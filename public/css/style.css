@@ -330,12 +330,21 @@ canvas#scene {
   box-shadow: 0 4px 0 #6272a4;
 }
 
+/* DEV MODE CONTROLS (Ẩn mặc định đối với người chơi thông thường) */
+.dev-only {
+  display: none !important;
+}
+
+body.dev-mode .dev-only {
+  display: block !important;
+}
+
 /* BOTTOM NAVIGATION TOOLBAR */
 .bottom-nav {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding: 8px 12px;
+  grid-template-columns: repeat(auto-fit, minmax(65px, 1fr));
+  gap: 5px;
+  padding: 8px 10px;
   background: #180d15;
   border-top: 2px solid var(--panel-border);
 }
@@ -344,11 +353,12 @@ canvas#scene {
   background: #341f2e;
   border: 1px solid #57334d;
   color: var(--text-main);
-  padding: 6px 2px;
-  font-size: 0.95rem;
+  padding: 7px 4px;
+  font-size: 0.92rem;
   border-radius: 6px;
   cursor: pointer;
   text-align: center;
+  white-space: nowrap;
 }
 
 .nav-btn:hover {
