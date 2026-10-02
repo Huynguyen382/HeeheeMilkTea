@@ -1,13 +1,21 @@
 {
-  "name": "game",
+  "name": "heehee-milktea",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Game Tiệm Trà Sữa HeeHee Pixel Art",
+  "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "game",
+    "pixel-art",
+    "milktea",
+    "express"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

@@ -17,7 +17,7 @@ const API = {
       return data;
     } catch (err) {
       console.error('API Error:', err);
-      return { error: 'Không thể kết nối đến máy chủ Quán Trà Sữa Hyhy!' };
+      return { error: 'Không thể kết nối đến máy chủ Tiệm Trà Sữa HeeHee!' };
     }
   },
 
