@@ -231,11 +231,13 @@ const db = {
       let pgSql = toPgSql(sql);
       const isInsert = pgSql.trim().toUpperCase().startsWith('INSERT');
       if (isInsert && !pgSql.toUpperCase().includes('RETURNING')) {
-        pgSql += ' RETURNING id';
+        pgSql += ' RETURNING *';
       }
       const res = await pgPool.query(pgSql, flatParams);
+      const row = res.rows && res.rows[0];
+      const rowId = row ? (row.id ?? row.store_id ?? Object.values(row)[0] ?? null) : null;
       return {
-        lastInsertRowid: res.rows[0]?.id || null,
+        lastInsertRowid: rowId,
         changes: res.rowCount,
         rowCount: res.rowCount
       };

@@ -262,8 +262,30 @@ async function getStoreState(storeId) {
   const store = await db.prepare('SELECT * FROM stores WHERE id = ?').get(storeId);
   if (!store) return null;
 
-  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
-  const daily = await anticheat.getOrCreateDailyStats(storeId, save.chapter);
+  let save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  if (!save) {
+    console.warn(`[Self-Healing] Missing game_saves for store ID ${storeId}, auto-creating default save...`);
+    const initialSave = {
+      store_id: storeId,
+      chapter: 1,
+      day_in_game: 1,
+      money: 200000,
+      debt_remaining: 3000000,
+      reputation: 5.0
+    };
+    const hash = anticheat.generateSaveHash(initialSave);
+    const now = new Date().toISOString();
+
+    await db.prepare(`
+      INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, save_hash, updated_at)
+      VALUES (?, 1, 1, 200000, 3000000, 5.0, ?, ?)
+    `).run(storeId, hash, now);
+
+    save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  }
+
+  const chapter = save ? (save.chapter || 1) : 1;
+  const daily = await anticheat.getOrCreateDailyStats(storeId, chapter);
 
   return {
     username: store.username || store.store_name,
