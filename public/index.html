@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#1a1016">
-  <title>Tiệm Trà Sữa HeeHee – Khởi Nghiệp Trà Sữa Pixel</title>
+  <title>🧋 Tiệm Trà Sữa HeeHee – Khởi Nghiệp Trà Sữa Pixel</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,7 +14,10 @@
   <!-- HUD TOP -->
   <header class="hud-top">
     <div class="hud-row-1">
-      <div class="store-title" id="store-name">Tiệm Trà Sữa HeeHee</div>
+      <div class="store-title" id="store-name">
+        <span class="header-icon">🧋</span>
+        <span class="store-name-text">Tiệm Trà Sữa HeeHee</span>
+      </div>
       <div style="display: flex; gap: 6px; align-items: center;">
         <span id="user-badge" style="font-size: 0.95rem; color: #f1fa8c;">👤 Khách</span>
         <button id="btn-logout" style="background: none; border: 1px solid #ff5555; color: #ff5555; border-radius: 4px; padding: 1px 6px; font-size: 0.85rem; cursor: pointer;">Thoát</button>
@@ -138,7 +142,7 @@
     <button class="nav-btn" id="nav-debt">💰 Trả Nợ</button>
     <button class="nav-btn" id="nav-upgrades">🛒 Nâng Cấp</button>
     <button class="nav-btn" id="nav-invite-tiktoker" style="color: #ff79c6;">📣 Mời TikToker</button>
-    <button class="nav-btn" id="nav-sound">🔇 Nhạc: Tắt</button>
+    <button class="nav-btn" id="nav-sound">🔊 Nhạc: Bật</button>
     <!-- DEV MODE CONTROLS (Ẩn mặc định cho người chơi thường) -->
     <button class="nav-btn dev-only" id="nav-advance-day" style="border-color: #bd93f9; color: #bd93f9;">🌅 Sang Ngày</button>
     <button class="nav-btn btn-danger dev-only" id="nav-test-hack">🛡️ Test Cheat</button>
@@ -253,6 +257,64 @@
             </div>
             <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Đội lát cam siêu chill, giúp khách kiên nhẫn đứng đợi không giục giã!</div>
             <button class="btn-action-wide" data-buy-upgrade="pet_capybara" style="background: #16a085;">Mua Capybara Siêu Chill (5.500.000đ)</button>
+          </div>
+        </div>
+
+        <!-- CÔNG THỨC MÓN MỚI (MỞ RỘNG MENU) -->
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 2px dashed #f4c430;">
+          <div style="font-weight: bold; color: #f4c430; font-size: 1.15rem; margin-bottom: 4px;">📜 CÔNG THỨC MÓN MỚI (MỞ RỘNG MENU)</div>
+          <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;">
+            Khách chỉ gọi những món có trong Menu quán. Mua công thức để mở rộng thực đơn và bán được giá cao hơn!
+          </div>
+
+          <!-- Recipe 1: Hồng Trà Tắc -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #e17055; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🍊 Hồng Trà Tắc Xí Muội</b>
+              <span style="color: #f1fa8c; font-size: 0.9rem; font-weight: bold;">Giá Bán: 12.000đ/ly</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Cốt trà đen, tắc chua thanh, xí muội mằn mặn dân văn phòng ưa thích.</div>
+            <button class="btn-action-wide" data-buy-upgrade="recipe_hong_tra_tac" style="background: #d35400;">Mở Khóa Công Thức (120.000đ)</button>
+          </div>
+
+          <!-- Recipe 2: Trà Sữa Thái Xanh -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #00b894; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🌿 Trà Sữa Thái Xanh</b>
+              <span style="color: #50fa7b; font-size: 0.9rem; font-weight: bold;">Giá Bán: 18.000đ/ly</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Cốt trà Thái xanh thơm nồng hoa lài kèm thạch lá dứa giòn tan.</div>
+            <button class="btn-action-wide" data-buy-upgrade="recipe_tra_thai_xanh" style="background: #00b894;">Mở Khóa Công Thức (250.000đ)</button>
+          </div>
+
+          <!-- Recipe 3: Sữa Tươi Trân Châu Đường Đen -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #fdcb6e; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🥛 Sữa Tươi Trân Châu Đường Đen</b>
+              <span style="color: #ffeaa7; font-size: 0.9rem; font-weight: bold;">Giá Bán: 25.000đ/ly</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Sữa tươi thanh trùng cùng trân châu nấu đường đen dẻo quánh hot trend.</div>
+            <button class="btn-action-wide" data-buy-upgrade="recipe_sua_tuoi_duong_den" style="background: #e67e22;">Mở Khóa Công Thức (500.000đ)</button>
+          </div>
+
+          <!-- Recipe 4: Trà Đào Cam Sả -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #e84393; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🍑 Trà Đào Cam Sả</b>
+              <span style="color: #ff79c6; font-size: 0.9rem; font-weight: bold;">Giá Bán: 28.000đ/ly</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Lục trà lài mát rượi, sả đập dập thơm lừng kèm những miếng đào giòn tan.</div>
+            <button class="btn-action-wide" data-buy-upgrade="recipe_tra_dao_cam_sa" style="background: #e84393;">Mở Khóa Công Thức (800.000đ)</button>
+          </div>
+
+          <!-- Recipe 5: Trà Ô Long Nướng Sương Sáo -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #a29bfe;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🔥 Trà Ô Long Nướng Sương Sáo</b>
+              <span style="color: #bd93f9; font-size: 0.9rem; font-weight: bold;">Giá Bán: 35.000đ/ly</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Cốt trà ô long sao cháy thượng hạng đậm vị khói cùng sương sáo thanh nhiệt.</div>
+            <button class="btn-action-wide" data-buy-upgrade="recipe_tra_olong_nuong" style="background: #6c5ce7;">Mở Khóa Công Thức (1.500.000đ)</button>
           </div>
         </div>
       </div>

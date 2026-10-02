@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const save = storeState.save;
     const daily = storeState.daily_stats;
 
-    elStoreName.innerText = storeState.store_name;
+    elStoreName.innerHTML = `<span class="header-icon">🧋</span> <span class="store-name-text">${storeState.store_name}</span>`;
     elStoreCode.innerText = storeState.store_code;
     elUserBadge.innerText = '👤 ' + (storeState.username || 'HeeHee');
     elMoney.innerText = save.money.toLocaleString('vi-VN') + 'đ';
@@ -368,16 +368,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Update Upgrade & Pet buttons in Upgrade Modal
+    // Update Upgrade, Pet & Recipe buttons in Upgrade Modal
     document.querySelectorAll('[data-buy-upgrade]').forEach(btn => {
       const upId = btn.getAttribute('data-buy-upgrade');
-      if (save.upgrades && save.upgrades[upId]) {
+      const recId = upId.startsWith('recipe_') ? upId.replace('recipe_', '') : null;
+      const isOwned = (save.upgrades && save.upgrades[upId]) || (recId && save.recipes && save.recipes.includes(recId));
+
+      if (isOwned) {
         if (upId.startsWith('pet_')) {
-          if (save.upgrades.active_pet === upId) {
+          if (save.upgrades && save.upgrades.active_pet === upId) {
             btn.innerText = save.upgrades.is_pet_stolen ? 'Đang Bị Bắt Cóc 🚨' : 'Đang Giữ Quán 🐾';
           } else {
             btn.innerText = 'Đã Sở Hữu ✅';
           }
+        } else if (upId.startsWith('recipe_')) {
+          btn.innerText = 'Đã Thêm Vào Menu ✅';
+          btn.style.background = '#27ae60';
         } else {
           btn.innerText = 'Đã Sở Hữu ✅';
         }
@@ -819,7 +825,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (res.success) {
           sound.coin();
           showToast(res.message);
-          btn.innerText = 'Đã Sở Hữu ✅';
+          btn.innerText = upId.startsWith('recipe_') ? 'Đã Thêm Vào Menu ✅' : 'Đã Sở Hữu ✅';
+          if (upId.startsWith('recipe_')) btn.style.background = '#27ae60';
           btn.disabled = true;
           storeState = await API.getState();
           updateUI();
@@ -1055,6 +1062,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         const current = document.body.classList.contains('dev-mode');
         applyDevMode(!current, true);
         sound.bell();
+      }
+    });
+  }
+
+  // Click store code to copy
+  if (elStoreCode) {
+    elStoreCode.style.cursor = 'pointer';
+    elStoreCode.title = 'Nhấn để sao chép mã quán';
+    elStoreCode.addEventListener('click', async () => {
+      if (!storeState || !storeState.store_code) return;
+      try {
+        await navigator.clipboard.writeText(storeState.store_code);
+        showToast('📋 Đã sao chép Mã Quán: ' + storeState.store_code, 2000);
+      } catch {
+        // Fallback for older browsers
+        const ta = document.createElement('textarea');
+        ta.value = storeState.store_code;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('📋 Đã sao chép Mã Quán: ' + storeState.store_code, 2000);
       }
     });
   }

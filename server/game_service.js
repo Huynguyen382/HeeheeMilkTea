@@ -247,8 +247,8 @@ async function getOrCreateStore(storeName, inputCode) {
     const hash = anticheat.generateSaveHash(initialSave);
 
     await db.prepare(`
-      INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, save_hash, updated_at)
-      VALUES (?, 1, 1, 200000, 3000000, 5.0, ?, ?)
+      INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, recipes, save_hash, updated_at)
+      VALUES (?, 1, 1, 200000, 3000000, 5.0, '["tra_sua_truyen_thong"]', ?, ?)
     `).run(storeId, hash, now);
 
     store = await db.prepare('SELECT * FROM stores WHERE id = ?').get(storeId);
@@ -277,8 +277,8 @@ async function getStoreState(storeId) {
     const now = new Date().toISOString();
 
     await db.prepare(`
-      INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, save_hash, updated_at)
-      VALUES (?, 1, 1, 200000, 3000000, 5.0, ?, ?)
+      INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, recipes, save_hash, updated_at)
+      VALUES (?, 1, 1, 200000, 3000000, 5.0, '["tra_sua_truyen_thong"]', ?, ?)
     `).run(storeId, hash, now);
 
     save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
@@ -361,7 +361,8 @@ async function generateOrder(storeId) {
   }
 
   const unlocked = JSON.parse(save.recipes || '["tra_sua_truyen_thong"]');
-  const availableKeys = Object.keys(RECIPES).filter(k => unlocked.includes(k) && RECIPES[k].chapter <= save.chapter);
+  const availableKeys = Object.keys(RECIPES).filter(k => unlocked.includes(k));
+  const validKeys = availableKeys.length > 0 ? availableKeys : ['tra_sua_truyen_thong'];
 
   // 2. Wave size calculation: 1 to 4 customers per wave
   let waveSize = 1;
@@ -393,14 +394,21 @@ async function generateOrder(storeId) {
   let snackEvent = null;
 
   for (let i = 0; i < waveSize; i++) {
-    const selectedKey = availableKeys[Math.floor(Math.random() * availableKeys.length)] || 'tra_sua_truyen_thong';
-    const recipe = RECIPES[selectedKey];
-    
     // Select customer: if invited TikToker, ensure first customer is Tú (TikToker)
     let cust = CUSTOMERS[Math.floor(Math.random() * CUSTOMERS.length)];
     if (isInvitedTiktoker && i === 0) {
       cust = CUSTOMERS.find(c => c.isTiktoker) || CUSTOMERS[3];
     }
+
+    // Customer picks a drink that exists in the store's unlocked menu!
+    const custUnlockedFavs = (cust.fav || []).filter(k => validKeys.includes(k));
+    let selectedKey;
+    if (custUnlockedFavs.length > 0 && Math.random() < 0.75) {
+      selectedKey = custUnlockedFavs[Math.floor(Math.random() * custUnlockedFavs.length)];
+    } else {
+      selectedKey = validKeys[Math.floor(Math.random() * validKeys.length)];
+    }
+    const recipe = RECIPES[selectedKey] || RECIPES['tra_sua_truyen_thong'];
     
     let quote = cust.dialogues[Math.floor(Math.random() * cust.dialogues.length)];
     if (isInvitedTiktoker && i === 0) {
@@ -764,6 +772,43 @@ const UPGRADES = {
     type: 'pet',
     petId: 'capybara',
     desc: 'Thánh ngoại giao bình tĩnh nhất quả đất, tăng +40% thời gian kiên nhẫn chờ đợi của khách hàng!'
+  },
+
+  // HỆ THỐNG CÔNG THỨC MÓN MỚI (MỞ RỘNG MENU)
+  recipe_hong_tra_tac: {
+    name: '📜 Công Thức: Hồng Trà Tắc Xí Muội',
+    cost: 120000,
+    type: 'recipe',
+    recipeId: 'hong_tra_tac',
+    desc: 'Mở khóa món Hồng Trà Tắc Xí Muội vào Menu quán! Giá bán: 12.000đ/ly.'
+  },
+  recipe_tra_thai_xanh: {
+    name: '📜 Công Thức: Trà Sữa Thái Xanh',
+    cost: 250000,
+    type: 'recipe',
+    recipeId: 'tra_thai_xanh',
+    desc: 'Mở khóa món Trà Sữa Thái Xanh vào Menu quán! Giá bán: 18.000đ/ly.'
+  },
+  recipe_sua_tuoi_duong_den: {
+    name: '📜 Công Thức: Sữa Tươi Trân Châu Đường Đen',
+    cost: 500000,
+    type: 'recipe',
+    recipeId: 'sua_tuoi_duong_den',
+    desc: 'Mở khóa món Sữa Tươi Đường Đen hot trend vào Menu quán! Giá bán: 25.000đ/ly.'
+  },
+  recipe_tra_dao_cam_sa: {
+    name: '📜 Công Thức: Trà Đào Cam Sả',
+    cost: 800000,
+    type: 'recipe',
+    recipeId: 'tra_dao_cam_sa',
+    desc: 'Mở khóa món Trà Đào Cam Sả giải nhiệt vào Menu quán! Giá bán: 28.000đ/ly.'
+  },
+  recipe_tra_olong_nuong: {
+    name: '📜 Công Thức: Trà Ô Long Nướng Sương Sáo',
+    cost: 1500000,
+    type: 'recipe',
+    recipeId: 'tra_olong_nuong',
+    desc: 'Mở khóa món Trà Ô Long Nướng Thượng Hạng vào Menu quán! Giá bán: 35.000đ/ly.'
   }
 };
 
@@ -773,9 +818,10 @@ async function buyUpgrade(storeId, upgradeId) {
 
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   const upgrades = JSON.parse(save.upgrades || '{}');
+  let recipes = JSON.parse(save.recipes || '["tra_sua_truyen_thong"]');
 
-  if (upgrades[upgradeId]) {
-    return { success: false, message: 'Đã sở hữu nâng cấp này rồi!' };
+  if (upgrades[upgradeId] || (item.type === 'recipe' && recipes.includes(item.recipeId))) {
+    return { success: false, message: 'Đã sở hữu nâng cấp/công thức này rồi!' };
   }
 
   if (save.money < item.cost) {
@@ -786,6 +832,10 @@ async function buyUpgrade(storeId, upgradeId) {
   if (item.type === 'pet') {
     upgrades.active_pet = item.petId;
     upgrades.is_pet_stolen = false;
+  } else if (item.type === 'recipe') {
+    if (!recipes.includes(item.recipeId)) {
+      recipes.push(item.recipeId);
+    }
   }
 
   const newMoney = save.money - item.cost;
@@ -801,15 +851,18 @@ async function buyUpgrade(storeId, upgradeId) {
 
   await db.prepare(`
     UPDATE game_saves 
-    SET money = ?, upgrades = ?, save_hash = ?, updated_at = ?
+    SET money = ?, upgrades = ?, recipes = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
-  `).run(newMoney, JSON.stringify(upgrades), hash, new Date().toISOString(), storeId);
+  `).run(newMoney, JSON.stringify(upgrades), JSON.stringify(recipes), hash, new Date().toISOString(), storeId);
 
   return {
     success: true,
     money: newMoney,
     upgrades,
-    message: `Đã trang bị thành công [${item.name}]!`
+    recipes,
+    message: item.type === 'recipe' 
+      ? `🎉 Mở khóa thành công [${item.name}]! Khách hàng bắt đầu có thể order món này!` 
+      : `Đã trang bị thành công [${item.name}]!`
   };
 }
 

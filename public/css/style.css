@@ -66,10 +66,25 @@ body {
 }
 
 .store-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 1.3rem;
   color: var(--gold);
   font-weight: bold;
   letter-spacing: 1px;
+}
+
+.header-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  display: inline-block;
+  animation: headerBounce 2.5s infinite ease-in-out;
+}
+
+@keyframes headerBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 
 .store-code-badge {

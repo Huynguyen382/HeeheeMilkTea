@@ -56,8 +56,8 @@ async function register(username, password, storeName) {
   const hash = anticheat.generateSaveHash(initialSave);
 
   await db.prepare(`
-    INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, save_hash, updated_at)
-    VALUES (?, 1, 1, 200000, 3000000, 5.0, ?, ?)
+    INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, recipes, save_hash, updated_at)
+    VALUES (?, 1, 1, 200000, 3000000, 5.0, '["tra_sua_truyen_thong"]', ?, ?)
   `).run(storeId, hash, now);
 
   const state = await gameService.getStoreState(storeId);

@@ -3,7 +3,7 @@ class SoundManager {
   constructor() {
     this.ctx = null;
     this.soundEnabled = true;
-    this.bgmEnabled = false;
+    this.bgmEnabled = true; // Mặc định BẬT nhạc
     this.bgmInterval = null;
   }
 
@@ -14,6 +14,18 @@ class SoundManager {
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
+    }
+  }
+
+  tryStartBGM() {
+    if (!this.bgmEnabled || this.bgmInterval) return;
+    this.init();
+    if (this.ctx && (this.ctx.state === 'running' || this.ctx.state === 'suspended')) {
+      this.ctx.resume().then(() => {
+        if (!this.bgmInterval && this.bgmEnabled) {
+          this.startLofiBGM();
+        }
+      }).catch(() => {});
     }
   }
 
@@ -94,12 +106,16 @@ class SoundManager {
     if (this.bgmEnabled) {
       this.startLofiBGM();
     } else {
-      if (this.bgmInterval) clearInterval(this.bgmInterval);
+      if (this.bgmInterval) {
+        clearInterval(this.bgmInterval);
+        this.bgmInterval = null;
+      }
     }
     return this.bgmEnabled;
   }
 
   startLofiBGM() {
+    if (this.bgmInterval) clearInterval(this.bgmInterval);
     const melody = [
       { f: 523.25, d: 0.2 }, { f: 587.33, d: 0.2 }, { f: 659.25, d: 0.3 },
       { f: 783.99, d: 0.3 }, { f: 659.25, d: 0.2 }, { f: 523.25, d: 0.4 }
@@ -115,3 +131,10 @@ class SoundManager {
 }
 
 window.sound = new SoundManager();
+
+// Automatically start BGM on first user interaction anywhere
+['click', 'touchstart', 'pointerdown', 'keydown'].forEach(evt => {
+  window.addEventListener(evt, () => {
+    if (window.sound) window.sound.tryStartBGM();
+  }, { passive: true });
+});
