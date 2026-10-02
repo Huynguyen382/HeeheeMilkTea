@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1016">
+  <title>Tiệm Trà Sữa HeeHee – Khởi Nghiệp Trà Sữa Pixel</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="game-container">
+  <!-- HUD TOP -->
+  <header class="hud-top">
+    <div class="hud-row-1">
+      <div class="store-title" id="store-name">Tiệm Trà Sữa HeeHee</div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <span id="user-badge" style="font-size: 0.95rem; color: #f1fa8c;">👤 Khách</span>
+        <button id="btn-logout" style="background: none; border: 1px solid #ff5555; color: #ff5555; border-radius: 4px; padding: 1px 6px; font-size: 0.85rem; cursor: pointer;">Thoát</button>
+        <div class="store-code-badge" id="store-code" title="Mã Quán - Chia sẻ để Collab bạn bè">HYHY-0000</div>
+      </div>
+    </div>
+    <div class="hud-row-2">
+      <div class="stat-item">Chương <b id="stat-chapter">1</b> · Ngày <b id="stat-day">1</b></div>
+      <div class="stat-item"><span class="stat-val-rep" id="stat-rep">5.0⭐</span></div>
+      <div class="stat-item">Nợ: <span class="stat-val-debt" id="stat-debt">3.000.000đ</span></div>
+      <div class="stat-item">Tiền: <span class="stat-val-money" id="stat-money">200.000đ</span></div>
+    </div>
+
+    <!-- DAILY CAP BAR (HẠN MỨC NGÀY THỰC) -->
+    <div class="daily-cap-box">
+      <div class="cap-label-row">
+        <span>Doanh số hôm nay: <b id="cap-earned">0đ</b></span>
+        <span>Hạn mức: <b id="cap-max">1.200.000đ</b></span>
+      </div>
+      <div class="cap-progress-bg">
+        <div id="cap-progress-fill" class="cap-progress-fill"></div>
+      </div>
+      <div id="overload-warning" class="overload-warning">
+        🛑 QUÁN QUÁ TẢI HÔM NAY! Khách thưa thớt. Hãy Collab bạn bè để mở thêm hạn mức!
+      </div>
+
+      <!-- ACTIVE BUFFS & VIRAL STATUS BAR -->
+      <div id="active-buffs-bar" style="display: none; margin-top: 6px; gap: 4px; flex-wrap: wrap; font-size: 0.85rem;">
+        <span id="buff-tiktoker" style="display: none; background: rgba(255, 121, 198, 0.2); border: 1px solid #ff79c6; color: #ff79c6; border-radius: 4px; padding: 2px 6px;">🔥 TikTok Triệu View (x2.5 Khách)</span>
+        <span id="buff-tiktoker-flop" style="display: none; background: rgba(255, 85, 85, 0.2); border: 1px solid #ff5555; color: #ff5555; border-radius: 4px; padding: 2px 6px;">📉 Bị Bóc Phốt (Khách Vắng)</span>
+        <span id="buff-patience" style="display: none; background: rgba(80, 250, 123, 0.2); border: 1px solid #50fa7b; color: #50fa7b; border-radius: 4px; padding: 2px 6px;">⏱️ Khách Kiên Nhẫn +40%</span>
+        <span id="buff-tip" style="display: none; background: rgba(241, 250, 140, 0.2); border: 1px solid #f1fa8c; color: #f1fa8c; border-radius: 4px; padding: 2px 6px;">💰 Tip Thưởng +10%</span>
+      </div>
+
+      <!-- LOW REPUTATION (< 3.0⭐) ALERT & RESCUE BANNER -->
+      <div id="low-rep-banner" style="display: none; margin-top: 6px; background: rgba(231, 76, 60, 0.25); border: 1px solid #e74c3c; border-radius: 6px; padding: 6px 10px; font-size: 0.88rem; color: #ff7675; align-items: center; justify-content: space-between;">
+        <span>⚠️ <b>Đánh giá tiệm < 3⭐:</b> Khách e ngại, lượng khách giảm 50%!</span>
+        <button id="btn-invite-tiktoker-banner" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); border: none; border-radius: 4px; padding: 3px 8px; color: #fff; font-weight: bold; cursor: pointer; font-size: 0.85rem; margin-left: 6px; white-space: nowrap;">📣 Mời TikToker (25k)</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CANVAS SCENE -->
+  <div id="scene-wrapper">
+    <canvas id="scene" width="360" height="200"></canvas>
+  </div>
+
+  <!-- MULTI-CUSTOMER QUEUE INDICATOR -->
+  <div id="queue-indicator" style="display: none; background: #190c16; padding: 4px 8px; border-radius: 4px; font-size: 0.88rem; color: var(--gold); border: 1px solid #4d3345; margin: 0 10px 4px 10px;">
+    👥 Hàng chờ: <span id="queue-text" style="color: var(--text-muted);">...</span>
+  </div>
+
+  <!-- ORDER TICKET SECTION -->
+  <section class="order-section" id="order-content">
+    <div class="order-box no-order">
+      Đang đón chờ vị khách đầu tiên ghé quầy... 🧋
+    </div>
+  </section>
+
+  <!-- MIXING COUNTER STATION -->
+  <main class="mixing-counter">
+    <!-- Cốt Trà -->
+    <div>
+      <div class="section-label">1. Chọn Cốt Trà:</div>
+      <div class="options-row">
+        <button class="btn-select active" data-tea="den">🍵 Trà Đen Đậm</button>
+        <button class="btn-select" data-tea="thai_xanh">🌿 Thái Xanh</button>
+        <button class="btn-select" data-tea="sua_tuoi">🥛 Sữa Tươi</button>
+        <button class="btn-select" data-tea="lai">🌸 Lục Trà Lài</button>
+        <button class="btn-select" data-tea="olong_nuong">🔥 Ô Long Nướng</button>
+      </div>
+    </div>
+
+    <!-- Đường & Đá -->
+    <div>
+      <div class="section-label">2. Mức Đường & Lượng Đá:</div>
+      <div class="options-row" style="margin-bottom: 4px;">
+        <button class="btn-select" data-sugar="0%">0% Đường</button>
+        <button class="btn-select" data-sugar="30%">30% Đường</button>
+        <button class="btn-select active" data-sugar="50%">50% Đường</button>
+        <button class="btn-select" data-sugar="70%">70% Đường</button>
+        <button class="btn-select" data-sugar="100%">100% Đường</button>
+      </div>
+      <div class="options-row">
+        <button class="btn-select" data-ice="Nóng">♨️ Nóng</button>
+        <button class="btn-select" data-ice="Ít đá">🧊 Ít đá</button>
+        <button class="btn-select active" data-ice="Vừa đá">🧊🧊 Vừa đá</button>
+        <button class="btn-select" data-ice="Đầy đá">❄️ Đầy đá</button>
+      </div>
+    </div>
+
+    <!-- Topping -->
+    <div>
+      <div class="section-label">3. Topping Kèm Theo:</div>
+      <div class="options-row">
+        <button class="btn-select" data-topping="tranchau_den">⚫ Trân Châu Đen</button>
+        <button class="btn-select" data-topping="thach_la_dua">🍃 Thạch Lá Dứa</button>
+        <button class="btn-select" data-topping="tranchau_duongden">🍯 Đường Đen</button>
+        <button class="btn-select" data-topping="dao_mieng">🍑 Đào Miếng</button>
+        <button class="btn-select" data-topping="suong_sao">🍮 Sương Sáo</button>
+      </div>
+    </div>
+
+    <!-- REAL-TIME CUP MIX MONITOR -->
+    <div id="cup-status-bar" style="background: #190c16; border: 1px dashed var(--gold); border-radius: 6px; padding: 5px 8px; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; color: var(--milk-cream);">
+      <span>🧋 <b id="mix-tea-name" style="color: var(--gold);">Trà Đen</b> (180ml)</span>
+      <span>Đường: <b id="mix-sugar-val" style="color: #50fa7b;">50%</b></span>
+      <span>Đá: <b id="mix-ice-val" style="color: #8be9fd;">Vừa đá</b></span>
+      <span>Topping: <b id="mix-topping-val" style="color: #ff79c6;">0 loại</b></span>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-box">
+      <button class="btn-shaker" id="btn-shaker">Lắc Shaker 🥤</button>
+      <button class="btn-serve" id="btn-serve" disabled>GIAO LY (SERVE) ✨</button>
+    </div>
+  </main>
+
+  <!-- NAVIGATION BOTTOM BAR -->
+  <footer class="bottom-nav">
+    <button class="nav-btn" id="nav-collab">🤝 Collab Bạn</button>
+    <button class="nav-btn" id="nav-debt">💰 Trả Nợ</button>
+    <button class="nav-btn" id="nav-upgrades">🛒 Nâng Cấp</button>
+    <button class="nav-btn" id="nav-invite-tiktoker" style="color: #ff79c6;">📣 Mời TikToker</button>
+    <button class="nav-btn" id="nav-advance-day">🌅 Sang Ngày</button>
+    <button class="nav-btn" id="nav-sound">🔇 Nhạc: Tắt</button>
+    <button class="nav-btn btn-danger" id="nav-test-hack">🛡️ Test Cheat</button>
+  </footer>
+
+  <!-- MODAL: COLLAB BẠN BÈ -->
+  <div class="modal-overlay" id="modal-collab">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🤝 Liên Minh Trà Sữa Bạn Hữu</div>
+        <button class="btn-close" id="close-collab">&times;</button>
+      </div>
+      <p style="font-size: 1.05rem; color: var(--text-muted);">
+        Hạn mức doanh số mỗi ngày thực có giới hạn. Hãy Collab với bạn bè để tăng thêm trần doanh thu kiếm được trong ngày!
+      </p>
+      <div>
+        <label style="color: var(--gold);">Mã Quán Của Bạn (Gửi cho bạn bè):</label>
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <input type="text" id="my-collab-code" class="input-box" readonly>
+          <button class="btn-action-wide" id="btn-copy-code" style="margin: 0; white-space: nowrap;">Copy</button>
+        </div>
+      </div>
+      <div style="margin-top: 6px;">
+        <label style="color: var(--gold);">Nhập Mã Quán Bạn Bè Cần Collab:</label>
+        <input type="text" id="friend-code-input" class="input-box" placeholder="Ví dụ: HYHY-A1B2C3" style="margin-top: 4px;">
+        <button class="btn-action-wide" id="btn-submit-collab" style="width: 100%;">Ký Kết Collab (+Hạn Mức)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TRẢ NỢ ANH BẢNH -->
+  <div class="modal-overlay" id="modal-debt">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">💰 Sổ Nợ Anh Bảnh</div>
+        <button class="btn-close" id="close-debt">&times;</button>
+      </div>
+      <p style="font-size: 1.15rem;">
+        Khoản nợ xe đẩy còn lại: <b style="color: #ff5555;" id="debt-remaining-disp">3.000.000đ</b>
+      </p>
+      <p style="font-size: 1rem; color: var(--text-muted);">
+        "Liệu mà trả đủ trước 7 ngày, không thì tao kéo chiếc xe đẩy đi đấy nhé! Khà khà!" - Anh Bảnh.
+      </p>
+      <button class="btn-action-wide" id="btn-pay-500k">Trả bớt 500.000đ</button>
+      <button class="btn-action-wide" id="btn-pay-all-debt" style="background: #50fa7b;">Trả Hết Sạch Nợ (Mở Chương 2)</button>
+    </div>
+  </div>
+
+  <!-- MODAL: NÂNG CẤP QUÁN -->
+  <div class="modal-overlay" id="modal-upgrades">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🛒 Cửa Hàng Nâng Cấp</div>
+        <button class="btn-close" id="close-upgrades">&times;</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #4d3345;">
+          <b>⚙️ Máy Dập Nắp Tự Động</b>
+          <div style="color: var(--text-muted); font-size: 0.95rem;">Bé Bắp tự động dập nắp ly siêu tốc, tiết kiệm thời gian.</div>
+          <button class="btn-action-wide" data-buy-upgrade="may_dap_nap">Mua (500.000đ)</button>
+        </div>
+        <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #4d3345;">
+          <b>🍵 Bình Ủ Inox Giữ Nhiệt 10L</b>
+          <div style="color: var(--text-muted); font-size: 0.95rem;">Cốt trà giữ trọn hương vị, không lo bị đắng chát.</div>
+          <button class="btn-action-wide" data-buy-upgrade="binh_u_lon">Mua (400.000đ)</button>
+        </div>
+        <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #4d3345;">
+          <b>🛵 Xe Wave Cho Anh Lâm</b>
+          <div style="color: var(--text-muted); font-size: 0.95rem;">Tăng tốc độ ship đơn và rượt bắt khách boom hàng.</div>
+          <button class="btn-action-wide" data-buy-upgrade="xe_wave">Mua (1.200.000đ)</button>
+        </div>
+
+        <!-- PET SHOP SECTION -->
+        <div style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #ff79c6;">
+          <div style="font-weight: bold; color: #ff79c6; font-size: 1.15rem; margin-bottom: 4px;">🐾 THÚ CƯNG GIỮ QUÁN (PETS)</div>
+          <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 6px;">
+            Thú cưng giúp tăng doanh thu & kiên nhẫn của khách! ⚠️ <b>Lưu ý:</b> Thú cưng có thể bị kẻ trộm mặc đồ đen bịt khẩu trang câu trộm khi quán đông khách.
+          </div>
+
+          <!-- Stolen Pet Warning Banner in Upgrade Menu -->
+          <div id="pet-stolen-banner" style="display: none; background: rgba(255, 85, 85, 0.2); border: 1px solid #ff5555; padding: 8px; border-radius: 6px; margin-bottom: 8px; text-align: center;">
+            <div style="color: #ff5555; font-weight: bold; font-size: 1.05rem;">🚨 THÚ CƯNG ĐÃ BỊ KẺ TRỘM ĐỒ ĐEN BẮT CÓC!</div>
+            <div style="color: #f5ebe6; font-size: 0.9rem; margin: 4px 0;">Bé đang bị nhốt ở lò chó mèo, hãy chuộc bé về sớm nhé!</div>
+            <button class="btn-action-wide" id="btn-redeem-pet-shop" style="background: #27ae60; color: #fff;">💰 Chuộc Lại Thú Cưng (50% Giá Mua)</button>
+          </div>
+
+          <!-- Pet 1: Corgi -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #ff79c6; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🐶 Cún Corgi Chân Ngắn</b>
+              <span style="color: #f1fa8c; font-size: 0.9rem; font-weight: bold;">+20% Tiền Tip</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Mông trái tim lúc lắc siêu cưng, thu hút khách tip thêm tiền!</div>
+            <button class="btn-action-wide" data-buy-upgrade="pet_corgi" style="background: #d35400;">Mua Cún Corgi (1.800.000đ)</button>
+          </div>
+
+          <!-- Pet 2: Mèo Tam Thể -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #ff79c6; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🐱 Mèo Tam Thể Chiêu Tài</b>
+              <span style="color: #50fa7b; font-size: 0.9rem; font-weight: bold;">+15% Doanh Thu</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Vẫy tay thần tài Maneki Neko mang tài lộc, tăng 15% tiền mỗi ly!</div>
+            <button class="btn-action-wide" data-buy-upgrade="pet_meo_tam_the" style="background: #8e44ad;">Mua Mèo Chiêu Tài (3.200.000đ)</button>
+          </div>
+
+          <!-- Pet 3: Capybara -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #ff79c6;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🐹 Chuột Lang Nước Capybara</b>
+              <span style="color: #8be9fd; font-size: 0.9rem; font-weight: bold;">+40% Chờ Đợi</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Đội lát cam siêu chill, giúp khách kiên nhẫn đứng đợi không giục giã!</div>
+            <button class="btn-action-wide" data-buy-upgrade="pet_capybara" style="background: #16a085;">Mua Capybara Siêu Chill (5.500.000đ)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BÁO ĐỘNG THÚ CƯNG BỊ CÂU TRỘM -->
+  <div class="modal-overlay" id="modal-pet-stolen" style="z-index: 9998;">
+    <div class="modal-content" style="border-color: #ff5555; background: #2b0b14; max-width: 360px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #ff5555;">🚨 BÁO ĐỘNG: BỊ CÂU TRỘM THÚ CƯNG!</div>
+        <button class="btn-close" id="close-pet-stolen">&times;</button>
+      </div>
+      <div style="text-align: center; font-size: 2.8rem; margin: 8px 0;">🥷💨🐕</div>
+      <p style="font-size: 1.15rem; font-weight: bold; color: #ff5555; text-align: center; margin-bottom: 4px;">
+        KẺ TRỘM ĐỒ ĐEN ĐÃ BẮT CÓC MẤT THÚ CƯNG!
+      </p>
+      <p id="pet-stolen-desc" style="font-size: 0.95rem; color: #f5ebe6; text-align: center; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 6px; line-height: 1.4;">
+        Lợi dụng lúc quán đang đông khách, một kẻ bịt kín khẩu trang mặc đồ đen đã lượn lờ và câu mất thú cưng của quán!
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+        <button class="btn-action-wide" id="btn-redeem-pet-modal" style="background: #27ae60; color: #fff; font-size: 1.05rem;">
+          💰 Nộp Tiền Chuộc Bé Về (50% Giá Trị Thú Cưng)
+        </button>
+        <button class="btn-action-wide" id="btn-ignore-pet-stolen" style="background: #4d3345; color: #ddd;">
+          Đóng (Tạm thời chưa chuộc)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ANTI-CHEAT JAIL -->
+  <div class="modal-overlay" id="modal-jail" style="z-index: 9999;">
+    <div class="modal-content" style="border-color: #ff5555; background: #330b12;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #ff5555;">🚨 CƠ QUAN CHỨC NĂNG NIÊM PHONG!</div>
+      </div>
+      <div style="text-align: center; font-size: 2.5rem; margin: 10px 0;">🚓👮</div>
+      <p style="font-size: 1.25rem; font-weight: bold; color: #ff5555; text-align: center;">
+        HEEHEE BỊ QUẢN LÝ THỊ TRƯỜNG TỊCH THU XE ĐẨY!
+      </p>
+      <p id="jail-reason-text" style="font-size: 1.05rem; color: #f5ebe6; text-align: center; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 6px;">
+        Phát hiện can thiệp dữ liệu trái phép hoặc tốc độ bất thường.
+      </p>
+      <p style="font-size: 0.95rem; color: #ffb86c; text-align: center;">
+        "Làm ăn buôn bán phải giữ lấy cái tâm và sự trung thực! Quán bị xử phạt hành chính 50.000.000đ trừ trực tiếp vào tài khoản, danh tiếng rớt về 1.0⭐."
+      </p>
+      <button class="btn-action-wide" id="btn-close-jail" style="background: #ff5555; color: #fff;">Chấp Nhận Nộp Phạt 50 Triệu & Mở Niêm Phong</button>
+    </div>
+  </div>
+
+  <!-- MODAL: LOGIN / REGISTER -->
+  <div class="modal-overlay" id="modal-auth" style="z-index: 10000; background: rgba(10, 5, 12, 0.95);">
+    <div class="modal-content" style="max-width: 360px; border-color: var(--gold);">
+      <div style="text-align: center; margin-bottom: 6px;">
+        <div style="font-size: 2.2rem;">🧋✨</div>
+        <div style="font-size: 1.4rem; color: var(--gold); font-weight: bold;">TIỆM TRÀ SỮA HEEHEE</div>
+        <div style="font-size: 0.95rem; color: var(--text-muted);">Khởi nghiệp trà sữa phố đêm Pixel Art</div>
+      </div>
+
+      <!-- TABS -->
+      <div style="display: flex; border-bottom: 2px solid var(--panel-border); margin-bottom: 10px;">
+        <button id="tab-login" class="tab-btn active" style="flex: 1; padding: 6px; background: none; border: none; color: var(--gold); font-size: 1.15rem; font-weight: bold; cursor: pointer; border-bottom: 2px solid var(--gold);">Đăng Nhập</button>
+        <button id="tab-register" class="tab-btn" style="flex: 1; padding: 6px; background: none; border: none; color: var(--text-muted); font-size: 1.15rem; cursor: pointer;">Đăng Ký Mới</button>
+      </div>
+
+      <!-- ERROR MESSAGE -->
+      <div id="auth-error" style="color: #ff5555; font-size: 0.95rem; display: none; background: rgba(255,85,85,0.15); padding: 6px 10px; border-radius: 4px; text-align: center; border: 1px solid #ff5555;"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="form-login" style="display: flex; flex-direction: column; gap: 8px;">
+        <div>
+          <label style="color: var(--text-muted); font-size: 0.95rem;">Tên đăng nhập hoặc Mã Quán:</label>
+          <input type="text" id="login-account" class="input-box" placeholder="Ví dụ: heehee_boss hoặc HYHY-C79654" required>
+        </div>
+        <div>
+          <label style="color: var(--text-muted); font-size: 0.95rem;">Mật khẩu:</label>
+          <input type="password" id="login-password" class="input-box" placeholder="Nhập mật khẩu..." required>
+        </div>
+        <button type="submit" class="btn-action-wide" style="background: linear-gradient(180deg, #50fa7b, #2e8b57); color: #000; font-size: 1.25rem; margin-top: 6px;">VÀO QUÁN BÁN HÀNG 🚀</button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="form-register" style="display: none; flex-direction: column; gap: 8px;">
+        <div>
+          <label style="color: var(--text-muted); font-size: 0.95rem;">Tên đăng nhập (viết liền, không dấu):</label>
+          <input type="text" id="reg-username" class="input-box" placeholder="Ví dụ: heehee123" required minlength="3">
+        </div>
+        <div>
+          <label style="color: var(--text-muted); font-size: 0.95rem;">Tên Tiệm Trà Sữa Của Bạn:</label>
+          <input type="text" id="reg-storename" class="input-box" placeholder="Ví dụ: Tiệm Trà Sữa HeeHee" required>
+        </div>
+        <div>
+          <label style="color: var(--text-muted); font-size: 0.95rem;">Mật khẩu:</label>
+          <input type="password" id="reg-password" class="input-box" placeholder="Ít nhất 4 ký tự..." required minlength="4">
+        </div>
+        <button type="submit" class="btn-action-wide" style="background: linear-gradient(180deg, #f4c430, #b8860b); color: #000; font-size: 1.25rem; margin-top: 6px;">MỞ TIỆM & KHỞI NGHIỆP ✨</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SHIPPER SNACK EVENT -->
+  <div class="modal-overlay" id="modal-snack" style="z-index: 9998; display: none;">
+    <div class="modal-content" style="border-color: #50fa7b; max-width: 360px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #50fa7b;">🛵 Anh Shipper Mời Ăn Vặt!</div>
+      </div>
+      <div style="text-align: center; font-size: 2.8rem; margin: 6px 0;" id="snack-icon">🥡</div>
+      <div style="font-size: 1.25rem; font-weight: bold; color: var(--gold); text-align: center;" id="snack-title">
+        Bánh Tráng Trộn Bò Khô Trứng Cút
+      </div>
+      <p id="snack-quote" style="font-size: 1.05rem; color: #f5ebe6; text-align: center; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; margin: 8px 0; font-style: italic;">
+        "Nè HeeHee ơi! Anh vừa mua được phần bánh tráng trộn... em ăn cùng anh hông?"
+      </p>
+      <div style="background: rgba(255,184,108,0.1); border: 1px dashed #ffb86c; border-radius: 6px; padding: 8px; font-size: 0.95rem; color: #ffb86c; margin-bottom: 10px;">
+        💡 <b>Ăn vặt vỉa hè:</b><br>
+        • <b>75% May mắn:</b> Tăng +40% kiên nhẫn của khách HOẶC tăng +10% tiền cho mỗi đơn!<br>
+        • <b>25% Đau bụng:</b> Quán phải tạm nghỉ ngơi đúng <b>15 phút thời gian thực</b>!
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-action-wide" id="btn-eat-snack" style="flex: 1; background: linear-gradient(180deg, #50fa7b, #2e8b57); color: #000; font-size: 1.15rem; margin: 0;">😋 Ăn Luôn!</button>
+        <button class="btn-action-wide" id="btn-refuse-snack" style="flex: 1; background: #4a5568; color: #fff; font-size: 1.15rem; margin: 0;">🙅 Từ Chối</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PROACTIVE TIKTOKER INVITATION -->
+  <div class="modal-overlay" id="modal-tiktoker">
+    <div class="modal-content" style="max-width: 420px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #ff79c6;">📣 Mời Tú (TikToker Reviewer) Kéo Sao</div>
+        <button class="btn-close" id="close-tiktoker">&times;</button>
+      </div>
+      <div style="text-align: center; margin: 8px 0;">
+        <span style="font-size: 2.8rem;">📱🎥✨</span>
+      </div>
+      <p style="font-size: 1rem; color: var(--milk-cream); line-height: 1.5; margin-bottom: 12px; text-align: center;">
+        Chủ động book lịch <b>Tú (TikToker 500k Followers)</b> đến quán để làm clip review thực tế kéo lại đánh giá cho tiệm!
+      </p>
+      <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 0.92rem; line-height: 1.6;">
+        <div style="color: var(--gold); margin-bottom: 4px;">💰 <b>Chi phí PR:</b> 25.000đ</div>
+        <div style="color: #50fa7b; margin-bottom: 4px;">🌟 <b>Phục vụ tốt & đúng giờ:</b> Kéo lại đánh giá quán <b>(+0.4⭐)</b>, nổ tip x2 và kích hoạt <b>Cơn Sốt Viral x2.5 Khách</b> (trong 8 lượt)!</div>
+        <div style="color: #ff5555;">⚠️ <b>Rủi ro:</b> Nếu để trễ giờ hoặc hủy đơn, Tú sẽ bóc phốt phục vụ chậm <b>(-0.35⭐)</b>!</div>
+      </div>
+      <button class="btn-action-wide" id="btn-confirm-invite-tiktoker" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff; font-weight: bold; width: 100%; font-size: 1.05rem;">🚀 Book Tú TikToker Ghé Quán (25.000đ)</button>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN RESTING OVERLAY (ĐAU BỤNG 15 PHÚT THỰC) -->
+  <div class="modal-overlay" id="overlay-resting" style="z-index: 10001; background: rgba(15, 5, 10, 0.96); display: none;">
+    <div class="modal-content" style="border-color: #ff5555; background: #260c16; text-align: center; max-width: 360px;">
+      <div style="font-size: 3rem; margin-bottom: 4px;">🤢💊🚽</div>
+      <div style="font-size: 1.4rem; font-weight: bold; color: #ff5555; margin-bottom: 6px;">HEEHEE ĐANG BỊ ĐAU BỤNG!</div>
+      <p style="font-size: 1.05rem; color: #f5ebe6; line-height: 1.4;">
+        Do ăn đồ ăn vặt cay béo vỉa hè của anh Shipper, bụng dạ HeeHee đang sôi ùng ục! Bác sĩ bắt buộc phải tạm đóng quầy nghỉ ngơi hồi sức.
+      </p>
+      <div style="background: rgba(0,0,0,0.6); border: 2px solid #ff5555; border-radius: 8px; padding: 12px; margin: 12px 0;">
+        <div style="font-size: 0.95rem; color: #ffb86c; margin-bottom: 4px;">THỜI GIAN MỞ LẠI QUẦY TRÀ SỮA:</div>
+        <div id="rest-timer-display" style="font-size: 2.2rem; font-weight: bold; color: #50fa7b; font-family: monospace;">14:59</div>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">
+        🔒 <i>Cơ chế chống gian lận thời gian thực: F5 hoặc tắt máy cũng không thể bỏ qua thời gian nghỉ ngơi!</i>
+      </p>
+    </div>
+  </div>
+
+  <!-- FLOATING TOAST NOTIFICATION -->
+  <div id="toast"></div>
+</div>
+
+<script src="js/audio.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
