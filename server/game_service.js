@@ -218,10 +218,10 @@ function generateStoreCode() {
 }
 
 // Create or get store profile
-function getOrCreateStore(storeName, inputCode) {
+async function getOrCreateStore(storeName, inputCode) {
   let store = null;
   if (inputCode) {
-    store = db.prepare('SELECT * FROM stores WHERE store_code = ?').get(inputCode);
+    store = await db.prepare('SELECT * FROM stores WHERE store_code = ?').get(inputCode);
   }
 
   if (!store) {
@@ -229,7 +229,7 @@ function getOrCreateStore(storeName, inputCode) {
     const token = crypto.randomBytes(16).toString('hex');
     const now = new Date().toISOString();
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
       INSERT INTO stores (store_code, store_name, session_token, created_at)
       VALUES (?, ?, ?, ?)
     `).run(code, storeName || 'Tiệm Trà Sữa HeeHee', token, now);
@@ -246,24 +246,24 @@ function getOrCreateStore(storeName, inputCode) {
     };
     const hash = anticheat.generateSaveHash(initialSave);
 
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, save_hash, updated_at)
       VALUES (?, 1, 1, 200000, 3000000, 5.0, ?, ?)
     `).run(storeId, hash, now);
 
-    store = db.prepare('SELECT * FROM stores WHERE id = ?').get(storeId);
+    store = await db.prepare('SELECT * FROM stores WHERE id = ?').get(storeId);
   }
 
-  return getStoreState(store.id);
+  return await getStoreState(store.id);
 }
 
 // Get full state of a store
-function getStoreState(storeId) {
-  const store = db.prepare('SELECT * FROM stores WHERE id = ?').get(storeId);
+async function getStoreState(storeId) {
+  const store = await db.prepare('SELECT * FROM stores WHERE id = ?').get(storeId);
   if (!store) return null;
 
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
-  const daily = anticheat.getOrCreateDailyStats(storeId, save.chapter);
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  const daily = await anticheat.getOrCreateDailyStats(storeId, save.chapter);
 
   return {
     username: store.username || store.store_name,
@@ -291,8 +291,8 @@ function getStoreState(storeId) {
 }
 
 // Generate new random customer order wave (1 - 4 customers)
-function generateOrder(storeId) {
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+async function generateOrder(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save || save.is_jailed === 1) return null;
 
   const now = Date.now();
@@ -308,7 +308,7 @@ function generateOrder(storeId) {
     };
   }
 
-  const daily = anticheat.getOrCreateDailyStats(storeId, save.chapter);
+  const daily = await anticheat.getOrCreateDailyStats(storeId, save.chapter);
   
   // If store is overloaded, restrict customer appearance probability by 75%
   if (daily.is_overloaded && Math.random() < 0.75) {
@@ -325,7 +325,7 @@ function generateOrder(storeId) {
   if (activeBuffs.tiktoker_invited) {
     isInvitedTiktoker = true;
     delete activeBuffs.tiktoker_invited;
-    db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
+    await db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
       .run(JSON.stringify(activeBuffs), storeId);
   }
 
@@ -429,7 +429,7 @@ function generateOrder(storeId) {
       };
     }
 
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO active_orders (id, store_id, recipe_id, customer_name, sugar, ice, toppings, price, created_at, expires_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(orderId, storeId, recipe.id, cust.name, sugar, ice, JSON.stringify(recipe.toppings), price, now, expiresAt);
@@ -460,7 +460,7 @@ function generateOrder(storeId) {
       delete activeBuffs.tiktoker_status;
       delete activeBuffs.tiktoker_waves;
     }
-    db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
+    await db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
       .run(JSON.stringify(activeBuffs), storeId);
   }
 
@@ -475,8 +475,8 @@ function generateOrder(storeId) {
 }
 
 // Player's response to Shipper snack offer
-function handleSnackDecision(storeId, accept) {
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+async function handleSnackDecision(storeId, accept) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
   if (!accept) {
@@ -497,7 +497,7 @@ function handleSnackDecision(storeId, accept) {
     const isPatience = Math.random() < 0.5;
     if (isPatience) {
       activeBuffs.patience_boost = 6;
-      db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
+      await db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
         .run(JSON.stringify(activeBuffs), storeId);
       return {
         success: true,
@@ -508,7 +508,7 @@ function handleSnackDecision(storeId, accept) {
       };
     } else {
       activeBuffs.tip_bonus = 6;
-      db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
+      await db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
         .run(JSON.stringify(activeBuffs), storeId);
       return {
         success: true,
@@ -521,8 +521,8 @@ function handleSnackDecision(storeId, accept) {
   } else {
     // 25% bad effect: Đau bụng -> buộc nghỉ 15 phút thực
     const restUntil = now + (15 * 60 * 1000);
-    db.prepare('UPDATE game_saves SET rest_until_ts = ? WHERE store_id = ?').run(restUntil, storeId);
-    db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
+    await db.prepare('UPDATE game_saves SET rest_until_ts = ? WHERE store_id = ?').run(restUntil, storeId);
+    await db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
 
     return {
       success: true,
@@ -536,9 +536,9 @@ function handleSnackDecision(storeId, accept) {
 }
 
 // Record order timeout / failure (penalty to reputation & flop debuff if TikToker fails)
-function recordOrderFailure(storeId, orderId, isTiktoker = false) {
-  db.prepare('DELETE FROM active_orders WHERE id = ? AND store_id = ?').run(orderId, storeId);
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+async function recordOrderFailure(storeId, orderId, isTiktoker = false) {
+  await db.prepare('DELETE FROM active_orders WHERE id = ? AND store_id = ?').run(orderId, storeId);
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: true };
 
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
@@ -563,7 +563,7 @@ function recordOrderFailure(storeId, orderId, isTiktoker = false) {
   };
   const hash = anticheat.generateSaveHash(updatedSave);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET reputation = ?, active_buffs = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
@@ -578,8 +578,8 @@ function recordOrderFailure(storeId, orderId, isTiktoker = false) {
 }
 
 // Proactively invite Tú (TikToker Reviewer) to boost store reputation & attract customer rush
-function inviteTiktoker(storeId) {
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+async function inviteTiktoker(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Không tìm thấy tiệm trà sữa!' };
 
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
@@ -605,7 +605,7 @@ function inviteTiktoker(storeId) {
   };
   const hash = anticheat.generateSaveHash(updatedSave);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET money = ?, active_buffs = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
@@ -620,9 +620,9 @@ function inviteTiktoker(storeId) {
 }
 
 // Collab with a friend's store code
-function addCollab(hostStoreId, friendCode) {
-  const hostStore = db.prepare('SELECT * FROM stores WHERE id = ?').get(hostStoreId);
-  const friendStore = db.prepare('SELECT * FROM stores WHERE store_code = ?').get(friendCode.trim().toUpperCase());
+async function addCollab(hostStoreId, friendCode) {
+  const hostStore = await db.prepare('SELECT * FROM stores WHERE id = ?').get(hostStoreId);
+  const friendStore = await db.prepare('SELECT * FROM stores WHERE store_code = ?').get(friendCode.trim().toUpperCase());
 
   if (!friendStore) {
     return { success: false, message: 'Không tìm thấy Mã Quán bạn bè này!' };
@@ -632,37 +632,37 @@ function addCollab(hostStoreId, friendCode) {
     return { success: false, message: 'Bạn không thể tự Collab với chính mình!' };
   }
 
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(hostStoreId);
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(hostStoreId);
   const realDate = anticheat.getRealDate();
   const capInfo = anticheat.CHAPTER_CAPS[save.chapter] || anticheat.CHAPTER_CAPS[1];
 
   // Check current collabs
-  const countRow = db.prepare('SELECT COUNT(*) as cnt FROM collabs WHERE host_store_id = ? AND collab_date = ?').get(hostStoreId, realDate);
+  const countRow = await db.prepare('SELECT COUNT(*) as cnt FROM collabs WHERE host_store_id = ? AND collab_date = ?').get(hostStoreId, realDate);
   if (countRow.cnt >= capInfo.maxCollabs) {
     return { success: false, message: `Hôm nay bạn đã đạt giới hạn tối đa ${capInfo.maxCollabs} đối tác Collab!` };
   }
 
   // Check duplicate
-  const existing = db.prepare('SELECT * FROM collabs WHERE host_store_id = ? AND friend_store_id = ? AND collab_date = ?')
+  const existing = await db.prepare('SELECT * FROM collabs WHERE host_store_id = ? AND friend_store_id = ? AND collab_date = ?')
     .get(hostStoreId, friendStore.id, realDate);
   if (existing) {
     return { success: false, message: 'Hôm nay bạn và quán này đã ký thỏa thuận Collab rồi!' };
   }
 
   // Insert two-way or one-way collab
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO collabs (host_store_id, friend_store_id, collab_date)
     VALUES (?, ?, ?)
   `).run(hostStoreId, friendStore.id, realDate);
 
   // Update daily stats
-  db.prepare(`
+  await db.prepare(`
     UPDATE daily_stats 
     SET collab_count = collab_count + 1 
     WHERE store_id = ? AND real_date = ?
   `).run(hostStoreId, realDate);
 
-  const updatedDaily = anticheat.getOrCreateDailyStats(hostStoreId, save.chapter);
+  const updatedDaily = await anticheat.getOrCreateDailyStats(hostStoreId, save.chapter);
 
   return {
     success: true,
@@ -672,8 +672,8 @@ function addCollab(hostStoreId, friendCode) {
 }
 
 // Pay debt to Anh Bảnh
-function payDebt(storeId, amount) {
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+async function payDebt(storeId, amount) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
   if (save.money < amount) {
@@ -698,7 +698,7 @@ function payDebt(storeId, amount) {
   };
   const hash = anticheat.generateSaveHash(updatedSave);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET money = ?, debt_remaining = ?, chapter = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
@@ -745,11 +745,11 @@ const UPGRADES = {
   }
 };
 
-function buyUpgrade(storeId, upgradeId) {
+async function buyUpgrade(storeId, upgradeId) {
   const item = UPGRADES[upgradeId];
   if (!item) return { success: false, message: 'Vật phẩm không tồn tại' };
 
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   const upgrades = JSON.parse(save.upgrades || '{}');
 
   if (upgrades[upgradeId]) {
@@ -777,7 +777,7 @@ function buyUpgrade(storeId, upgradeId) {
   };
   const hash = anticheat.generateSaveHash(updatedSave);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET money = ?, upgrades = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
@@ -792,8 +792,8 @@ function buyUpgrade(storeId, upgradeId) {
 }
 
 // Thief snatches pet during rush hour
-function stealPet(storeId) {
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+async function stealPet(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
   const upgrades = JSON.parse(save.upgrades || '{}');
@@ -821,13 +821,13 @@ function stealPet(storeId) {
   };
   const hash = anticheat.generateSaveHash(updatedSave);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET reputation = ?, upgrades = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
   `).run(updatedSave.reputation, JSON.stringify(upgrades), hash, new Date().toISOString(), storeId);
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO audit_logs (store_id, event_type, detail, logged_at)
     VALUES (?, 'PET_STOLEN', 'Kẻ trộm đồ đen đeo khẩu trang đã câu trộm mất thú cưng khi quán đông khách!', ?)
   `).run(storeId, new Date().toISOString());
@@ -843,8 +843,8 @@ function stealPet(storeId) {
 }
 
 // Redeem / Ransom pet back (Tiền chuộc bằng 50% giá trị thú cưng)
-function redeemPet(storeId) {
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+async function redeemPet(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
   const upgrades = JSON.parse(save.upgrades || '{}');
@@ -875,13 +875,13 @@ function redeemPet(storeId) {
   };
   const hash = anticheat.generateSaveHash(updatedSave);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET money = ?, reputation = ?, upgrades = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
   `).run(newMoney, updatedSave.reputation, JSON.stringify(upgrades), hash, new Date().toISOString(), storeId);
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO audit_logs (store_id, event_type, detail, logged_at)
     VALUES (?, 'PET_REDEEMED', 'Chủ quán đã chi tiền chuộc thú cưng trở về an toàn', ?)
   `).run(storeId, new Date().toISOString());
@@ -895,8 +895,8 @@ function redeemPet(storeId) {
 }
 
 // Catch and shoo away thief
-function shooThief(storeId) {
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+async function shooThief(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
   const reward = 10000;
@@ -913,7 +913,7 @@ function shooThief(storeId) {
   };
   const hash = anticheat.generateSaveHash(updatedSave);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET money = ?, reputation = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?

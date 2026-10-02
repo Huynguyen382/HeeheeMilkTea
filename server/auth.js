@@ -17,7 +17,7 @@ function verifyPassword(password, storedHash) {
 }
 
 // Register new user & store
-function register(username, password, storeName) {
+async function register(username, password, storeName) {
   if (!username || username.trim().length < 3) {
     return { success: false, message: 'Tên đăng nhập phải có ít nhất 3 ký tự!' };
   }
@@ -26,7 +26,7 @@ function register(username, password, storeName) {
   }
 
   const cleanUser = username.trim().toLowerCase();
-  const existing = db.prepare('SELECT id FROM stores WHERE username = ?').get(cleanUser);
+  const existing = await db.prepare('SELECT id FROM stores WHERE username = ?').get(cleanUser);
   if (existing) {
     return { success: false, message: 'Tên đăng nhập này đã được sử dụng!' };
   }
@@ -37,7 +37,7 @@ function register(username, password, storeName) {
   const now = new Date().toISOString();
   const finalStoreName = storeName && storeName.trim() ? storeName.trim() : `Trà Sữa ${username}`;
 
-  const result = db.prepare(`
+  const result = await db.prepare(`
     INSERT INTO stores (username, password_hash, store_code, store_name, session_token, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(cleanUser, passHash, storeCode, finalStoreName, token, now);
@@ -55,12 +55,12 @@ function register(username, password, storeName) {
   };
   const hash = anticheat.generateSaveHash(initialSave);
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, save_hash, updated_at)
     VALUES (?, 1, 1, 200000, 3000000, 5.0, ?, ?)
   `).run(storeId, hash, now);
 
-  const state = gameService.getStoreState(storeId);
+  const state = await gameService.getStoreState(storeId);
   return {
     success: true,
     message: 'Đăng ký tiệm trà sữa thành công! Chúc mừng bạn đã chính thức khởi nghiệp.',
@@ -70,14 +70,14 @@ function register(username, password, storeName) {
 }
 
 // Login with username or store_code and password
-function login(account, password) {
+async function login(account, password) {
   if (!account || !password) {
     return { success: false, message: 'Vui lòng nhập đầy đủ tên đăng nhập/mã quán và mật khẩu!' };
   }
 
   const cleanAcc = account.trim();
   // Find either by username or by store_code
-  let store = db.prepare('SELECT * FROM stores WHERE username = ? OR store_code = ?').get(cleanAcc.toLowerCase(), cleanAcc.toUpperCase());
+  let store = await db.prepare('SELECT * FROM stores WHERE username = ? OR store_code = ?').get(cleanAcc.toLowerCase(), cleanAcc.toUpperCase());
 
   if (!store) {
     return { success: false, message: 'Tài khoản hoặc Mã Quán không tồn tại!' };
@@ -89,9 +89,9 @@ function login(account, password) {
 
   // Generate fresh session token
   const token = crypto.randomBytes(16).toString('hex');
-  db.prepare('UPDATE stores SET session_token = ? WHERE id = ?').run(token, store.id);
+  await db.prepare('UPDATE stores SET session_token = ? WHERE id = ?').run(token, store.id);
 
-  const state = gameService.getStoreState(store.id);
+  const state = await gameService.getStoreState(store.id);
   state.session_token = token;
 
   return {
@@ -103,8 +103,8 @@ function login(account, password) {
 }
 
 // Logout
-function logout(storeId) {
-  db.prepare('UPDATE stores SET session_token = NULL WHERE id = ?').run(storeId);
+async function logout(storeId) {
+  await db.prepare('UPDATE stores SET session_token = NULL WHERE id = ?').run(storeId);
   return { success: true, message: 'Đã đăng xuất an toàn.' };
 }
 

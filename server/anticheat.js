@@ -33,25 +33,25 @@ function verifySaveHash(save, providedHash) {
 }
 
 // Get or initialize daily stats for a store
-function getOrCreateDailyStats(storeId, chapter) {
+async function getOrCreateDailyStats(storeId, chapter) {
   const realDate = getRealDate();
   const capInfo = CHAPTER_CAPS[chapter] || CHAPTER_CAPS[1];
 
-  let row = db.prepare('SELECT * FROM daily_stats WHERE store_id = ? AND real_date = ?').get(storeId, realDate);
+  let row = await db.prepare('SELECT * FROM daily_stats WHERE store_id = ? AND real_date = ?').get(storeId, realDate);
   if (!row) {
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO daily_stats (store_id, real_date, earned_today, collab_count, is_overloaded, last_active_ts)
       VALUES (?, ?, 0, 0, 0, ?)
     `).run(storeId, realDate, Date.now());
 
-    row = db.prepare('SELECT * FROM daily_stats WHERE store_id = ? AND real_date = ?').get(storeId, realDate);
+    row = await db.prepare('SELECT * FROM daily_stats WHERE store_id = ? AND real_date = ?').get(storeId, realDate);
   }
 
   // Count active collabs for today
-  const collabsCountRow = db.prepare(`
+  const collabsCountRow = await db.prepare(`
     SELECT COUNT(*) as cnt FROM collabs WHERE host_store_id = ? AND collab_date = ?
   `).get(storeId, realDate);
-  const collabsCount = Math.min(collabsCountRow.cnt, capInfo.maxCollabs);
+  const collabsCount = Math.min(collabsCountRow ? collabsCountRow.cnt : 0, capInfo.maxCollabs);
 
   const effectiveCap = Math.min(capInfo.max, capInfo.base + (collabsCount * capInfo.collabBoost));
   const isOverloaded = row.earned_today >= effectiveCap;
@@ -70,24 +70,24 @@ function getOrCreateDailyStats(storeId, chapter) {
 }
 
 // Punish cheater (Jail / Market Management seizure)
-function jailStore(storeId, reason) {
+async function jailStore(storeId, reason) {
   console.warn(`[ANTI-CHEAT TRIGGERED] Store ${storeId} jailed for: ${reason}`);
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET is_jailed = 1, jail_reason = ?, reputation = 1.0
     WHERE store_id = ?
   `).run(reason, storeId);
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO audit_logs (store_id, event_type, detail, logged_at)
     VALUES (?, 'JAILED', ?, ?)
   `).run(storeId, reason, new Date().toISOString());
 }
 
 // Accept penalty: release store from jail and deduct 50,000,000 fine
-function acceptPenalty(storeId) {
+async function acceptPenalty(storeId) {
   console.log(`[ANTI-CHEAT] Store ${storeId} accepted penalty (-50.000.000đ fine).`);
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   const currentMoney = save ? save.money : 0;
   const newMoney = currentMoney - 50000000; // Phạt trừ 50 triệu đồng
   const newRep = 1.0;
@@ -105,7 +105,7 @@ function acceptPenalty(storeId) {
   };
   const hash = generateSaveHash(updatedSave);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET is_jailed = 0, jail_reason = NULL,
         chapter = 1, day_in_game = 1, money = ?, debt_remaining = 3000000, 
@@ -115,19 +115,19 @@ function acceptPenalty(storeId) {
   `).run(newMoney, newRep, hash, storeId);
 
   // Clear any pending active orders for this store
-  db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
+  await db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO audit_logs (store_id, event_type, detail, logged_at)
     VALUES (?, 'PENALTY_ACCEPTED', 'Chủ quán chấp nhận phạt: Bị trừ 50.000.000đ và mở niêm phong xe đẩy', ?)
   `).run(storeId, new Date().toISOString());
 
-  return db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  return await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
 }
 
 // Validate order completion against anti-cheat rules
-function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clientRecipeId, clientSugar, clientIce) {
-  const save = db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clientRecipeId, clientSugar, clientIce) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
   if (save.is_jailed === 1) {
@@ -136,30 +136,30 @@ function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clientRecip
 
   // 1. Minimum physical time check (cannot prepare drink under 1000ms unless high automation)
   if (clientTimeTaken < 800) {
-    jailStore(storeId, 'Tốc độ pha chế bất thường (Speed-hack / Auto clicker: dưới 0.8s)');
+    await jailStore(storeId, 'Tốc độ pha chế bất thường (Speed-hack / Auto clicker: dưới 0.8s)');
     return { success: false, isJailed: true, jailReason: 'Gian lận tốc độ pha chế siêu nhân' };
   }
 
   // 2. Fetch order from active_orders table
-  const order = db.prepare('SELECT * FROM active_orders WHERE id = ? AND store_id = ?').get(orderId, storeId);
+  const order = await db.prepare('SELECT * FROM active_orders WHERE id = ? AND store_id = ?').get(orderId, storeId);
   if (!order) {
     return { success: false, message: 'Đơn hàng không hợp lệ hoặc đã giao trước đó' };
   }
 
   const now = Date.now();
   if (now > order.expires_at) {
-    db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
+    await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
     return { success: false, message: 'Đơn hàng đã hết thời gian chờ, khách đã rời đi!' };
   }
 
   // 3. Check ingredient matching
   if (order.recipe_id !== clientRecipeId || order.sugar !== clientSugar || order.ice !== clientIce) {
-    db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
+    await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
     return { success: false, message: 'Pha sai công thức, độ đường hoặc lượng đá! Khách càu nhàu trả lại ly.' };
   }
 
   // 4. Daily Cap enforcement
-  const daily = getOrCreateDailyStats(storeId, save.chapter);
+  const daily = await getOrCreateDailyStats(storeId, save.chapter);
   let payout = order.price;
   let isOverloadedNow = daily.is_overloaded;
 
@@ -195,10 +195,10 @@ function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clientRecip
   }
 
   // Update Database Transaction
-  db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
+  await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
 
   // Update daily stats
-  db.prepare(`
+  await db.prepare(`
     UPDATE daily_stats 
     SET earned_today = earned_today + ?, 
         is_overloaded = ?, 
@@ -220,7 +220,7 @@ function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clientRecip
   };
   const newHash = generateSaveHash(updatedSave);
 
-  db.prepare(`
+  await db.prepare(`
     UPDATE game_saves 
     SET money = ?, reputation = ?, active_buffs = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
