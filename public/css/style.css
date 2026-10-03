@@ -486,20 +486,11 @@ canvas#scene {
 
 .action-box.workflow-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1.6fr;
+  grid-template-columns: 1fr 1fr 1fr 1.35fr;
   gap: 6px;
   margin-top: 4px;
 }
 
-@media (max-width: 480px) {
-  .action-box.workflow-grid {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-  .btn-serve-cup {
-    grid-column: span 3;
-    padding: 8px 6px;
-  }
-}
 
 .btn-workflow {
   display: flex;
@@ -1036,7 +1027,7 @@ button,
     border-radius: 0;
     box-shadow: none;
     overflow-x: hidden;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding-bottom: 0;
   }
 
   .hud-top {
@@ -1120,116 +1111,193 @@ button,
   #scene-wrapper {
     width: 100%;
     height: auto;
-    aspect-ratio: 9 / 5;
+    aspect-ratio: 16 / 7.2;
+    min-height: 140px;
     border-bottom-width: 2px;
   }
 
+  .workstation-wrapper {
+    aspect-ratio: 440 / 225;
+    min-height: 165px;
+  }
+
+  .shelf-hint {
+    font-size: 0.72rem;
+  }
+
   #queue-indicator {
-    margin: 0 8px 4px !important;
-    font-size: 0.85rem !important;
+    margin: 0 8px 3px !important;
+    font-size: 0.82rem !important;
   }
 
   .order-section {
-    padding: 8px 10px;
-    min-height: 80px;
+    padding: 6px 8px;
+    min-height: 65px;
   }
 
-  .order-header { font-size: 1.1rem; }
-  .order-specs { gap: 4px; font-size: 0.96rem; }
-  .spec-badge { padding: 2px 6px; }
+  .order-header { font-size: 1rem; }
+  .order-specs { gap: 3px; font-size: 0.88rem; }
+  .spec-badge { padding: 1px 5px; font-size: 0.84rem; }
 
   .mixing-counter {
-    padding: 8px 10px;
-    gap: 8px;
+    padding: 5px 8px;
+    gap: 5px;
   }
 
-  .section-label { font-size: 0.92rem; }
+  .meter-actions-row {
+    gap: 4px;
+    margin-bottom: 3px;
+  }
+
+  .btn-step-gauge {
+    padding: 4px 6px;
+    gap: 4px;
+    border-radius: 6px;
+  }
+
+  .step-icon {
+    font-size: 1.15rem;
+  }
+
+  .step-title {
+    font-size: 0.78rem;
+  }
+
+  .step-badge {
+    font-size: 0.72rem;
+    padding: 1px 4px;
+  }
+
+  .compact-selectors {
+    padding: 3px 5px;
+    gap: 2px;
+    border-radius: 6px;
+  }
+
+  .mini-pills-row {
+    gap: 3px;
+  }
+
+  .pill-label {
+    min-width: 36px;
+    font-size: 0.74rem;
+  }
+
+  .btn-pill {
+    padding: 2px 5px;
+    font-size: 0.76rem;
+    border-radius: 4px;
+  }
+
+  .section-label { font-size: 0.88rem; }
   .options-row {
-    margin-right: -10px;
-    padding-right: 10px;
+    margin-right: -8px;
+    padding-right: 8px;
   }
 
   .btn-select {
-    min-height: 42px;
-    font-size: 0.95rem;
-    padding: 6px 12px;
+    min-height: 38px;
+    font-size: 0.88rem;
+    padding: 4px 10px;
   }
 
   #cup-status-bar {
-    gap: 4px;
+    gap: 3px;
     overflow-x: auto;
     white-space: nowrap;
-    font-size: 0.85rem !important;
-    padding: 6px 8px;
+    font-size: 0.78rem !important;
+    padding: 4px 6px;
   }
 
   #cup-status-bar span { flex: 0 0 auto; }
 
-  /* Natural flow action box (Not sticky over toppings!) */
+  /* Natural flow action box */
   .action-box {
     position: relative;
     bottom: auto;
     z-index: 5;
-    margin: 6px 0 2px 0;
+    margin: 4px 0 2px 0;
     padding: 0;
     background: transparent;
     backdrop-filter: none;
-    display: flex;
-    gap: 8px;
   }
 
-  .btn-serve,
-  .btn-shaker {
-    min-height: 52px;
-    font-size: 1.15rem;
-    font-weight: bold;
-    border-radius: 8px;
-    box-shadow: 0 3px 0 rgba(0,0,0,0.5);
+  .action-box.workflow-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1.35fr;
+    gap: 4px;
+    margin-top: 3px;
+  }
+
+  .btn-workflow {
+    padding: 4px 2px;
+    min-height: 40px;
+    border-radius: 6px;
+  }
+
+  .btn-workflow .wf-icon {
+    font-size: 1.1rem;
+  }
+
+  .btn-workflow .wf-text {
+    font-size: 0.72rem;
+    letter-spacing: -0.2px;
+  }
+
+  .btn-serve-cup {
+    font-size: 0.88rem;
+    padding: 4px 3px;
+    min-height: 40px;
+    border-radius: 6px;
   }
 
   .bottom-nav {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    padding: 8px 10px max(14px, env(safe-area-inset-bottom));
+    gap: 4px;
+    padding: 5px 6px max(8px, env(safe-area-inset-bottom));
   }
 
   .nav-btn {
-    min-height: 42px;
-    padding: 6px 3px;
-    font-size: 0.82rem;
+    min-height: 38px;
+    padding: 4px 2px;
+    font-size: 0.76rem;
     white-space: normal;
     line-height: 1.1;
+    border-radius: 6px;
   }
 
   .modal-overlay {
     position: fixed;
     inset: 0;
-    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
   }
 
   .modal-content {
-    max-height: 90vh;
-    max-height: 90dvh;
-    padding: 12px;
-    gap: 8px;
+    max-height: 88vh;
+    max-height: 88dvh;
+    padding: 10px;
+    gap: 6px;
     border-width: 2px;
     overscroll-behavior: contain;
   }
 
-  .modal-title { font-size: 1.15rem; }
-  .btn-close { min-width: 40px; min-height: 40px; }
-  .story-tab-btn { font-size: 0.82rem; min-height: 40px; }
+  .modal-title { font-size: 1.1rem; }
+  .btn-close { min-width: 38px; min-height: 38px; }
+  .story-tab-btn { font-size: 0.8rem; min-height: 38px; }
   
-  #toast { position: fixed; top: max(12px, env(safe-area-inset-top)); font-size: 0.95rem; }
+  #toast { position: fixed; top: max(10px, env(safe-area-inset-top)); font-size: 0.9rem; }
 }
 
 @media (max-width: 360px) {
-  .store-title { font-size: 0.95rem; }
-  .store-code-badge { font-size: 0.72rem; }
-  .btn-select { font-size: 0.88rem; padding: 5px 9px; }
-  .nav-btn { font-size: 0.74rem; }
-  .btn-serve, .btn-shaker { font-size: 1rem; min-height: 48px; }
+  .store-title { font-size: 0.92rem; }
+  .store-code-badge { font-size: 0.7rem; }
+  .btn-select { font-size: 0.82rem; padding: 4px 8px; }
+  .btn-workflow .wf-text { font-size: 0.66rem; }
+  .btn-serve-cup { font-size: 0.8rem; }
+  .nav-btn { font-size: 0.7rem; min-height: 36px; }
+  .btn-pill { padding: 2px 4px; font-size: 0.72rem; }
+  .pill-label { min-width: 32px; font-size: 0.7rem; }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
