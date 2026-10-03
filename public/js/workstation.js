@@ -308,8 +308,8 @@ class BaristaWorkstation {
     this.drawSweetnessMeter(ctx);
     this.drawIceMeter(ctx);
 
-    // 4. Draw Central Milk Tea Cup (Cốc Trà Sữa Trung Tâm)
-    this.drawCentralCup(ctx);
+    // 4. Draw Central Mixing Bomb (Quả Bom Pha Chế Trung Tâm)
+    this.drawMixingBomb(ctx);
 
     // 5. Draw Floating Status & Notifications
     this.drawFloatingTexts(ctx);
@@ -518,207 +518,350 @@ class BaristaWorkstation {
     ctx.restore();
   }
 
-  // --- THE CENTRAL HERO CUP ---
-  drawCentralCup(ctx) {
-    const cx = this.width * 0.5;
-    const cy = this.height * 0.62;
-
-    const cupTopW = 76;
-    const cupBotW = 56;
-    const cupH = 135;
-
-    const topY = cy - cupH * 0.72;
-    const botY = topY + cupH;
-
+  // --- BOM PHA CHẾ: INSPECTION PORTHOLE CONTENTS (Trà sữa, bọt kem, đá, trân châu nhìn qua kính) ---
+  drawBombContents(ctx, cx, cy, r, isSwirling = false) {
     ctx.save();
-    if (this.handAction === 'shake') {
-      ctx.globalAlpha = 0.25;
-    }
-
-    // 1. Cup shadow on the wooden table
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    // Clip to circular window
     ctx.beginPath();
-    ctx.ellipse(cx, botY + 4, cupBotW * 0.65, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 2. Clear Glass Cup Outline Path
-    ctx.beginPath();
-    ctx.moveTo(cx - cupTopW * 0.5, topY);
-    ctx.lineTo(cx - cupBotW * 0.5, botY);
-    ctx.quadraticCurveTo(cx, botY + 6, cx + cupBotW * 0.5, botY);
-    ctx.lineTo(cx + cupTopW * 0.5, topY);
-    ctx.quadraticCurveTo(cx, topY - 6, cx - cupTopW * 0.5, topY);
-    ctx.closePath();
-
-    // Save clip to draw contents cleanly inside the cup
-    ctx.save();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.clip();
 
-    // Background glass tint
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-    ctx.fill();
+    // Dark interior background
+    ctx.fillStyle = '#140c14';
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
 
-    // 3. Liquid level
+    // Liquid fill calculation
     const tCol = BaristaWorkstation.TEA_COLORS[this.tea] || BaristaWorkstation.TEA_COLORS.den;
-    const liquidTop = botY - cupH * 0.82;
+    const fillRatio = 0.72;
+    const liquidTop = cy + r - r * 2 * fillRatio;
 
-    const liquidGrad = ctx.createLinearGradient(0, botY, 0, liquidTop);
+    // Liquid gradient
+    const liquidGrad = ctx.createLinearGradient(cx, cy + r, cx, liquidTop);
     liquidGrad.addColorStop(0, tCol.base);
     liquidGrad.addColorStop(0.55, tCol.mid);
     liquidGrad.addColorStop(0.9, tCol.light);
     liquidGrad.addColorStop(1, tCol.cream);
-
     ctx.fillStyle = liquidGrad;
+
     ctx.beginPath();
-    ctx.moveTo(cx - cupTopW * 0.52, liquidTop);
-    ctx.lineTo(cx - cupBotW * 0.52, botY);
-    ctx.lineTo(cx + cupBotW * 0.52, botY);
-    ctx.lineTo(cx + cupTopW * 0.52, liquidTop);
-    // Liquid meniscus wave
-    const wave = Math.sin(this.tick * 0.08) * 1.5;
-    ctx.quadraticCurveTo(cx, liquidTop + wave + 3, cx - cupTopW * 0.52, liquidTop);
+    ctx.moveTo(cx - r, cy + r);
+    ctx.lineTo(cx - r, liquidTop);
+    // Swirling wave meniscus
+    const waveFreq = isSwirling ? 0.35 : 0.08;
+    const waveAmp = isSwirling ? 8 : 2.5;
+    const wave = Math.sin(this.tick * waveFreq) * waveAmp;
+    ctx.quadraticCurveTo(cx, liquidTop + wave, cx + r, liquidTop);
+    ctx.lineTo(cx + r, cy + r);
     ctx.closePath();
     ctx.fill();
 
-    // 4. Boba Pearls & Toppings at the bottom
-    this.bobaPearls.forEach(p => {
-      const px = cx + p.x;
-      const py = botY - 14 + p.y * 0.25;
+    // Swirling vortex effect when shaking
+    if (isSwirling) {
+      ctx.strokeStyle = tCol.cream;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      const swirlRot = this.tick * 0.25;
+      ctx.ellipse(cx, cy + 2, r * 0.6, r * 0.35, swirlRot, 0, Math.PI * 1.6);
+      ctx.stroke();
+    }
+
+    // Boba pearls & Toppings
+    this.bobaPearls.forEach((p, idx) => {
+      let px, py;
+      if (isSwirling) {
+        // Swirling in vortex!
+        const angle = this.tick * 0.15 + (idx * 0.7);
+        const dist = 10 + (idx % 4) * 5;
+        px = cx + Math.cos(angle) * dist;
+        py = cy + 12 + Math.sin(angle) * (dist * 0.5);
+      } else {
+        px = cx + p.x * 0.6;
+        py = cy + r - 12 + (p.y % 14) * 0.4;
+      }
 
       if (p.type === 'thach_la_dua') {
-        // Pandan green jelly cube
         ctx.fillStyle = 'rgba(46, 204, 113, 0.9)';
-        ctx.fillRect(px - 5, py - 5, 10, 10);
+        ctx.fillRect(px - 4, py - 4, 8, 8);
         ctx.strokeStyle = '#a8e6cf';
-        ctx.lineWidth = 0.8;
-        ctx.strokeRect(px - 5, py - 5, 10, 10);
+        ctx.lineWidth = 0.7;
+        ctx.strokeRect(px - 4, py - 4, 8, 8);
       } else if (p.type === 'dao_mieng') {
-        // Golden peach slice
         ctx.fillStyle = '#f39c12';
         ctx.beginPath();
-        ctx.ellipse(px, py, 7, 4, 0.4, 0, Math.PI * 2);
+        ctx.ellipse(px, py, 6, 3.5, 0.4, 0, Math.PI * 2);
         ctx.fill();
       } else if (p.type === 'suong_sao') {
-        // Grass jelly black block
         ctx.fillStyle = '#111111';
-        ctx.fillRect(px - 6, py - 5, 12, 10);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.fillRect(px - 4, py - 4, 4, 3);
+        ctx.fillRect(px - 5, py - 4, 10, 8);
       } else {
-        // Chewy black boba pearls
+        // Black pearls
         ctx.fillStyle = p.type === 'tranchau_duongden' ? '#1f0d06' : '#140c14';
         ctx.beginPath();
-        ctx.arc(px, py, p.r, 0, Math.PI * 2);
+        ctx.arc(px, py, 3.8, 0, Math.PI * 2);
         ctx.fill();
-        // Pearl glossy highlight
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(px - p.r * 0.35, py - p.r * 0.35, 1.3, 0, Math.PI * 2);
+        ctx.arc(px - 1.2, py - 1.2, 1.1, 0, Math.PI * 2);
         ctx.fill();
       }
     });
 
-    // Brown sugar syrup streaks on glass walls
-    if (this.toppings.includes('tranchau_duongden')) {
-      ctx.strokeStyle = 'rgba(60, 24, 12, 0.75)';
-      ctx.lineWidth = 3.5;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(cx - 24, liquidTop + 10);
-      ctx.quadraticCurveTo(cx - 20, liquidTop + 35, cx - 22, botY - 15);
-      ctx.moveTo(cx + 20, liquidTop + 15);
-      ctx.quadraticCurveTo(cx + 25, liquidTop + 40, cx + 18, botY - 10);
-      ctx.stroke();
-    }
-
-    // 5. Floating Ice Cubes
+    // Floating Ice Cubes inside window
     if (this.ice !== 'Nóng') {
-      this.iceCubes.forEach(c => {
-        const bob = Math.sin(this.tick * c.bobSpeed + c.bobOffset) * 2.5;
-        const ix = cx + c.x;
-        const iy = liquidTop + 24 + c.y + bob;
-
-        ctx.save();
-        ctx.translate(ix, iy);
-        ctx.rotate(c.rot);
-
-        // Translucent blue crystal cube
-        ctx.fillStyle = 'rgba(220, 245, 255, 0.55)';
+      const cubeCount = this.ice === 'Ít đá' ? 2 : (this.ice === 'Vừa đá' ? 3 : 5);
+      for (let i = 0; i < cubeCount; i++) {
+        let ix, iy;
+        if (isSwirling) {
+          const a = -this.tick * 0.12 + i * 1.5;
+          ix = cx + Math.cos(a) * 16;
+          iy = cy - 2 + Math.sin(a) * 10;
+        } else {
+          ix = cx - 18 + i * 12;
+          iy = liquidTop + 10 + Math.sin(this.tick * 0.05 + i) * 2;
+        }
+        ctx.fillStyle = 'rgba(210, 245, 255, 0.65)';
         ctx.beginPath();
-        ctx.roundRect(-c.w * 0.5, -c.h * 0.5, c.w, c.h, 3);
+        ctx.roundRect(ix - 6, iy - 5, 12, 10, 2.5);
         ctx.fill();
-
-        // Ice cube 3D crystal bevels
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 0.8;
         ctx.stroke();
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.fillRect(-c.w * 0.3, -c.h * 0.3, c.w * 0.4, c.h * 0.3);
-        ctx.restore();
-      });
+      }
     }
 
     // Foam & crema bubbles on liquid top
     ctx.fillStyle = tCol.cream;
-    for (let bx = -cupTopW * 0.45; bx <= cupTopW * 0.45; bx += 8) {
-      const bRad = 2.5 + Math.sin(this.tick * 0.1 + bx) * 1.0;
+    for (let bx = -r * 0.7; bx <= r * 0.7; bx += 8) {
+      const bRad = 2.2 + Math.sin(this.tick * 0.1 + bx) * 0.8;
       ctx.beginPath();
       ctx.arc(cx + bx, liquidTop + 2, Math.max(1, bRad), 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 6. Milk Tea Straw (Ống hút boba to chéo góc)
-    ctx.fillStyle = '#ff79c6';
+    // Glass Porthole Specular Crescent Glare
+    const glareGrad = ctx.createLinearGradient(cx - r * 0.8, cy - r * 0.8, cx + r * 0.5, cy + r * 0.5);
+    glareGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+    glareGrad.addColorStop(0.3, 'rgba(255, 255, 255, 0.15)');
+    glareGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = glareGrad;
     ctx.beginPath();
-    ctx.moveTo(cx + 12, topY - 32);
-    ctx.lineTo(cx + 18, topY - 32);
-    ctx.lineTo(cx - 10, botY - 8);
-    ctx.lineTo(cx - 16, botY - 8);
+    ctx.arc(cx, cy, r - 1, -Math.PI * 0.85, -Math.PI * 0.15);
+    ctx.lineTo(cx, cy);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.fillRect(cx + 13, topY - 30, 2, cupH + 18);
 
-    ctx.restore(); // Restore clip
+    ctx.restore();
+  }
 
-    // 7. Glass Cup Highlights & Reflections
-    // Glass rim ring
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-    ctx.lineWidth = 2.2;
+  // --- THE BOM PHA CHẾ (HERO CENTRAL MIXING BOMB ON COUNTERTOP) ---
+  drawMixingBomb(ctx) {
+    const cx = this.width * 0.5;
+    const cy = this.height * 0.62;
+    const bombR = 52; // spherical radius
+
+    ctx.save();
+    if (this.handAction === 'shake') {
+      ctx.globalAlpha = 0.22; // Dim countertop bomb while being shaken front & center
+    }
+
+    // 1. Heavy shadow on mahogany counter
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.beginPath();
-    ctx.ellipse(cx, topY, cupTopW * 0.5, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy + bombR + 4, bombR * 0.8, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Brass Stand Pedestal
+    const baseGrad = ctx.createLinearGradient(cx - 32, 0, cx + 32, 0);
+    baseGrad.addColorStop(0, '#785422');
+    baseGrad.addColorStop(0.3, '#d4af37');
+    baseGrad.addColorStop(0.5, '#fef08a');
+    baseGrad.addColorStop(0.7, '#d4af37');
+    baseGrad.addColorStop(1, '#533814');
+    ctx.fillStyle = baseGrad;
+    ctx.beginPath();
+    ctx.roundRect(cx - 34, cy + bombR - 6, 68, 14, [4, 4, 6, 6]);
+    ctx.fill();
+    ctx.strokeStyle = '#2f3542';
+    ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Vertical specular sheen on glass left edge
-    const sheenGrad = ctx.createLinearGradient(cx - cupTopW * 0.46, 0, cx - cupTopW * 0.3, 0);
-    sheenGrad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-    sheenGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    ctx.fillStyle = sheenGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - cupTopW * 0.46, topY + 4);
-    ctx.lineTo(cx - cupBotW * 0.46, botY - 4);
-    ctx.lineTo(cx - cupBotW * 0.32, botY - 4);
-    ctx.lineTo(cx - cupTopW * 0.32, topY + 4);
-    ctx.closePath();
-    ctx.fill();
-
-    // Volume measuring ticks on right side
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
-    [0.25, 0.5, 0.75].forEach((m, idx) => {
-      const my = botY - cupH * m;
-      ctx.fillRect(cx + cupBotW * 0.36 + idx * 2, my, 8, 1.2);
+    // 3. Side Heavy Handles (Behind the bomb body)
+    [-1, 1].forEach(dir => {
+      ctx.strokeStyle = '#b8860b';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(cx + dir * (bombR + 2), cy, 14, dir === 1 ? -Math.PI * 0.45 : Math.PI * 0.55, dir === 1 ? Math.PI * 0.45 : Math.PI * 1.45);
+      ctx.stroke();
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
     });
 
-    // 8. Steam Particles for Hot Drink
+    // 4. Main Spherical Bomb Body
+    const sphereGrad = ctx.createRadialGradient(
+      cx - bombR * 0.35, cy - bombR * 0.4, 4,
+      cx, cy, bombR * 1.15
+    );
+    sphereGrad.addColorStop(0, '#636e72');
+    sphereGrad.addColorStop(0.25, '#3b434a');
+    sphereGrad.addColorStop(0.65, '#202428');
+    sphereGrad.addColorStop(0.95, '#131618');
+    sphereGrad.addColorStop(1, '#0a0c0e');
+    ctx.fillStyle = sphereGrad;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, bombR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outer rim highlight
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Horizontal Riveted Band
+    ctx.fillStyle = 'rgba(20, 25, 30, 0.85)';
+    ctx.fillRect(cx - bombR + 2, cy - 6, (bombR - 2) * 2, 12);
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(cx - bombR + 2, cy - 6, (bombR - 2) * 2, 12);
+
+    // Golden Hex Rivets
+    [-38, -20, 20, 38].forEach(rx => {
+      ctx.fillStyle = '#f4c430';
+      ctx.beginPath();
+      ctx.arc(cx + rx, cy, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // 5. Analog Pressure Gauge on upper-left shoulder
+    const gx = cx - 38;
+    const gy = cy - 36;
+    const gR = 13;
+    // Brass bezel
+    ctx.fillStyle = '#b8860b';
+    ctx.beginPath();
+    ctx.arc(gx, gy, gR + 2, 0, Math.PI * 2);
+    ctx.fill();
+    // Dial face
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.arc(gx, gy, gR, 0, Math.PI * 2);
+    ctx.fill();
+    // Gauge zones
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(gx, gy, gR - 2, Math.PI * 0.8, Math.PI * 1.3);
+    ctx.stroke();
+    ctx.strokeStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(gx, gy, gR - 2, Math.PI * 1.7, Math.PI * 2.2);
+    ctx.stroke();
+    // Red needle
+    const needleRot = Math.PI * 0.9 + (this.sugar === '100%' ? 1.4 : 0.8);
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.lineTo(gx + Math.cos(needleRot) * (gR - 3), gy + Math.sin(needleRot) * (gR - 3));
+    ctx.stroke();
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.arc(gx, gy, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 6. Top Brass Funnel & Valve Collar (Miệng Rót Đồng & Ngòi Áp Suất)
+    const topY = cy - bombR;
+    const neckGrad = ctx.createLinearGradient(cx - 20, 0, cx + 20, 0);
+    neckGrad.addColorStop(0, '#8c6708');
+    neckGrad.addColorStop(0.3, '#d4af37');
+    neckGrad.addColorStop(0.5, '#fef08a');
+    neckGrad.addColorStop(0.8, '#d4af37');
+    neckGrad.addColorStop(1, '#694a03');
+    ctx.fillStyle = neckGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(cx - 16, topY + 4);
+    ctx.lineTo(cx - 22, topY - 14);
+    ctx.lineTo(cx + 22, topY - 14);
+    ctx.lineTo(cx + 16, topY + 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#533814';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Funnel rim
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.ellipse(cx, topY - 14, 22, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#8c6708';
+    ctx.stroke();
+
+    // Funnel inner mouth
+    ctx.fillStyle = '#2d1810';
+    ctx.beginPath();
+    ctx.ellipse(cx, topY - 14, 18, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Valve cap / fuse on top
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.roundRect(cx - 4, topY - 24, 8, 10, 2);
+    ctx.fill();
+    ctx.fillStyle = '#f4c430';
+    ctx.fillRect(cx - 2, topY - 26, 4, 3);
+
+    // Steam billows from top if hot drink
     if (this.ice === 'Nóng') {
       this.steamParticles.forEach(p => {
         ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y - 15, p.r, 0, Math.PI * 2);
         ctx.fill();
       });
     }
+
+    // 7. Central Crystal Porthole Flange (Vành Đồng Cửa Sổ Kính)
+    const portholeR = 34;
+    const flangeGrad = ctx.createLinearGradient(cx - portholeR - 6, 0, cx + portholeR + 6, 0);
+    flangeGrad.addColorStop(0, '#785422');
+    flangeGrad.addColorStop(0.25, '#d4af37');
+    flangeGrad.addColorStop(0.5, '#fef08a');
+    flangeGrad.addColorStop(0.75, '#d4af37');
+    flangeGrad.addColorStop(1, '#533814');
+    ctx.fillStyle = flangeGrad;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy + 3, portholeR + 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#2f3542';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // 8 Hexagonal Golden Bolts around flange
+    for (let i = 0; i < 8; i++) {
+      const boltAngle = (i * Math.PI * 2) / 8;
+      const bx = cx + Math.cos(boltAngle) * (portholeR + 3.8);
+      const by = cy + 3 + Math.sin(boltAngle) * (portholeR + 3.8);
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(bx, by, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#533814';
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    }
+
+    // 8. RENDER CONTENTS INSIDE THE PORTHOLE (Trà sữa, bọt kem, đá, trân châu)
+    this.drawBombContents(ctx, cx, cy + 3, portholeR, false);
+
+    // 9. Stencil Label "HEEHEE BOMB 💣"
+    ctx.font = 'bold 9px "VT323", monospace, sans-serif';
+    ctx.fillStyle = '#f4c430';
+    ctx.textAlign = 'center';
+    ctx.fillText('HEEHEE BOMB 💣', cx, cy - 35);
 
     ctx.restore();
   }
@@ -1126,16 +1269,15 @@ class BaristaWorkstation {
     ctx.restore();
   }
 
-  // --- TWO-HANDED SHAKER ANIMATION (HAI TAY LẮC SHAKER GÓC NHÌN THỨ NHẤT) ---
+  // --- TWO-HANDED BOM PHA CHẾ SHAKING ANIMATION (HAI TAY LẮC BOM PHA CHẾ) ---
   drawTwoHandedShake(ctx) {
     const p = this.handProgress; // 0.0 -> 1.0
-    // Ramp up in first 18%, intense shake in middle, ramp down in last 18%
     const rampIn = Math.min(1, p * 5.5);
     const rampOut = Math.min(1, (1 - p) * 5.5);
     const intensity = Math.sin(Math.min(rampIn, rampOut) * Math.PI * 0.5);
 
     const cx = this.width * 0.5;
-    const cy = this.height * 0.48;
+    const cy = this.height * 0.46;
 
     // Energetic Shaking Physics (Rhythmic 60fps rapid vibration)
     const shakeCycle = this.tick * 0.95;
@@ -1143,25 +1285,25 @@ class BaristaWorkstation {
     const shakeY = Math.cos(shakeCycle * 1.3) * 22 * intensity;
     const shakeRot = Math.sin(shakeCycle) * 0.22 * intensity;
 
-    // 1. Dynamic Speed Lines / Motion Streaks radiating around shaker
+    // 1. Dynamic Speed Lines / Motion Streaks radiating around the bomb
     if (intensity > 0.4) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.lineWidth = 2.5;
       for (let i = 0; i < 4; i++) {
         const lineOffset = ((this.tick * 6 + i * 25) % 80) - 40;
         const ly = cy + shakeY + lineOffset;
         ctx.beginPath();
-        ctx.moveTo(cx - 55 - Math.random() * 20, ly);
-        ctx.lineTo(cx - 35, ly);
-        ctx.moveTo(cx + 35, ly);
-        ctx.lineTo(cx + 55 + Math.random() * 20, ly);
+        ctx.moveTo(cx - 65 - Math.random() * 20, ly);
+        ctx.lineTo(cx - 40, ly);
+        ctx.moveTo(cx + 40, ly);
+        ctx.lineTo(cx + 65 + Math.random() * 20, ly);
         ctx.stroke();
       }
       ctx.restore();
     }
 
-    // 2. Chilly Frost Mist & Particles
+    // 2. Chilly Frost Mist & Sizzling Spark Particles
     this.frostParticles.forEach(fp => {
       ctx.save();
       ctx.fillStyle = `rgba(180, 235, 255, ${fp.alpha})`;
@@ -1171,127 +1313,147 @@ class BaristaWorkstation {
       ctx.restore();
     });
 
-    // 3. LEFT ARM (reaches from bottom-left corner to lower shaker body)
-    const leftBaseX = this.width * 0.08;
+    // 3. LEFT ARM (reaches from bottom-left corner to left handle of the bomb)
+    const leftBaseX = this.width * 0.06;
     const leftBaseY = this.height + 40;
-    const leftWristX = cx - 22 + shakeX * 0.8;
-    const leftWristY = cy + 26 + shakeY * 0.8;
+    const leftWristX = cx - 44 + shakeX * 0.8;
+    const leftWristY = cy + 12 + shakeY * 0.8;
     this.drawRealisticArm(ctx, leftBaseX, leftBaseY, leftWristX, leftWristY, 'left');
 
-    // 4. RIGHT ARM (reaches from bottom-right corner to top shaker cap)
-    const rightBaseX = this.width * 0.92;
+    // 4. RIGHT ARM (reaches from bottom-right corner to right handle of the bomb)
+    const rightBaseX = this.width * 0.94;
     const rightBaseY = this.height + 40;
-    const rightWristX = cx + 22 + shakeX * 0.8;
-    const rightWristY = cy - 28 + shakeY * 0.8;
+    const rightWristX = cx + 44 + shakeX * 0.8;
+    const rightWristY = cy + 12 + shakeY * 0.8;
     this.drawRealisticArm(ctx, rightBaseX, rightBaseY, rightWristX, rightWristY, 'right');
 
-    // 5. THE CENTRAL COBBLER SHAKER (High-detail Brushed Stainless Steel)
+    // 5. THE HERO BOM PHA CHẾ IN ACTION (BEING SHAKEN BY BOTH HANDS!)
     ctx.save();
     ctx.translate(cx + shakeX, cy + shakeY);
     ctx.rotate(shakeRot);
 
-    // Shaker Drop Shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    const bombR = 48;
+
+    // A. Side Brass Handles
+    [-1, 1].forEach(dir => {
+      ctx.strokeStyle = '#b8860b';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(dir * (bombR + 4), 0, 16, dir === 1 ? -Math.PI * 0.5 : Math.PI * 0.5, dir === 1 ? Math.PI * 0.5 : Math.PI * 1.5);
+      ctx.stroke();
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+    });
+
+    // B. Spherical Bomb Body
+    const bGrad = ctx.createRadialGradient(-16, -18, 4, 0, 0, bombR * 1.15);
+    bGrad.addColorStop(0, '#636e72');
+    bGrad.addColorStop(0.3, '#3b434a');
+    bGrad.addColorStop(0.7, '#202428');
+    bGrad.addColorStop(1, '#0b0d0e');
+    ctx.fillStyle = bGrad;
     ctx.beginPath();
-    ctx.ellipse(0, 48, 28, 8, 0, 0, Math.PI * 2);
+    ctx.arc(0, 0, bombR, 0, Math.PI * 2);
     ctx.fill();
-
-    // A. Shaker Lower Cylinder Body (tapers slightly to bottom)
-    const bodyGrad = ctx.createLinearGradient(-26, 0, 26, 0);
-    bodyGrad.addColorStop(0, '#3d4451');
-    bodyGrad.addColorStop(0.18, '#8395a7');
-    bodyGrad.addColorStop(0.42, '#f8fafc'); // mirror chrome shine
-    bodyGrad.addColorStop(0.68, '#c8d6e5');
-    bodyGrad.addColorStop(0.9, '#576574');
-    bodyGrad.addColorStop(1, '#222f3e');
-    ctx.fillStyle = bodyGrad;
-
-    ctx.beginPath();
-    ctx.moveTo(-24, -8);
-    ctx.lineTo(24, -8);
-    ctx.lineTo(18, 44);
-    ctx.quadraticCurveTo(0, 48, -18, 44);
-    ctx.closePath();
-    ctx.fill();
-
-    // Body bottom rim
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
     ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.ellipse(0, 43, 18, 4, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // HeeHee Emblem on shaker body
-    ctx.fillStyle = '#f4c430';
-    ctx.beginPath();
-    ctx.arc(0, 18, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#1e272e';
-    ctx.font = 'bold 9px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('🧋', 0, 21);
+    // Riveted horizontal band
+    ctx.fillStyle = 'rgba(15, 20, 25, 0.9)';
+    ctx.fillRect(-bombR + 2, -6, (bombR - 2) * 2, 12);
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(-bombR + 2, -6, (bombR - 2) * 2, 12);
 
-    // Condensation moisture streaks running down cold steel
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    [-32, -16, 16, 32].forEach(rx => {
+      ctx.fillStyle = '#f4c430';
+      ctx.beginPath();
+      ctx.arc(rx, 0, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Top funnel and pressure cap
+    ctx.fillStyle = '#d4af37';
+    ctx.beginPath();
+    ctx.moveTo(-16, -bombR + 4);
+    ctx.lineTo(-20, -bombR - 12);
+    ctx.lineTo(20, -bombR - 12);
+    ctx.lineTo(16, -bombR + 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#8c6708';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(-8, 5);
-    ctx.lineTo(-8, 30);
-    ctx.moveTo(9, 8);
-    ctx.lineTo(9, 26);
     ctx.stroke();
 
-    // B. Strainer Shoulder & Mid Ring
-    ctx.fillStyle = '#485460';
-    ctx.fillRect(-25, -12, 50, 4);
-
-    const shoulderGrad = ctx.createLinearGradient(-24, 0, 24, 0);
-    shoulderGrad.addColorStop(0, '#576574');
-    shoulderGrad.addColorStop(0.4, '#ffffff');
-    shoulderGrad.addColorStop(0.7, '#c8d6e5');
-    shoulderGrad.addColorStop(1, '#2f3542');
-    ctx.fillStyle = shoulderGrad;
-
+    // Sputtering spark / valve on top
+    ctx.fillStyle = '#ef4444';
     ctx.beginPath();
-    ctx.moveTo(-24, -12);
-    ctx.quadraticCurveTo(-18, -32, -12, -38);
-    ctx.lineTo(12, -38);
-    ctx.quadraticCurveTo(18, -32, 24, -12);
-    ctx.closePath();
+    ctx.roundRect(-5, -bombR - 22, 10, 10, 2);
     ctx.fill();
 
-    // C. Shaker Dome Cap (Held down by right hand!)
-    const capGrad = ctx.createLinearGradient(-13, 0, 13, 0);
-    capGrad.addColorStop(0, '#576574');
-    capGrad.addColorStop(0.35, '#ffffff');
-    capGrad.addColorStop(0.75, '#c8d6e5');
-    capGrad.addColorStop(1, '#2f3542');
-    ctx.fillStyle = capGrad;
-
+    // Spark particles emitting from top valve while shaking!
+    ctx.fillStyle = '#fef08a';
     ctx.beginPath();
-    ctx.moveTo(-13, -38);
-    ctx.lineTo(-13, -48);
-    ctx.quadraticCurveTo(0, -56, 13, -48);
-    ctx.lineTo(13, -38);
-    ctx.closePath();
+    ctx.arc(0, -bombR - 25, 3, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cap specular shine ring
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.2;
+    // Pressure Gauge vibrating to RED ZONE!
+    const gx = -32;
+    const gy = -30;
+    const gR = 12;
+    ctx.fillStyle = '#b8860b';
     ctx.beginPath();
-    ctx.arc(0, -48, 8, -Math.PI * 0.7, -Math.PI * 0.3);
+    ctx.arc(gx, gy, gR + 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.arc(gx, gy, gR, 0, Math.PI * 2);
+    ctx.fill();
+    // Needle pointing to MAX red!
+    const needleVibe = Math.sin(this.tick * 0.8) * 0.25;
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.lineTo(gx + Math.cos(Math.PI * 1.9 + needleVibe) * (gR - 3), gy + Math.sin(Math.PI * 1.9 + needleVibe) * (gR - 3));
     ctx.stroke();
 
-    ctx.restore(); // Restore shaker transform
+    // C. Porthole Flange Ring
+    const portholeR = 30;
+    const flangeGrad = ctx.createLinearGradient(-portholeR - 6, 0, portholeR + 6, 0);
+    flangeGrad.addColorStop(0, '#785422');
+    flangeGrad.addColorStop(0.3, '#d4af37');
+    flangeGrad.addColorStop(0.5, '#fef08a');
+    flangeGrad.addColorStop(0.7, '#d4af37');
+    flangeGrad.addColorStop(1, '#533814');
+    ctx.fillStyle = flangeGrad;
+    ctx.beginPath();
+    ctx.arc(0, 2, portholeR + 6, 0, Math.PI * 2);
+    ctx.fill();
 
-    // 6. LEFT HAND GRIPPING LOWER SHAKER BODY
-    // Left hand enters from left wrist, palm wraps around the metal cylinder
+    // 8 bolts
+    for (let i = 0; i < 8; i++) {
+      const boltAngle = (i * Math.PI * 2) / 8;
+      const bx = Math.cos(boltAngle) * (portholeR + 3.2);
+      const by = 2 + Math.sin(boltAngle) * (portholeR + 3.2);
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(bx, by, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // D. Swirling Tea Liquid & Boba inside porthole during shake!
+    this.drawBombContents(ctx, 0, 2, portholeR, true);
+
+    ctx.restore(); // Restore bomb transform
+
+    // 6. LEFT HAND FIRMLY CLASPING LEFT HANDLE
     ctx.save();
     ctx.translate(leftWristX, leftWristY);
     ctx.rotate(0.35 + shakeRot * 0.5);
 
-    // Left Palm pad
     const lPalmGrad = ctx.createRadialGradient(0, 0, 2, 4, 2, 16);
     lPalmGrad.addColorStop(0, '#fffbf5');
     lPalmGrad.addColorStop(0.5, '#ffe5cc');
@@ -1301,13 +1463,8 @@ class BaristaWorkstation {
     ctx.ellipse(0, 2, 11, 8, -0.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Left Thumb resting on side of shaker
     this.drawFingersWithNails(ctx, [
-      { x: 2, y: -8, w: 15, h: 5.5, rot: -0.35, nail: true }
-    ]);
-
-    // 4 Left Fingers wrapping around the front of the shaker!
-    this.drawFingersWithNails(ctx, [
+      { x: 2, y: -8, w: 15, h: 5.5, rot: -0.35, nail: true },
       { x: 8, y: -2, w: 20, h: 5.2, rot: 0.1, nail: true },
       { x: 8, y: 5, w: 22, h: 5.4, rot: 0.05, nail: true },
       { x: 7, y: 12, w: 20, h: 5.2, rot: 0.0, nail: true },
@@ -1315,13 +1472,11 @@ class BaristaWorkstation {
     ]);
     ctx.restore();
 
-    // 7. RIGHT HAND FIRMLY CUPPING AND PRESSING THE TOP CAP
-    // Right hand enters from right wrist, palm heel pushes down on the dome
+    // 7. RIGHT HAND FIRMLY CLASPING RIGHT HANDLE
     ctx.save();
     ctx.translate(rightWristX, rightWristY);
-    ctx.rotate(-0.45 + shakeRot * 0.5);
+    ctx.rotate(-0.35 + shakeRot * 0.5);
 
-    // Right Palm Heel pressing down on shaker lid
     const rPalmGrad = ctx.createRadialGradient(-2, 0, 2, 0, 4, 16);
     rPalmGrad.addColorStop(0, '#fffbf5');
     rPalmGrad.addColorStop(0.5, '#ffe5cc');
@@ -1331,27 +1486,22 @@ class BaristaWorkstation {
     ctx.ellipse(-4, 0, 11, 8, 0.3, 0, Math.PI * 2);
     ctx.fill();
 
-    // Right Thumb gripping cap shoulder
     this.drawFingersWithNails(ctx, [
-      { x: -14, y: 4, w: 14, h: 5.2, rot: 2.7, nail: true }
-    ]);
-
-    // Right Fingers cupping down across the cap
-    this.drawFingersWithNails(ctx, [
+      { x: -14, y: 4, w: 14, h: 5.2, rot: 2.7, nail: true },
       { x: -16, y: -4, w: 18, h: 5.2, rot: 3.0, nail: true },
       { x: -16, y: -10, w: 17, h: 5.0, rot: 3.1, nail: true },
       { x: -14, y: -16, w: 15, h: 4.6, rot: 3.2, nail: true }
     ]);
     ctx.restore();
 
-    // 8. "SHAKING!" Punchy Visual Badge in Center
+    // 8. "LẮC BOM PHA CHẾ!" Dramatic Banner
     ctx.save();
-    ctx.font = 'bold 20px "VT323", monospace, sans-serif';
+    ctx.font = 'bold 22px "VT323", monospace, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ff79c6';
-    ctx.shadowColor = 'rgba(0,0,0,0.85)';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
     ctx.shadowBlur = 8;
-    ctx.fillText('⚡ LẮC ĐỀU TAY! 🥤', cx + shakeX, cy - 65 + shakeY);
+    ctx.fillText('💣💥 ĐANG LẮC BOM PHA CHẾ! 💥💣', cx + shakeX, cy - 72 + shakeY);
     ctx.restore();
   }
 }

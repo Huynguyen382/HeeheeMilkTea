@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Reset shaker state for new drink
     isShaken = false;
     if (elBtnShaker) {
-      elBtnShaker.innerText = 'Lắc Shaker 🥤';
+      elBtnShaker.innerText = 'Lắc Bom Pha Chế 💣';
       elBtnShaker.disabled = false;
     }
     if (elBtnServe) {
@@ -806,15 +806,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     canvas.setShaking(true);
     if (workstation) {
       workstation.triggerHandAction('shake');
-      workstation.addFloatingText('⚡ LẮC SHAKER ĐỀU TAY! 🥤', '#bd93f9');
+      workstation.addFloatingText('💣 LẮC ĐỀU QUẢ BOM! 💥', '#bd93f9');
     }
-    elBtnShaker.innerText = 'Đang Lắc Cực Mạnh... 🥤';
+    elBtnShaker.innerText = 'Đang Lắc Bom Cực Mạnh... 💣';
     setTimeout(() => {
       canvas.setShaking(false);
-      elBtnShaker.innerText = 'Đã Lắc Xong ✨';
+      elBtnShaker.innerText = 'Đã Lắc Bom Xong ✨';
     }, 1100);
     setTimeout(() => {
-      elBtnShaker.innerText = 'Lắc Shaker 🥤';
+      elBtnShaker.innerText = 'Lắc Bom Pha Chế 💣';
       elBtnShaker.disabled = false;
     }, 2000);
   });
@@ -823,7 +823,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   elBtnServe.addEventListener('click', async () => {
     if (!currentOrder) return;
     if (!isShaken) {
-      showToast('Hãy lắc shaker trước khi giao ly!');
+      showToast('Hãy lắc bom pha chế trước khi giao ly!');
       return;
     }
     elBtnServe.disabled = true;
@@ -1279,11 +1279,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             hint: { icon: '🧋', text: 'Bước 2: Chọn đúng cốt trà + mức đường đá + topping theo yêu cầu.' }
           },
           {
-            avatar: '🥤',
+            avatar: '💣',
             speaker: 'Bé Bắp (Hướng Dẫn Viên)',
-            role: 'Bước 3: Lắc Shaker & Giao Ly',
-            text: 'Pha xong các nguyên liệu trong ly:\n\n1. Nhấn nút [Lắc Shaker 🥤] để hòa tan cốt trà và đường đá sánh mịn thơm ngát!\n2. Nhấn nút [GIAO LY (SERVE) ✨] để trao tận tay khách!\n\nTing ting! Tiền thanh toán và tiền tip thưởng sẽ cộng ngay vào túi tiệm!',
-            hint: { icon: '✨', text: 'Bước 3: Lắc Shaker -> Bấm GIAO LY (SERVE) nhận tiền liền tay!' }
+            role: 'Bước 3: Lắc Bom Pha Chế & Giao Ly',
+            text: 'Pha xong các nguyên liệu trong quả bom:\n\n1. Nhấn nút [Lắc Bom Pha Chế 💣] để kích hoạt quả bom hòa tan cốt trà, đường đá và boba sánh mịn thơm ngát!\n2. Nhấn nút [GIAO LY (SERVE) ✨] để trao tận tay khách!\n\nTing ting! Tiền thanh toán và tiền tip thưởng sẽ cộng ngay vào túi tiệm!',
+            hint: { icon: '💣', text: 'Bước 3: Lắc Bom Pha Chế -> Bấm GIAO LY (SERVE) nhận tiền liền tay!' }
           },
           {
             avatar: '🛒',
