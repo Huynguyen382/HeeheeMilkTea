@@ -157,6 +157,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Handle Register Submit
+    // Quick Play (Chơi ngay với tài khoản khách)
+    const btnQuickPlay = document.getElementById('btn-quick-play');
+    if (btnQuickPlay) {
+      btnQuickPlay.addEventListener('click', async () => {
+        btnQuickPlay.disabled = true;
+        btnQuickPlay.innerText = 'Đang Vào Quán... 🧋';
+        try {
+          const res = await API.login('Tiệm Trà Sữa HeeHee');
+          if (res && (res.session_token || res.save)) {
+            sound.bell();
+            storeState = res;
+            modalAuth.style.display = 'none';
+            showToast('🎉 Chào mừng bạn đến với Tiệm Trà Sữa HeeHee!', 3500);
+            updateUI();
+
+            const storySeenKey = 'heehee_story_seen_' + (storeState.store_code || 'guest');
+            if (!localStorage.getItem(storySeenKey)) {
+              openStoryModal(0, storeState.save ? storeState.save.chapter : 1);
+              localStorage.setItem(storySeenKey, 'true');
+            }
+
+            scheduleNextOrder(1500);
+          } else {
+            sound.fail();
+            authError.innerText = res.error || res.message || 'Không thể tạo phiên chơi nhanh';
+            authError.style.display = 'block';
+            btnQuickPlay.disabled = false;
+            btnQuickPlay.innerText = '⚡ Chơi Ngay (Không Cần Đăng Ký)';
+          }
+        } catch (err) {
+          sound.fail();
+          authError.innerText = 'Lỗi kết nối máy chủ!';
+          authError.style.display = 'block';
+          btnQuickPlay.disabled = false;
+          btnQuickPlay.innerText = '⚡ Chơi Ngay (Không Cần Đăng Ký)';
+        }
+      });
+    }
+
     formRegister.addEventListener('submit', async (e) => {
       e.preventDefault();
       authError.style.display = 'none';
@@ -944,14 +983,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Periodic thief spawn check when busy
     setInterval(checkThiefEncounter, 14000);
 
-    // Canvas click to catch thief
+    // Canvas click / touch to catch thief
     const sceneCanvas = document.getElementById('scene');
     if (sceneCanvas) {
-      sceneCanvas.addEventListener('pointerup', async (e) => {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
+      let lastTapTime = 0;
+      const onCanvasTap = async (clientX, clientY) => {
+        const now = Date.now();
+        if (now - lastTapTime < 300) return;
+        lastTapTime = now;
         const rect = sceneCanvas.getBoundingClientRect();
-        const clickX = (e.clientX - rect.left) * (360 / rect.width);
-        const clickY = (e.clientY - rect.top) * (200 / rect.height);
+        const clickX = (clientX - rect.left) * (360 / rect.width);
+        const clickY = (clientY - rect.top) * (200 / rect.height);
 
         if (canvas.checkThiefClick(clickX, clickY)) {
           sound.coin();
@@ -966,6 +1008,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Shoo thief error:', err);
           }
         }
+      };
+
+      sceneCanvas.addEventListener('pointerup', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        onCanvasTap(e.clientX, e.clientY);
+      });
+      sceneCanvas.addEventListener('click', (e) => {
+        onCanvasTap(e.clientX, e.clientY);
       });
     }
 
