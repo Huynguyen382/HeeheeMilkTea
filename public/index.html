@@ -177,10 +177,24 @@
       <span>Topping: <b id="mix-topping-val" style="color: #ff79c6;">0 loại</b></span>
     </div>
 
-    <!-- Actions -->
-    <div class="action-box">
-      <button class="btn-shaker" id="btn-shaker">Lắc Bom Pha Chế 💣</button>
-      <button class="btn-serve" id="btn-serve" disabled>GIAO LY (SERVE) ✨</button>
+    <!-- Actions Workflow: 1. Lắc Bom ➔ 2. Rót Cốc ➔ 3. Dập Nắp ➔ 4. Giao Ly -->
+    <div class="action-box workflow-grid">
+      <button class="btn-workflow btn-shake" id="btn-shaker" title="1. Lắc đều quả bom pha chế">
+        <span class="wf-icon">💣</span>
+        <span class="wf-text">1. Lắc Bom</span>
+      </button>
+      <button class="btn-workflow btn-pour" id="btn-pour-cup" title="2. Đổ trà sữa từ bom vào cốc" disabled>
+        <span class="wf-icon">🧋</span>
+        <span class="wf-text">2. Rót Cốc</span>
+      </button>
+      <button class="btn-workflow btn-seal" id="btn-seal-cup" title="3. Dập màng nilon niêm phong miệng cốc" disabled>
+        <span class="wf-icon">🖲️</span>
+        <span class="wf-text">3. Dập Nắp</span>
+      </button>
+      <button class="btn-serve btn-serve-cup" id="btn-serve" disabled title="4. Giao ly trà sữa hoàn chỉnh cho khách">
+        <span class="wf-icon">✨</span>
+        <span class="wf-text">GIAO LY (SERVE)</span>
+      </button>
     </div>
   </main>
 

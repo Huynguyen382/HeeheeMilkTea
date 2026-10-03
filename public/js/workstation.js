@@ -15,6 +15,7 @@ class BaristaWorkstation {
     this.ice = 'Vừa đá';
     this.toppings = [];
     this.isShaken = false;
+    this.cupState = 'empty'; // 'empty' | 'filled' | 'sealed'
 
     // Dimensions
     this.width = 440;
@@ -184,12 +185,21 @@ class BaristaWorkstation {
     return map[key] || 'Topping';
   }
 
+  setCupState(state) {
+    this.cupState = state;
+  }
+
+  resetCupState() {
+    this.cupState = 'empty';
+  }
+
   resetCup() {
     this.tea = 'den';
     this.sugar = '0%';
     this.ice = 'Nóng';
     this.toppings = [];
     this.isShaken = false;
+    this.cupState = 'empty';
     this.initCupContents();
     this.addFloatingText('🔄 Đã làm lại ly mới!', '#ffffff');
     this.onChange({ tea: this.tea, sugar: this.sugar, ice: this.ice, toppings: this.toppings });
@@ -228,10 +238,22 @@ class BaristaWorkstation {
 
     // Update hand progress
     if (this.handAction) {
-      // Shake lasts longer (~60 frames) so player can experience the full satisfying shaking action
-      const step = this.handAction === 'shake' ? 0.016 : 0.045;
+      // Custom durations:
+      // Shake: ~60 frames
+      // Pour cup: ~50 frames
+      // Seal cup: ~45 frames
+      let step = 0.045;
+      if (this.handAction === 'shake') step = 0.016;
+      else if (this.handAction === 'pour_cup') step = 0.020;
+      else if (this.handAction === 'seal_cup') step = 0.022;
+
       this.handProgress += step;
       if (this.handProgress >= 1.0) {
+        if (this.handAction === 'pour_cup') {
+          this.cupState = 'filled';
+        } else if (this.handAction === 'seal_cup') {
+          this.cupState = 'sealed';
+        }
         this.handAction = null;
         this.handProgress = 0;
       }
@@ -311,12 +333,19 @@ class BaristaWorkstation {
     // 4. Draw Central Mixing Bomb (Quả Bom Pha Chế Trung Tâm)
     this.drawMixingBomb(ctx);
 
-    // 5. Draw Floating Status & Notifications
+    // 5. Draw Takeaway Cup on Countertop (Ly Trà Sữa Mang Đi)
+    this.drawTakeawayCup(ctx);
+
+    // 6. Draw Floating Status & Notifications
     this.drawFloatingTexts(ctx);
 
-    // 6. Draw First-Person Barista Animated Arm & Hand
+    // 7. Draw First-Person Barista Animated Arm & Hand
     if (this.handAction === 'shake') {
       this.drawTwoHandedShake(ctx);
+    } else if (this.handAction === 'pour_cup') {
+      this.drawPourCupAnimation(ctx);
+    } else if (this.handAction === 'seal_cup') {
+      this.drawSealCupAnimation(ctx);
     } else if (this.handAction) {
       this.drawBaristaHand(ctx);
     }
@@ -660,8 +689,8 @@ class BaristaWorkstation {
     const bombR = 52; // spherical radius
 
     ctx.save();
-    if (this.handAction === 'shake') {
-      ctx.globalAlpha = 0.22; // Dim countertop bomb while being shaken front & center
+    if (this.handAction === 'shake' || this.handAction === 'pour_cup') {
+      ctx.globalAlpha = 0.22; // Dim countertop bomb while being shaken or poured front & center
     }
 
     // 1. Heavy shadow on mahogany counter
@@ -862,6 +891,255 @@ class BaristaWorkstation {
     ctx.fillStyle = '#f4c430';
     ctx.textAlign = 'center';
     ctx.fillText('HEEHEE BOMB 💣', cx, cy - 35);
+
+    ctx.restore();
+  }
+
+  // --- TAKEAWAY CUP ON COUNTERTOP (LY TRÀ SỮA MANG ĐI TRÊN QUẦY PHA CHẾ) ---
+  drawTakeawayCup(ctx) {
+    const cx = this.width * 0.5;
+    const cy = this.height * 0.62;
+    const cupX = Math.min(this.width - 66, cx + 86);
+    const cupY = cy + 22; // base of cup on counter
+    const cupH = 50;
+    const cupTopY = cupY - cupH;
+    const topR = 17;
+    const botR = 12;
+
+    ctx.save();
+
+    // 1. Soft Counter Shadow & Cork Coaster
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(cupX, cupY + 4, botR + 8, 4.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cork Coaster
+    const coasterGrad = ctx.createLinearGradient(cupX - botR - 6, 0, cupX + botR + 6, 0);
+    coasterGrad.addColorStop(0, '#7c532b');
+    coasterGrad.addColorStop(0.5, '#ba8a5b');
+    coasterGrad.addColorStop(1, '#66421f');
+    ctx.fillStyle = coasterGrad;
+    ctx.beginPath();
+    ctx.ellipse(cupX, cupY + 3, botR + 7, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#4e3116';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 2. Liquid Contents Calculation
+    let fillRatio = 0;
+    if (this.cupState === 'filled' || this.cupState === 'sealed') {
+      fillRatio = 0.86;
+    } else if (this.handAction === 'pour_cup') {
+      // Liquid rises dynamically during pouring!
+      fillRatio = Math.max(0, Math.min(0.86, (this.handProgress - 0.22) / 0.68 * 0.86));
+    }
+
+    // 3. Clear Acrylic Cup Body (Trapezoid Clip for Liquid)
+    if (fillRatio > 0) {
+      ctx.save();
+      // Clip inside cup
+      ctx.beginPath();
+      ctx.moveTo(cupX - topR + 1, cupTopY + 2);
+      ctx.lineTo(cupX + topR - 1, cupTopY + 2);
+      ctx.lineTo(cupX + botR - 1, cupY);
+      ctx.lineTo(cupX - botR + 1, cupY);
+      ctx.closePath();
+      ctx.clip();
+
+      const liquidH = cupH * fillRatio;
+      const liquidTop = cupY - liquidH;
+      const tCol = BaristaWorkstation.TEA_COLORS[this.tea] || BaristaWorkstation.TEA_COLORS.den;
+
+      // Milk tea gradient
+      const teaGrad = ctx.createLinearGradient(0, cupY, 0, liquidTop);
+      teaGrad.addColorStop(0, tCol.base);
+      teaGrad.addColorStop(0.5, tCol.mid);
+      teaGrad.addColorStop(0.88, tCol.light);
+      teaGrad.addColorStop(1, tCol.cream);
+      ctx.fillStyle = teaGrad;
+      ctx.fillRect(cupX - topR - 2, liquidTop, (topR + 2) * 2, liquidH + 10);
+
+      // Meniscus ellipse
+      const menW = botR + (topR - botR) * fillRatio;
+      ctx.fillStyle = tCol.cream;
+      ctx.beginPath();
+      ctx.ellipse(cupX, liquidTop, menW, 3.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Boba pearls in cup
+      const pearlCount = Math.min(14, this.toppings.length * 6);
+      for (let i = 0; i < pearlCount; i++) {
+        const px = cupX + ((i * 7 + 3) % (botR * 1.5)) - botR * 0.75;
+        const py = cupY - 3 - Math.floor(i / 4) * 5;
+        ctx.fillStyle = '#140c14';
+        ctx.beginPath();
+        ctx.arc(px, py, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(px - 0.8, py - 0.8, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Ice cubes in cup
+      if (this.ice !== 'Nóng' && fillRatio > 0.4) {
+        const iceCount = this.ice === 'Ít đá' ? 1 : (this.ice === 'Vừa đá' ? 2 : 3);
+        for (let i = 0; i < iceCount; i++) {
+          const ix = cupX - 6 + i * 7;
+          const iy = liquidTop + 5 + (i % 2) * 4;
+          ctx.fillStyle = 'rgba(220, 248, 255, 0.75)';
+          ctx.beginPath();
+          ctx.roundRect(ix - 4, iy - 4, 8, 7, 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    // 4. Transparent Plastic Cup Shell & Highlights
+    ctx.save();
+    const cupGrad = ctx.createLinearGradient(cupX - topR, 0, cupX + topR, 0);
+    cupGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+    cupGrad.addColorStop(0.2, 'rgba(220, 240, 255, 0.15)');
+    cupGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.08)');
+    cupGrad.addColorStop(0.9, 'rgba(255, 255, 255, 0.35)');
+    cupGrad.addColorStop(1, 'rgba(255, 255, 255, 0.55)');
+    ctx.fillStyle = cupGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(cupX - topR, cupTopY);
+    ctx.lineTo(cupX + topR, cupTopY);
+    ctx.lineTo(cupX + botR, cupY);
+    ctx.ellipse(cupX, cupY, botR, 3, 0, 0, Math.PI);
+    ctx.lineTo(cupX - topR, cupTopY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Cup outline
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Vertical gloss streak reflection
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+    ctx.beginPath();
+    ctx.moveTo(cupX - topR * 0.7, cupTopY + 5);
+    ctx.lineTo(cupX - topR * 0.55, cupTopY + 5);
+    ctx.lineTo(cupX - botR * 0.55, cupY - 5);
+    ctx.lineTo(cupX - botR * 0.7, cupY - 5);
+    ctx.closePath();
+    ctx.fill();
+
+    // Cup Top Rolled Lip Rim
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath();
+    ctx.ellipse(cupX, cupTopY, topR, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(200, 225, 245, 0.9)';
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+
+    ctx.restore();
+
+    // 5. Sealed Film Lid & Straw (If sealed)
+    if (this.cupState === 'sealed') {
+      ctx.save();
+      // Heat-sealed plastic membrane film
+      const filmGrad = ctx.createRadialGradient(cupX, cupTopY, 2, cupX, cupTopY, topR);
+      filmGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      filmGrad.addColorStop(0.6, 'rgba(240, 250, 255, 0.75)');
+      filmGrad.addColorStop(1, 'rgba(254, 240, 138, 0.9)');
+      ctx.fillStyle = filmGrad;
+
+      ctx.beginPath();
+      ctx.ellipse(cupX, cupTopY, topR + 1.2, 4.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Golden heat-crimp edge seal
+      ctx.strokeStyle = '#f4c430';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      // Mini HeeHee seal print logo on the film
+      ctx.fillStyle = '#ff79c6';
+      ctx.beginPath();
+      ctx.arc(cupX, cupTopY, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 6px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('H', cupX, cupTopY + 2.2);
+
+      // Boba Giant Straw piercing through sealed film!
+      const strawX = cupX + 4;
+      const strawY = cupTopY;
+      ctx.save();
+      ctx.translate(strawX, strawY);
+      ctx.rotate(-0.25); // ~15 deg tilt
+
+      // Straw tube
+      const strawGrad = ctx.createLinearGradient(-3.5, 0, 3.5, 0);
+      strawGrad.addColorStop(0, '#f59e0b');
+      strawGrad.addColorStop(0.5, '#fbbf24');
+      strawGrad.addColorStop(1, '#d97706');
+      ctx.fillStyle = strawGrad;
+      // Below lid inside drink
+      ctx.fillRect(-3.5, 0, 7, 26);
+      // Above lid
+      ctx.fillRect(-3.5, -24, 7, 24);
+
+      // Red spiral candy stripe on straw
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2.2;
+      for (let sY = -22; sY < 20; sY += 8) {
+        ctx.beginPath();
+        ctx.moveTo(-3.5, sY);
+        ctx.lineTo(3.5, sY + 4);
+        ctx.stroke();
+      }
+
+      // Top oval cut of straw
+      ctx.fillStyle = '#fffbeb';
+      ctx.beginPath();
+      ctx.ellipse(0, -24, 3.5, 1.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Sparkles around freshly sealed cup
+      ctx.fillStyle = '#fef08a';
+      const sparkA = this.tick * 0.1;
+      [-1, 1].forEach((dir, idx) => {
+        const sx = cupX + dir * 16 + Math.cos(sparkA + idx) * 3;
+        const sy = cupTopY - 8 + Math.sin(sparkA + idx) * 3;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.restore();
+    }
+
+    // 6. Label & Indicator above the cup
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 11px "VT323", monospace, sans-serif';
+    if (this.cupState === 'empty') {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.fillText('[ CỐC TRỐNG ]', cupX, cupTopY - 8);
+    } else if (this.cupState === 'filled') {
+      ctx.fillStyle = '#f4c430';
+      ctx.fillText('🧋 ĐÃ RÓT TRÀ', cupX, cupTopY - 8);
+    } else if (this.cupState === 'sealed') {
+      ctx.fillStyle = '#50fa7b';
+      ctx.fillText('✨ ĐÃ DẬP NẮP', cupX, cupTopY - 8);
+    }
+    ctx.restore();
 
     ctx.restore();
   }
@@ -1250,12 +1528,44 @@ class BaristaWorkstation {
       ctx.lineWidth = 1.4;
       ctx.stroke();
 
+      // Mini sealed takeaway cup sitting on the tray
+      const tCol = BaristaWorkstation.TEA_COLORS[this.tea] || BaristaWorkstation.TEA_COLORS.den;
+      // Cup body with tea
+      ctx.fillStyle = tCol.mid;
+      ctx.beginPath();
+      ctx.moveTo(-38, 10);
+      ctx.lineTo(-26, 10);
+      ctx.lineTo(-24, -12);
+      ctx.lineTo(-40, -12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+
+      // Sealed film on cup top
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.ellipse(-32, -12, 8, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#f4c430';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Boba straw
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(-31, -12);
+      ctx.lineTo(-28, -26);
+      ctx.stroke();
+
       // Sparkles & stars
       ctx.fillStyle = '#ffd700';
       ctx.beginPath();
-      ctx.arc(-48, -12, 3, 0, Math.PI * 2);
-      ctx.arc(-18, -18, 2.5, 0, Math.PI * 2);
-      ctx.arc(-32, -26, 2, 0, Math.PI * 2);
+      ctx.arc(-48, -14, 3, 0, Math.PI * 2);
+      ctx.arc(-18, -20, 2.5, 0, Math.PI * 2);
+      ctx.arc(-32, -28, 2, 0, Math.PI * 2);
       ctx.fill();
 
       // Fingers supporting the tray
@@ -1502,6 +1812,298 @@ class BaristaWorkstation {
     ctx.shadowColor = 'rgba(0,0,0,0.9)';
     ctx.shadowBlur = 8;
     ctx.fillText('💣💥 ĐANG LẮC BOM PHA CHẾ! 💥💣', cx + shakeX, cy - 72 + shakeY);
+    ctx.restore();
+  }
+
+  // --- POUR MILK TEA FROM BOMB INTO TAKEAWAY CUP (RÓT TRÀ SỮA TỪ BOM VÀO CỐC) ---
+  drawPourCupAnimation(ctx) {
+    const p = this.handProgress; // 0.0 -> 1.0
+    const cx = this.width * 0.5;
+    const cy = this.height * 0.56;
+    const cupX = Math.min(this.width - 66, cx + 86);
+    const cupTopY = this.height * 0.62 + 22 - 50;
+
+    // Tilt angle ramps up to ~38 degrees then returns smoothly
+    const curve = Math.sin(p * Math.PI); // 0 -> 1 -> 0
+    const tilt = curve * 0.65; // ~37 degrees tilt
+
+    // Bomb center shifts slightly towards the cup
+    const bombX = cx + curve * 32;
+    const bombY = cy - curve * 14;
+
+    // 1. Draw Left Arm reaching to bottom-left of bomb
+    const leftBaseX = this.width * 0.06;
+    const leftBaseY = this.height + 40;
+    const leftWristX = bombX - 42 + Math.cos(tilt) * -10;
+    const leftWristY = bombY + 16 + Math.sin(tilt) * -10;
+    this.drawRealisticArm(ctx, leftBaseX, leftBaseY, leftWristX, leftWristY, 'left');
+
+    // 2. Draw Right Arm reaching to right handle of bomb
+    const rightBaseX = this.width * 0.94;
+    const rightBaseY = this.height + 40;
+    const rightWristX = bombX + 38 + Math.cos(tilt) * 12;
+    const rightWristY = bombY - 12 + Math.sin(tilt) * 12;
+    this.drawRealisticArm(ctx, rightBaseX, rightBaseY, rightWristX, rightWristY, 'right');
+
+    // 3. Draw Tilted Hero Bom Pha Chế
+    ctx.save();
+    ctx.translate(bombX, bombY);
+    ctx.rotate(tilt);
+
+    const bombR = 48;
+    // Side Brass Handles
+    [-1, 1].forEach(dir => {
+      ctx.strokeStyle = '#b8860b';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(dir * (bombR + 3), 0, 14, dir === 1 ? -Math.PI * 0.5 : Math.PI * 0.5, dir === 1 ? Math.PI * 0.5 : Math.PI * 1.5);
+      ctx.stroke();
+    });
+
+    // Spherical body
+    const bGrad = ctx.createRadialGradient(-12, -14, 4, 0, 0, bombR * 1.1);
+    bGrad.addColorStop(0, '#636e72');
+    bGrad.addColorStop(0.3, '#3b434a');
+    bGrad.addColorStop(0.7, '#202428');
+    bGrad.addColorStop(1, '#0b0d0e');
+    ctx.fillStyle = bGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, bombR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Riveted band
+    ctx.fillStyle = 'rgba(15, 20, 25, 0.9)';
+    ctx.fillRect(-bombR + 2, -5, (bombR - 2) * 2, 10);
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(-bombR + 2, -5, (bombR - 2) * 2, 10);
+
+    // Top spout funnel
+    ctx.fillStyle = '#d4af37';
+    ctx.beginPath();
+    ctx.moveTo(-14, -bombR + 4);
+    ctx.lineTo(-18, -bombR - 12);
+    ctx.lineTo(18, -bombR - 12);
+    ctx.lineTo(14, -bombR + 4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Crystal porthole contents swirling while tilting
+    const portholeR = 30;
+    this.drawBombContents(ctx, 0, 2, portholeR, curve > 0.3);
+
+    ctx.restore();
+
+    // World spout coordinates
+    const spoutX = bombX + Math.sin(tilt) * (bombR + 12);
+    const spoutY = bombY - Math.cos(tilt) * (bombR + 12);
+
+    // 4. Luscious Pouring Milk Tea Stream (Arc from spout to cup)
+    if (curve > 0.2) {
+      const tCol = BaristaWorkstation.TEA_COLORS[this.tea] || BaristaWorkstation.TEA_COLORS.den;
+      ctx.save();
+
+      // Smooth bezier stream
+      const streamGrad = ctx.createLinearGradient(spoutX, spoutY, cupX, cupTopY);
+      streamGrad.addColorStop(0, tCol.light);
+      streamGrad.addColorStop(0.35, tCol.mid);
+      streamGrad.addColorStop(0.85, tCol.base);
+      streamGrad.addColorStop(1, tCol.cream);
+      ctx.fillStyle = streamGrad;
+
+      const streamW = 6 * curve;
+      ctx.beginPath();
+      ctx.moveTo(spoutX - streamW * 0.5, spoutY);
+      ctx.quadraticCurveTo(spoutX + 20, (spoutY + cupTopY) * 0.5, cupX - 3, cupTopY + 2);
+      ctx.lineTo(cupX + 3, cupTopY + 2);
+      ctx.quadraticCurveTo(spoutX + 20 + streamW, (spoutY + cupTopY) * 0.5, spoutX + streamW * 0.5, spoutY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Boba pearls sliding down the liquid stream!
+      for (let i = 0; i < 3; i++) {
+        const pearlP = ((p * 3.5 + i * 0.33) % 1.0);
+        if (pearlP > 0.1 && pearlP < 0.9) {
+          const t = pearlP;
+          const pX = (1 - t) * (1 - t) * spoutX + 2 * (1 - t) * t * (spoutX + 20) + t * t * cupX;
+          const pY = (1 - t) * (1 - t) * spoutY + 2 * (1 - t) * t * ((spoutY + cupTopY) * 0.5) + t * t * (cupTopY + 2);
+          ctx.fillStyle = '#140c14';
+          ctx.beginPath();
+          ctx.arc(pX, pY, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Splash droplets at the mouth of the cup
+      ctx.fillStyle = tCol.cream;
+      for (let d = 0; d < 4; d++) {
+        const dx = cupX + (Math.sin(this.tick * 0.3 + d) * 8);
+        const dy = cupTopY - Math.abs(Math.cos(this.tick * 0.4 + d) * 10);
+        ctx.beginPath();
+        ctx.arc(dx, dy, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    // 5. Left Hand grip
+    ctx.save();
+    ctx.translate(leftWristX, leftWristY);
+    ctx.rotate(0.35 + tilt * 0.3);
+    this.drawFingersWithNails(ctx, [
+      { x: 4, y: -4, w: 16, h: 5.2, rot: 0.1, nail: true },
+      { x: 4, y: 3, w: 18, h: 5.2, rot: 0.05, nail: true },
+      { x: 3, y: 10, w: 16, h: 5.0, rot: -0.05, nail: true }
+    ]);
+    ctx.restore();
+
+    // 6. Right Hand grip
+    ctx.save();
+    ctx.translate(rightWristX, rightWristY);
+    ctx.rotate(-0.35 + tilt * 0.3);
+    this.drawFingersWithNails(ctx, [
+      { x: -14, y: 2, w: 14, h: 5.2, rot: 2.8, nail: true },
+      { x: -15, y: -5, w: 16, h: 5.0, rot: 3.0, nail: true },
+      { x: -14, y: -12, w: 14, h: 4.8, rot: 3.1, nail: true }
+    ]);
+    ctx.restore();
+
+    // 7. Dramatic Banner
+    ctx.save();
+    ctx.font = 'bold 20px "VT323", monospace, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#f4c430';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+    ctx.shadowBlur = 8;
+    ctx.fillText('🧋 ĐANG RÓT TRÀ SỮA VÀO CỐC... ✨', cx, cy - 72);
+    ctx.restore();
+  }
+
+  // --- SEAL CUP WITH CUP-SEALER MACHINE (DẬP MÀNG NIÊM PHONG MIỆNG CỐC) ---
+  drawSealCupAnimation(ctx) {
+    const p = this.handProgress; // 0.0 -> 1.0
+    const cx = this.width * 0.5;
+    const cy = this.height * 0.62;
+    const cupX = Math.min(this.width - 66, cx + 86);
+    const cupTopY = cy + 22 - 50;
+
+    // Sealer Stamp descends:
+    let stampY;
+    const restY = cupTopY - 48;
+    const pressY = cupTopY - 2;
+
+    if (p < 0.4) {
+      const t = p / 0.4;
+      stampY = restY + (pressY - restY) * Math.sin(t * Math.PI * 0.5);
+    } else if (p < 0.65) {
+      stampY = pressY + Math.sin((p - 0.4) * 80) * 0.8;
+    } else {
+      const t = (p - 0.65) / 0.35;
+      stampY = pressY - (pressY - restY) * (t * t);
+    }
+
+    // 1. Right Arm pulling the sealing machine lever
+    const rightBaseX = this.width * 0.94;
+    const rightBaseY = this.height + 40;
+    const leverWristX = cupX + 28;
+    const leverWristY = stampY + 12;
+    this.drawRealisticArm(ctx, rightBaseX, rightBaseY, leverWristX, leverWristY, 'right');
+
+    // 2. Stainless Steel & Brass Cup Sealer Machine Head
+    ctx.save();
+    ctx.translate(cupX, stampY);
+
+    // Chrome vertical plunger shaft
+    const shaftGrad = ctx.createLinearGradient(-6, 0, 6, 0);
+    shaftGrad.addColorStop(0, '#747d8c');
+    shaftGrad.addColorStop(0.5, '#f1f2f6');
+    shaftGrad.addColorStop(1, '#57606f');
+    ctx.fillStyle = shaftGrad;
+    ctx.fillRect(-5, -45, 10, 45);
+
+    // Sealer Head Bell Housing
+    const bellGrad = ctx.createLinearGradient(-24, 0, 24, 0);
+    bellGrad.addColorStop(0, '#2f3542');
+    bellGrad.addColorStop(0.3, '#57606f');
+    bellGrad.addColorStop(0.5, '#a4b0be');
+    bellGrad.addColorStop(0.8, '#57606f');
+    bellGrad.addColorStop(1, '#2f3542');
+    ctx.fillStyle = bellGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(-18, -12);
+    ctx.lineTo(-24, 0);
+    ctx.lineTo(24, 0);
+    ctx.lineTo(18, -12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#1e272e';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Glowing Golden Heat Element Ring (Heats up intensely during press!)
+    const isPressing = p >= 0.38 && p <= 0.68;
+    const ringGrad = ctx.createLinearGradient(-22, 0, 22, 0);
+    if (isPressing) {
+      ringGrad.addColorStop(0, '#ef4444');
+      ringGrad.addColorStop(0.5, '#fef08a');
+      ringGrad.addColorStop(1, '#ef4444');
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 14;
+    } else {
+      ringGrad.addColorStop(0, '#b8860b');
+      ringGrad.addColorStop(0.5, '#fef08a');
+      ringGrad.addColorStop(1, '#b8860b');
+    }
+    ctx.fillStyle = ringGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 22, 5.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = isPressing ? '#ffffff' : '#d4af37';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.restore();
+
+    // 3. Electrical Heat Sparks & Steam Burst during press!
+    if (isPressing) {
+      ctx.save();
+      // Steam / hot air vapor puffs
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      for (let s = 0; s < 5; s++) {
+        const sx = cupX + (Math.sin(this.tick * 0.5 + s) * 22);
+        const sy = cupTopY - 4 - Math.random() * 8;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2 + Math.random() * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Golden electric heat sparks
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.8;
+      for (let sp = 0; sp < 4; sp++) {
+        const sparkAng = (this.tick * 0.4 + sp * 1.5);
+        const sX1 = cupX + Math.cos(sparkAng) * 20;
+        const sY1 = cupTopY + Math.sin(sparkAng) * 4;
+        const sX2 = sX1 + Math.cos(sparkAng) * 7;
+        const sY2 = sY1 + Math.sin(sparkAng) * 5;
+        ctx.beginPath();
+        ctx.moveTo(sX1, sY1);
+        ctx.lineTo(sX2, sY2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // 4. Dramatic Banner
+    ctx.save();
+    ctx.font = 'bold 20px "VT323", monospace, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#50fa7b';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+    ctx.shadowBlur = 8;
+    ctx.fillText('🖲️ ĐANG DẬP MÀNG NIÊM PHONG... 🔒', cx, cy - 72);
     ctx.restore();
   }
 }

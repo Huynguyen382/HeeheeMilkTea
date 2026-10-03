@@ -10,12 +10,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   let restTimerInterval = null;
   let orderStartTime = 0;
   
-  // Mixing Selection State
+  // Mixing & Workflow Selection State
   let selectedTea = 'den';
   let selectedSugar = '50%';
   let selectedIce = 'Vừa đá';
   let selectedToppings = [];
   let isShaken = false;
+  let isPoured = false;
+  let isSealed = false;
 
   // DOM Elements
   const elStoreName = document.getElementById('store-name');
@@ -34,8 +36,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const elOverloadWarning = document.getElementById('overload-warning');
 
   const elOrderSection = document.getElementById('order-content');
-  const elBtnServe = document.getElementById('btn-serve');
   const elBtnShaker = document.getElementById('btn-shaker');
+  const elBtnPourCup = document.getElementById('btn-pour-cup');
+  const elBtnSealCup = document.getElementById('btn-seal-cup');
+  const elBtnServe = document.getElementById('btn-serve');
   const toast = document.getElementById('toast');
 
   // Auth Modal Elements
@@ -521,15 +525,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     orderStartTime = Date.now();
     sound.bell();
 
-    // Reset shaker state for new drink
+    // Reset workflow state for new drink
     isShaken = false;
-    if (elBtnShaker) {
-      elBtnShaker.innerText = 'Lắc Bom Pha Chế 💣';
-      elBtnShaker.disabled = false;
-    }
-    if (elBtnServe) {
-      elBtnServe.disabled = false;
-    }
+    isPoured = false;
+    isSealed = false;
+    if (workstation) workstation.resetCupState();
+    updateWorkflowButtons();
 
     renderOrderTicket();
     updateUI();
@@ -580,7 +581,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     orderQueue.shift();
     currentOrder = null;
+    isShaken = false;
+    isPoured = false;
+    isSealed = false;
+    if (workstation) workstation.resetCupState();
     renderOrderTicket();
+    updateWorkflowButtons();
     updateUI();
 
     setTimeout(() => {
@@ -592,14 +598,141 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 1000);
   }
 
+  // --- WORKFLOW 4-STEP MANAGEMENT: 1. LẮC BOM -> 2. RÓT CỐC -> 3. DẬP NẮP -> 4. GIAO LY ---
+  function updateWorkflowButtons() {
+    const hasOrder = !!currentOrder;
+
+    // Step 1: 1. Lắc Bom
+    if (!isShaken) {
+      if (elBtnShaker) {
+        elBtnShaker.disabled = !hasOrder;
+        elBtnShaker.classList.toggle('ready-step', hasOrder);
+        elBtnShaker.classList.remove('completed-step');
+        const txt = elBtnShaker.querySelector('.wf-text');
+        if (txt) txt.innerText = '1. Lắc Bom';
+        const ico = elBtnShaker.querySelector('.wf-icon');
+        if (ico) ico.innerText = '💣';
+      }
+      if (elBtnPourCup) {
+        elBtnPourCup.disabled = true;
+        elBtnPourCup.classList.remove('ready-step', 'completed-step');
+        const txt = elBtnPourCup.querySelector('.wf-text');
+        if (txt) txt.innerText = '2. Rót Cốc';
+        const ico = elBtnPourCup.querySelector('.wf-icon');
+        if (ico) ico.innerText = '🧋';
+      }
+      if (elBtnSealCup) {
+        elBtnSealCup.disabled = true;
+        elBtnSealCup.classList.remove('ready-step', 'completed-step');
+        const txt = elBtnSealCup.querySelector('.wf-text');
+        if (txt) txt.innerText = '3. Dập Nắp';
+        const ico = elBtnSealCup.querySelector('.wf-icon');
+        if (ico) ico.innerText = '🖲️';
+      }
+      if (elBtnServe) {
+        elBtnServe.disabled = true;
+        elBtnServe.classList.remove('ready-step');
+      }
+    } else if (!isPoured) {
+      // Step 2: 2. Rót Cốc
+      if (elBtnShaker) {
+        elBtnShaker.disabled = false;
+        elBtnShaker.classList.remove('ready-step');
+        elBtnShaker.classList.add('completed-step');
+        const txt = elBtnShaker.querySelector('.wf-text');
+        if (txt) txt.innerText = '✓ Đã Lắc';
+        const ico = elBtnShaker.querySelector('.wf-icon');
+        if (ico) ico.innerText = '✅';
+      }
+      if (elBtnPourCup) {
+        elBtnPourCup.disabled = !hasOrder;
+        elBtnPourCup.classList.toggle('ready-step', hasOrder);
+        elBtnPourCup.classList.remove('completed-step');
+        const txt = elBtnPourCup.querySelector('.wf-text');
+        if (txt) txt.innerText = '2. Rót Cốc';
+        const ico = elBtnPourCup.querySelector('.wf-icon');
+        if (ico) ico.innerText = '🧋';
+      }
+      if (elBtnSealCup) {
+        elBtnSealCup.disabled = true;
+        elBtnSealCup.classList.remove('ready-step', 'completed-step');
+        const txt = elBtnSealCup.querySelector('.wf-text');
+        if (txt) txt.innerText = '3. Dập Nắp';
+        const ico = elBtnSealCup.querySelector('.wf-icon');
+        if (ico) ico.innerText = '🖲️';
+      }
+      if (elBtnServe) {
+        elBtnServe.disabled = true;
+        elBtnServe.classList.remove('ready-step');
+      }
+    } else if (!isSealed) {
+      // Step 3: 3. Dập Nắp
+      if (elBtnShaker) {
+        elBtnShaker.disabled = true;
+        elBtnShaker.classList.remove('ready-step');
+        elBtnShaker.classList.add('completed-step');
+        const txt = elBtnShaker.querySelector('.wf-text');
+        if (txt) txt.innerText = '✓ Đã Lắc';
+        const ico = elBtnShaker.querySelector('.wf-icon');
+        if (ico) ico.innerText = '✅';
+      }
+      if (elBtnPourCup) {
+        elBtnPourCup.disabled = true;
+        elBtnPourCup.classList.remove('ready-step');
+        elBtnPourCup.classList.add('completed-step');
+        const txt = elBtnPourCup.querySelector('.wf-text');
+        if (txt) txt.innerText = '✓ Đã Rót';
+        const ico = elBtnPourCup.querySelector('.wf-icon');
+        if (ico) ico.innerText = '✅';
+      }
+      if (elBtnSealCup) {
+        elBtnSealCup.disabled = !hasOrder;
+        elBtnSealCup.classList.toggle('ready-step', hasOrder);
+        elBtnSealCup.classList.remove('completed-step');
+        const txt = elBtnSealCup.querySelector('.wf-text');
+        if (txt) txt.innerText = '3. Dập Nắp';
+        const ico = elBtnSealCup.querySelector('.wf-icon');
+        if (ico) ico.innerText = '🖲️';
+      }
+      if (elBtnServe) {
+        elBtnServe.disabled = true;
+        elBtnServe.classList.remove('ready-step');
+      }
+    } else {
+      // Step 4: GIAO LY (SERVE)
+      if (elBtnShaker) {
+        elBtnShaker.disabled = true;
+        elBtnShaker.classList.remove('ready-step');
+        elBtnShaker.classList.add('completed-step');
+      }
+      if (elBtnPourCup) {
+        elBtnPourCup.disabled = true;
+        elBtnPourCup.classList.remove('ready-step');
+        elBtnPourCup.classList.add('completed-step');
+      }
+      if (elBtnSealCup) {
+        elBtnSealCup.disabled = true;
+        elBtnSealCup.classList.remove('ready-step');
+        elBtnSealCup.classList.add('completed-step');
+        const txt = elBtnSealCup.querySelector('.wf-text');
+        if (txt) txt.innerText = '✓ Đã Dập';
+        const ico = elBtnSealCup.querySelector('.wf-icon');
+        if (ico) ico.innerText = '✅';
+      }
+      if (elBtnServe) {
+        elBtnServe.disabled = !hasOrder;
+        elBtnServe.classList.toggle('ready-step', hasOrder);
+      }
+    }
+  }
+
   function renderOrderTicket() {
+    updateWorkflowButtons();
     if (!currentOrder) {
       elOrderSection.innerHTML = `<div class="order-box no-order">Đang ngóng chờ khách hàng tiếp theo ghé quầy... 🧋</div>`;
-      elBtnServe.disabled = true;
       return;
     }
 
-    elBtnServe.disabled = false;
     elOrderSection.innerHTML = `
       <div class="order-box">
         <div class="order-header">
@@ -733,6 +866,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectedToppings = [];
       }
       isShaken = false;
+      isPoured = false;
+      isSealed = false;
+      updateWorkflowButtons();
       updateMixingButtonsState();
       canvas.setDrinkPreview({ tea: selectedTea, toppings: selectedToppings });
     });
@@ -797,33 +933,95 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Shaker action with first-person animation
-  elBtnShaker.addEventListener('click', () => {
-    if (elBtnShaker.disabled) return;
-    elBtnShaker.disabled = true;
-    sound.shake();
-    isShaken = true;
-    canvas.setShaking(true);
-    if (workstation) {
-      workstation.triggerHandAction('shake');
-      workstation.addFloatingText('💣 LẮC ĐỀU QUẢ BOM! 💥', '#bd93f9');
-    }
-    elBtnShaker.innerText = 'Đang Lắc Bom Cực Mạnh... 💣';
-    setTimeout(() => {
-      canvas.setShaking(false);
-      elBtnShaker.innerText = 'Đã Lắc Bom Xong ✨';
-    }, 1100);
-    setTimeout(() => {
-      elBtnShaker.innerText = 'Lắc Bom Pha Chế 💣';
-      elBtnShaker.disabled = false;
-    }, 2000);
-  });
+  // --- 4-STEP WORKFLOW HANDLERS ---
+  // Step 1: Lắc Bom Pha Chế
+  if (elBtnShaker) {
+    elBtnShaker.addEventListener('click', () => {
+      if (elBtnShaker.disabled) return;
+      elBtnShaker.disabled = true;
+      sound.shake();
+      canvas.setShaking(true);
+      if (workstation) {
+        workstation.triggerHandAction('shake');
+        workstation.addFloatingText('💣 LẮC ĐỀU QUẢ BOM! 💥', '#bd93f9');
+      }
+      const txt = elBtnShaker.querySelector('.wf-text');
+      if (txt) txt.innerText = 'Đang Lắc...';
 
-  // 4. Serve Drink Action
+      setTimeout(() => {
+        canvas.setShaking(false);
+        isShaken = true;
+        updateWorkflowButtons();
+        showToast('✨ Đã lắc đều! Hãy bấm [2. Rót Cốc] để đổ vào ly.', 2400);
+      }, 1100);
+    });
+  }
+
+  // Step 2: Rót Trà Sữa Vào Cốc
+  if (elBtnPourCup) {
+    elBtnPourCup.addEventListener('click', () => {
+      if (elBtnPourCup.disabled) return;
+      if (!isShaken) {
+        showToast('Hãy bấm [1. Lắc Bom] trước!');
+        return;
+      }
+      elBtnPourCup.disabled = true;
+      sound.pour();
+      if (workstation) {
+        workstation.triggerHandAction('pour_cup');
+        workstation.addFloatingText('🧋 RÓT TRÀ SỮA VÀO CỐC! ✨', '#f4c430');
+      }
+      const txt = elBtnPourCup.querySelector('.wf-text');
+      if (txt) txt.innerText = 'Đang Rót...';
+
+      setTimeout(() => {
+        isPoured = true;
+        if (workstation) workstation.setCupState('filled');
+        updateWorkflowButtons();
+        showToast('✨ Đã rót đầy ly! Hãy bấm [3. Dập Nắp] để niêm phong miệng cốc.', 2500);
+      }, 1150);
+    });
+  }
+
+  // Step 3: Dập Nắp Miệng Cốc
+  if (elBtnSealCup) {
+    elBtnSealCup.addEventListener('click', () => {
+      if (elBtnSealCup.disabled) return;
+      if (!isPoured) {
+        showToast('Hãy bấm [2. Rót Cốc] trước!');
+        return;
+      }
+      elBtnSealCup.disabled = true;
+      sound.seal();
+      if (workstation) {
+        workstation.triggerHandAction('seal_cup');
+        workstation.addFloatingText('🖲️ DẬP NẮP NIÊM PHONG! 🔒', '#50fa7b');
+      }
+      const txt = elBtnSealCup.querySelector('.wf-text');
+      if (txt) txt.innerText = 'Đang Dập...';
+
+      setTimeout(() => {
+        isSealed = true;
+        if (workstation) workstation.setCupState('sealed');
+        updateWorkflowButtons();
+        showToast('🎉 Đã dập nắp hoàn chỉnh! Bấm [GIAO LY (SERVE)] cho khách nào!', 2600);
+      }, 1100);
+    });
+  }
+
+  // Step 4: Giao Ly (Serve Drink Action)
   elBtnServe.addEventListener('click', async () => {
     if (!currentOrder) return;
     if (!isShaken) {
-      showToast('Hãy lắc bom pha chế trước khi giao ly!');
+      showToast('Hãy bấm [1. Lắc Bom] để trộn đều nguyên liệu!');
+      return;
+    }
+    if (!isPoured) {
+      showToast('Hãy bấm [2. Rót Cốc] để đổ trà sữa vào cốc!');
+      return;
+    }
+    if (!isSealed) {
+      showToast('Hãy bấm [3. Dập Nắp] để niêm phong ly trước khi giao!');
       return;
     }
     elBtnServe.disabled = true;
@@ -845,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if (selectedTea === 'lai') chosenRecipeId = 'tra_dao_cam_sa';
     else if (selectedTea === 'olong_nuong') chosenRecipeId = 'tra_olong_nuong';
 
-    sound.seal();
+    sound.bell();
 
     try {
       const res = await API.serveOrder(
@@ -886,7 +1084,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         orderQueue.shift();
         currentOrder = null;
         isShaken = false;
+        isPoured = false;
+        isSealed = false;
+        if (workstation) workstation.resetCupState();
         renderOrderTicket();
+        updateWorkflowButtons();
 
         // Progress through wave or schedule next wave
         setTimeout(() => {
@@ -901,6 +1103,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           showToast(`❌ ${res.message}`, 4000);
         }
         isShaken = false;
+        isPoured = false;
+        isSealed = false;
+        if (workstation) workstation.resetCupState();
+        updateWorkflowButtons();
         handleOrderTimeout();
       }
     } catch (err) {
