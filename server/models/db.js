@@ -86,11 +86,11 @@ const db = {
             customer_name TEXT NOT NULL,
             sugar TEXT NOT NULL,
             ice TEXT NOT NULL,
-            toppings TEXT NOT NULL,
-            price INTEGER NOT NULL,
-            original_price INTEGER,
-            negotiation TEXT,
-            created_at BIGINT NOT NULL,
+             toppings TEXT NOT NULL,
+             price INTEGER NOT NULL,
+             original_price INTEGER,
+             negotiation TEXT,
+             created_at BIGINT NOT NULL,
             expires_at BIGINT NOT NULL
           );
 
@@ -101,8 +101,14 @@ const db = {
             detail TEXT,
             logged_at TEXT NOT NULL
           );
-        `);
-        console.log('Neon PostgreSQL schema initialized successfully.');
+         `);
+         await client.query(`
+           ALTER TABLE active_orders ADD COLUMN IF NOT EXISTS original_price INTEGER;
+           ALTER TABLE active_orders ADD COLUMN IF NOT EXISTS negotiation TEXT;
+            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS properties TEXT DEFAULT '{}';
+            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS decorations TEXT DEFAULT '[]';
+         `);
+         console.log('Neon PostgreSQL schema initialized successfully.');
       } finally {
         client.release();
       }
@@ -110,7 +116,7 @@ const db = {
       // Local fallback to SQLite
       console.log('No DATABASE_URL found. Initializing local SQLite database...');
       const { DatabaseSync } = require('node:sqlite');
-      const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'hyhy_game.db');
+      const dbPath = process.env.DB_PATH || path.join(__dirname, '..', '..', 'data', 'hyhy_game.db');
       const dataDir = path.dirname(dbPath);
       if (!fs.existsSync(dataDir)) {
         fs.mkdirSync(dataDir, { recursive: true });
@@ -135,9 +141,9 @@ const db = {
       try { sqliteDb.exec('ALTER TABLE stores ADD COLUMN password_hash TEXT;'); } catch (e) {}
       try { sqliteDb.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_stores_username ON stores(username);'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN rest_until_ts INTEGER DEFAULT 0;'); } catch (e) {}
-      try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN active_buffs TEXT DEFAULT \'{}\';'); } catch (e) {}
-      try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN properties TEXT DEFAULT \'{}\';'); } catch (e) {}
-      try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN decorations TEXT DEFAULT \'[]\';'); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN active_buffs TEXT DEFAULT '{}';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN properties TEXT DEFAULT '{}';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN decorations TEXT DEFAULT '[]';"); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN negotiation TEXT;'); } catch (e) {}
 
@@ -158,8 +164,6 @@ const db = {
           updated_at TEXT,
           rest_until_ts INTEGER DEFAULT 0,
           active_buffs TEXT DEFAULT '{}',
-          properties TEXT DEFAULT '{}',
-          decorations TEXT DEFAULT '[]',
           FOREIGN KEY(store_id) REFERENCES stores(id) ON DELETE CASCADE
         );
 
@@ -192,11 +196,11 @@ const db = {
           customer_name TEXT NOT NULL,
           sugar TEXT NOT NULL,
           ice TEXT NOT NULL,
-          toppings TEXT NOT NULL,
-          price INTEGER NOT NULL,
-          original_price INTEGER,
-          negotiation TEXT,
-          created_at INTEGER NOT NULL,
+           toppings TEXT NOT NULL,
+           price INTEGER NOT NULL,
+           original_price INTEGER,
+           negotiation TEXT,
+           created_at INTEGER NOT NULL,
           expires_at INTEGER NOT NULL,
           FOREIGN KEY(store_id) REFERENCES stores(id) ON DELETE CASCADE
         );

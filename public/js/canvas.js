@@ -1284,8 +1284,16 @@ class GameCanvas {
 
   // Smooth Anatomical Face & Expression Helper
   drawOrganicHead(ctx, cx, cy, rx, ry, skinColor, blushColor, isBlinking, eyeColor = '#1a1016', isHappy = false) {
-    // Chin and jaw curve
-    ctx.fillStyle = skinColor;
+    // Chin and jaw curve with a warm, directional skin gradient.
+    // The low-contrast shading keeps the pixel-art silhouette soft instead of flat.
+    const skinGrad = ctx.createRadialGradient(
+      cx - rx * 0.35, cy - ry * 0.55, 0,
+      cx + rx * 0.45, cy + ry * 0.8, Math.max(rx, ry) * 1.8
+    );
+    skinGrad.addColorStop(0, '#fff7e8');
+    skinGrad.addColorStop(0.42, skinColor);
+    skinGrad.addColorStop(1, 'rgba(166, 92, 72, 0.42)');
+    ctx.fillStyle = skinGrad;
     ctx.beginPath();
     ctx.moveTo(cx - rx, cy - ry * 0.2);
     ctx.quadraticCurveTo(cx - rx, cy + ry * 0.7, cx, cy + ry);
@@ -1293,6 +1301,17 @@ class GameCanvas {
     ctx.quadraticCurveTo(cx + rx, cy - ry, cx, cy - ry);
     ctx.quadraticCurveTo(cx - rx, cy - ry, cx - rx, cy - ry * 0.2);
     ctx.fill();
+
+    // Feathered cheek light and a soft jaw rim.
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.beginPath();
+    ctx.ellipse(cx - rx * 0.42, cy - ry * 0.38, rx * 0.28, ry * 0.42, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(110, 57, 53, 0.24)';
+    ctx.lineWidth = 0.55;
+    ctx.beginPath();
+    ctx.arc(cx, cy + ry * 0.1, rx * 0.86, Math.PI * 0.12, Math.PI * 0.88);
+    ctx.stroke();
 
     // Soft curved ears
     ctx.beginPath();
@@ -1445,6 +1464,44 @@ class GameCanvas {
     ctx.beginPath();
     ctx.roundRect(x - len * 0.45, y + h * 0.4, len * 1.1, h * 0.4, 1.5);
     ctx.fill();
+  }
+
+  // Soft fabric finish: gentle rim light and fold shading shared by all outfits.
+  // Keeps garments from reading as flat blocks without hiding their detail.
+  drawFabricFinish(ctx, cx, top, width, height, baseShade = 'rgba(0, 0, 0, 0.16)') {
+    const grad = ctx.createLinearGradient(cx - width / 2, top, cx + width / 2, top + height);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
+    grad.addColorStop(0.45, 'rgba(255, 255, 255, 0)');
+    grad.addColorStop(1, baseShade);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(cx - width / 2, top, width, height, [3, 3, 3, 3]);
+    ctx.fill();
+
+    // Subtle drape folds
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(cx - width * 0.18, top + height * 0.12);
+    ctx.quadraticCurveTo(cx - width * 0.24, top + height * 0.5, cx - width * 0.16, top + height * 0.9);
+    ctx.moveTo(cx + width * 0.2, top + height * 0.14);
+    ctx.quadraticCurveTo(cx + width * 0.26, top + height * 0.52, cx + width * 0.18, top + height * 0.88);
+    ctx.stroke();
+  }
+
+  // Silk hair gloss: broad soft band plus tight specular streaks.
+  drawHairGloss(ctx, cx, cy, scale = 1) {
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(cx - 1.5 * scale, cy - 2.2 * scale, 4.2 * scale, 1.5 * scale, -0.42, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    ctx.ellipse(cx + 1.8 * scale, cy - 1.4 * scale, 2.2 * scale, 0.8 * scale, -0.28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   // HYHY - BARISTA CHỦ QUÁN (Toàn thân chi tiết: giày Oxford viền chỉ, vớ đen, váy xếp ly viền vàng, tạp dề xanh ngọc bích, tóc bóng halo)
@@ -1618,6 +1675,9 @@ class GameCanvas {
     ctx.arc(hx + 12, hy + 4 + bob, 1.4, 0, Math.PI * 2);
     ctx.fill();
 
+    // Fine chestnut hair sheen, painted before the beret so the accessory remains crisp.
+    this.drawHairGloss(ctx, hx + 6.5, hy + 1 + bob, 0.9);
+
     // 9. CHIC PARISIAN BARISTA BERET (Mũ nồi xanh lá đính huy hiệu sao vàng)
     ctx.fillStyle = '#27ae60';
     ctx.beginPath();
@@ -1640,6 +1700,9 @@ class GameCanvas {
     // 10. UPPER ARMS (Down to elbow level behind counter)
     this.drawCurvedLimb(ctx, hx - 2, hy + 18 + bob, hx - 1, hy + 25 + bob, 2.4, 2.0, '#ffe0bd');
     this.drawCurvedLimb(ctx, hx + 14, hy + 18 + bob, hx + 13, hy + 24 + bob, 2.4, 2.0, '#ffe0bd');
+
+    // Fabric drape finishing on apron and blouse for depth.
+    this.drawFabricFinish(ctx, hx + 6.5, hy + 18 + bob, 14, 20, 'rgba(0, 0, 0, 0.22)');
   }
 
   // --- HYHY FOREARMS & INTERACTIVE ACTIONS (Resting / shaking over countertop) ---
@@ -2921,6 +2984,27 @@ class GameCanvas {
         ctx.fill();
         break;
       }
+    }
+
+    // --- Shared hair gloss & outfit finishing for extra polish ---
+    // (drawn after each archetype's costume so details stay readable underneath)
+    if (type === 7) {
+      // Couple: separate gloss for Duy and Linh
+      this.drawHairGloss(ctx, x + 5, y - 4.5, 0.65);
+      this.drawHairGloss(ctx, x + 15, y - 4.5, 0.65);
+      this.drawFabricFinish(ctx, x + 4, y + 7, 12, 18);
+      this.drawFabricFinish(ctx, x + 16, y + 7, 12, 17);
+    } else if (type === 4) {
+      // Shipper wears a helmet, so only the jacket gets fabric finishing.
+      this.drawHairGloss(ctx, x + 9.5, y - 6, 0.8);
+      this.drawFabricFinish(ctx, x + 9.5, y + 7, 17, 19);
+    } else if (type === 5) {
+      // Elder: gloss stays on the khan-dong silk wrap, áo dài gets a rich sheen.
+      this.drawHairGloss(ctx, x + 9.5, y - 6.5, 0.8);
+      this.drawFabricFinish(ctx, x + 9.5, y + 6, 17, 27, 'rgba(0, 10, 40, 0.25)');
+    } else {
+      this.drawHairGloss(ctx, x + 9.5, y - 5, 0.85);
+      this.drawFabricFinish(ctx, x + 9.5, y + 7, 17, 18);
     }
 
     // --- CUSTOMER DRINKING HAPPINESS EFFECTS (Floating Hearts & Sipping Boba) ---

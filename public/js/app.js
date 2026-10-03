@@ -53,6 +53,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => { toast.style.display = 'none'; }, duration);
   }
 
+  // Keep the page from scrolling behind an open mobile modal.
+  function syncModalScrollLock() {
+    const modalOpen = [...document.querySelectorAll('.modal-overlay')]
+      .some(modal => getComputedStyle(modal).display !== 'none');
+    document.body.classList.toggle('modal-open', modalOpen);
+  }
+
+  const modalObserver = new MutationObserver(syncModalScrollLock);
+  modalObserver.observe(document.body, { attributes: true, attributeFilter: ['style', 'class'], subtree: true });
+  syncModalScrollLock();
+
   // 1. Initialize or Load Store
   async function initStore() {
     setupAuthEvents();
@@ -471,6 +482,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     orderStartTime = Date.now();
     sound.bell();
 
+    // Reset shaker state for new drink
+    isShaken = false;
+    if (elBtnShaker) {
+      elBtnShaker.innerText = 'Lắc Shaker 🥤';
+      elBtnShaker.disabled = false;
+    }
+    if (elBtnServe) {
+      elBtnServe.disabled = false;
+    }
+
     renderOrderTicket();
     updateUI();
     checkThiefEncounter();
@@ -633,78 +654,104 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Shaker action
   elBtnShaker.addEventListener('click', () => {
+    if (elBtnShaker.disabled) return;
+    elBtnShaker.disabled = true;
     sound.shake();
     isShaken = true;
     canvas.setShaking(true);
     elBtnShaker.innerText = 'Đang Lắc... 🥤';
-    setTimeout(() => { 
+    setTimeout(() => {
       canvas.setShaking(false);
-      elBtnShaker.innerText = 'Đã Lắc Xong ✨'; 
+      elBtnShaker.innerText = 'Đã Lắc Xong ✨';
     }, 800);
-    setTimeout(() => { elBtnShaker.innerText = 'Lắc Shaker 🥤'; }, 1800);
+    setTimeout(() => {
+      elBtnShaker.innerText = 'Lắc Shaker 🥤';
+      elBtnShaker.disabled = false;
+    }, 1800);
   });
 
   // 4. Serve Drink Action
   elBtnServe.addEventListener('click', async () => {
     if (!currentOrder) return;
+    if (!isShaken) {
+      showToast('Hãy lắc shaker trước khi giao ly!');
+      return;
+    }
     elBtnServe.disabled = true;
 
     const timeTaken = Date.now() - orderStartTime;
 
     // Check recipe mapping from chosen tea
     let chosenRecipeId = 'tra_sua_truyen_thong';
-    if (selectedTea === 'den' && selectedToppings.length === 0) chosenRecipeId = 'hong_tra_tac';
-    else if (selectedTea === 'thai_xanh') chosenRecipeId = 'tra_thai_xanh';
+    if (selectedTea === 'den') {
+      if (currentOrder && currentOrder.recipeId === 'hong_tra_tac' && !selectedToppings.includes('tranchau_den')) {
+        chosenRecipeId = 'hong_tra_tac';
+      } else if (selectedToppings.length === 0) {
+        chosenRecipeId = 'hong_tra_tac';
+      } else {
+        chosenRecipeId = 'tra_sua_truyen_thong';
+      }
+    } else if (selectedTea === 'thai_xanh') chosenRecipeId = 'tra_thai_xanh';
     else if (selectedTea === 'sua_tuoi') chosenRecipeId = 'sua_tuoi_duong_den';
     else if (selectedTea === 'lai') chosenRecipeId = 'tra_dao_cam_sa';
     else if (selectedTea === 'olong_nuong') chosenRecipeId = 'tra_olong_nuong';
 
     sound.seal();
 
-    const res = await API.serveOrder(
-      currentOrder.orderId,
-      timeTaken,
-      chosenRecipeId,
-      selectedSugar,
-      selectedIce
-    );
+    try {
+      const res = await API.serveOrder(
+        currentOrder.orderId,
+        timeTaken,
+        chosenRecipeId,
+        selectedSugar,
+        selectedIce
+      );
 
-    if (res.isJailed) {
-      showJailModal(res.jailReason);
-      return;
-    }
-
-    if (res.success) {
-      sound.coin();
-      clearInterval(orderTimerInterval);
-      canvas.triggerSuccessEffects(res.payout);
-
-      showToast(`🎉 Giao thành công! Nhận +${res.payout.toLocaleString('vi-VN')}đ`);
-
-      if (res.tiktokerViral) {
-        setTimeout(() => {
-          showToast(`🔥 VIDEO TIKTOK CỦA TÚ VIRAL TRIỆU VIEW! Lượng khách kéo đến nườm nượp!`, 6000);
-        }, 800);
+      if (res && res.isJailed) {
+        showJailModal(res.jailReason);
+        return;
       }
 
-      // Refresh store state
-      storeState = await API.getState();
-      updateUI();
+      if (res && res.success) {
+        sound.coin();
+        clearInterval(orderTimerInterval);
+        canvas.triggerSuccessEffects(res.payout);
 
-      orderQueue.shift();
-      currentOrder = null;
-      renderOrderTicket();
+        showToast(`🎉 Giao thành công! Nhận +${res.payout.toLocaleString('vi-VN')}đ`);
 
-      // Progress through wave or schedule next wave
-      setTimeout(() => {
-        if (orderQueue.length > 0) {
-          startNextOrderInQueue();
-        } else {
-          scheduleNextOrder(3000);
+        if (res.tiktokerViral) {
+          setTimeout(() => {
+            showToast(`🔥 VIDEO TIKTOK CỦA TÚ VIRAL TRIỆU VIEW! Lượng khách kéo đến nườm nượp!`, 6000);
+          }, 800);
         }
-      }, 1200);
-    } else {
-      handleOrderTimeout();
+
+        // Refresh store state
+        storeState = await API.getState();
+        updateUI();
+
+        orderQueue.shift();
+        currentOrder = null;
+        isShaken = false;
+        renderOrderTicket();
+
+        // Progress through wave or schedule next wave
+        setTimeout(() => {
+          if (orderQueue.length > 0) {
+            startNextOrderInQueue();
+          } else {
+            scheduleNextOrder(3000);
+          }
+        }, 1200);
+      } else {
+        if (res && res.message) {
+          showToast(`❌ ${res.message}`, 4000);
+        }
+        isShaken = false;
+        handleOrderTimeout();
+      }
+    } catch (err) {
+      console.error('Serve order error:', err);
+      elBtnServe.disabled = false;
     }
   });
 
@@ -900,7 +947,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Canvas click to catch thief
     const sceneCanvas = document.getElementById('scene');
     if (sceneCanvas) {
-      sceneCanvas.addEventListener('click', async (e) => {
+      sceneCanvas.addEventListener('pointerup', async (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         const rect = sceneCanvas.getBoundingClientRect();
         const clickX = (e.clientX - rect.left) * (360 / rect.width);
         const clickY = (e.clientY - rect.top) * (200 / rect.height);
