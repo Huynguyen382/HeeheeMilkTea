@@ -76,12 +76,21 @@
     </div>
   </section>
 
-  <!-- MIXING COUNTER STATION -->
+  <!-- MIXING COUNTER STATION (Góc nhìn thứ nhất: Bàn Pha Chế & Cốc Trà Sữa) -->
   <main class="mixing-counter">
-    <!-- Cốt Trà -->
-    <div>
-      <div class="section-label">1. Chọn Cốt Trà:</div>
-      <div class="options-row">
+    <!-- HERO FIRST-PERSON WORKSTATION (Bàn Pha Chế & Cốc Trà Sữa Trung Tâm) -->
+    <div class="workstation-wrapper">
+      <canvas id="workstation-canvas" width="440" height="260"></canvas>
+    </div>
+
+    <!-- TACTILE BARISTA SHELVES -->
+    <!-- 1. Kệ Cốt Trà -->
+    <div class="barista-shelf">
+      <div class="shelf-header">
+        <span class="section-label">1. Cốt Trà Thơm Nồng:</span>
+        <span class="shelf-hint">Rót trực tiếp vào ly</span>
+      </div>
+      <div class="options-row tea-shelf">
         <button class="btn-select active" data-tea="den">🍵 Trà Đen Đậm</button>
         <button class="btn-select" data-tea="thai_xanh">🌿 Thái Xanh</button>
         <button class="btn-select" data-tea="sua_tuoi">🥛 Sữa Tươi</button>
@@ -90,28 +99,68 @@
       </div>
     </div>
 
-    <!-- Đường & Đá -->
-    <div>
-      <div class="section-label">2. Mức Đường & Lượng Đá:</div>
-      <div class="options-row" style="margin-bottom: 4px;">
-        <button class="btn-select" data-sugar="0%">0% Đường</button>
-        <button class="btn-select" data-sugar="30%">30% Đường</button>
-        <button class="btn-select active" data-sugar="50%">50% Đường</button>
-        <button class="btn-select" data-sugar="70%">70% Đường</button>
-        <button class="btn-select" data-sugar="100%">100% Đường</button>
+    <!-- 2. Kệ Gia Vị & Nhiệt Độ (Thả Đường & Gắp Đá Từng Mức) -->
+    <div class="barista-shelf">
+      <div class="shelf-header">
+        <span class="section-label">2. Đường & Đá (Thả Từng Mức):</span>
+        <span class="shelf-hint">Mỗi lần thả tăng 1 mức ngọt / lạnh</span>
       </div>
-      <div class="options-row">
-        <button class="btn-select" data-ice="Nóng">♨️ Nóng</button>
-        <button class="btn-select" data-ice="Ít đá">🧊 Ít đá</button>
-        <button class="btn-select active" data-ice="Vừa đá">🧊🧊 Vừa đá</button>
-        <button class="btn-select" data-ice="Đầy đá">❄️ Đầy đá</button>
+      <div class="meter-actions-row">
+        <!-- Nút Thêm Đường Từng Mức -->
+        <button class="btn-step-gauge btn-sugar-step" id="btn-add-sugar" title="Thêm muỗng đường vào ly">
+          <span class="step-icon">🍯</span>
+          <span class="step-info">
+            <span class="step-title">+ Thêm Đường</span>
+            <span class="step-badge" id="sugar-badge">50% Đường</span>
+          </span>
+        </button>
+
+        <!-- Nút Gắp Đá Từng Mức -->
+        <button class="btn-step-gauge btn-ice-step" id="btn-add-ice" title="Dùng kẹp gắp thêm đá">
+          <span class="step-icon">🧊</span>
+          <span class="step-info">
+            <span class="step-title">+ Gắp Thêm Đá</span>
+            <span class="step-badge" id="ice-badge">Vừa đá</span>
+          </span>
+        </button>
+
+        <!-- Nút Làm Lại Ly -->
+        <button class="btn-step-gauge btn-reset-cup" id="btn-reset-cup" title="Đổi ly trà sữa mới">
+          <span class="step-icon">🔄</span>
+          <span class="step-info">
+            <span class="step-title">Đổi Ly Mới</span>
+            <span class="step-badge">0% / Nóng</span>
+          </span>
+        </button>
+      </div>
+
+      <!-- Quick Selector Pills -->
+      <div class="compact-selectors">
+        <div class="mini-pills-row" id="sugar-pills">
+          <span class="pill-label">Đường:</span>
+          <button class="btn-pill" data-sugar="0%">0%</button>
+          <button class="btn-pill" data-sugar="30%">30%</button>
+          <button class="btn-pill active" data-sugar="50%">50%</button>
+          <button class="btn-pill" data-sugar="70%">70%</button>
+          <button class="btn-pill" data-sugar="100%">100%</button>
+        </div>
+        <div class="mini-pills-row" id="ice-pills">
+          <span class="pill-label">Đá:</span>
+          <button class="btn-pill" data-ice="Nóng">♨️ Nóng</button>
+          <button class="btn-pill" data-ice="Ít đá">🧊 Ít</button>
+          <button class="btn-pill active" data-ice="Vừa đá">🧊🧊 Vừa</button>
+          <button class="btn-pill" data-ice="Đầy đá">❄️ Đầy</button>
+        </div>
       </div>
     </div>
 
-    <!-- Topping -->
-    <div>
-      <div class="section-label">3. Topping Kèm Theo:</div>
-      <div class="options-row">
+    <!-- 3. Kệ Topping -->
+    <div class="barista-shelf">
+      <div class="shelf-header">
+        <span class="section-label">3. Topping Kèm Theo:</span>
+        <span class="shelf-hint">Múc thả vào đáy ly</span>
+      </div>
+      <div class="options-row topping-shelf">
         <button class="btn-select" data-topping="tranchau_den">⚫ Trân Châu Đen</button>
         <button class="btn-select" data-topping="thach_la_dua">🍃 Thạch Lá Dứa</button>
         <button class="btn-select" data-topping="tranchau_duongden">🍯 Đường Đen</button>
@@ -600,6 +649,7 @@
 
 <script src="js/audio.js"></script>
 <script src="js/canvas.js"></script>
+<script src="js/workstation.js"></script>
 <script src="js/api.js"></script>
 <script src="js/app.js"></script>
 </body>

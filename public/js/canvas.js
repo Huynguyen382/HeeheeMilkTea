@@ -1284,31 +1284,32 @@ class GameCanvas {
 
   // Smooth Anatomical Face & Expression Helper
   drawOrganicHead(ctx, cx, cy, rx, ry, skinColor, blushColor, isBlinking, eyeColor = '#1a1016', isHappy = false) {
-    // Chin and jaw curve with a warm, directional skin gradient.
-    // The low-contrast shading keeps the pixel-art silhouette soft instead of flat.
+    // Chin and jaw curve with a warm, soft directional skin gradient.
     const skinGrad = ctx.createRadialGradient(
       cx - rx * 0.35, cy - ry * 0.55, 0,
       cx + rx * 0.45, cy + ry * 0.8, Math.max(rx, ry) * 1.8
     );
-    skinGrad.addColorStop(0, '#fff7e8');
-    skinGrad.addColorStop(0.42, skinColor);
-    skinGrad.addColorStop(1, 'rgba(166, 92, 72, 0.42)');
+    skinGrad.addColorStop(0, '#fff9f0');
+    skinGrad.addColorStop(0.38, skinColor);
+    skinGrad.addColorStop(0.82, 'rgba(215, 135, 115, 0.42)');
+    skinGrad.addColorStop(1, 'rgba(175, 95, 78, 0.48)');
     ctx.fillStyle = skinGrad;
     ctx.beginPath();
-    ctx.moveTo(cx - rx, cy - ry * 0.2);
-    ctx.quadraticCurveTo(cx - rx, cy + ry * 0.7, cx, cy + ry);
-    ctx.quadraticCurveTo(cx + rx, cy + ry * 0.7, cx + rx, cy - ry * 0.2);
-    ctx.quadraticCurveTo(cx + rx, cy - ry, cx, cy - ry);
-    ctx.quadraticCurveTo(cx - rx, cy - ry, cx - rx, cy - ry * 0.2);
+    ctx.moveTo(cx - rx, cy - ry * 0.25);
+    ctx.quadraticCurveTo(cx - rx * 0.98, cy + ry * 0.55, cx - rx * 0.45, cy + ry * 0.88);
+    ctx.quadraticCurveTo(cx, cy + ry * 1.02, cx + rx * 0.45, cy + ry * 0.88);
+    ctx.quadraticCurveTo(cx + rx * 0.98, cy + ry * 0.55, cx + rx, cy - ry * 0.25);
+    ctx.quadraticCurveTo(cx + rx * 0.9, cy - ry * 0.95, cx, cy - ry);
+    ctx.quadraticCurveTo(cx - rx * 0.9, cy - ry * 0.95, cx - rx, cy - ry * 0.25);
     ctx.fill();
 
-    // Feathered cheek light and a soft jaw rim.
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+    // Feathered cheek light and a soft jaw rim
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
     ctx.beginPath();
     ctx.ellipse(cx - rx * 0.42, cy - ry * 0.38, rx * 0.28, ry * 0.42, -0.35, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(110, 57, 53, 0.24)';
-    ctx.lineWidth = 0.55;
+    ctx.strokeStyle = 'rgba(110, 57, 53, 0.2)';
+    ctx.lineWidth = 0.5;
     ctx.beginPath();
     ctx.arc(cx, cy + ry * 0.1, rx * 0.86, Math.PI * 0.12, Math.PI * 0.88);
     ctx.stroke();
@@ -1320,25 +1321,42 @@ class GameCanvas {
     ctx.fill();
 
     // 1. Soft chin shadow contour
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
     ctx.beginPath();
     ctx.ellipse(cx, cy + ry * 0.92, rx * 0.7, ry * 0.22, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 2. Soft blushing anime cheeks with sparkle dots
+    // 2. Cute subtle nose contour & soft highlight tip
+    ctx.fillStyle = 'rgba(165, 85, 70, 0.26)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + ry * 0.22, 0.8, 1.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.beginPath();
+    ctx.arc(cx - 0.4, cy + ry * 0.16, 0.7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. Soft airbrushed anime blush with radiant diffusion & twinkle dots
     if (blushColor || isHappy) {
-      ctx.fillStyle = isHappy ? 'rgba(255, 99, 132, 0.68)' : blushColor;
-      ctx.beginPath();
-      ctx.ellipse(cx - rx * 0.52, cy + ry * 0.35, isHappy ? 3.2 : 2.5, 1.8, 0, 0, Math.PI * 2);
-      ctx.ellipse(cx + rx * 0.52, cy + ry * 0.35, isHappy ? 3.2 : 2.5, 1.8, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Anime blush sparkle dots
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.fillRect(cx - rx * 0.52 - 0.5, cy + ry * 0.35 - 0.5, 1.2, 1.2);
-      ctx.fillRect(cx + rx * 0.52 - 0.5, cy + ry * 0.35 - 0.5, 1.2, 1.2);
+      const bColor = isHappy ? 'rgba(255, 99, 132, 0.75)' : (blushColor || 'rgba(255, 125, 125, 0.42)');
+      [-1, 1].forEach(side => {
+        const bx = cx + side * rx * 0.52;
+        const by = cy + ry * 0.35;
+        const bGrad = ctx.createRadialGradient(bx, by, 0, bx, by, rx * 0.42);
+        bGrad.addColorStop(0, bColor);
+        bGrad.addColorStop(0.7, 'rgba(255, 125, 125, 0.15)');
+        bGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = bGrad;
+        ctx.beginPath();
+        ctx.ellipse(bx, by, isHappy ? 3.5 : 2.8, 1.9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Anime blush twinkle dots
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.fillRect(bx - 0.5, by - 0.5, 1.1, 1.1);
+      });
     }
 
-    // 3. High-Fidelity Anime Eyes
+    // 4. High-Fidelity Anime Eyes
     const eyeSpacing = rx * 0.48;
     const eyeY = cy - ry * 0.05;
     if (isHappy) {
@@ -1365,10 +1383,22 @@ class GameCanvas {
       ctx.ellipse(cx + eyeSpacing, eyeY, 2.2, 2.8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Colored Iris
-      ctx.fillStyle = eyeColor;
+      // Colored Iris with depth gradient
+      const irisGradL = ctx.createLinearGradient(cx - eyeSpacing, eyeY - 2.5, cx - eyeSpacing, eyeY + 2.5);
+      irisGradL.addColorStop(0, '#100814');
+      irisGradL.addColorStop(0.55, eyeColor);
+      irisGradL.addColorStop(1, '#e8f0fe');
+      ctx.fillStyle = irisGradL;
       ctx.beginPath();
       ctx.ellipse(cx - eyeSpacing, eyeY + 0.2, 1.8, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const irisGradR = ctx.createLinearGradient(cx + eyeSpacing, eyeY - 2.5, cx + eyeSpacing, eyeY + 2.5);
+      irisGradR.addColorStop(0, '#100814');
+      irisGradR.addColorStop(0.55, eyeColor);
+      irisGradR.addColorStop(1, '#e8f0fe');
+      ctx.fillStyle = irisGradR;
+      ctx.beginPath();
       ctx.ellipse(cx + eyeSpacing, eyeY + 0.2, 1.8, 2.5, 0, 0, Math.PI * 2);
       ctx.fill();
 
@@ -1390,36 +1420,60 @@ class GameCanvas {
 
       // Upper Eyeliner & Lashes
       ctx.strokeStyle = '#1a1016';
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1.25;
       ctx.beginPath();
       ctx.arc(cx - eyeSpacing, eyeY - 1, 2.4, Math.PI * 1.1, Math.PI * 1.9);
       ctx.arc(cx + eyeSpacing, eyeY - 1, 2.4, Math.PI * 1.1, Math.PI * 1.9);
       ctx.stroke();
 
       // Double-eyelid crease
-      ctx.strokeStyle = 'rgba(26, 16, 22, 0.4)';
-      ctx.lineWidth = 0.6;
+      ctx.strokeStyle = 'rgba(26, 16, 22, 0.38)';
+      ctx.lineWidth = 0.55;
       ctx.beginPath();
       ctx.arc(cx - eyeSpacing, eyeY - 2.2, 2.0, Math.PI * 1.2, Math.PI * 1.8);
       ctx.arc(cx + eyeSpacing, eyeY - 2.2, 2.0, Math.PI * 1.2, Math.PI * 1.8);
       ctx.stroke();
     }
 
-    // 4. Delicate anime mouth with subtle lip gloss
-    ctx.strokeStyle = '#8b4513';
-    ctx.lineWidth = 0.8;
+    // 5. Delicate soft eyebrows
+    ctx.strokeStyle = 'rgba(45, 25, 35, 0.6)';
+    ctx.lineWidth = 0.7;
     ctx.beginPath();
+    ctx.arc(cx - eyeSpacing, eyeY - 2.9, 2.2, Math.PI * 1.15, Math.PI * 1.78);
+    ctx.arc(cx + eyeSpacing, eyeY - 2.9, 2.2, Math.PI * 1.22, Math.PI * 1.85);
+    ctx.stroke();
+
+    // 6. Delicate anime mouth with subtle lip gloss
     if (isHappy) {
-      ctx.fillStyle = '#ff7675';
-      ctx.arc(cx, cy + ry * 0.5, 2.4, 0, Math.PI);
+      const mouthGrad = ctx.createLinearGradient(cx, cy + ry * 0.48, cx, cy + ry * 0.78);
+      mouthGrad.addColorStop(0, '#e74c3c');
+      mouthGrad.addColorStop(1, '#ff7675');
+      ctx.fillStyle = mouthGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy + ry * 0.5, 2.5, 0, Math.PI);
       ctx.fill();
+      ctx.strokeStyle = '#8b263e';
+      ctx.lineWidth = 0.8;
       ctx.stroke();
       // Lip shine highlight
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(cx - 0.6, cy + ry * 0.5 + 1.2, 1.2, 0.8);
     } else {
-      ctx.arc(cx, cy + ry * 0.55, 1.4, 0.1, Math.PI - 0.1);
+      // Soft gentle smile with subtle pink tint
+      ctx.fillStyle = 'rgba(235, 110, 110, 0.3)';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + ry * 0.57, 1.6, 0.75, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#8b4513';
+      ctx.lineWidth = 0.75;
+      ctx.beginPath();
+      ctx.arc(cx, cy + ry * 0.52, 1.4, 0.15, Math.PI - 0.15);
       ctx.stroke();
+
+      // Lower lip tiny shine glint
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.fillRect(cx - 0.4, cy + ry * 0.58, 0.9, 0.6);
     }
   }
 
@@ -1466,40 +1520,63 @@ class GameCanvas {
     ctx.fill();
   }
 
-  // Soft fabric finish: gentle rim light and fold shading shared by all outfits.
-  // Keeps garments from reading as flat blocks without hiding their detail.
+  // Soft fabric finish: gentle rim light, draping folds, and crease shading
   drawFabricFinish(ctx, cx, top, width, height, baseShade = 'rgba(0, 0, 0, 0.16)') {
-    const grad = ctx.createLinearGradient(cx - width / 2, top, cx + width / 2, top + height);
-    grad.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
-    grad.addColorStop(0.45, 'rgba(255, 255, 255, 0)');
+    ctx.save();
+    const grad = ctx.createLinearGradient(cx - width * 0.6, top, cx + width * 0.6, top + height);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
+    grad.addColorStop(0.35, 'rgba(255, 255, 255, 0.03)');
+    grad.addColorStop(0.75, 'rgba(0, 0, 0, 0.05)');
     grad.addColorStop(1, baseShade);
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.roundRect(cx - width / 2, top, width, height, [3, 3, 3, 3]);
     ctx.fill();
 
-    // Subtle drape folds
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
+    // Organic soft draping crease curves
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.13)';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(cx - width * 0.22, top + height * 0.15);
+    ctx.quadraticCurveTo(cx - width * 0.3, top + height * 0.52, cx - width * 0.18, top + height * 0.88);
+    ctx.moveTo(cx + width * 0.24, top + height * 0.16);
+    ctx.quadraticCurveTo(cx + width * 0.32, top + height * 0.54, cx + width * 0.2, top + height * 0.86);
+    ctx.stroke();
+
+    // Soft highlight on fold crests
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
     ctx.lineWidth = 0.5;
     ctx.beginPath();
-    ctx.moveTo(cx - width * 0.18, top + height * 0.12);
-    ctx.quadraticCurveTo(cx - width * 0.24, top + height * 0.5, cx - width * 0.16, top + height * 0.9);
-    ctx.moveTo(cx + width * 0.2, top + height * 0.14);
-    ctx.quadraticCurveTo(cx + width * 0.26, top + height * 0.52, cx + width * 0.18, top + height * 0.88);
+    ctx.moveTo(cx - width * 0.18, top + height * 0.18);
+    ctx.quadraticCurveTo(cx - width * 0.26, top + height * 0.52, cx - width * 0.14, top + height * 0.86);
     ctx.stroke();
+
+    ctx.restore();
   }
 
-  // Silk hair gloss: broad soft band plus tight specular streaks.
+  // Silk hair gloss: soft multi-layered angel halo ring with gradient transparency & specular catchlights
   drawHairGloss(ctx, cx, cy, scale = 1) {
     ctx.save();
-    ctx.globalAlpha = 0.55;
+    // 1. Soft diffused halo glow along crown
+    const haloGrad = ctx.createLinearGradient(cx - 6 * scale, cy - 3 * scale, cx + 6 * scale, cy);
+    haloGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    haloGrad.addColorStop(0.3, 'rgba(255, 248, 225, 0.45)');
+    haloGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.7)');
+    haloGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.strokeStyle = haloGrad;
+    ctx.lineWidth = 1.6 * scale;
+    ctx.beginPath();
+    ctx.arc(cx, cy - 1 * scale, 6.5 * scale, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+
+    // 2. Crisp specular hair streaks (angel's ring highlight)
+    ctx.globalAlpha = 0.85;
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.ellipse(cx - 1.5 * scale, cy - 2.2 * scale, 4.2 * scale, 1.5 * scale, -0.42, 0, Math.PI * 2);
+    ctx.ellipse(cx - 1.8 * scale, cy - 2.4 * scale, 3.8 * scale, 1.2 * scale, -0.38, 0, Math.PI * 2);
     ctx.fill();
-    ctx.globalAlpha = 0.85;
     ctx.beginPath();
-    ctx.ellipse(cx + 1.8 * scale, cy - 1.4 * scale, 2.2 * scale, 0.8 * scale, -0.28, 0, Math.PI * 2);
+    ctx.ellipse(cx + 2.2 * scale, cy - 1.6 * scale, 2.4 * scale, 0.8 * scale, -0.22, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }

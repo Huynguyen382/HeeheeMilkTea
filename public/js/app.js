@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   }
 
-  // 3. Mixing Station Selection Handlers
+  // 3. Mixing Station & First-Person Barista Workstation Handlers
   const elMixTea = document.getElementById('mix-tea-name');
   const elMixSugar = document.getElementById('mix-sugar-val');
   const elMixIce = document.getElementById('mix-ice-val');
@@ -644,60 +644,170 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (elMixTop) elMixTop.innerText = `${selectedToppings.length} loại`;
   }
 
+  function updateMixingButtonsState() {
+    // Sync active tea buttons
+    document.querySelectorAll('[data-tea]').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-tea') === selectedTea);
+    });
+
+    // Sync active sugar buttons & pills
+    document.querySelectorAll('[data-sugar]').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-sugar') === selectedSugar);
+    });
+    const sugarBadge = document.getElementById('sugar-badge');
+    if (sugarBadge) sugarBadge.innerText = `${selectedSugar} Đường`;
+
+    // Sync active ice buttons & pills
+    document.querySelectorAll('[data-ice]').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-ice') === selectedIce);
+    });
+    const iceBadge = document.getElementById('ice-badge');
+    if (iceBadge) iceBadge.innerText = selectedIce;
+
+    // Sync active topping buttons
+    document.querySelectorAll('[data-topping]').forEach(b => {
+      const topKey = b.getAttribute('data-topping');
+      b.classList.toggle('active', selectedToppings.includes(topKey));
+    });
+
+    updateCupMonitor();
+  }
+
+  // Initialize Barista Workstation
+  let workstation = null;
+  const workstationCanvas = document.getElementById('workstation-canvas');
+  if (workstationCanvas && typeof BaristaWorkstation !== 'undefined') {
+    workstation = new BaristaWorkstation('workstation-canvas', (st) => {
+      selectedTea = st.tea;
+      selectedSugar = st.sugar;
+      selectedIce = st.ice;
+      selectedToppings = [...st.toppings];
+      updateMixingButtonsState();
+      canvas.setDrinkPreview({ tea: selectedTea, toppings: selectedToppings });
+    });
+  }
+
+  // Step-by-step Sugar (+1 level per drop)
+  const btnAddSugar = document.getElementById('btn-add-sugar');
+  if (btnAddSugar) {
+    btnAddSugar.addEventListener('click', () => {
+      sound.pour();
+      if (workstation) {
+        selectedSugar = workstation.nextSugarStep();
+      } else {
+        const steps = ['0%', '30%', '50%', '70%', '100%'];
+        const idx = steps.indexOf(selectedSugar);
+        selectedSugar = steps[(idx + 1) % steps.length];
+      }
+      updateMixingButtonsState();
+    });
+  }
+
+  // Step-by-step Ice (+1 level per scoop/cube)
+  const btnAddIce = document.getElementById('btn-add-ice');
+  if (btnAddIce) {
+    btnAddIce.addEventListener('click', () => {
+      sound.ice();
+      if (workstation) {
+        selectedIce = workstation.nextIceStep();
+      } else {
+        const steps = ['Nóng', 'Ít đá', 'Vừa đá', 'Đầy đá'];
+        const idx = steps.indexOf(selectedIce);
+        selectedIce = steps[(idx + 1) % steps.length];
+      }
+      updateMixingButtonsState();
+    });
+  }
+
+  // Quick Reset Cup Button
+  const btnResetCup = document.getElementById('btn-reset-cup');
+  if (btnResetCup) {
+    btnResetCup.addEventListener('click', () => {
+      sound.bell();
+      if (workstation) {
+        workstation.resetCup();
+      } else {
+        selectedTea = 'den';
+        selectedSugar = '0%';
+        selectedIce = 'Nóng';
+        selectedToppings = [];
+      }
+      isShaken = false;
+      updateMixingButtonsState();
+      canvas.setDrinkPreview({ tea: selectedTea, toppings: selectedToppings });
+    });
+  }
+
+  // Tea Selection Buttons
   document.querySelectorAll('[data-tea]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-tea]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedTea = btn.getAttribute('data-tea');
+      const teaKey = btn.getAttribute('data-tea');
       sound.pour();
+      selectedTea = teaKey;
+      if (workstation) {
+        workstation.setTea(teaKey);
+      }
+      updateMixingButtonsState();
       canvas.setDrinkPreview({ tea: selectedTea, toppings: selectedToppings });
-      updateCupMonitor();
     });
   });
 
+  // Direct Sugar Selection Buttons & Pills
   document.querySelectorAll('[data-sugar]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-sugar]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedSugar = btn.getAttribute('data-sugar');
+      const val = btn.getAttribute('data-sugar');
       sound.pour();
-      updateCupMonitor();
+      selectedSugar = val;
+      if (workstation) {
+        workstation.setSugar(val);
+      }
+      updateMixingButtonsState();
     });
   });
 
+  // Direct Ice Selection Buttons & Pills
   document.querySelectorAll('[data-ice]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-ice]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedIce = btn.getAttribute('data-ice');
+      const val = btn.getAttribute('data-ice');
       sound.ice();
-      updateCupMonitor();
+      selectedIce = val;
+      if (workstation) {
+        workstation.setIce(val);
+      }
+      updateMixingButtonsState();
     });
   });
 
+  // Topping Toggles
   document.querySelectorAll('[data-topping]').forEach(btn => {
     btn.addEventListener('click', () => {
       const top = btn.getAttribute('data-topping');
-      if (selectedToppings.includes(top)) {
-        selectedToppings = selectedToppings.filter(t => t !== top);
-        btn.classList.remove('active');
-      } else {
-        selectedToppings.push(top);
-        btn.classList.add('active');
-      }
       sound.pour();
+      if (workstation) {
+        workstation.toggleTopping(top);
+      } else {
+        if (selectedToppings.includes(top)) {
+          selectedToppings = selectedToppings.filter(t => t !== top);
+        } else {
+          selectedToppings.push(top);
+        }
+      }
+      updateMixingButtonsState();
       canvas.setDrinkPreview({ tea: selectedTea, toppings: selectedToppings });
-      updateCupMonitor();
     });
   });
 
-  // Shaker action
+  // Shaker action with first-person animation
   elBtnShaker.addEventListener('click', () => {
     if (elBtnShaker.disabled) return;
     elBtnShaker.disabled = true;
     sound.shake();
     isShaken = true;
     canvas.setShaking(true);
+    if (workstation) {
+      workstation.triggerHandAction('shake');
+      workstation.addFloatingText('🥤 Đang Lắc Shaker...', '#bd93f9');
+    }
     elBtnShaker.innerText = 'Đang Lắc... 🥤';
     setTimeout(() => {
       canvas.setShaking(false);
@@ -755,6 +865,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         sound.coin();
         clearInterval(orderTimerInterval);
         canvas.triggerSuccessEffects(res.payout);
+
+        if (workstation) {
+          workstation.triggerHandAction('serve');
+          workstation.addFloatingText(`✨ +${res.payout.toLocaleString('vi-VN')}đ!`, '#50fa7b');
+        }
 
         showToast(`🎉 Giao thành công! Nhận +${res.payout.toLocaleString('vi-VN')}đ`);
 
