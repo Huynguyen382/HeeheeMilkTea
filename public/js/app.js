@@ -598,20 +598,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 1000);
   }
 
-  // --- WORKFLOW 4-STEP MANAGEMENT: 1. LẮC BOM -> 2. RÓT CỐC -> 3. DẬP NẮP -> 4. GIAO LY ---
+  // --- WORKFLOW 4-STEP MANAGEMENT: 1. LẮC BÌNH -> 2. RÓT CỐC -> 3. DẬP NẮP -> 4. GIAO LY ---
   function updateWorkflowButtons() {
     const hasOrder = !!currentOrder;
 
-    // Step 1: 1. Lắc Bom
+    // Step 1: 1. Lắc Bình
     if (!isShaken) {
       if (elBtnShaker) {
         elBtnShaker.disabled = !hasOrder;
         elBtnShaker.classList.toggle('ready-step', hasOrder);
         elBtnShaker.classList.remove('completed-step');
         const txt = elBtnShaker.querySelector('.wf-text');
-        if (txt) txt.innerText = '1. Lắc Bom';
+        if (txt) txt.innerText = '1. Lắc Bình';
         const ico = elBtnShaker.querySelector('.wf-icon');
-        if (ico) ico.innerText = '💣';
+        if (ico) ico.innerText = '🍸';
       }
       if (elBtnPourCup) {
         elBtnPourCup.disabled = true;
@@ -934,7 +934,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // --- 4-STEP WORKFLOW HANDLERS ---
-  // Step 1: Lắc Bom Pha Chế
+  // Step 1: Lắc Bình Pha Chế
   if (elBtnShaker) {
     elBtnShaker.addEventListener('click', () => {
       if (elBtnShaker.disabled) return;
@@ -943,7 +943,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       canvas.setShaking(true);
       if (workstation) {
         workstation.triggerHandAction('shake');
-        workstation.addFloatingText('💣 LẮC ĐỀU QUẢ BOM! 💥', '#bd93f9');
+        workstation.addFloatingText('🍸 LẮC ĐỀU BÌNH PHA CHẾ! ✨', '#bd93f9');
       }
       const txt = elBtnShaker.querySelector('.wf-text');
       if (txt) txt.innerText = 'Đang Lắc...';
@@ -962,7 +962,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     elBtnPourCup.addEventListener('click', () => {
       if (elBtnPourCup.disabled) return;
       if (!isShaken) {
-        showToast('Hãy bấm [1. Lắc Bom] trước!');
+        showToast('Hãy bấm [1. Lắc Bình] trước!');
         return;
       }
       elBtnPourCup.disabled = true;
@@ -1013,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   elBtnServe.addEventListener('click', async () => {
     if (!currentOrder) return;
     if (!isShaken) {
-      showToast('Hãy bấm [1. Lắc Bom] để trộn đều nguyên liệu!');
+      showToast('Hãy bấm [1. Lắc Bình] để trộn đều nguyên liệu!');
       return;
     }
     if (!isPoured) {
@@ -1485,11 +1485,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             hint: { icon: '🧋', text: 'Bước 2: Chọn đúng cốt trà + mức đường đá + topping theo yêu cầu.' }
           },
           {
-            avatar: '💣',
+            avatar: '🍸',
             speaker: 'Bé Bắp (Hướng Dẫn Viên)',
-            role: 'Bước 3: Lắc Bom Pha Chế & Giao Ly',
-            text: 'Pha xong các nguyên liệu trong quả bom:\n\n1. Nhấn nút [Lắc Bom Pha Chế 💣] để kích hoạt quả bom hòa tan cốt trà, đường đá và boba sánh mịn thơm ngát!\n2. Nhấn nút [GIAO LY (SERVE) ✨] để trao tận tay khách!\n\nTing ting! Tiền thanh toán và tiền tip thưởng sẽ cộng ngay vào túi tiệm!',
-            hint: { icon: '💣', text: 'Bước 3: Lắc Bom Pha Chế -> Bấm GIAO LY (SERVE) nhận tiền liền tay!' }
+            role: 'Bước 3: Quy Trình 4 Bước Chuẩn Barista',
+            text: 'Pha xong các nguyên liệu trong Bình Lắc:\n\n1. Nhấn [1. Lắc Bình 🍸] để hòa quyện cốt trà, đường đá và topping sánh mịn!\n2. Nhấn [2. Rót Cốc 🧋] để đổ trà sữa vào ly mang đi.\n3. Nhấn [3. Dập Nắp 🖲️] niêm phong màng nilon chuyên nghiệp.\n4. Nhấn [GIAO LY (SERVE) ✨] trao tận tay khách hàng!\n\nTing ting! Tiền thanh toán và tiền tip thưởng sẽ cộng ngay vào túi tiệm!',
+            hint: { icon: '🍸', text: 'Quy trình 4 bước: 1. Lắc Bình ➔ 2. Rót Cốc ➔ 3. Dập Nắp ➔ 4. Giao Ly!' }
           },
           {
             avatar: '🛒',
