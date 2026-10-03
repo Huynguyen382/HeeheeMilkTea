@@ -333,19 +333,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       elRep.style.color = 'var(--gold)';
     }
 
-    // Daily Cap Progress
-    elCapEarned.innerText = daily.earned_today.toLocaleString('vi-VN') + 'đ';
-    elCapMax.innerText = daily.effective_cap.toLocaleString('vi-VN') + 'đ';
-
-    const pct = Math.min(100, Math.floor((daily.earned_today / daily.effective_cap) * 100));
-    elCapFill.style.width = pct + '%';
-
-    if (daily.is_overloaded) {
-      elCapFill.classList.add('overloaded');
-      elOverloadWarning.style.display = 'block';
-    } else {
-      elCapFill.classList.remove('overloaded');
-      elOverloadWarning.style.display = 'none';
+    // Today Earnings (Unlimited) & Time of Day badge
+    if (elCapEarned) elCapEarned.innerText = (daily.earned_today || 0).toLocaleString('vi-VN') + 'đ';
+    const elTimeBadge = document.getElementById('time-of-day-badge');
+    if (elTimeBadge && canvas && canvas.getTimeOfDayLabel) {
+      elTimeBadge.innerText = canvas.getTimeOfDayLabel();
     }
 
     // Active buffs
@@ -695,10 +687,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 800);
       }
 
-      if (res.isOverloaded) {
-        showToast(`🛑 ĐÃ CHẠM HẠN MỨC DOANH SỐ HÔM NAY! Quán chuyển sang chế độ phục vụ cầm chừng.`, 4500);
-      }
-
       // Refresh store state
       storeState = await API.getState();
       updateUI();
@@ -712,8 +700,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (orderQueue.length > 0) {
           startNextOrderInQueue();
         } else {
-          const delay = res.isOverloaded ? 10000 : 3500;
-          scheduleNextOrder(delay);
+          scheduleNextOrder(3000);
         }
       }, 1200);
     } else {
@@ -1439,6 +1426,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.execCommand('copy');
         document.body.removeChild(ta);
         showToast('📋 Đã sao chép Mã Quán: ' + storeState.store_code, 2000);
+      }
+    });
+  }
+
+  // Time of Day badge click to toggle/cycle scenery
+  const elTimeBadge = document.getElementById('time-of-day-badge');
+  if (elTimeBadge) {
+    const updateTimeBadge = () => {
+      if (canvas && canvas.getTimeOfDayLabel) {
+        elTimeBadge.innerText = canvas.getTimeOfDayLabel();
+      }
+    };
+    updateTimeBadge();
+    setInterval(updateTimeBadge, 30000); // Check time every 30s
+
+    elTimeBadge.addEventListener('click', () => {
+      if (canvas && canvas.cycleTimeOfDay) {
+        const res = canvas.cycleTimeOfDay();
+        updateTimeBadge();
+        sound.bell();
+        showToast(`🎨 Khung cảnh: ${res.label}`, 2500);
       }
     });
   }

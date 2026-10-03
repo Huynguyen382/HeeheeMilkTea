@@ -145,6 +145,16 @@ body {
   transition: width 0.3s ease;
 }
 
+.time-badge {
+  transition: all 0.15s ease;
+}
+
+.time-badge:hover {
+  background: rgba(244, 196, 48, 0.3) !important;
+  border-color: #fff !important;
+  transform: scale(1.04);
+}
+
 .cap-progress-fill.overloaded {
   background: linear-gradient(90deg, #ff79c6, #bd93f9);
 }

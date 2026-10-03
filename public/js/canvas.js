@@ -57,6 +57,14 @@ class GameCanvas {
     this.onPetStolen = null;
     this.onThiefCaught = null;
     
+    // Time of Day system ('morning', 'noon', 'afternoon', 'night', or null for auto based on real clock)
+    this.customTimeOfDay = null;
+    this.clouds = [
+      { x: 35, y: 16, w: 46, h: 14, speed: 0.12 },
+      { x: 155, y: 30, w: 58, h: 16, speed: 0.09 },
+      { x: 275, y: 14, w: 50, h: 15, speed: 0.15 }
+    ];
+
     this.initLoop();
   }
 
@@ -249,6 +257,12 @@ class GameCanvas {
       if (t.x < -30) t.x = this.width + 20;
     });
 
+    // Drifting clouds for daytime
+    this.clouds.forEach(c => {
+      c.x += c.speed;
+      if (c.x > this.width + 45) c.x = -65;
+    });
+
     // Customer walk movement: queue & active
     if (this.queue && this.queue.length > 0) {
       this.queue.forEach((qCust, idx) => {
@@ -417,101 +431,292 @@ class GameCanvas {
     ctx.restore();
   }
 
+  getTimeOfDay() {
+    if (this.customTimeOfDay) return this.customTimeOfDay;
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 11) return 'morning';   // 5h00 - 10h59: Buổi Sáng
+    if (hour >= 11 && hour < 15) return 'noon';      // 11h00 - 14h59: Buổi Trưa
+    if (hour >= 15 && hour < 19) return 'afternoon'; // 15h00 - 18h59: Buổi Chiều (Hoàng hôn)
+    return 'night';                                  // 19h00 - 4h59: Buổi Tối / Đêm
+  }
+
+  getTimeOfDayLabel() {
+    const tod = this.getTimeOfDay();
+    const labels = {
+      morning: '🌅 Sáng',
+      noon: '☀️ Trưa',
+      afternoon: '🌇 Chiều',
+      night: '🌙 Tối'
+    };
+    return labels[tod] || '🌅 Sáng';
+  }
+
+  cycleTimeOfDay() {
+    const list = ['morning', 'noon', 'afternoon', 'night'];
+    const cur = this.getTimeOfDay();
+    const curIdx = list.indexOf(cur);
+    const nextIdx = (curIdx + 1) % list.length;
+    this.customTimeOfDay = list[nextIdx];
+    return {
+      tod: this.customTimeOfDay,
+      label: this.getTimeOfDayLabel()
+    };
+  }
+
+  drawClouds(ctx, tod) {
+    if (tod === 'night') return; // Buổi tối dùng trăng và sao thay mây
+    this.clouds.forEach(c => {
+      let topColor = '#ffffff';
+      let bottomColor = '#dfe6e9';
+      let alpha = 0.88;
+
+      if (tod === 'morning') {
+        topColor = '#ffffff';
+        bottomColor = '#ffeaa7';
+        alpha = 0.82;
+      } else if (tod === 'noon') {
+        topColor = '#ffffff';
+        bottomColor = '#c7ecee';
+        alpha = 0.92;
+      } else if (tod === 'afternoon') {
+        topColor = '#ffeaa7';
+        bottomColor = '#e17055';
+        alpha = 0.85;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      // Cloud base shadow
+      ctx.fillStyle = bottomColor;
+      ctx.beginPath();
+      ctx.roundRect(c.x, c.y + 4, c.w, c.h - 4, 6);
+      ctx.fill();
+
+      // Cloud puffs
+      ctx.fillStyle = topColor;
+      ctx.beginPath();
+      ctx.arc(c.x + c.w * 0.32, c.y + 5, c.h * 0.45, 0, Math.PI * 2);
+      ctx.arc(c.x + c.w * 0.68, c.y + 4, c.h * 0.55, 0, Math.PI * 2);
+      ctx.roundRect(c.x + 2, c.y + 5, c.w - 4, c.h - 5, 5);
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
   drawBackground(ctx) {
-    // Sky Gradient: Twilight indigo to warm purple
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, 140);
-    skyGrad.addColorStop(0, '#0c0612');
-    skyGrad.addColorStop(0.5, '#1e0c24');
-    skyGrad.addColorStop(1, '#3b1638');
+    const tod = this.getTimeOfDay();
+
+    // 1. SKY GRADIENT DYNAMIC THEO GIỜ TRONG NGÀY
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, 145);
+    if (tod === 'morning') {
+      // Bình minh ban mai: Xanh lam trong trẻo chuyển vàng mơ nắng sớm
+      skyGrad.addColorStop(0, '#2e6bb5');
+      skyGrad.addColorStop(0.38, '#5fa7e8');
+      skyGrad.addColorStop(0.72, '#f5cd79');
+      skyGrad.addColorStop(1, '#ffeaa7');
+    } else if (tod === 'noon') {
+      // Giữa trưa: Bầu trời xanh biếc nắng chói chang
+      skyGrad.addColorStop(0, '#0984e3');
+      skyGrad.addColorStop(0.5, '#74b9ff');
+      skyGrad.addColorStop(0.85, '#81ecec');
+      skyGrad.addColorStop(1, '#dff9fb');
+    } else if (tod === 'afternoon') {
+      // Chiều tà hoàng hôn: Tím hồng mộng mơ chuyển cam cháy rực rỡ
+      skyGrad.addColorStop(0, '#2b1055');
+      skyGrad.addColorStop(0.35, '#75175a');
+      skyGrad.addColorStop(0.68, '#d35400');
+      skyGrad.addColorStop(0.88, '#e67e22');
+      skyGrad.addColorStop(1, '#f1c40f');
+    } else {
+      // Đêm: Tím chàm huyền ảo, phố đêm lung linh
+      skyGrad.addColorStop(0, '#0c0612');
+      skyGrad.addColorStop(0.5, '#1e0c24');
+      skyGrad.addColorStop(1, '#3b1638');
+    }
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, this.width, 145);
 
-    // Crescent Moon with warm glow
-    ctx.fillStyle = 'rgba(255, 235, 160, 0.15)';
-    ctx.beginPath();
-    ctx.arc(45, 28, 18, 0, Math.PI * 2);
-    ctx.fill();
+    // 2. MẶT TRỜI / MẶT TRĂNG & SAO
+    if (tod === 'night') {
+      // Trăng lưỡi liềm vàng ấm
+      ctx.fillStyle = 'rgba(255, 235, 160, 0.15)';
+      ctx.beginPath();
+      ctx.arc(45, 28, 18, 0, Math.PI * 2);
+      ctx.fill();
 
-    ctx.fillStyle = '#fff4cc';
-    ctx.beginPath();
-    ctx.arc(45, 28, 11, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#1e0c24';
-    ctx.beginPath();
-    ctx.arc(41, 26, 9, 0, Math.PI * 2);
-    ctx.fill();
+      ctx.fillStyle = '#fff4cc';
+      ctx.beginPath();
+      ctx.arc(45, 28, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1e0c24';
+      ctx.beginPath();
+      ctx.arc(41, 26, 9, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Twinkling Stars
-    const stars = [
-      { x: 15, y: 18 }, { x: 80, y: 24 }, { x: 125, y: 15 },
-      { x: 195, y: 28 }, { x: 260, y: 14 }, { x: 310, y: 22 },
-      { x: 340, y: 40 }, { x: 160, y: 45 }
-    ];
-    ctx.fillStyle = '#fff';
-    stars.forEach((s, idx) => {
-      const flicker = (Math.sin(this.tick * 0.1 + idx) + 1) * 0.4 + 0.3;
-      ctx.globalAlpha = flicker;
-      ctx.fillRect(s.x, s.y, 2, 2);
-    });
-    ctx.globalAlpha = 1.0;
+      // Sao lấp lánh ban đêm
+      const stars = [
+        { x: 15, y: 18 }, { x: 80, y: 24 }, { x: 125, y: 15 },
+        { x: 195, y: 28 }, { x: 260, y: 14 }, { x: 310, y: 22 },
+        { x: 340, y: 40 }, { x: 160, y: 45 }
+      ];
+      ctx.fillStyle = '#fff';
+      stars.forEach((s, idx) => {
+        const flicker = (Math.sin(this.tick * 0.1 + idx) + 1) * 0.4 + 0.3;
+        ctx.globalAlpha = flicker;
+        ctx.fillRect(s.x, s.y, 2, 2);
+      });
+      ctx.globalAlpha = 1.0;
+    } else if (tod === 'morning') {
+      // Mặt trời bình minh dịu mát bên góc trái
+      const sx = 55;
+      const sy = 32;
+      const sunHalo = ctx.createRadialGradient(sx, sy, 3, sx, sy, 30);
+      sunHalo.addColorStop(0, 'rgba(255, 245, 180, 0.6)');
+      sunHalo.addColorStop(0.5, 'rgba(255, 215, 100, 0.2)');
+      sunHalo.addColorStop(1, 'rgba(255, 215, 100, 0)');
+      ctx.fillStyle = sunHalo;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 30, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Distant City Skyline Silhouettes
-    ctx.fillStyle = '#18091d';
+      ctx.fillStyle = '#fff6b7';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 10, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (tod === 'noon') {
+      // Mặt trời đứng bóng rực rỡ trên đỉnh trời
+      const sx = 180;
+      const sy = 22;
+      const sunHalo = ctx.createRadialGradient(sx, sy, 4, sx, sy, 36);
+      sunHalo.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+      sunHalo.addColorStop(0.4, 'rgba(255, 235, 150, 0.35)');
+      sunHalo.addColorStop(1, 'rgba(255, 235, 150, 0)');
+      ctx.fillStyle = sunHalo;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 36, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 12, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (tod === 'afternoon') {
+      // Vầng dương hoàng hôn đỏ cam lặn dần bên các tòa nhà
+      const sx = 65;
+      const sy = 55;
+      const sunHalo = ctx.createRadialGradient(sx, sy, 4, sx, sy, 34);
+      sunHalo.addColorStop(0, 'rgba(255, 107, 107, 0.75)');
+      sunHalo.addColorStop(0.5, 'rgba(254, 202, 87, 0.35)');
+      sunHalo.addColorStop(1, 'rgba(254, 202, 87, 0)');
+      ctx.fillStyle = sunHalo;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 34, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ff6b6b';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 12, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 3. MÂY TRÔI BAN NGÀY
+    this.drawClouds(ctx, tod);
+
+    // 4. TÒA NHÀ PHÍA XA (SILHOUETTES THEO BUỔI)
+    let bldColor = '#18091d';
+    if (tod === 'morning') bldColor = '#2f3542';
+    else if (tod === 'noon') bldColor = '#2f3640';
+    else if (tod === 'afternoon') bldColor = '#2b1035';
+
+    ctx.fillStyle = bldColor;
     ctx.fillRect(20, 50, 48, 95);
     ctx.fillRect(68, 35, 55, 110);
     ctx.fillRect(123, 60, 65, 85);
     ctx.fillRect(220, 42, 60, 103);
     ctx.fillRect(280, 55, 75, 90);
 
-    // Glowing Pixel Neon Signs on Distant Buildings: "TIỆM TRÀ" & "ĂN VẶT"
-    const neonCyan = (Math.sin(this.tick * 0.1) * 0.2) + 0.8;
+    // 5. BẢNG HIỆU NEON TRÊN TÒA NHÀ (SÁNG VÀO HOÀNG HÔN & TỐI)
+    let neonAlpha = 1.0;
+    if (tod === 'morning') neonAlpha = 0.25;
+    else if (tod === 'noon') neonAlpha = 0.15;
+    else if (tod === 'afternoon') neonAlpha = 0.75;
+    else neonAlpha = 1.0;
+
+    const neonCyan = ((Math.sin(this.tick * 0.1) * 0.2) + 0.8) * neonAlpha;
     ctx.fillStyle = `rgba(0, 206, 201, ${neonCyan})`;
     ctx.font = 'bold 9px monospace';
     ctx.fillText('⚡TIỆM TRÀ', 72, 50);
 
-    const neonPink = (Math.sin(this.tick * 0.12 + 1) * 0.2) + 0.8;
+    const neonPink = ((Math.sin(this.tick * 0.12 + 1) * 0.2) + 0.8) * neonAlpha;
     ctx.fillStyle = `rgba(253, 121, 168, ${neonPink})`;
     ctx.fillText('🍟ĂN VẶT', 228, 56);
 
-    // City Building Window Lights (Warm yellow & cyan)
+    // 6. ÁNH SÁNG CỬA SỔ TÒA NHÀ
     for (let bx = 30; bx < 340; bx += 28) {
       for (let by = 60; by < 130; by += 20) {
         if ((bx + by) % 7 === 0) {
-          ctx.fillStyle = (bx % 2 === 0) ? '#f4c430' : '#8be9fd';
+          if (tod === 'noon') {
+            ctx.fillStyle = (bx % 2 === 0) ? '#dfe6e9' : '#81ecec';
+          } else if (tod === 'morning') {
+            ctx.fillStyle = (bx % 2 === 0) ? '#ffeaa7' : '#74b9ff';
+          } else {
+            ctx.fillStyle = (bx % 2 === 0) ? '#f4c430' : '#8be9fd';
+          }
           ctx.fillRect(bx, by, 6, 8);
         }
       }
     }
 
-    // Distant Horizon Road & Moving Motorbike Traffic
-    ctx.fillStyle = '#220f20';
+    // 7. MẶT ĐƯỜNG & XE MÁY LƯU THÔNG
+    let roadColor = '#220f20';
+    if (tod === 'morning') roadColor = '#3a3440';
+    else if (tod === 'noon') roadColor = '#4a4250';
+    else if (tod === 'afternoon') roadColor = '#321c2e';
+
+    ctx.fillStyle = roadColor;
     ctx.fillRect(0, 134, this.width, 8);
     this.traffic.forEach(t => {
-      // Motorbike pixel silhouette
       ctx.fillStyle = '#111';
       ctx.fillRect(t.x, 135, 8, 4);
-      // Tiny rider
       ctx.fillRect(t.x + 3, 132, 3, 4);
-      // Yellow headlight beam
       ctx.fillStyle = t.color;
       ctx.fillRect(t.x - 3, 136, 3, 2);
-      // Red taillight
       ctx.fillStyle = '#ff3838';
       ctx.fillRect(t.x + 8, 136, 1, 2);
     });
 
-    // Street Ground / Pavement Tiles
-    ctx.fillStyle = '#261223';
+    // 8. VỈA HÈ & GẠCH LÁT THEO ÁNH SÁNG BUỔI
+    let groundColor = '#261223';
+    let kerb1 = '#3f1f3b';
+    let kerb2 = '#542b4e';
+    let grout = '#1e0c1b';
+
+    if (tod === 'morning') {
+      groundColor = '#48414a';
+      kerb1 = '#5c545f';
+      kerb2 = '#6e6572';
+      grout = '#3a343c';
+    } else if (tod === 'noon') {
+      groundColor = '#57505a';
+      kerb1 = '#6d6571';
+      kerb2 = '#7f7684';
+      grout = '#453f47';
+    } else if (tod === 'afternoon') {
+      groundColor = '#3b2234';
+      kerb1 = '#4f2e46';
+      kerb2 = '#633a57';
+      grout = '#2d1827';
+    }
+
+    ctx.fillStyle = groundColor;
     ctx.fillRect(0, 142, this.width, 58);
 
-    // Sidewalk Kerb stone
-    ctx.fillStyle = '#3f1f3b';
+    ctx.fillStyle = kerb1;
     ctx.fillRect(0, 142, this.width, 5);
-    ctx.fillStyle = '#542b4e';
+    ctx.fillStyle = kerb2;
     ctx.fillRect(0, 145, this.width, 2);
 
-    // Pavement Tile Grout lines
-    ctx.strokeStyle = '#1e0c1b';
+    ctx.strokeStyle = grout;
     ctx.lineWidth = 1;
     for (let x = 0; x < this.width; x += 32) {
       ctx.beginPath();
@@ -520,8 +725,8 @@ class GameCanvas {
       ctx.stroke();
     }
 
-    // Glowing Fairy String Lights across the street
-    ctx.strokeStyle = '#3a2034';
+    // 9. DÂY ĐÈN TRANG TRÍ (FAIRY LIGHTS)
+    ctx.strokeStyle = (tod === 'morning' || tod === 'noon') ? '#57606f' : '#3a2034';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(0, 20);
@@ -530,27 +735,29 @@ class GameCanvas {
     ctx.stroke();
 
     const lightColors = ['#ff5555', '#f1fa8c', '#50fa7b', '#bd93f9', '#ff79c6', '#8be9fd'];
+    const lightGlowAlpha = (tod === 'night') ? 0.35 : (tod === 'afternoon' ? 0.2 : 0.08);
+
     for (let i = 15; i < 350; i += 28) {
       const swingY = Math.sin(this.tick * 0.05 + i) * 2;
       const lightY = (i < 200 ? 20 + Math.sin(i / 100 * Math.PI) * 8 : 22 + Math.sin((i - 200) / 80 * Math.PI) * 7) + swingY;
       const c = lightColors[(Math.floor(i / 28)) % lightColors.length];
       
-      // Light Glow halo
+      // Halo
       ctx.fillStyle = c;
-      ctx.globalAlpha = 0.3;
+      ctx.globalAlpha = lightGlowAlpha;
       ctx.beginPath();
       ctx.arc(i, lightY + 4, 6, 0, Math.PI * 2);
       ctx.fill();
 
-      // Bulb
-      ctx.globalAlpha = 1.0;
+      // Bóng đèn
+      ctx.globalAlpha = (tod === 'morning' || tod === 'noon') ? 0.7 : 1.0;
       ctx.fillRect(i - 2, lightY + 2, 4, 6);
     }
 
-    // Drifting Cherry Blossom Petals in the breeze
+    // 10. HOA ANH ĐÀO BAY TRONG GIÓ
     this.petals.forEach(p => {
       ctx.fillStyle = p.color;
-      ctx.globalAlpha = 0.8;
+      ctx.globalAlpha = 0.85;
       ctx.beginPath();
       ctx.ellipse(p.x, p.y, p.size + 1, p.size, Math.PI / 4, 0, Math.PI * 2);
       ctx.fill();
@@ -559,6 +766,7 @@ class GameCanvas {
   }
 
   drawStreetLamp(ctx) {
+    const tod = this.getTimeOfDay();
     const lx = 295;
     const ly = 55;
 
@@ -572,20 +780,39 @@ class GameCanvas {
     ctx.fillStyle = '#2d2d3a';
     ctx.fillRect(lx - 16, ly + 24, 14, 5);
 
-    // Lamp Bulb Glow (Warm Volumetric Light Cone)
-    const bulbGlow = (Math.sin(this.tick * 0.08) * 0.1) + 0.85;
-    const radGrad = ctx.createRadialGradient(lx - 9, ly + 36, 4, lx - 9, ly + 80, 95);
-    radGrad.addColorStop(0, `rgba(255, 230, 140, ${0.45 * bulbGlow})`);
-    radGrad.addColorStop(0.5, `rgba(255, 200, 100, ${0.15 * bulbGlow})`);
-    radGrad.addColorStop(1, 'rgba(255, 200, 100, 0)');
-    ctx.fillStyle = radGrad;
-    ctx.beginPath();
-    ctx.arc(lx - 9, ly + 70, 90, 0, Math.PI * 2);
-    ctx.fill();
+    if (tod === 'night') {
+      // Đêm: Quầng sáng nón rực rỡ chiếu xuống xe trà sữa
+      const bulbGlow = (Math.sin(this.tick * 0.08) * 0.1) + 0.85;
+      const radGrad = ctx.createRadialGradient(lx - 9, ly + 36, 4, lx - 9, ly + 80, 95);
+      radGrad.addColorStop(0, `rgba(255, 230, 140, ${0.45 * bulbGlow})`);
+      radGrad.addColorStop(0.5, `rgba(255, 200, 100, ${0.15 * bulbGlow})`);
+      radGrad.addColorStop(1, 'rgba(255, 200, 100, 0)');
+      ctx.fillStyle = radGrad;
+      ctx.beginPath();
+      ctx.arc(lx - 9, ly + 70, 90, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Yellow bulb
-    ctx.fillStyle = '#fff4aa';
-    ctx.fillRect(lx - 12, ly + 29, 6, 6);
+      // Yellow bulb
+      ctx.fillStyle = '#fff4aa';
+      ctx.fillRect(lx - 12, ly + 29, 6, 6);
+    } else if (tod === 'afternoon') {
+      // Chiều: Đèn vàng bắt đầu sáng nhẹ
+      const bulbGlow = (Math.sin(this.tick * 0.08) * 0.05) + 0.5;
+      const radGrad = ctx.createRadialGradient(lx - 9, ly + 36, 2, lx - 9, ly + 70, 60);
+      radGrad.addColorStop(0, `rgba(255, 200, 100, ${0.25 * bulbGlow})`);
+      radGrad.addColorStop(1, 'rgba(255, 200, 100, 0)');
+      ctx.fillStyle = radGrad;
+      ctx.beginPath();
+      ctx.arc(lx - 9, ly + 60, 60, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fbc531';
+      ctx.fillRect(lx - 12, ly + 29, 6, 6);
+    } else {
+      // Ban ngày (Sáng, Trưa): Đèn đường tắt
+      ctx.fillStyle = '#4b4b5a';
+      ctx.fillRect(lx - 12, ly + 29, 6, 6);
+    }
   }
 
   drawCart(ctx) {

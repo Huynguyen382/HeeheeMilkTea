@@ -53,19 +53,17 @@ async function getOrCreateDailyStats(storeId, chapter) {
   `).get(storeId, realDate);
   const collabsCount = Math.min(collabsCountRow ? collabsCountRow.cnt : 0, capInfo.maxCollabs);
 
-  const effectiveCap = Math.min(capInfo.max, capInfo.base + (collabsCount * capInfo.collabBoost));
-  const isOverloaded = row.earned_today >= effectiveCap;
-
+  // Daily Cap removed per user request: unlimited daily revenue!
   return {
     real_date: realDate,
     earned_today: row.earned_today,
-    base_cap: capInfo.base,
-    effective_cap: effectiveCap,
-    max_cap: capInfo.max,
+    base_cap: null,
+    effective_cap: Infinity,
+    max_cap: null,
     collabs_count: collabsCount,
     max_collabs: capInfo.maxCollabs,
-    is_overloaded: isOverloaded || row.is_overloaded === 1,
-    remaining_today: Math.max(0, effectiveCap - row.earned_today)
+    is_overloaded: false,
+    remaining_today: Infinity
   };
 }
 
@@ -158,21 +156,10 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     return { success: false, message: 'Pha sai công thức, độ đường hoặc lượng đá! Khách càu nhàu trả lại ly.' };
   }
 
-  // 4. Daily Cap enforcement
+  // 4. Daily earnings: No limit! Full price payout every order
   const daily = await getOrCreateDailyStats(storeId, save.chapter);
-  let payout = order.price;
-  let isOverloadedNow = daily.is_overloaded;
-
-  if (daily.is_overloaded) {
-    // If shop is already overloaded, payout drops drastically (pity fee 1,000 VND) and reputation won't increase
-    payout = Math.min(2000, Math.floor(order.price * 0.1));
-  } else {
-    // If payout would exceed effective cap, clamp payout to cap and trigger overload
-    if (daily.earned_today + payout >= daily.effective_cap) {
-      payout = daily.effective_cap - daily.earned_today;
-      isOverloadedNow = true;
-    }
-  }
+  const payout = order.price;
+  const isOverloadedNow = false;
 
   // 5. Check customer archetype effects (Tú TikToker review & Buff decrements)
   let tiktokerViral = false;

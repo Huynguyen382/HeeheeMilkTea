@@ -331,14 +331,6 @@ async function generateOrder(storeId) {
   }
 
   const daily = await anticheat.getOrCreateDailyStats(storeId, save.chapter);
-  
-  // If store is overloaded, restrict customer appearance probability by 75%
-  if (daily.is_overloaded && Math.random() < 0.75) {
-    return {
-      isOverloaded: true,
-      message: 'Quán đang quá tải hạn mức hôm nay! Khách vãng lai thưa thớt, hãy collab bạn bè hoặc chờ ngày mai.'
-    };
-  }
 
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
 
@@ -692,11 +684,29 @@ async function addCollab(hostStoreId, friendCode) {
     WHERE store_id = ? AND real_date = ?
   `).run(hostStoreId, realDate);
 
+  const bonus = 50000;
+  const newMoney = save.money + bonus;
+  const updatedSave = {
+    store_id: hostStoreId,
+    chapter: save.chapter,
+    day_in_game: save.day_in_game,
+    money: newMoney,
+    debt_remaining: save.debt_remaining,
+    reputation: save.reputation
+  };
+  const hash = anticheat.generateSaveHash(updatedSave);
+
+  await db.prepare(`
+    UPDATE game_saves 
+    SET money = ?, save_hash = ?, updated_at = ?
+    WHERE store_id = ?
+  `).run(newMoney, hash, new Date().toISOString(), hostStoreId);
+
   const updatedDaily = await anticheat.getOrCreateDailyStats(hostStoreId, save.chapter);
 
   return {
     success: true,
-    message: `Ký kết Collab thành công với [${friendStore.store_name}]! Hạn mức doanh số tăng thêm +${capInfo.collabBoost.toLocaleString('vi-VN')}đ!`,
+    message: `Ký kết Collab thành công với [${friendStore.store_name}]! Nhận ngay +${bonus.toLocaleString('vi-VN')}đ tiền thưởng đối tác!`,
     daily_stats: updatedDaily
   };
 }
