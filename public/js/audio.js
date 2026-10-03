@@ -61,6 +61,10 @@ class SoundManager {
     setTimeout(() => this.playTone(1800, 'square', 0.04, 0.15), 50);
   }
 
+  talk(pitch = 520) {
+    this.playTone(pitch, 'triangle', 0.04, 0.15, 0.01);
+  }
+
   shake() {
     this.playTone(150, 'sawtooth', 0.08, 0.3);
     setTimeout(() => this.playTone(120, 'sawtooth', 0.08, 0.3), 80);

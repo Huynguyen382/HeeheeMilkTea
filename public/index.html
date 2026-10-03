@@ -19,6 +19,7 @@
         <span class="store-name-text">Tiệm Trà Sữa HeeHee</span>
       </div>
       <div style="display: flex; gap: 6px; align-items: center;">
+        <button id="btn-story-header" style="background: rgba(244, 196, 48, 0.15); border: 1px solid var(--gold); color: var(--gold); border-radius: 4px; padding: 2px 7px; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 3px;" title="Xem cốt truyện & hướng dẫn">📖 Cốt Truyện</button>
         <span id="user-badge" style="font-size: 0.95rem; color: #f1fa8c;">👤 Khách</span>
         <button id="btn-logout" style="background: none; border: 1px solid #ff5555; color: #ff5555; border-radius: 4px; padding: 1px 6px; font-size: 0.85rem; cursor: pointer;">Thoát</button>
         <div class="store-code-badge" id="store-code" title="Mã Quán - Chia sẻ để Collab bạn bè">HYHY-0000</div>
@@ -138,6 +139,7 @@
 
   <!-- NAVIGATION BOTTOM BAR -->
   <footer class="bottom-nav">
+    <button class="nav-btn" id="nav-story" style="color: var(--gold); border-color: var(--gold); font-weight: bold;">📖 Cốt Truyện</button>
     <button class="nav-btn" id="nav-collab">🤝 Collab Bạn</button>
     <button class="nav-btn" id="nav-debt">💰 Trả Nợ</button>
     <button class="nav-btn" id="nav-upgrades">🛒 Nâng Cấp</button>
@@ -478,6 +480,114 @@
       <p style="font-size: 0.9rem; color: var(--text-muted);">
         🔒 <i>Cơ chế chống gian lận thời gian thực: F5 hoặc tắt máy cũng không thể bỏ qua thời gian nghỉ ngơi!</i>
       </p>
+    </div>
+  </div>
+
+  <!-- MODAL: CỐT TRUYỆN & DẪN DẮT NGƯỜI CHƠI -->
+  <div class="modal-overlay" id="modal-story" style="z-index: 10002;">
+    <div class="modal-content" style="max-width: 440px; border-color: var(--gold); background: #221220; padding: 12px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 6px;">
+          <span>📖 CỐT TRUYỆN & HƯỚNG DẪN</span>
+        </div>
+        <button class="btn-close" id="close-story">&times;</button>
+      </div>
+
+      <!-- TABS CHO MODAL CỐT TRUYỆN -->
+      <div style="display: flex; gap: 4px; border-bottom: 2px solid var(--panel-border); margin-bottom: 8px;">
+        <button id="story-tab-dialogue" class="story-tab-btn active">🎭 Cốt Truyện</button>
+        <button id="story-tab-quests" class="story-tab-btn">🎯 Cột Mốc Nhiệm Vụ</button>
+        <button id="story-tab-guide" class="story-tab-btn">📜 Sổ Tay Pha Chế</button>
+      </div>
+
+      <!-- TAB 1: VISUAL NOVEL DIALOGUE SCENE -->
+      <div id="story-view-dialogue" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- Chapter badge & Title -->
+        <div id="story-chapter-badge" style="background: rgba(244, 196, 48, 0.12); border: 1px solid var(--gold); border-radius: 6px; padding: 4px 8px; font-size: 0.95rem; color: var(--gold); display: flex; justify-content: space-between; align-items: center;">
+          <span id="story-chapter-title">Chương 1: Xe Đẩy Vỉa Hè (Món Nợ 3 Triệu)</span>
+          <button id="btn-story-replay" style="background: none; border: none; color: #8be9fd; cursor: pointer; font-size: 0.88rem;">🔄 Đọc lại từ đầu</button>
+        </div>
+
+        <!-- Character Avatar & Speech Bubble -->
+        <div class="story-dialogue-box">
+          <div class="story-speaker-row">
+            <div id="story-avatar" class="story-avatar">🧋</div>
+            <div style="display: flex; flex-direction: column;">
+              <div id="story-speaker-name" style="font-weight: bold; color: var(--gold); font-size: 1.15rem;">HeeHee (Cô Chủ Nhỏ)</div>
+              <div id="story-speaker-role" style="font-size: 0.85rem; color: var(--text-muted);">Khởi nghiệp trà sữa vỉa hè</div>
+            </div>
+          </div>
+
+          <div id="story-dialogue-text" class="story-dialogue-text">
+            Đang tải lời thoại cốt truyện...
+          </div>
+
+          <!-- Interactive Action Guidance Hint Box -->
+          <div id="story-visual-hint" class="story-hint-card" style="display: none;">
+            <span style="font-size: 1.3rem;" id="story-hint-icon">💡</span>
+            <span id="story-hint-text">Mẹo: Chọn đúng cốt trà và topping theo yêu cầu của khách!</span>
+          </div>
+        </div>
+
+        <!-- Controls: Prev, Next, Skip, Start -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+          <button id="btn-story-prev" class="btn-action-wide" style="flex: 1; margin: 0 4px 0 0; background: #3d2436; color: #fff; font-size: 1rem;">◀ Lùi lại</button>
+          <div id="story-step-indicator" style="font-size: 0.95rem; color: var(--text-muted); padding: 0 6px; white-space: nowrap;">1 / 8</div>
+          <button id="btn-story-next" class="btn-action-wide" style="flex: 2; margin: 0 0 0 4px; background: linear-gradient(180deg, #f4c430, #b8860b); color: #000; font-size: 1.1rem;">Tiếp tục ▶</button>
+        </div>
+      </div>
+
+      <!-- TAB 2: CỘT MỐC NHIỆM VỤ DẪN DẮT (QUESTS) -->
+      <div id="story-view-quests" style="display: none;">
+        <div style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 6px;">
+          Hoàn thành các cột mốc cốt truyện dưới đây để xây dựng tiệm trà sữa HeeHee vững mạnh và thoát khỏi gánh nặng nợ nần!
+        </div>
+        <div class="quest-list" id="story-quest-list">
+          <!-- Dynamic quests rendered via JS -->
+        </div>
+      </div>
+
+      <!-- TAB 3: SỔ TAY PHA CHẾ (BARISTA GUIDE) -->
+      <div id="story-view-guide" style="display: none;">
+        <div class="guide-list">
+          <div class="guide-item">
+            <div class="guide-item-title">📋 CÔNG THỨC PHA CHẾ CÁC MÓN</div>
+            <div class="guide-item-content">
+              • 🧋 <b>Trà Sữa Truyền Thống:</b> Cốt Trà Đen + Trân Châu Đen (15.000đ)<br>
+              • 🍊 <b>Hồng Trà Tắc Xí Muội:</b> Cốt Trà Đen + Không Topping (12.000đ)<br>
+              • 🌿 <b>Trà Sữa Thái Xanh:</b> Cốt Thái Xanh + Thạch Lá Dứa (18.000đ)<br>
+              • 🥛 <b>Sữa Tươi Đường Đen:</b> Cốt Sữa Tươi + Trân Châu Đường Đen (25.000đ)<br>
+              • 🍑 <b>Trà Đào Cam Sả:</b> Cốt Lục Trà Lài + Đào Miếng (28.000đ)<br>
+              • 🔥 <b>Trà Ô Long Nướng:</b> Cốt Ô Long Nướng + Sương Sáo (35.000đ)
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-item-title">⚙️ QUY TRÌNH 3 BƯỚC PHA CHẾ NHANH</div>
+            <div class="guide-item-content">
+              1. <b>Chọn Cốt Trà</b> đúng theo món khách gọi.<br>
+              2. <b>Chỉnh Đường & Đá</b> theo đúng sở thích của khách (Người già thích ít đá, Gymer thích 0% đường).<br>
+              3. Bấm <b>Lắc Shaker 🥤</b> rồi bấm <b>GIAO LY (SERVE) ✨</b> trước khi thanh thời gian cạn kiệt!
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-item-title">🛵 BÍ KÍP ĐƯỜNG PHỐ & SỰ KIỆN</div>
+            <div class="guide-item-content">
+              • <b>Ăn Vặt Anh Shipper:</b> 75% nhận buff hời (+40% kiên nhẫn hoặc +10% tiền), 25% nguy cơ đau bụng phải tạm nghỉ 15 phút thực!<br>
+              • <b>Tú TikToker:</b> Phục vụ nhanh để kéo bão đánh giá +0.4⭐ và sốt Viral x2.5 khách! Tránh để trễ kẻo bị bóc phốt (-0.35⭐).<br>
+              • <b>Thú Cưng Giữ Quầy:</b> Tăng mạnh doanh thu và kiên nhẫn. Canh chừng kẻ trộm đồ đen câu mất và nộp tiền chuộc lại bé!
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-item-title">💰 MỤC TIÊU LỚN: TRẢ NỢ ANH BẢNH</div>
+            <div class="guide-item-content">
+              Khoản nợ 3.000.000đ của Anh Bảnh là gông cùm ban đầu. Hãy vào mục <b>Trả Nợ</b> để trả góp (mỗi lần 500k hoặc trả hết). Trả sạch nợ sẽ lập tức <b>Mở Khóa Chương 2: Góc Hẻm Sinh Viên</b>!
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

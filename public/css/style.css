@@ -478,3 +478,213 @@ body.dev-mode .dev-only {
   text-align: center;
   max-width: 90%;
 }
+
+/* STORY & NARRATIVE GUIDED TUTORIAL STYLES */
+.story-tab-btn {
+  flex: 1;
+  padding: 6px 4px;
+  background: #1f121d;
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  font-size: 1rem;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.story-tab-btn.active {
+  background: #2b1826;
+  color: var(--gold);
+  border-color: var(--gold);
+  border-bottom: 2px solid var(--gold);
+  font-weight: bold;
+}
+
+.story-dialogue-box {
+  background: #180d16;
+  border: 2px solid #57334d;
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+}
+
+.story-speaker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px dashed #57334d;
+  padding-bottom: 6px;
+}
+
+.story-avatar {
+  width: 52px;
+  height: 52px;
+  background: #2b1727;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  box-shadow: 0 0 10px rgba(244, 196, 48, 0.3);
+  flex-shrink: 0;
+  animation: storyAvatarPulse 3s infinite ease-in-out;
+}
+
+@keyframes storyAvatarPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.story-dialogue-text {
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--milk-cream);
+  min-height: 70px;
+  white-space: pre-line;
+}
+
+.story-dialogue-text b {
+  color: var(--gold);
+}
+
+.story-dialogue-text .highlight-green {
+  color: #50fa7b;
+  font-weight: bold;
+}
+
+.story-dialogue-text .highlight-pink {
+  color: #ff79c6;
+  font-weight: bold;
+}
+
+.story-dialogue-text .highlight-red {
+  color: #ff5555;
+  font-weight: bold;
+}
+
+.story-dialogue-text .highlight-cyan {
+  color: #8be9fd;
+  font-weight: bold;
+}
+
+.story-hint-card {
+  background: rgba(244, 196, 48, 0.08);
+  border: 1px dashed var(--gold);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  color: #ffeaa7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* STORY QUEST LIST */
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.quest-item {
+  background: #1c101a;
+  border: 1px solid #4a2c42;
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quest-item.completed {
+  border-color: #50fa7b;
+  background: rgba(80, 250, 123, 0.08);
+}
+
+.quest-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.quest-title {
+  font-size: 1.05rem;
+  font-weight: bold;
+  color: var(--gold);
+}
+
+.quest-item.completed .quest-title {
+  color: #50fa7b;
+}
+
+.quest-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.quest-reward {
+  font-size: 0.85rem;
+  color: #f1fa8c;
+}
+
+.quest-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.88rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.quest-badge.done {
+  background: rgba(80, 250, 123, 0.2);
+  color: #50fa7b;
+  border: 1px solid #50fa7b;
+}
+
+.quest-badge.pending {
+  background: rgba(255, 184, 108, 0.2);
+  color: #ffb86c;
+  border: 1px dashed #ffb86c;
+}
+
+/* BARISTA GUIDE */
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.guide-item {
+  background: #1e111c;
+  border: 1px solid #57334d;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.guide-item-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.guide-item-content {
+  font-size: 0.92rem;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
