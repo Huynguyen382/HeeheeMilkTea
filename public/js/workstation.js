@@ -27,6 +27,7 @@ class BaristaWorkstation {
     this.liquidFill = 0.72; // Current fill animation target
     this.currentFill = 0.72;
     this.steamParticles = [];
+    this.frostParticles = [];
     this.iceCubes = [];
     this.bobaPearls = [];
     this.floatingTexts = [];
@@ -227,7 +228,9 @@ class BaristaWorkstation {
 
     // Update hand progress
     if (this.handAction) {
-      this.handProgress += 0.055;
+      // Shake lasts longer (~60 frames) so player can experience the full satisfying shaking action
+      const step = this.handAction === 'shake' ? 0.016 : 0.045;
+      this.handProgress += step;
       if (this.handProgress >= 1.0) {
         this.handAction = null;
         this.handProgress = 0;
@@ -255,6 +258,30 @@ class BaristaWorkstation {
       p.r += 0.1;
     });
     this.steamParticles = this.steamParticles.filter(p => p.alpha > 0);
+
+    // Frost mist particles during shaking
+    if (this.handAction === 'shake') {
+      const cx = this.width * 0.5;
+      const cy = this.height * 0.48;
+      for (let i = 0; i < 2; i++) {
+        this.frostParticles.push({
+          x: cx + (Math.random() - 0.5) * 50,
+          y: cy + (Math.random() - 0.5) * 70,
+          vx: (Math.random() - 0.5) * 4,
+          vy: -1 - Math.random() * 3,
+          alpha: 0.85,
+          r: 2.2 + Math.random() * 3.5
+        });
+      }
+    }
+
+    this.frostParticles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= 0.035;
+      p.r += 0.08;
+    });
+    this.frostParticles = this.frostParticles.filter(p => p.alpha > 0);
 
     // Floating text update
     this.floatingTexts.forEach(t => {
@@ -288,7 +315,9 @@ class BaristaWorkstation {
     this.drawFloatingTexts(ctx);
 
     // 6. Draw First-Person Barista Animated Arm & Hand
-    if (this.handAction) {
+    if (this.handAction === 'shake') {
+      this.drawTwoHandedShake(ctx);
+    } else if (this.handAction) {
       this.drawBaristaHand(ctx);
     }
   }
@@ -502,6 +531,9 @@ class BaristaWorkstation {
     const botY = topY + cupH;
 
     ctx.save();
+    if (this.handAction === 'shake') {
+      ctx.globalAlpha = 0.25;
+    }
 
     // 1. Cup shadow on the wooden table
     ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
@@ -706,183 +738,620 @@ class BaristaWorkstation {
     ctx.restore();
   }
 
-  // --- FIRST-PERSON BARISTA HAND & ARM ANIMATION ---
+  // --- REALISTIC ANATOMICAL BARISTA ARM ---
+  drawRealisticArm(ctx, startX, startY, wristX, wristY, side = 'right') {
+    ctx.save();
+    const dx = wristX - startX;
+    const dy = wristY - startY;
+    const angle = Math.atan2(dy, dx);
+    const len = Math.hypot(dx, dy);
+
+    ctx.translate(startX, startY);
+    ctx.rotate(angle);
+
+    const baseW = 48; // forearm width near elbow
+    const wristW = 22; // wrist width
+
+    // 1. Soft Arm Cast Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+    ctx.beginPath();
+    ctx.ellipse(len * 0.45, 18, len * 0.52, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Bare Skin Wrist & Forearm portion
+    const skinGrad = ctx.createLinearGradient(0, -wristW * 0.5, 0, wristW * 0.5);
+    skinGrad.addColorStop(0, '#fffbf5');
+    skinGrad.addColorStop(0.35, '#ffe5cc');
+    skinGrad.addColorStop(0.75, '#f8bda8');
+    skinGrad.addColorStop(1, '#df8f7c');
+    ctx.fillStyle = skinGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(len * 0.62, -wristW * 0.6);
+    ctx.quadraticCurveTo(len * 0.82, -wristW * 0.52, len, -wristW * 0.48);
+    // Ulnar notch / wrist bone bump
+    if (side === 'right') {
+      ctx.lineTo(len, wristW * 0.55);
+      ctx.quadraticCurveTo(len * 0.82, wristW * 0.6, len * 0.62, wristW * 0.68);
+    } else {
+      ctx.lineTo(len, wristW * 0.48);
+      ctx.quadraticCurveTo(len * 0.82, wristW * 0.52, len * 0.62, wristW * 0.6);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    // Delicate tendon line at wrist flexion
+    ctx.strokeStyle = 'rgba(180, 100, 80, 0.22)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.arc(len - 4, 0, 8, -Math.PI * 0.35, Math.PI * 0.35);
+    ctx.stroke();
+
+    // 3. Voluminous Emerald Barista Sleeve
+    const sleeveEnd = len * 0.76;
+    const sleeveGrad = ctx.createLinearGradient(0, -baseW * 0.7, 0, baseW * 0.7);
+    sleeveGrad.addColorStop(0, '#15522e');
+    sleeveGrad.addColorStop(0.2, '#27ae60');
+    sleeveGrad.addColorStop(0.5, '#2ecc71');
+    sleeveGrad.addColorStop(0.85, '#1e824c');
+    sleeveGrad.addColorStop(1, '#0f3c21');
+    ctx.fillStyle = sleeveGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(-20, -baseW * 0.65);
+    ctx.quadraticCurveTo(sleeveEnd * 0.5, -baseW * 0.85, sleeveEnd, -wristW * 0.78);
+    ctx.lineTo(sleeveEnd, wristW * 0.78);
+    ctx.quadraticCurveTo(sleeveEnd * 0.5, baseW * 0.85, -20, baseW * 0.65);
+    ctx.closePath();
+    ctx.fill();
+
+    // Sleeve Drapery Folds & Wrinkles
+    ctx.strokeStyle = 'rgba(10, 45, 20, 0.45)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(sleeveEnd * 0.28, -baseW * 0.5);
+    ctx.quadraticCurveTo(sleeveEnd * 0.5, -baseW * 0.1, sleeveEnd * 0.38, baseW * 0.3);
+    ctx.moveTo(sleeveEnd * 0.58, -baseW * 0.45);
+    ctx.quadraticCurveTo(sleeveEnd * 0.72, 0, sleeveEnd * 0.62, baseW * 0.4);
+    ctx.stroke();
+
+    // Sleeve Highlight Crease
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.moveTo(sleeveEnd * 0.26, -baseW * 0.55);
+    ctx.quadraticCurveTo(sleeveEnd * 0.46, -baseW * 0.15, sleeveEnd * 0.36, baseW * 0.25);
+    ctx.stroke();
+
+    // Golden Cuff Hem Stitching
+    ctx.strokeStyle = '#f4c430';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(sleeveEnd - 2, -wristW * 0.78);
+    ctx.lineTo(sleeveEnd - 2, wristW * 0.78);
+    ctx.stroke();
+
+    // 4. Delicate Scalloped White Lace Cuff
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.ellipse(sleeveEnd + 4, 0, 7, wristW * 0.84, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Lace Scallop Lobes
+    ctx.fillStyle = '#ffffff';
+    const scallopCount = 5;
+    for (let i = 0; i < scallopCount; i++) {
+      const sy = -wristW * 0.68 + (i * wristW * 1.36) / (scallopCount - 1);
+      ctx.beginPath();
+      ctx.arc(sleeveEnd + 7, sy, 3.2, -Math.PI * 0.5, Math.PI * 0.5);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(200, 210, 225, 0.6)';
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  // Helper to draw realistic anime fingers with joints, pads, and manicured nails
+  drawFingersWithNails(ctx, fingerList) {
+    fingerList.forEach(f => {
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(f.rot || 0);
+
+      // Finger gradient (skin tone + peach blush pad at tip)
+      const fGrad = ctx.createLinearGradient(0, 0, f.w, 0);
+      fGrad.addColorStop(0, '#ffe5cc');
+      fGrad.addColorStop(0.7, '#f8bda8');
+      fGrad.addColorStop(1, '#f49a85');
+      ctx.fillStyle = fGrad;
+
+      // Finger phalanx capsule
+      ctx.beginPath();
+      ctx.roundRect(0, -f.h * 0.5, f.w, f.h, f.h * 0.5);
+      ctx.fill();
+
+      // Knuckle crease line
+      ctx.strokeStyle = 'rgba(180, 95, 75, 0.35)';
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(f.w * 0.45, -f.h * 0.35);
+      ctx.lineTo(f.w * 0.45, f.h * 0.35);
+      ctx.stroke();
+
+      // Manicured fingernail
+      if (f.nail !== false) {
+        ctx.fillStyle = '#fecdd3';
+        ctx.beginPath();
+        ctx.roundRect(f.w - 5, -f.h * 0.38, 4.2, f.h * 0.76, [1.5, 2.5, 2.5, 1.5]);
+        ctx.fill();
+
+        // White specular gloss on nail
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(f.w - 4, -f.h * 0.25, 1.2, f.h * 0.5);
+      }
+
+      ctx.restore();
+    });
+  }
+
+  // --- SINGLE-HAND BARISTA INTERACTIONS (Rót trà, múc đường, gắp đá, múc topping, giao ly) ---
   drawBaristaHand(ctx) {
     const p = this.handProgress; // 0.0 -> 1.0
-    // Sine curve: hand enters from bottom-right (p=0 to 0.5), acts at peak (p=0.5), retracts (0.5 to 1.0)
     const curve = Math.sin(p * Math.PI); // 0 -> 1 -> 0
     const cx = this.width * 0.5;
     const cy = this.height * 0.52;
 
-    const startX = this.width + 60;
-    const startY = this.height + 40;
-    const handX = startX - (startX - (cx + 35)) * curve;
-    const handY = startY - (startY - (cy - 10)) * curve;
+    const startX = this.width + 65;
+    const startY = this.height + 45;
+    const wristX = startX - (startX - (cx + 38)) * curve;
+    const wristY = startY - (startY - (cy - 12)) * curve;
 
+    // 1. Draw realistic forearm with sleeve & lace cuff
+    this.drawRealisticArm(ctx, startX, startY, wristX, wristY, 'right');
+
+    // 2. Draw anatomical hand & tool at wrist position
     ctx.save();
-    ctx.translate(handX, handY);
-    ctx.rotate(-0.25 * curve);
+    ctx.translate(wristX, wristY);
+    ctx.rotate(-0.28 * curve);
 
-    // 1. Arm with Emerald Green Apron Sleeve
-    const sleeveGrad = ctx.createLinearGradient(0, 0, 70, 70);
-    sleeveGrad.addColorStop(0, '#2e8b57');
-    sleeveGrad.addColorStop(0.5, '#27ae60');
-    sleeveGrad.addColorStop(1, '#1b5233');
-    ctx.fillStyle = sleeveGrad;
+    // Anatomical Palm
+    const palmGrad = ctx.createRadialGradient(-3, 6, 2, 0, 5, 20);
+    palmGrad.addColorStop(0, '#fffbf5');
+    palmGrad.addColorStop(0.45, '#ffe5cc');
+    palmGrad.addColorStop(0.8, '#f8bda8');
+    palmGrad.addColorStop(1, '#e39480');
+    ctx.fillStyle = palmGrad;
 
     ctx.beginPath();
-    ctx.moveTo(15, 20);
-    ctx.lineTo(80, 85);
-    ctx.lineTo(45, 110);
-    ctx.lineTo(-10, 45);
-    ctx.closePath();
+    ctx.ellipse(-6, 8, 11, 8, -0.35, 0, Math.PI * 2);
     ctx.fill();
 
-    // 2. Cute white lace / ruffled cuff
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.ellipse(8, 28, 14, 8, -0.7, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 3. Delicate Barista Hand / Fingers (Soft Anime Skin)
-    const skinGrad = ctx.createRadialGradient(-4, 4, 2, 0, 0, 16);
-    skinGrad.addColorStop(0, '#fff5eb');
-    skinGrad.addColorStop(0.6, '#ffe0bd');
-    skinGrad.addColorStop(1, '#f3b49f');
-    ctx.fillStyle = skinGrad;
-
-    // Palm and curved fingers gripping the utensil
-    ctx.beginPath();
-    ctx.ellipse(-6, 8, 11, 8, -0.4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Thumb & fingers
-    ctx.beginPath();
-    ctx.roundRect(-16, -2, 14, 6, 3);
-    ctx.roundRect(-18, 5, 15, 6, 3);
-    ctx.roundRect(-16, 12, 14, 5, 2.5);
-    ctx.fill();
-
-    // 4. Utensil based on Action:
+    // Utensil based on Action:
     if (this.handAction === 'pour_tea') {
-      // Stainless steel tea kettle pouring stream
-      ctx.fillStyle = '#bdc3c7';
+      // Brushed Stainless Steel Gooseneck Kettle with wood handle
+      const kettleGrad = ctx.createLinearGradient(-42, -22, -10, 6);
+      kettleGrad.addColorStop(0, '#f1f2f6');
+      kettleGrad.addColorStop(0.4, '#ced6e0');
+      kettleGrad.addColorStop(1, '#747d8c');
+      ctx.fillStyle = kettleGrad;
+
       ctx.beginPath();
-      ctx.roundRect(-36, -18, 28, 24, 4);
+      ctx.roundRect(-42, -22, 32, 28, [6, 4, 6, 6]);
       ctx.fill();
-      ctx.fillStyle = '#95a5a6';
-      ctx.fillRect(-44, -12, 10, 6); // spout
+      ctx.strokeStyle = '#57606f';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Gooseneck curved spout
+      ctx.fillStyle = '#a4b0be';
+      ctx.beginPath();
+      ctx.moveTo(-42, -5);
+      ctx.quadraticCurveTo(-58, -25, -50, -32);
+      ctx.lineTo(-46, -30);
+      ctx.quadraticCurveTo(-52, -24, -42, -12);
+      ctx.closePath();
+      ctx.fill();
+
+      // Ergonomic wooden handle grip
+      ctx.fillStyle = '#8b5a2b';
+      ctx.beginPath();
+      ctx.roundRect(-14, -20, 8, 24, 3);
+      ctx.fill();
 
       // Pouring liquid stream into the cup!
       if (curve > 0.35) {
         const tCol = BaristaWorkstation.TEA_COLORS[this.tea] || BaristaWorkstation.TEA_COLORS.den;
         ctx.fillStyle = tCol.mid;
         ctx.beginPath();
-        ctx.moveTo(-44, -9);
-        ctx.quadraticCurveTo(-55, 15, -42, 45);
-        ctx.lineTo(-37, 45);
-        ctx.quadraticCurveTo(-49, 15, -38, -9);
+        ctx.moveTo(-50, -31);
+        ctx.quadraticCurveTo(-65, 12, -45, 52);
+        ctx.lineTo(-40, 52);
+        ctx.quadraticCurveTo(-59, 12, -46, -30);
         ctx.closePath();
         ctx.fill();
 
-        // Droplets
+        // Tea splash droplets
         ctx.fillStyle = tCol.light;
-        ctx.fillRect(-44, 48, 3, 3);
-        ctx.fillRect(-38, 52, 2.5, 2.5);
+        ctx.fillRect(-48, 54, 3.5, 3.5);
+        ctx.fillRect(-41, 58, 2.5, 2.5);
+        ctx.fillRect(-52, 48, 2, 2);
       }
+
+      // Fingers gripping the handle
+      this.drawFingersWithNails(ctx, [
+        { x: -16, y: -4, w: 14, h: 5.5, rot: 3.1, nail: true },
+        { x: -16, y: 3, w: 15, h: 5.4, rot: 3.1, nail: true },
+        { x: -15, y: 10, w: 14, h: 5.0, rot: 3.1, nail: true },
+        { x: -6, y: -12, w: 13, h: 5.2, rot: -1.2, nail: true } // thumb on top
+      ]);
+
     } else if (this.handAction === 'add_sugar') {
-      // Long golden honey / syrup spoon
+      // Long golden syrup spoon
       ctx.strokeStyle = '#f1c40f';
       ctx.lineWidth = 3.5;
       ctx.beginPath();
       ctx.moveTo(0, 5);
-      ctx.lineTo(-38, -12);
+      ctx.lineTo(-42, -14);
       ctx.stroke();
 
-      // Spoon bowl with golden honey
+      // Spoon bowl with dripping honey
       ctx.fillStyle = '#f39c12';
       ctx.beginPath();
-      ctx.ellipse(-40, -13, 8, 5, -0.5, 0, Math.PI * 2);
+      ctx.ellipse(-44, -15, 9, 6, -0.5, 0, Math.PI * 2);
       ctx.fill();
-
-      // Honey drip
-      if (curve > 0.4) {
-        ctx.fillStyle = '#f1c40f';
-        ctx.beginPath();
-        ctx.arc(-42, 6, 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else if (this.handAction === 'add_ice') {
-      // Metal ice tongs holding ice cube
-      ctx.strokeStyle = '#bdc3c7';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(-5, 0);
-      ctx.lineTo(-30, -10);
-      ctx.lineTo(-38, -4);
-      ctx.moveTo(-5, 8);
-      ctx.lineTo(-30, 2);
-      ctx.lineTo(-38, -2);
-      ctx.stroke();
-
-      // Translucent ice cube held in tongs
-      ctx.fillStyle = 'rgba(178, 235, 242, 0.85)';
-      ctx.beginPath();
-      ctx.roundRect(-46, -10, 12, 12, 2.5);
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
+      ctx.strokeStyle = '#d35400';
       ctx.lineWidth = 1;
       ctx.stroke();
+
+      // Viscous honey drizzle
+      if (curve > 0.38) {
+        ctx.fillStyle = '#f1c40f';
+        ctx.beginPath();
+        ctx.moveTo(-45, -10);
+        ctx.quadraticCurveTo(-47, 8, -45, 26);
+        ctx.lineTo(-43, 26);
+        ctx.quadraticCurveTo(-44, 8, -43, -10);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(-44, 32, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Fingers gracefully holding spoon
+      this.drawFingersWithNails(ctx, [
+        { x: -12, y: -2, w: 14, h: 5.2, rot: 2.8, nail: true },
+        { x: -11, y: 5, w: 14, h: 5.0, rot: 2.9, nail: true },
+        { x: -2, y: -8, w: 12, h: 5.0, rot: -0.8, nail: true } // thumb
+      ]);
+
+    } else if (this.handAction === 'add_ice') {
+      // Precision metal ice tongs
+      ctx.strokeStyle = '#ced6e0';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(-4, 0);
+      ctx.lineTo(-32, -12);
+      ctx.lineTo(-42, -5);
+      ctx.moveTo(-4, 8);
+      ctx.lineTo(-32, 2);
+      ctx.lineTo(-42, -3);
+      ctx.stroke();
+
+      // Sparkling crystalline ice cube held in tongs
+      ctx.fillStyle = 'rgba(180, 235, 250, 0.88)';
+      ctx.beginPath();
+      ctx.roundRect(-52, -12, 14, 14, 3);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-49, -9, 4, 4);
+
+      // Droplets & cold vapors
+      if (curve > 0.45) {
+        ctx.fillStyle = '#8be9fd';
+        ctx.fillRect(-46, 12, 2.5, 2.5);
+        ctx.fillRect(-42, 20, 2, 2);
+      }
+
+      // Fingers gripping tongs
+      this.drawFingersWithNails(ctx, [
+        { x: -14, y: 0, w: 15, h: 5.4, rot: 2.9, nail: true },
+        { x: -13, y: 7, w: 14, h: 5.2, rot: 3.0, nail: true },
+        { x: -3, y: -7, w: 13, h: 5.2, rot: -0.9, nail: true } // thumb
+      ]);
+
     } else if (this.handAction === 'add_topping') {
       // Boba perforated ladle with pearls
-      ctx.strokeStyle = '#7f8c8d';
+      ctx.strokeStyle = '#747d8c';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(0, 5);
-      ctx.lineTo(-34, -12);
+      ctx.lineTo(-36, -14);
       ctx.stroke();
 
-      ctx.fillStyle = '#34495e';
+      ctx.fillStyle = '#2f3542';
       ctx.beginPath();
-      ctx.ellipse(-38, -13, 9, 6, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(-42, -15, 11, 7, -0.35, 0, Math.PI * 2);
       ctx.fill();
 
       // Boba pearls in ladle
-      ctx.fillStyle = '#140c14';
+      ctx.fillStyle = '#111111';
       ctx.beginPath();
-      ctx.arc(-40, -14, 3, 0, Math.PI * 2);
-      ctx.arc(-36, -12, 2.8, 0, Math.PI * 2);
+      ctx.arc(-44, -16, 3.5, 0, Math.PI * 2);
+      ctx.arc(-39, -14, 3.2, 0, Math.PI * 2);
+      ctx.arc(-42, -12, 3.0, 0, Math.PI * 2);
       ctx.fill();
-    } else if (this.handAction === 'shake') {
-      // Sleek stainless steel cocktail shaker
-      const shakeVibe = Math.sin(this.tick * 0.8) * 4;
-      ctx.fillStyle = '#bdc3c7';
-      ctx.beginPath();
-      ctx.roundRect(-42 + shakeVibe, -28, 26, 38, [6, 6, 4, 4]);
-      ctx.fill();
-      ctx.fillStyle = '#ecf0f1';
-      ctx.fillRect(-38 + shakeVibe, -34, 18, 7);
-      ctx.strokeStyle = '#7f8c8d';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-42 + shakeVibe, -28, 26, 38);
+
+      // Fingers holding ladle
+      this.drawFingersWithNails(ctx, [
+        { x: -14, y: -1, w: 15, h: 5.4, rot: 2.9, nail: true },
+        { x: -13, y: 6, w: 14, h: 5.2, rot: 3.0, nail: true },
+        { x: -3, y: -8, w: 13, h: 5.2, rot: -0.8, nail: true }
+      ]);
+
     } else if (this.handAction === 'serve') {
-      // Wooden serving tray offering the finished drink
+      // Wooden serving tray presenting the finished cup
       ctx.fillStyle = '#8b5a2b';
       ctx.beginPath();
-      ctx.ellipse(-30, 10, 24, 7, 0, 0, Math.PI * 2);
+      ctx.ellipse(-32, 12, 28, 8, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = '#f4c430';
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1.4;
       ctx.stroke();
 
-      // Sparkle stars
+      // Sparkles & stars
       ctx.fillStyle = '#ffd700';
       ctx.beginPath();
-      ctx.arc(-45, -8, 2.5, 0, Math.PI * 2);
-      ctx.arc(-18, -12, 2, 0, Math.PI * 2);
+      ctx.arc(-48, -12, 3, 0, Math.PI * 2);
+      ctx.arc(-18, -18, 2.5, 0, Math.PI * 2);
+      ctx.arc(-32, -26, 2, 0, Math.PI * 2);
       ctx.fill();
+
+      // Fingers supporting the tray
+      this.drawFingersWithNails(ctx, [
+        { x: -16, y: 14, w: 16, h: 5.2, rot: 3.1, nail: true },
+        { x: -15, y: 20, w: 15, h: 5.0, rot: 3.1, nail: true },
+        { x: -4, y: 6, w: 12, h: 5.0, rot: -0.5, nail: true }
+      ]);
     }
 
+    ctx.restore();
+  }
+
+  // --- TWO-HANDED SHAKER ANIMATION (HAI TAY LẮC SHAKER GÓC NHÌN THỨ NHẤT) ---
+  drawTwoHandedShake(ctx) {
+    const p = this.handProgress; // 0.0 -> 1.0
+    // Ramp up in first 18%, intense shake in middle, ramp down in last 18%
+    const rampIn = Math.min(1, p * 5.5);
+    const rampOut = Math.min(1, (1 - p) * 5.5);
+    const intensity = Math.sin(Math.min(rampIn, rampOut) * Math.PI * 0.5);
+
+    const cx = this.width * 0.5;
+    const cy = this.height * 0.48;
+
+    // Energetic Shaking Physics (Rhythmic 60fps rapid vibration)
+    const shakeCycle = this.tick * 0.95;
+    const shakeX = Math.sin(shakeCycle) * 16 * intensity;
+    const shakeY = Math.cos(shakeCycle * 1.3) * 22 * intensity;
+    const shakeRot = Math.sin(shakeCycle) * 0.22 * intensity;
+
+    // 1. Dynamic Speed Lines / Motion Streaks radiating around shaker
+    if (intensity > 0.4) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 2.5;
+      for (let i = 0; i < 4; i++) {
+        const lineOffset = ((this.tick * 6 + i * 25) % 80) - 40;
+        const ly = cy + shakeY + lineOffset;
+        ctx.beginPath();
+        ctx.moveTo(cx - 55 - Math.random() * 20, ly);
+        ctx.lineTo(cx - 35, ly);
+        ctx.moveTo(cx + 35, ly);
+        ctx.lineTo(cx + 55 + Math.random() * 20, ly);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // 2. Chilly Frost Mist & Particles
+    this.frostParticles.forEach(fp => {
+      ctx.save();
+      ctx.fillStyle = `rgba(180, 235, 255, ${fp.alpha})`;
+      ctx.beginPath();
+      ctx.arc(fp.x, fp.y, fp.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // 3. LEFT ARM (reaches from bottom-left corner to lower shaker body)
+    const leftBaseX = this.width * 0.08;
+    const leftBaseY = this.height + 40;
+    const leftWristX = cx - 22 + shakeX * 0.8;
+    const leftWristY = cy + 26 + shakeY * 0.8;
+    this.drawRealisticArm(ctx, leftBaseX, leftBaseY, leftWristX, leftWristY, 'left');
+
+    // 4. RIGHT ARM (reaches from bottom-right corner to top shaker cap)
+    const rightBaseX = this.width * 0.92;
+    const rightBaseY = this.height + 40;
+    const rightWristX = cx + 22 + shakeX * 0.8;
+    const rightWristY = cy - 28 + shakeY * 0.8;
+    this.drawRealisticArm(ctx, rightBaseX, rightBaseY, rightWristX, rightWristY, 'right');
+
+    // 5. THE CENTRAL COBBLER SHAKER (High-detail Brushed Stainless Steel)
+    ctx.save();
+    ctx.translate(cx + shakeX, cy + shakeY);
+    ctx.rotate(shakeRot);
+
+    // Shaker Drop Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(0, 48, 28, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // A. Shaker Lower Cylinder Body (tapers slightly to bottom)
+    const bodyGrad = ctx.createLinearGradient(-26, 0, 26, 0);
+    bodyGrad.addColorStop(0, '#3d4451');
+    bodyGrad.addColorStop(0.18, '#8395a7');
+    bodyGrad.addColorStop(0.42, '#f8fafc'); // mirror chrome shine
+    bodyGrad.addColorStop(0.68, '#c8d6e5');
+    bodyGrad.addColorStop(0.9, '#576574');
+    bodyGrad.addColorStop(1, '#222f3e');
+    ctx.fillStyle = bodyGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(-24, -8);
+    ctx.lineTo(24, -8);
+    ctx.lineTo(18, 44);
+    ctx.quadraticCurveTo(0, 48, -18, 44);
+    ctx.closePath();
+    ctx.fill();
+
+    // Body bottom rim
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(0, 43, 18, 4, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // HeeHee Emblem on shaker body
+    ctx.fillStyle = '#f4c430';
+    ctx.beginPath();
+    ctx.arc(0, 18, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#1e272e';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🧋', 0, 21);
+
+    // Condensation moisture streaks running down cold steel
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-8, 5);
+    ctx.lineTo(-8, 30);
+    ctx.moveTo(9, 8);
+    ctx.lineTo(9, 26);
+    ctx.stroke();
+
+    // B. Strainer Shoulder & Mid Ring
+    ctx.fillStyle = '#485460';
+    ctx.fillRect(-25, -12, 50, 4);
+
+    const shoulderGrad = ctx.createLinearGradient(-24, 0, 24, 0);
+    shoulderGrad.addColorStop(0, '#576574');
+    shoulderGrad.addColorStop(0.4, '#ffffff');
+    shoulderGrad.addColorStop(0.7, '#c8d6e5');
+    shoulderGrad.addColorStop(1, '#2f3542');
+    ctx.fillStyle = shoulderGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(-24, -12);
+    ctx.quadraticCurveTo(-18, -32, -12, -38);
+    ctx.lineTo(12, -38);
+    ctx.quadraticCurveTo(18, -32, 24, -12);
+    ctx.closePath();
+    ctx.fill();
+
+    // C. Shaker Dome Cap (Held down by right hand!)
+    const capGrad = ctx.createLinearGradient(-13, 0, 13, 0);
+    capGrad.addColorStop(0, '#576574');
+    capGrad.addColorStop(0.35, '#ffffff');
+    capGrad.addColorStop(0.75, '#c8d6e5');
+    capGrad.addColorStop(1, '#2f3542');
+    ctx.fillStyle = capGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(-13, -38);
+    ctx.lineTo(-13, -48);
+    ctx.quadraticCurveTo(0, -56, 13, -48);
+    ctx.lineTo(13, -38);
+    ctx.closePath();
+    ctx.fill();
+
+    // Cap specular shine ring
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(0, -48, 8, -Math.PI * 0.7, -Math.PI * 0.3);
+    ctx.stroke();
+
+    ctx.restore(); // Restore shaker transform
+
+    // 6. LEFT HAND GRIPPING LOWER SHAKER BODY
+    // Left hand enters from left wrist, palm wraps around the metal cylinder
+    ctx.save();
+    ctx.translate(leftWristX, leftWristY);
+    ctx.rotate(0.35 + shakeRot * 0.5);
+
+    // Left Palm pad
+    const lPalmGrad = ctx.createRadialGradient(0, 0, 2, 4, 2, 16);
+    lPalmGrad.addColorStop(0, '#fffbf5');
+    lPalmGrad.addColorStop(0.5, '#ffe5cc');
+    lPalmGrad.addColorStop(1, '#f8bda8');
+    ctx.fillStyle = lPalmGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, 2, 11, 8, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Left Thumb resting on side of shaker
+    this.drawFingersWithNails(ctx, [
+      { x: 2, y: -8, w: 15, h: 5.5, rot: -0.35, nail: true }
+    ]);
+
+    // 4 Left Fingers wrapping around the front of the shaker!
+    this.drawFingersWithNails(ctx, [
+      { x: 8, y: -2, w: 20, h: 5.2, rot: 0.1, nail: true },
+      { x: 8, y: 5, w: 22, h: 5.4, rot: 0.05, nail: true },
+      { x: 7, y: 12, w: 20, h: 5.2, rot: 0.0, nail: true },
+      { x: 5, y: 18, w: 17, h: 4.8, rot: -0.05, nail: true }
+    ]);
+    ctx.restore();
+
+    // 7. RIGHT HAND FIRMLY CUPPING AND PRESSING THE TOP CAP
+    // Right hand enters from right wrist, palm heel pushes down on the dome
+    ctx.save();
+    ctx.translate(rightWristX, rightWristY);
+    ctx.rotate(-0.45 + shakeRot * 0.5);
+
+    // Right Palm Heel pressing down on shaker lid
+    const rPalmGrad = ctx.createRadialGradient(-2, 0, 2, 0, 4, 16);
+    rPalmGrad.addColorStop(0, '#fffbf5');
+    rPalmGrad.addColorStop(0.5, '#ffe5cc');
+    rPalmGrad.addColorStop(1, '#f8bda8');
+    ctx.fillStyle = rPalmGrad;
+    ctx.beginPath();
+    ctx.ellipse(-4, 0, 11, 8, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Right Thumb gripping cap shoulder
+    this.drawFingersWithNails(ctx, [
+      { x: -14, y: 4, w: 14, h: 5.2, rot: 2.7, nail: true }
+    ]);
+
+    // Right Fingers cupping down across the cap
+    this.drawFingersWithNails(ctx, [
+      { x: -16, y: -4, w: 18, h: 5.2, rot: 3.0, nail: true },
+      { x: -16, y: -10, w: 17, h: 5.0, rot: 3.1, nail: true },
+      { x: -14, y: -16, w: 15, h: 4.6, rot: 3.2, nail: true }
+    ]);
+    ctx.restore();
+
+    // 8. "SHAKING!" Punchy Visual Badge in Center
+    ctx.save();
+    ctx.font = 'bold 20px "VT323", monospace, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ff79c6';
+    ctx.shadowColor = 'rgba(0,0,0,0.85)';
+    ctx.shadowBlur = 8;
+    ctx.fillText('⚡ LẮC ĐỀU TAY! 🥤', cx + shakeX, cy - 65 + shakeY);
     ctx.restore();
   }
 }

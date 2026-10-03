@@ -806,17 +806,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     canvas.setShaking(true);
     if (workstation) {
       workstation.triggerHandAction('shake');
-      workstation.addFloatingText('🥤 Đang Lắc Shaker...', '#bd93f9');
+      workstation.addFloatingText('⚡ LẮC SHAKER ĐỀU TAY! 🥤', '#bd93f9');
     }
-    elBtnShaker.innerText = 'Đang Lắc... 🥤';
+    elBtnShaker.innerText = 'Đang Lắc Cực Mạnh... 🥤';
     setTimeout(() => {
       canvas.setShaking(false);
       elBtnShaker.innerText = 'Đã Lắc Xong ✨';
-    }, 800);
+    }, 1100);
     setTimeout(() => {
       elBtnShaker.innerText = 'Lắc Shaker 🥤';
       elBtnShaker.disabled = false;
-    }, 1800);
+    }, 2000);
   });
 
   // 4. Serve Drink Action
