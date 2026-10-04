@@ -140,6 +140,8 @@ const db = {
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN decorations TEXT DEFAULT \'[]\';'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN negotiation TEXT;'); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN status TEXT DEFAULT 'accepted';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN created_at TEXT;"); } catch (e) {}
 
       sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS game_saves (

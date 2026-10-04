@@ -6,11 +6,11 @@ const SECRET_KEY = process.env.HYHY_SECRET || 'hyhy_super_secret_anti_cheat_key_
 
 // Chapter configuration: Base Cap & Max Cap per real-world day (VND)
 const CHAPTER_CAPS = {
-  1: { base: 1200000, max: 2000000, maxCollabs: 2, collabBoost: 400000 },
+  1: { base: 1200000, max: 2000000, maxCollabs: 3, collabBoost: 400000 },
   2: { base: 5000000, max: 8500000, maxCollabs: 3, collabBoost: 1166666 },
-  3: { base: 1800000, max: 30000000, maxCollabs: 4, collabBoost: 3000000 },
-  4: { base: 50000000, max: 80000000, maxCollabs: 5, collabBoost: 6000000 },
-  5: { base: 120000000, max: 200000000, maxCollabs: 5, collabBoost: 16000000 }
+  3: { base: 1800000, max: 30000000, maxCollabs: 3, collabBoost: 3000000 },
+  4: { base: 50000000, max: 80000000, maxCollabs: 3, collabBoost: 6000000 },
+  5: { base: 120000000, max: 200000000, maxCollabs: 3, collabBoost: 16000000 }
 };
 
 // Get current server real-world date in VN timezone (GMT+7)
@@ -48,11 +48,14 @@ async function getOrCreateDailyStats(storeId, chapter) {
     row = await db.prepare('SELECT * FROM daily_stats WHERE store_id = ? AND real_date = ?').get(storeId, realDate);
   }
 
-  // Count active collabs for today
+  // Count active collabs (where store is host or friend, and status is accepted)
   const collabsCountRow = await db.prepare(`
-    SELECT COUNT(*) as cnt FROM collabs WHERE host_store_id = ? AND collab_date = ?
-  `).get(storeId, realDate);
-  const collabsCount = Math.min(collabsCountRow ? collabsCountRow.cnt : 0, capInfo.maxCollabs);
+    SELECT COUNT(*) as cnt 
+    FROM collabs 
+    WHERE (host_store_id = ? OR friend_store_id = ?) 
+      AND status = 'accepted'
+  `).get(storeId, storeId);
+  const collabsCount = Math.min(collabsCountRow ? (collabsCountRow.cnt || 0) : 0, 3);
 
   // Daily Cap removed per user request: unlimited daily revenue!
   return {
@@ -62,7 +65,7 @@ async function getOrCreateDailyStats(storeId, chapter) {
     effective_cap: Infinity,
     max_cap: null,
     collabs_count: collabsCount,
-    max_collabs: capInfo.maxCollabs,
+    max_collabs: 3,
     is_overloaded: false,
     remaining_today: Infinity
   };
@@ -173,9 +176,18 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     return { success: false, message: 'Pha sai loại topping yêu cầu của khách! Khách càu nhàu trả lại ly.' };
   }
 
-  // 4. Daily earnings: No limit! Full price payout every order
+  // 4. Daily earnings: No limit! Full price payout + Collab revenue bonus (+10% per active partner, max 3 partners = +30%)
   const daily = await getOrCreateDailyStats(storeId, save.chapter);
-  const payout = order.price;
+  const collabRow = await db.prepare(`
+    SELECT COUNT(*) as cnt 
+    FROM collabs 
+    WHERE (host_store_id = ? OR friend_store_id = ?) 
+      AND status = 'accepted'
+  `).get(storeId, storeId);
+  const activeCollabs = Math.min(3, collabRow ? (collabRow.cnt || 0) : 0);
+  const collabBonusPercent = activeCollabs * 10;
+  const collabBonus = Math.round(order.price * (collabBonusPercent / 100));
+  const payout = order.price + collabBonus;
   const isOverloadedNow = false;
 
   // 5. Check customer archetype effects (Tú TikToker review & Buff decrements)
@@ -285,6 +297,10 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   return {
     success: true,
     payout,
+    basePrice: order.price,
+    collabBonus,
+    collabBonusPercent,
+    activeCollabs,
     newMoney,
     reputation: newRep,
     repGain,

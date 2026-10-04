@@ -1209,12 +1209,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         clearInterval(orderTimerInterval);
         canvas.triggerSuccessEffects(res.payout);
 
+        const collabExtra = res.collabBonus > 0 
+          ? ` (+${res.collabBonusPercent}% Collab: ${res.activeCollabs} quán)` 
+          : '';
+
         if (workstation) {
           workstation.triggerHandAction('serve');
-          workstation.addFloatingText(`✨ +${res.payout.toLocaleString('vi-VN')}đ!`, '#50fa7b');
+          workstation.addFloatingText(`✨ +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}!`, '#50fa7b');
         }
 
-        showToast(`🎉 Giao thành công! Nhận +${res.payout.toLocaleString('vi-VN')}đ`);
+        showToast(`🎉 Giao thành công! Nhận +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}`);
 
         if (res.tiktokerViral) {
           setTimeout(() => {
@@ -1330,34 +1334,241 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupModals();
 
   function setupModals() {
-    // Collab Modal
+    // Collab Modal System
     const modalCollab = document.getElementById('modal-collab');
-    document.getElementById('nav-collab').addEventListener('click', () => {
-      document.getElementById('my-collab-code').value = storeState.store_code;
-      modalCollab.style.display = 'flex';
-    });
-    document.getElementById('close-collab').addEventListener('click', () => { modalCollab.style.display = 'none'; });
+    const navCollab = document.getElementById('nav-collab');
+    const closeCollab = document.getElementById('close-collab');
 
-    document.getElementById('btn-copy-code').addEventListener('click', () => {
-      navigator.clipboard.writeText(storeState.store_code);
-      showToast('Đã sao chép Mã Quán vào bộ nhớ tạm!');
-    });
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
 
-    document.getElementById('btn-submit-collab').addEventListener('click', async () => {
-      const friendCode = document.getElementById('friend-code-input').value;
-      if (!friendCode) return showToast('Vui lòng nhập mã quán bạn bè!');
+    async function renderCollabModal() {
+      if (!storeState) return;
+      const myCodeInput = document.getElementById('my-collab-code');
+      if (myCodeInput) myCodeInput.value = storeState.store_code || '';
 
-      const res = await API.collab(friendCode);
-      if (res.success) {
-        sound.coin();
-        showToast(res.message, 4000);
-        storeState = await API.getState();
-        updateUI();
-        modalCollab.style.display = 'none';
-      } else {
-        showToast('❌ ' + res.message);
+      try {
+        const res = await API.getCollabs();
+        if (!res || !res.success) return;
+
+        const countDisp = document.getElementById('collab-count-disp');
+        const boostDisp = document.getElementById('collab-boost-disp');
+        if (countDisp) countDisp.innerText = `${res.activeCount}/3 Quán`;
+        if (boostDisp) boostDisp.innerText = `📈 Đang tăng: +${res.bonusPercent}% Doanh Thu`;
+
+        // 1. Incoming Requests
+        const incomingContainer = document.getElementById('collab-incoming-list');
+        const incomingBadge = document.getElementById('incoming-count-badge');
+        if (incomingContainer) {
+          if (res.incomingRequests && res.incomingRequests.length > 0) {
+            if (incomingBadge) {
+              incomingBadge.innerText = res.incomingRequests.length;
+              incomingBadge.style.display = 'inline-block';
+            }
+            incomingContainer.innerHTML = res.incomingRequests.map(req => `
+              <div style="background: rgba(80, 250, 123, 0.08); border: 1px solid #50fa7b; border-radius: 6px; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: bold; color: #50fa7b;">${escapeHtml(req.store_name)}</div>
+                  <div style="font-size: 0.78rem; color: var(--text-muted);">Mã: ${escapeHtml(req.store_code)}</div>
+                </div>
+                <div style="display: flex; gap: 4px;">
+                  <button class="btn-action-sm btn-accept-collab" data-id="${req.id}" style="background: #50fa7b; color: #000; padding: 4px 10px; font-size: 0.82rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold;">✓ Chấp nhận</button>
+                  <button class="btn-action-sm btn-decline-collab" data-id="${req.id}" style="background: #ff5555; color: #fff; padding: 4px 8px; font-size: 0.82rem; border-radius: 4px; border: none; cursor: pointer;">✕ Từ chối</button>
+                </div>
+              </div>
+            `).join('');
+          } else {
+            if (incomingBadge) incomingBadge.style.display = 'none';
+            incomingContainer.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời nào đang chờ.</div>';
+          }
+        }
+
+        // 2. Active Collabs
+        const activeContainer = document.getElementById('collab-active-list');
+        if (activeContainer) {
+          if (res.activeCollabs && res.activeCollabs.length > 0) {
+            activeContainer.innerHTML = res.activeCollabs.map(item => `
+              <div style="background: rgba(139, 233, 253, 0.08); border: 1px solid #8be9fd; border-radius: 6px; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: bold; color: #8be9fd;">🤝 ${escapeHtml(item.partner_name)}</div>
+                  <div style="font-size: 0.78rem; color: #50fa7b; font-weight: bold;">+10% Doanh Thu • Mã: ${escapeHtml(item.partner_code)}</div>
+                </div>
+                <button class="btn-action-sm btn-unlink-collab" data-id="${item.id}" style="background: #4a5568; color: #fff; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; border: none; cursor: pointer;">Hủy</button>
+              </div>
+            `).join('');
+          } else {
+            activeContainer.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Chưa có đối tác nào. Hãy gửi mã quán cho bạn bè!</div>';
+          }
+        }
+
+        // 3. Outgoing Requests
+        const outgoingContainer = document.getElementById('collab-outgoing-list');
+        if (outgoingContainer) {
+          if (res.outgoingRequests && res.outgoingRequests.length > 0) {
+            outgoingContainer.innerHTML = res.outgoingRequests.map(req => `
+              <div style="background: rgba(255, 184, 108, 0.08); border: 1px solid #ffb86c; border-radius: 6px; padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: bold; color: #ffb86c;">📤 ${escapeHtml(req.store_name)}</div>
+                  <div style="font-size: 0.78rem; color: var(--text-muted);">Đang chờ phản hồi... (Mã: ${escapeHtml(req.store_code)})</div>
+                </div>
+                <button class="btn-action-sm btn-cancel-collab" data-id="${req.id}" style="background: #6272a4; color: #fff; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; border: none; cursor: pointer;">Thu hồi</button>
+              </div>
+            `).join('');
+          } else {
+            outgoingContainer.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời nào đang chờ phản hồi.</div>';
+          }
+        }
+      } catch (err) {
+        console.error('Error rendering collab modal:', err);
       }
-    });
+    }
+
+    if (navCollab) {
+      navCollab.addEventListener('click', () => {
+        renderCollabModal();
+        if (modalCollab) modalCollab.style.display = 'flex';
+      });
+    }
+
+    if (closeCollab) {
+      closeCollab.addEventListener('click', () => {
+        if (modalCollab) modalCollab.style.display = 'none';
+      });
+    }
+
+    const btnCopyCode = document.getElementById('btn-copy-code');
+    if (btnCopyCode) {
+      btnCopyCode.addEventListener('click', () => {
+        if (storeState && storeState.store_code) {
+          navigator.clipboard.writeText(storeState.store_code);
+          showToast('Đã sao chép Mã Quán vào bộ nhớ tạm! Gửi cho bạn bè để mời Collab nhé.');
+        }
+      });
+    }
+
+    const btnSubmitCollab = document.getElementById('btn-submit-collab');
+    if (btnSubmitCollab) {
+      btnSubmitCollab.addEventListener('click', async () => {
+        const input = document.getElementById('friend-code-input');
+        const friendCode = input ? input.value.trim() : '';
+        if (!friendCode) return showToast('Vui lòng nhập mã quán bạn bè!');
+
+        btnSubmitCollab.disabled = true;
+        btnSubmitCollab.innerText = 'Đang gửi...';
+
+        try {
+          const res = await API.collab(friendCode);
+          if (res && res.success) {
+            sound.coin();
+            showToast(res.message, 5000);
+            if (input) input.value = '';
+            renderCollabModal();
+            storeState = await API.getState();
+            updateUI();
+          } else {
+            showToast('❌ ' + (res.message || 'Không thể gửi lời mời Collab!'));
+          }
+        } catch (err) {
+          showToast('❌ Lỗi kết nối máy chủ!');
+        } finally {
+          btnSubmitCollab.disabled = false;
+          btnSubmitCollab.innerText = '📨 Gửi Lời Mời';
+        }
+      });
+    }
+
+    // Modal action delegation (Accept, Decline, Unlink, Cancel)
+    if (modalCollab) {
+      modalCollab.addEventListener('click', async (e) => {
+        const btnAccept = e.target.closest('.btn-accept-collab');
+        if (btnAccept) {
+          const id = btnAccept.getAttribute('data-id');
+          btnAccept.disabled = true;
+          try {
+            const res = await API.acceptCollab(id);
+            if (res && res.success) {
+              sound.coin();
+              showToast(res.message, 5000);
+              renderCollabModal();
+              storeState = await API.getState();
+              updateUI();
+            } else {
+              showToast('❌ ' + (res.message || 'Lỗi khi chấp nhận lời mời!'));
+              btnAccept.disabled = false;
+            }
+          } catch (err) {
+            showToast('❌ Lỗi kết nối!');
+            btnAccept.disabled = false;
+          }
+          return;
+        }
+
+        const btnDecline = e.target.closest('.btn-decline-collab');
+        if (btnDecline) {
+          const id = btnDecline.getAttribute('data-id');
+          btnDecline.disabled = true;
+          try {
+            const res = await API.declineCollab(id);
+            if (res && res.success) {
+              showToast(res.message, 3500);
+              renderCollabModal();
+            } else {
+              showToast('❌ ' + (res.message || 'Lỗi khi từ chối!'));
+              btnDecline.disabled = false;
+            }
+          } catch (err) {
+            showToast('❌ Lỗi kết nối!');
+            btnDecline.disabled = false;
+          }
+          return;
+        }
+
+        const btnUnlink = e.target.closest('.btn-unlink-collab');
+        if (btnUnlink) {
+          if (!confirm('Bạn có chắc chắn muốn hủy liên minh với đối tác này không? Sau khi hủy bạn sẽ mất +10% doanh thu tương ứng.')) return;
+          const id = btnUnlink.getAttribute('data-id');
+          btnUnlink.disabled = true;
+          try {
+            const res = await API.cancelCollab(id);
+            if (res && res.success) {
+              showToast(res.message, 4000);
+              renderCollabModal();
+              storeState = await API.getState();
+              updateUI();
+            } else {
+              showToast('❌ ' + (res.message || 'Lỗi khi hủy liên kết!'));
+              btnUnlink.disabled = false;
+            }
+          } catch (err) {
+            showToast('❌ Lỗi kết nối!');
+            btnUnlink.disabled = false;
+          }
+          return;
+        }
+
+        const btnCancel = e.target.closest('.btn-cancel-collab');
+        if (btnCancel) {
+          const id = btnCancel.getAttribute('data-id');
+          btnCancel.disabled = true;
+          try {
+            const res = await API.cancelCollab(id);
+            if (res && res.success) {
+              showToast(res.message, 3500);
+              renderCollabModal();
+            } else {
+              showToast('❌ ' + (res.message || 'Lỗi khi thu hồi lời mời!'));
+              btnCancel.disabled = false;
+            }
+          } catch (err) {
+            showToast('❌ Lỗi kết nối!');
+            btnCancel.disabled = false;
+          }
+          return;
+        }
+      });
+    }
 
     // Debt Modal
     const modalDebt = document.getElementById('modal-debt');

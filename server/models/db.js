@@ -111,6 +111,8 @@ const db = {
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_earned BIGINT DEFAULT 0;
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_ingredient_cost BIGINT DEFAULT 0;
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_tips BIGINT DEFAULT 0;
+           ALTER TABLE collabs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'accepted';
+           ALTER TABLE collabs ADD COLUMN IF NOT EXISTS created_at TEXT;
          `);
          console.log('Neon PostgreSQL schema initialized successfully.');
       } finally {
@@ -154,6 +156,8 @@ const db = {
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_earned INTEGER DEFAULT 0;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_ingredient_cost INTEGER DEFAULT 0;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_tips INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN status TEXT DEFAULT 'accepted';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN created_at TEXT;"); } catch (e) {}
 
       sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS game_saves (

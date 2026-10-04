@@ -90,6 +90,22 @@ const API = {
     return await this.request('/game/collab', 'POST', { friendCode });
   },
 
+  async getCollabs() {
+    return await this.request('/game/collabs');
+  },
+
+  async acceptCollab(collabId) {
+    return await this.request('/game/collab/accept', 'POST', { collabId });
+  },
+
+  async declineCollab(collabId) {
+    return await this.request('/game/collab/decline', 'POST', { collabId });
+  },
+
+  async cancelCollab(collabId) {
+    return await this.request('/game/collab/cancel', 'POST', { collabId });
+  },
+
   async payDebt(amount) {
     return await this.request('/game/pay-debt', 'POST', { amount });
   },

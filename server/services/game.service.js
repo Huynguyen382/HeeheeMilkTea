@@ -862,73 +862,232 @@ async function inviteTiktoker(storeId) {
   };
 }
 
-// Collab with a friend's store code
-async function addCollab(hostStoreId, friendCode) {
-  const hostStore = await db.prepare('SELECT * FROM stores WHERE id = ?').get(hostStoreId);
-  const friendStore = await db.prepare('SELECT * FROM stores WHERE store_code = ?').get(friendCode.trim().toUpperCase());
+// Get active collab count for a store (max 3)
+async function getActiveCollabCount(storeId) {
+  const row = await db.prepare(`
+    SELECT COUNT(*) as cnt 
+    FROM collabs 
+    WHERE (host_store_id = ? OR friend_store_id = ?) 
+      AND status = 'accepted'
+  `).get(storeId, storeId);
+  return Math.min(3, row ? (row.cnt || 0) : 0);
+}
 
-  if (!friendStore) {
-    return { success: false, message: 'Không tìm thấy Mã Quán bạn bè này!' };
-  }
+// Get full Collab Dashboard data
+async function getCollabData(storeId) {
+  const activeCollabs = await db.prepare(`
+    SELECT c.id, c.host_store_id, c.friend_store_id, c.created_at,
+           CASE WHEN c.host_store_id = ? THEN s_friend.store_name ELSE s_host.store_name END as partner_name,
+           CASE WHEN c.host_store_id = ? THEN s_friend.store_code ELSE s_host.store_code END as partner_code,
+           CASE WHEN c.host_store_id = ? THEN s_friend.username ELSE s_host.username END as partner_username
+    FROM collabs c
+    JOIN stores s_host ON s_host.id = c.host_store_id
+    JOIN stores s_friend ON s_friend.id = c.friend_store_id
+    WHERE (c.host_store_id = ? OR c.friend_store_id = ?)
+      AND c.status = 'accepted'
+    LIMIT 3
+  `).all(storeId, storeId, storeId, storeId);
 
-  if (friendStore.id === hostStoreId) {
-    return { success: false, message: 'Bạn không thể tự Collab với chính mình!' };
-  }
+  const incomingRequests = await db.prepare(`
+    SELECT c.id, c.host_store_id, c.created_at, s.store_name, s.store_code, s.username
+    FROM collabs c
+    JOIN stores s ON s.id = c.host_store_id
+    WHERE c.friend_store_id = ? AND c.status = 'pending'
+    ORDER BY c.id DESC
+  `).all(storeId);
 
-  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(hostStoreId);
-  const realDate = anticheat.getRealDate();
-  const capInfo = anticheat.CHAPTER_CAPS[save.chapter] || anticheat.CHAPTER_CAPS[1];
+  const outgoingRequests = await db.prepare(`
+    SELECT c.id, c.friend_store_id, c.created_at, s.store_name, s.store_code, s.username
+    FROM collabs c
+    JOIN stores s ON s.id = c.friend_store_id
+    WHERE c.host_store_id = ? AND c.status = 'pending'
+    ORDER BY c.id DESC
+  `).all(storeId);
 
-  // Check current collabs
-  const countRow = await db.prepare('SELECT COUNT(*) as cnt FROM collabs WHERE host_store_id = ? AND collab_date = ?').get(hostStoreId, realDate);
-  if (countRow.cnt >= capInfo.maxCollabs) {
-    return { success: false, message: `Hôm nay bạn đã đạt giới hạn tối đa ${capInfo.maxCollabs} đối tác Collab!` };
-  }
-
-  // Check duplicate
-  const existing = await db.prepare('SELECT * FROM collabs WHERE host_store_id = ? AND friend_store_id = ? AND collab_date = ?')
-    .get(hostStoreId, friendStore.id, realDate);
-  if (existing) {
-    return { success: false, message: 'Hôm nay bạn và quán này đã ký thỏa thuận Collab rồi!' };
-  }
-
-  // Insert two-way or one-way collab
-  await db.prepare(`
-    INSERT INTO collabs (host_store_id, friend_store_id, collab_date)
-    VALUES (?, ?, ?)
-  `).run(hostStoreId, friendStore.id, realDate);
-
-  // Update daily stats
-  await db.prepare(`
-    UPDATE daily_stats 
-    SET collab_count = collab_count + 1 
-    WHERE store_id = ? AND real_date = ?
-  `).run(hostStoreId, realDate);
-
-  const bonus = 50000;
-  const newMoney = save.money + bonus;
-  const updatedSave = {
-    store_id: hostStoreId,
-    chapter: save.chapter,
-    day_in_game: save.day_in_game,
-    money: newMoney,
-    debt_remaining: save.debt_remaining,
-    reputation: save.reputation
-  };
-  const hash = anticheat.generateSaveHash(updatedSave);
-
-  await db.prepare(`
-    UPDATE game_saves 
-    SET money = ?, save_hash = ?, updated_at = ?
-    WHERE store_id = ?
-  `).run(newMoney, hash, new Date().toISOString(), hostStoreId);
-
-  const updatedDaily = await anticheat.getOrCreateDailyStats(hostStoreId, save.chapter);
+  const activeCount = activeCollabs.length;
+  const bonusPercent = activeCount * 10; // 10% per active partner store, up to 30%
 
   return {
     success: true,
-    message: `Ký kết Collab thành công với [${friendStore.store_name}]! Nhận ngay +${bonus.toLocaleString('vi-VN')}đ tiền thưởng đối tác!`,
-    daily_stats: updatedDaily
+    activeCollabs,
+    incomingRequests,
+    outgoingRequests,
+    activeCount,
+    maxCollabs: 3,
+    bonusPercent
+  };
+}
+
+// Send Collab request (must be accepted by friend)
+async function addCollab(hostStoreId, friendCode) {
+  const cleanCode = (friendCode || '').trim().toUpperCase();
+  if (!cleanCode) {
+    return { success: false, message: 'Vui lòng nhập Mã Quán bạn bè!' };
+  }
+
+  const hostStore = await db.prepare('SELECT * FROM stores WHERE id = ?').get(hostStoreId);
+  const friendStore = await db.prepare('SELECT * FROM stores WHERE store_code = ?').get(cleanCode);
+
+  if (!friendStore) {
+    return { success: false, message: 'Không tìm thấy Mã Quán bạn bè này! Hãy kiểm tra lại mã.' };
+  }
+
+  if (friendStore.id === hostStoreId) {
+    return { success: false, message: 'Bạn không thể tự gửi lời mời Collab cho chính mình!' };
+  }
+
+  // 1. Kiểm tra giới hạn tối đa 3 cửa hàng collab
+  const hostCount = await getActiveCollabCount(hostStoreId);
+  if (hostCount >= 3) {
+    return { 
+      success: false, 
+      message: 'Bạn đã đạt giới hạn tối đa 3 đối tác Collab (+30% doanh thu)! Hãy hủy bớt liên kết cũ nếu muốn liên minh quán mới.' 
+    };
+  }
+
+  const friendCount = await getActiveCollabCount(friendStore.id);
+  if (friendCount >= 3) {
+    return { 
+      success: false, 
+      message: `Quán [${friendStore.store_name}] hiện đã có đủ 3 đối tác Collab tối đa!` 
+    };
+  }
+
+  // 2. Kiểm tra nếu 2 bên đã là đối tác của nhau
+  const existingAccepted = await db.prepare(`
+    SELECT * FROM collabs 
+    WHERE ((host_store_id = ? AND friend_store_id = ?) OR (host_store_id = ? AND friend_store_id = ?))
+      AND status = 'accepted'
+  `).get(hostStoreId, friendStore.id, friendStore.id, hostStoreId);
+
+  if (existingAccepted) {
+    return { success: false, message: `Hai bạn đã là đối tác Collab của nhau rồi (+10% doanh thu đang kích hoạt)!` };
+  }
+
+  // 3. Nếu bạn bè trước đó đã gửi lời mời đang chờ bạn -> Tự động chấp nhận luôn!
+  const incomingPending = await db.prepare(`
+    SELECT * FROM collabs 
+    WHERE host_store_id = ? AND friend_store_id = ? AND status = 'pending'
+  `).get(friendStore.id, hostStoreId);
+
+  if (incomingPending) {
+    await db.prepare("UPDATE collabs SET status = 'accepted' WHERE id = ?").run(incomingPending.id);
+    return {
+      success: true,
+      accepted: true,
+      message: `🎉 Quán [${friendStore.store_name}] trước đó đã gửi lời mời cho bạn! Hai quán đã chính thức liên minh Collab thành công (Tăng +10% doanh thu)!`
+    };
+  }
+
+  // 4. Kiểm tra nếu bạn đã gửi lời mời trước đó đang chờ
+  const outgoingPending = await db.prepare(`
+    SELECT * FROM collabs 
+    WHERE host_store_id = ? AND friend_store_id = ? AND status = 'pending'
+  `).get(hostStoreId, friendStore.id);
+
+  if (outgoingPending) {
+    return { success: false, message: `Bạn đã gửi lời mời Collab cho quán [${friendStore.store_name}] rồi! Vui lòng chờ bạn bè bấm Chấp nhận.` };
+  }
+
+  // 5. Dọn dẹp bản ghi cũ nếu từng từ chối để tránh vi phạm unique constraint
+  try {
+    await db.prepare(`
+      DELETE FROM collabs 
+      WHERE ((host_store_id = ? AND friend_store_id = ?) OR (host_store_id = ? AND friend_store_id = ?))
+        AND status != 'accepted'
+    `).run(hostStoreId, friendStore.id, friendStore.id, hostStoreId);
+  } catch (e) {}
+
+  const realDate = anticheat.getRealDate();
+  const createdAt = new Date().toISOString();
+
+  await db.prepare(`
+    INSERT INTO collabs (host_store_id, friend_store_id, collab_date, status, created_at)
+    VALUES (?, ?, ?, 'pending', ?)
+  `).run(hostStoreId, friendStore.id, realDate, createdAt);
+
+  return {
+    success: true,
+    pending: true,
+    message: `📨 Đã gửi lời mời Collab thành công tới [${friendStore.store_name}]! Khi đối phương bấm Chấp nhận, liên minh sẽ chính thức được kích hoạt (+10% doanh thu)!`
+  };
+}
+
+// Accept incoming Collab request
+async function acceptCollab(storeId, collabId) {
+  const request = await db.prepare(`
+    SELECT c.*, s.store_name, s.store_code 
+    FROM collabs c 
+    JOIN stores s ON s.id = c.host_store_id 
+    WHERE c.id = ? AND c.friend_store_id = ? AND c.status = 'pending'
+  `).get(collabId, storeId);
+
+  if (!request) {
+    return { success: false, message: 'Không tìm thấy lời mời Collab hợp lệ hoặc lời mời đã hết hạn!' };
+  }
+
+  const myCount = await getActiveCollabCount(storeId);
+  if (myCount >= 3) {
+    return { success: false, message: 'Bạn đã có đủ 3 đối tác Collab tối đa! Hãy hủy bớt liên minh cũ để chấp nhận thêm.' };
+  }
+
+  const hostCount = await getActiveCollabCount(request.host_store_id);
+  if (hostCount >= 3) {
+    return { success: false, message: `Quán [${request.store_name}] hiện đã có đủ 3 đối tác Collab!` };
+  }
+
+  await db.prepare("UPDATE collabs SET status = 'accepted' WHERE id = ?").run(collabId);
+
+  return {
+    success: true,
+    message: `🎉 Chấp nhận lời mời Collab thành công! Quán của bạn và [${request.store_name}] đã chính thức liên minh (+10% doanh thu mỗi ly trà sữa)!`
+  };
+}
+
+// Decline incoming Collab request
+async function declineCollab(storeId, collabId) {
+  const request = await db.prepare(`
+    SELECT c.*, s.store_name 
+    FROM collabs c 
+    JOIN stores s ON s.id = c.host_store_id 
+    WHERE c.id = ? AND c.friend_store_id = ? AND c.status = 'pending'
+  `).get(collabId, storeId);
+
+  if (!request) {
+    return { success: false, message: 'Không tìm thấy lời mời cần từ chối!' };
+  }
+
+  await db.prepare('DELETE FROM collabs WHERE id = ?').run(collabId);
+
+  return {
+    success: true,
+    message: `Đã từ chối lời mời Collab từ [${request.store_name}].`
+  };
+}
+
+// Cancel outgoing pending request or unlink active Collab
+async function cancelCollab(storeId, collabId) {
+  const collab = await db.prepare(`
+    SELECT c.*, 
+           CASE WHEN c.host_store_id = ? THEN s_friend.store_name ELSE s_host.store_name END as partner_name
+    FROM collabs c
+    JOIN stores s_host ON s_host.id = c.host_store_id
+    JOIN stores s_friend ON s_friend.id = c.friend_store_id
+    WHERE c.id = ? AND (c.host_store_id = ? OR c.friend_store_id = ?)
+  `).get(storeId, collabId, storeId, storeId);
+
+  if (!collab) {
+    return { success: false, message: 'Không tìm thấy thông tin liên minh cần hủy!' };
+  }
+
+  await db.prepare('DELETE FROM collabs WHERE id = ?').run(collabId);
+
+  const isPending = collab.status === 'pending';
+  return {
+    success: true,
+    message: isPending 
+      ? `Đã thu hồi lời mời Collab gửi tới [${collab.partner_name}].` 
+      : `Đã hủy liên kết Collab với [${collab.partner_name}]. Đã giải phóng 1 vị trí đối tác!`
   };
 }
 
@@ -1389,6 +1548,11 @@ module.exports = {
   handleSnackDecision,
   recordOrderFailure,
   addCollab,
+  getActiveCollabCount,
+  getCollabData,
+  acceptCollab,
+  declineCollab,
+  cancelCollab,
   payDebt,
   buyUpgrade,
   stealPet,

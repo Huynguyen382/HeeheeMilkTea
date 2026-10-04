@@ -215,25 +215,72 @@
 
   <!-- MODAL: COLLAB BẠN BÈ -->
   <div class="modal-overlay" id="modal-collab">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 440px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
-        <div class="modal-title">🤝 Liên Minh Trà Sữa Bạn Hữu</div>
+        <div class="modal-title" style="color: #ff79c6;">🤝 Liên Minh Trà Sữa Bạn Hữu</div>
         <button class="btn-close" id="close-collab">&times;</button>
       </div>
-      <p style="font-size: 1.05rem; color: var(--text-muted);">
-        Liên kết bạn bè để cùng nhau phát triển chuỗi trà sữa! Ký kết Collab thành công nhận ngay <b>+50.000đ</b> tiền thưởng đối tác!
-      </p>
-      <div>
-        <label style="color: var(--gold);">Mã Quán Của Bạn (Gửi cho bạn bè):</label>
-        <div style="display: flex; gap: 6px; margin-top: 4px;">
-          <input type="text" id="my-collab-code" class="input-box" readonly>
-          <button class="btn-action-wide" id="btn-copy-code" style="margin: 0; white-space: nowrap;">Copy</button>
+
+      <!-- STATUS BANNER -->
+      <div style="background: rgba(255, 121, 198, 0.12); border: 1px solid #ff79c6; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center;">
+        <div style="font-size: 0.95rem; color: #ff79c6; font-weight: bold; margin-bottom: 2px;">
+          🤝 ĐỐI TÁC: <span id="collab-count-disp" style="color: #fff;">0/3 Quán</span>
+        </div>
+        <div style="font-size: 1.05rem; font-weight: bold; color: #50fa7b;" id="collab-boost-disp">
+          📈 Đang tăng: +0% Doanh Thu
+        </div>
+        <div style="font-size: 0.8rem; color: #f5ebe6; margin-top: 4px;">
+          💡 Mỗi đối tác Collab thành công tăng <b>+10% doanh thu</b> cho mọi ly trà sữa (Tối đa 3 quán = <b>+30%</b>). Cần được đối phương <b>chấp nhận</b> mới có hiệu lực!
         </div>
       </div>
-      <div style="margin-top: 6px;">
-        <label style="color: var(--gold);">Nhập Mã Quán Bạn Bè Cần Collab:</label>
-        <input type="text" id="friend-code-input" class="input-box" placeholder="Ví dụ: HYHY-A1B2C3" style="margin-top: 4px;">
-        <button class="btn-action-wide" id="btn-submit-collab" style="width: 100%;">Ký Kết Collab (+50.000đ Thưởng)</button>
+
+      <!-- MY CODE -->
+      <div style="margin-bottom: 10px;">
+        <label style="color: var(--gold); font-size: 0.9rem;"><b>Mã Quán Của Bạn (Gửi cho bạn bè):</b></label>
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <input type="text" id="my-collab-code" class="input-box" readonly style="font-weight: bold; letter-spacing: 1px; text-align: center;">
+          <button class="btn-action-wide" id="btn-copy-code" style="margin: 0; white-space: nowrap; padding: 6px 14px;">📋 Sao chép</button>
+        </div>
+      </div>
+
+      <!-- SEND INVITATION -->
+      <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+        <label style="color: var(--gold); font-size: 0.9rem;"><b>Gửi Lời Mời Collab Tới Bạn Bè:</b></label>
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <input type="text" id="friend-code-input" class="input-box" placeholder="Ví dụ: HYHY-A1B2C3" style="text-transform: uppercase;">
+          <button class="btn-action-wide" id="btn-submit-collab" style="margin: 0; white-space: nowrap; background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff;">📨 Gửi Lời Mời</button>
+        </div>
+      </div>
+
+      <!-- INCOMING REQUESTS SECTION -->
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; color: #50fa7b; font-size: 0.92rem; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+          <span>📬 Lời Mời Nhận Được:</span>
+          <span id="incoming-count-badge" style="background: #50fa7b; color: #000; border-radius: 10px; padding: 1px 7px; font-size: 0.78rem; display: none;">0</span>
+        </div>
+        <div id="collab-incoming-list" style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời nào đang chờ.</div>
+        </div>
+      </div>
+
+      <!-- ACTIVE PARTNERS SECTION -->
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; color: #8be9fd; font-size: 0.92rem; margin-bottom: 6px;">
+          🏪 Danh Sách Đối Tác Đang Liên Minh (Tối đa 3):
+        </div>
+        <div id="collab-active-list" style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Chưa có đối tác nào. Hãy gửi mã quán cho bạn bè!</div>
+        </div>
+      </div>
+
+      <!-- OUTGOING REQUESTS SECTION -->
+      <div>
+        <div style="font-weight: bold; color: #ffb86c; font-size: 0.92rem; margin-bottom: 6px;">
+          📤 Lời Mời Đã Gửi Đi (Đang Chờ Bạn Bè Chấp Nhận):
+        </div>
+        <div id="collab-outgoing-list" style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời nào đang chờ phản hồi.</div>
+        </div>
       </div>
     </div>
   </div>

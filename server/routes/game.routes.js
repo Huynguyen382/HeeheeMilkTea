@@ -20,11 +20,15 @@ router.post('/serve', authStore, async (req, res) => {
 });
 router.post('/snack-decision', authStore, handle('Snack decision', req => gameService.handleSnackDecision(req.store.id, !!req.body.accept)));
 router.post('/order-fail', authStore, handle('Order fail', req => gameService.recordOrderFailure(req.store.id, req.body.orderId, !!req.body.isTiktoker)));
+router.get('/collabs', authStore, handle('Get collabs', req => gameService.getCollabData(req.store.id)));
 router.post('/collab', authStore, async (req, res) => {
   if (!req.body.friendCode) return res.status(400).json({ error: 'Vui lòng nhập Mã Quán bạn bè!' });
   try { res.json(await gameService.addCollab(req.store.id, req.body.friendCode)); }
   catch (err) { console.error('Collab error:', err); res.status(500).json({ error: err.message }); }
 });
+router.post('/collab/accept', authStore, handle('Accept collab', req => gameService.acceptCollab(req.store.id, req.body.collabId)));
+router.post('/collab/decline', authStore, handle('Decline collab', req => gameService.declineCollab(req.store.id, req.body.collabId)));
+router.post('/collab/cancel', authStore, handle('Cancel collab', req => gameService.cancelCollab(req.store.id, req.body.collabId)));
 router.post('/pay-debt', authStore, async (req, res) => {
   if (!req.body.amount || req.body.amount <= 0) return res.status(400).json({ error: 'Số tiền không hợp lệ' });
   try { res.json(await gameService.payDebt(req.store.id, Number(req.body.amount))); }
