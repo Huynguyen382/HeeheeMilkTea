@@ -19,7 +19,7 @@ class BaristaWorkstation {
 
     // Dimensions
     this.width = 440;
-    this.height = 270;
+    this.height = 175;
     this.dpr = window.devicePixelRatio || 1;
     this.setupCanvas();
 
@@ -49,7 +49,7 @@ class BaristaWorkstation {
     if (!this.canvas) return;
     const rect = this.canvas.getBoundingClientRect();
     const cssWidth = rect.width || 440;
-    const cssHeight = rect.height || 270;
+    const cssHeight = rect.height || 175;
     this.width = cssWidth;
     this.height = cssHeight;
 
@@ -447,16 +447,16 @@ class BaristaWorkstation {
   }
 
   drawSweetnessMeter(ctx) {
-    const x = 86;
-    const y = 55;
-    const w = 18;
-    const h = 135;
+    const x = Math.max(76, Math.round(this.width * 0.19));
+    const h = Math.min(135, Math.max(60, Math.round(this.height * 0.52)));
+    const y = Math.max(16, Math.round(this.height * 0.48 - h * 0.5));
+    const w = 16;
 
     // Meter background
     ctx.save();
     ctx.fillStyle = 'rgba(20, 10, 18, 0.82)';
     ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 8);
+    ctx.roundRect(x, y, w, h, 6);
     ctx.fill();
     ctx.strokeStyle = '#b8860b';
     ctx.lineWidth = 1.2;
@@ -474,37 +474,37 @@ class BaristaWorkstation {
 
     ctx.fillStyle = honeyGrad;
     ctx.beginPath();
-    ctx.roundRect(x + 3, y + h - 3 - fillH, w - 6, fillH, 5);
+    ctx.roundRect(x + 2, y + h - 3 - fillH, w - 4, fillH, 4);
     ctx.fill();
 
     // Meter tick markers
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     [0.1, 0.35, 0.58, 0.78, 0.95].forEach(t => {
-      ctx.fillRect(x + 2, y + h - h * t, 5, 1);
+      ctx.fillRect(x + 2, y + h - h * t, 4, 1);
     });
 
     // Label on top
-    ctx.font = 'bold 12px "VT323", monospace, sans-serif';
+    ctx.font = 'bold 11px "VT323", monospace, sans-serif';
     ctx.fillStyle = '#f4c430';
     ctx.textAlign = 'center';
-    ctx.fillText('ĐƯỜNG', x + w * 0.5, y - 8);
-    ctx.font = 'bold 14px "VT323", monospace, sans-serif';
+    ctx.fillText('ĐƯỜNG', x + w * 0.5, y - 6);
+    ctx.font = 'bold 12px "VT323", monospace, sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(this.sugar, x + w * 0.5, y + h + 16);
+    ctx.fillText(this.sugar, x + w * 0.5, y + h + 13);
     ctx.restore();
   }
 
   drawIceMeter(ctx) {
-    const x = this.width - 104;
-    const y = 55;
-    const w = 18;
-    const h = 135;
+    const w = 16;
+    const x = Math.min(this.width - 92, Math.round(this.width * 0.81 - w));
+    const h = Math.min(135, Math.max(60, Math.round(this.height * 0.52)));
+    const y = Math.max(16, Math.round(this.height * 0.48 - h * 0.5));
 
     // Meter background
     ctx.save();
     ctx.fillStyle = 'rgba(20, 10, 18, 0.82)';
     ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 8);
+    ctx.roundRect(x, y, w, h, 6);
     ctx.fill();
     ctx.strokeStyle = '#00bcd4';
     ctx.lineWidth = 1.2;
@@ -527,23 +527,23 @@ class BaristaWorkstation {
 
     ctx.fillStyle = iceGrad;
     ctx.beginPath();
-    ctx.roundRect(x + 3, y + h - 3 - fillH, w - 6, fillH, 5);
+    ctx.roundRect(x + 2, y + h - 3 - fillH, w - 4, fillH, 4);
     ctx.fill();
 
     // Meter tick markers
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     [0.1, 0.38, 0.68, 0.95].forEach(t => {
-      ctx.fillRect(x + w - 7, y + h - h * t, 5, 1);
+      ctx.fillRect(x + w - 6, y + h - h * t, 4, 1);
     });
 
     // Label on top
-    ctx.font = 'bold 12px "VT323", monospace, sans-serif';
+    ctx.font = 'bold 11px "VT323", monospace, sans-serif';
     ctx.fillStyle = '#8be9fd';
     ctx.textAlign = 'center';
-    ctx.fillText('ĐÁ', x + w * 0.5, y - 8);
-    ctx.font = 'bold 13px "VT323", monospace, sans-serif';
+    ctx.fillText('ĐÁ', x + w * 0.5, y - 6);
+    ctx.font = 'bold 12px "VT323", monospace, sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(this.ice, x + w * 0.5, y + h + 16);
+    ctx.fillText(this.ice, x + w * 0.5, y + h + 13);
     ctx.restore();
   }
 
@@ -684,28 +684,29 @@ class BaristaWorkstation {
 
   // --- BÌNH LẮC PHA CHẾ INOX CHUYÊN NGHIỆP (BARISTA STAINLESS STEEL SHAKER ON COUNTERTOP) ---
   drawMixingBomb(ctx) {
+    const scale = Math.min(1.0, Math.max(0.72, this.height / 235));
     const cx = this.width * 0.5;
-    const cy = this.height * 0.62;
+    const cy = this.height * 0.58;
 
     ctx.save();
     if (this.handAction === 'shake' || this.handAction === 'pour_cup') {
       ctx.globalAlpha = 0.22; // Dim countertop shaker while being handled in foreground
     }
 
-    const shakerBaseW = 44;
-    const shakerShoulderW = 54;
-    const shakerBodyH = 72;
-    const baseY = cy + 48; // bottom of canister
+    const shakerBaseW = 44 * scale;
+    const shakerShoulderW = 54 * scale;
+    const shakerBodyH = 70 * scale;
+    const baseY = cy + 44 * scale; // bottom of canister
     const shoulderY = baseY - shakerBodyH; // top of canister
-    const lidH = 26; // strainer lid
+    const lidH = 24 * scale; // strainer lid
     const lidY = shoulderY - lidH;
-    const capH = 18; // top cap
+    const capH = 16 * scale; // top cap
     const capY = lidY - capH;
 
     // 1. Soft Counter Shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
     ctx.beginPath();
-    ctx.ellipse(cx, baseY + 4, shakerBaseW * 0.6, 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, baseY + 4, shakerBaseW * 0.6, 7 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // 2. Anti-slip Base Ring (Silicone + Brushed Gold Accent)
@@ -879,14 +880,15 @@ class BaristaWorkstation {
 
   // --- TAKEAWAY CUP ON COUNTERTOP (LY TRÀ SỮA MANG ĐI TRÊN QUẦY PHA CHẾ) ---
   drawTakeawayCup(ctx) {
+    const scale = Math.min(1.0, Math.max(0.72, this.height / 235));
     const cx = this.width * 0.5;
-    const cy = this.height * 0.62;
-    const cupX = Math.min(this.width - 66, cx + 86);
-    const cupY = cy + 22; // base of cup on counter
-    const cupH = 50;
+    const cy = this.height * 0.58;
+    const cupX = Math.min(this.width - 56, cx + 82 * scale);
+    const cupY = cy + 22 * scale; // base of cup on counter
+    const cupH = 46 * scale;
     const cupTopY = cupY - cupH;
-    const topR = 17;
-    const botR = 12;
+    const topR = 16 * scale;
+    const botR = 11 * scale;
 
     ctx.save();
 
