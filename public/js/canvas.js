@@ -385,7 +385,7 @@ class GameCanvas {
     const ctx = this.ctx;
     ctx.save();
     ctx.scale(2, 2);
-    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingEnabled = false;
 
     // 1. SKY & DISTANT STREET BACKGROUND WITH NEON SIGNS
     this.drawBackground(ctx);
@@ -1282,1783 +1282,943 @@ class GameCanvas {
     ctx.fillRect(x, y - 2, 9, 3);
   }
 
-  // Smooth Anatomical Face & Expression Helper
+  // ==========================================
+  // RETRO PIXEL ART CHARACTER SYSTEM ENGINE
+  // ==========================================
+
+  // Integer-aligned crisp pixel rectangle
+  drawPixel(ctx, x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+  }
+
+  // Standard Pixel Art Head & Expressive Anime Pixel Face
   drawOrganicHead(ctx, cx, cy, rx, ry, skinColor, blushColor, isBlinking, eyeColor = '#1a1016', isHappy = false) {
-    // Chin and jaw curve with a warm, soft directional skin gradient.
-    const skinGrad = ctx.createRadialGradient(
-      cx - rx * 0.35, cy - ry * 0.55, 0,
-      cx + rx * 0.45, cy + ry * 0.8, Math.max(rx, ry) * 1.8
-    );
-    skinGrad.addColorStop(0, '#fff9f0');
-    skinGrad.addColorStop(0.38, skinColor);
-    skinGrad.addColorStop(0.82, 'rgba(215, 135, 115, 0.42)');
-    skinGrad.addColorStop(1, 'rgba(175, 95, 78, 0.48)');
-    ctx.fillStyle = skinGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - rx, cy - ry * 0.25);
-    ctx.quadraticCurveTo(cx - rx * 0.98, cy + ry * 0.55, cx - rx * 0.45, cy + ry * 0.88);
-    ctx.quadraticCurveTo(cx, cy + ry * 1.02, cx + rx * 0.45, cy + ry * 0.88);
-    ctx.quadraticCurveTo(cx + rx * 0.98, cy + ry * 0.55, cx + rx, cy - ry * 0.25);
-    ctx.quadraticCurveTo(cx + rx * 0.9, cy - ry * 0.95, cx, cy - ry);
-    ctx.quadraticCurveTo(cx - rx * 0.9, cy - ry * 0.95, cx - rx, cy - ry * 0.25);
-    ctx.fill();
+    const px = Math.round(cx);
+    const py = Math.round(cy);
+    const w = Math.round(rx * 2);
+    const h = Math.round(ry * 2);
+    const left = px - Math.floor(w / 2);
+    const top = py - Math.floor(h / 2);
 
-    // Feathered cheek light and a soft jaw rim
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-    ctx.beginPath();
-    ctx.ellipse(cx - rx * 0.42, cy - ry * 0.38, rx * 0.28, ry * 0.42, -0.35, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(110, 57, 53, 0.2)';
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.arc(cx, cy + ry * 0.1, rx * 0.86, Math.PI * 0.12, Math.PI * 0.88);
-    ctx.stroke();
+    const baseSkin = skinColor || '#ffe0bd';
+    const outlineColor = '#3a1e28'; // Warm dark outline
+    const shadowSkin = '#e8a882';   // Warm peach chin/neck shadow
+    const highlightSkin = '#fff4ea'; // Soft forehead / cheek light
 
-    // Soft curved ears
-    ctx.beginPath();
-    ctx.ellipse(cx - rx - 0.5, cy, 1.6, 2.4, 0, 0, Math.PI * 2);
-    ctx.ellipse(cx + rx + 0.5, cy, 1.6, 2.4, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // 1. Pixel Art Head Silhouette & Outline
+    this.drawPixel(ctx, left + 3, top, w - 6, 1, outlineColor);
+    this.drawPixel(ctx, left + 1, top + 1, 2, 1, outlineColor);
+    this.drawPixel(ctx, left + w - 3, top + 1, 2, 1, outlineColor);
+    this.drawPixel(ctx, left, top + 2, 1, h - 5, outlineColor);
+    this.drawPixel(ctx, left + w - 1, top + 2, 1, h - 5, outlineColor);
+    this.drawPixel(ctx, left + 1, top + h - 3, 2, 1, outlineColor);
+    this.drawPixel(ctx, left + w - 3, top + h - 3, 2, 1, outlineColor);
+    this.drawPixel(ctx, left + 3, top + h - 2, 2, 1, outlineColor);
+    this.drawPixel(ctx, left + w - 5, top + h - 2, 2, 1, outlineColor);
+    this.drawPixel(ctx, left + 5, top + h - 1, w - 10, 1, outlineColor);
 
-    // 1. Soft chin shadow contour
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
-    ctx.beginPath();
-    ctx.ellipse(cx, cy + ry * 0.92, rx * 0.7, ry * 0.22, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // 2. Base Skin Fill & Shading
+    this.drawPixel(ctx, left + 3, top + 1, w - 6, 1, highlightSkin);
+    this.drawPixel(ctx, left + 1, top + 2, w - 2, h - 6, baseSkin);
+    this.drawPixel(ctx, left + 2, top + h - 4, w - 4, 1, baseSkin);
+    this.drawPixel(ctx, left + 3, top + h - 3, w - 6, 1, shadowSkin);
+    this.drawPixel(ctx, left + 5, top + h - 2, w - 10, 1, shadowSkin);
 
-    // 2. Cute subtle nose contour & soft highlight tip
-    ctx.fillStyle = 'rgba(165, 85, 70, 0.26)';
-    ctx.beginPath();
-    ctx.ellipse(cx, cy + ry * 0.22, 0.8, 1.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.beginPath();
-    ctx.arc(cx - 0.4, cy + ry * 0.16, 0.7, 0, Math.PI * 2);
-    ctx.fill();
+    // 3. Cute Pixel Ears
+    this.drawPixel(ctx, left - 1, py - 1, 1, 3, outlineColor);
+    this.drawPixel(ctx, left, py, 1, 2, shadowSkin);
+    this.drawPixel(ctx, left + w, py - 1, 1, 3, outlineColor);
+    this.drawPixel(ctx, left + w - 1, py, 1, 2, shadowSkin);
 
-    // 3. Soft airbrushed anime blush with radiant diffusion & twinkle dots
-    if (blushColor || isHappy) {
-      const bColor = isHappy ? 'rgba(255, 99, 132, 0.75)' : (blushColor || 'rgba(255, 125, 125, 0.42)');
-      [-1, 1].forEach(side => {
-        const bx = cx + side * rx * 0.52;
-        const by = cy + ry * 0.35;
-        const bGrad = ctx.createRadialGradient(bx, by, 0, bx, by, rx * 0.42);
-        bGrad.addColorStop(0, bColor);
-        bGrad.addColorStop(0.7, 'rgba(255, 125, 125, 0.15)');
-        bGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = bGrad;
-        ctx.beginPath();
-        ctx.ellipse(bx, by, isHappy ? 3.5 : 2.8, 1.9, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Anime blush twinkle dots
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
-        ctx.fillRect(bx - 0.5, by - 0.5, 1.1, 1.1);
-      });
-    }
-
-    // 4. High-Fidelity Anime Eyes
-    const eyeSpacing = rx * 0.48;
-    const eyeY = cy - ry * 0.05;
+    // 4. Rosy Pixel Blush (cheeks below eyes)
+    const blush = blushColor || (isHappy ? '#ff6b81' : '#ff7675');
+    ctx.fillStyle = blush;
+    ctx.globalAlpha = 0.7;
+    this.drawPixel(ctx, left + 2, py + 2, 2, 1, blush);
+    this.drawPixel(ctx, left + w - 4, py + 2, 2, 1, blush);
     if (isHappy) {
-      // Joyful curved anime eyes (^ ^) with double upper lashes
-      ctx.strokeStyle = '#1a1016';
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.arc(cx - eyeSpacing, eyeY + 0.6, 2.4, Math.PI * 1.15, Math.PI * 1.85);
-      ctx.arc(cx + eyeSpacing, eyeY + 0.6, 2.4, Math.PI * 1.15, Math.PI * 1.85);
-      ctx.stroke();
+      this.drawPixel(ctx, left + 2, py + 3, 1, 1, blush);
+      this.drawPixel(ctx, left + w - 3, py + 3, 1, 1, blush);
+    }
+    ctx.globalAlpha = 1.0;
+
+    // 5. Expressive Pixel Eyes
+    const eyeSpacing = Math.round(rx * 0.44);
+    const eyeY = py - 1;
+    const leftEyeX = px - eyeSpacing - 2;
+    const rightEyeX = px + eyeSpacing - 1;
+
+    if (isHappy) {
+      // Joyful curved anime eyes: ^ ^
+      const drawHappyEye = (ex) => {
+        this.drawPixel(ctx, ex, eyeY + 1, 1, 1, '#1e1018');
+        this.drawPixel(ctx, ex + 1, eyeY, 2, 1, '#1e1018');
+        this.drawPixel(ctx, ex + 3, eyeY + 1, 1, 1, '#1e1018');
+      };
+      drawHappyEye(leftEyeX);
+      drawHappyEye(rightEyeX);
     } else if (isBlinking) {
-      // Natural blink with delicate curved lash line
-      ctx.strokeStyle = '#1a1016';
-      ctx.lineWidth = 1.3;
-      ctx.beginPath();
-      ctx.arc(cx - eyeSpacing, eyeY + 1, 2.2, Math.PI * 0.15, Math.PI * 0.85);
-      ctx.arc(cx + eyeSpacing, eyeY + 1, 2.2, Math.PI * 0.15, Math.PI * 0.85);
-      ctx.stroke();
+      // Resting blink: sweet closed lash line _ _
+      this.drawPixel(ctx, leftEyeX, eyeY + 1, 4, 1, '#1e1018');
+      this.drawPixel(ctx, leftEyeX + 3, eyeY, 1, 1, '#1e1018');
+      this.drawPixel(ctx, rightEyeX, eyeY + 1, 4, 1, '#1e1018');
+      this.drawPixel(ctx, rightEyeX + 3, eyeY, 1, 1, '#1e1018');
     } else {
-      // White sclera
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.ellipse(cx - eyeSpacing, eyeY, 2.2, 2.8, 0, 0, Math.PI * 2);
-      ctx.ellipse(cx + eyeSpacing, eyeY, 2.2, 2.8, 0, 0, Math.PI * 2);
-      ctx.fill();
+      // Standard High-Grade Anime Pixel Eyes with iris & white specular shine
+      const drawStandardEye = (ex) => {
+        // Upper eyelash bar
+        this.drawPixel(ctx, ex, eyeY - 1, 4, 1, '#1e1018');
+        this.drawPixel(ctx, ex + 3, eyeY, 1, 1, '#1e1018');
+        // Sclera
+        this.drawPixel(ctx, ex, eyeY, 3, 3, '#ffffff');
+        // Iris
+        this.drawPixel(ctx, ex + 1, eyeY, 2, 3, eyeColor);
+        // Pupil
+        this.drawPixel(ctx, ex + 1, eyeY + 1, 1, 2, '#110813');
+        // PURE WHITE SPECULAR CATCHLIGHT PIXEL (top-left)
+        this.drawPixel(ctx, ex + 1, eyeY, 1, 1, '#ffffff');
+        // Lower rim
+        this.drawPixel(ctx, ex + 1, eyeY + 3, 2, 1, '#3a1824');
+      };
+      drawStandardEye(leftEyeX);
+      drawStandardEye(rightEyeX);
 
-      // Colored Iris with depth gradient
-      const irisGradL = ctx.createLinearGradient(cx - eyeSpacing, eyeY - 2.5, cx - eyeSpacing, eyeY + 2.5);
-      irisGradL.addColorStop(0, '#100814');
-      irisGradL.addColorStop(0.55, eyeColor);
-      irisGradL.addColorStop(1, '#e8f0fe');
-      ctx.fillStyle = irisGradL;
-      ctx.beginPath();
-      ctx.ellipse(cx - eyeSpacing, eyeY + 0.2, 1.8, 2.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      const irisGradR = ctx.createLinearGradient(cx + eyeSpacing, eyeY - 2.5, cx + eyeSpacing, eyeY + 2.5);
-      irisGradR.addColorStop(0, '#100814');
-      irisGradR.addColorStop(0.55, eyeColor);
-      irisGradR.addColorStop(1, '#e8f0fe');
-      ctx.fillStyle = irisGradR;
-      ctx.beginPath();
-      ctx.ellipse(cx + eyeSpacing, eyeY + 0.2, 1.8, 2.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Deep dark pupil
-      ctx.fillStyle = '#0b080c';
-      ctx.beginPath();
-      ctx.arc(cx - eyeSpacing, eyeY + 0.3, 0.9, 0, Math.PI * 2);
-      ctx.arc(cx + eyeSpacing, eyeY + 0.3, 0.9, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Double Specular Catchlights (Primary star & secondary spark)
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(cx - eyeSpacing - 0.7, eyeY - 0.9, 0.8, 0, Math.PI * 2);
-      ctx.arc(cx - eyeSpacing + 0.7, eyeY + 0.9, 0.45, 0, Math.PI * 2);
-      ctx.arc(cx + eyeSpacing - 0.7, eyeY - 0.9, 0.8, 0, Math.PI * 2);
-      ctx.arc(cx + eyeSpacing + 0.7, eyeY + 0.9, 0.45, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Upper Eyeliner & Lashes
-      ctx.strokeStyle = '#1a1016';
-      ctx.lineWidth = 1.25;
-      ctx.beginPath();
-      ctx.arc(cx - eyeSpacing, eyeY - 1, 2.4, Math.PI * 1.1, Math.PI * 1.9);
-      ctx.arc(cx + eyeSpacing, eyeY - 1, 2.4, Math.PI * 1.1, Math.PI * 1.9);
-      ctx.stroke();
-
-      // Double-eyelid crease
-      ctx.strokeStyle = 'rgba(26, 16, 22, 0.38)';
-      ctx.lineWidth = 0.55;
-      ctx.beginPath();
-      ctx.arc(cx - eyeSpacing, eyeY - 2.2, 2.0, Math.PI * 1.2, Math.PI * 1.8);
-      ctx.arc(cx + eyeSpacing, eyeY - 2.2, 2.0, Math.PI * 1.2, Math.PI * 1.8);
-      ctx.stroke();
+      // Delicate pixel eyebrows
+      this.drawPixel(ctx, leftEyeX, eyeY - 3, 3, 1, '#533020');
+      this.drawPixel(ctx, rightEyeX + 1, eyeY - 3, 3, 1, '#533020');
     }
 
-    // 5. Delicate soft eyebrows
-    ctx.strokeStyle = 'rgba(45, 25, 35, 0.6)';
-    ctx.lineWidth = 0.7;
-    ctx.beginPath();
-    ctx.arc(cx - eyeSpacing, eyeY - 2.9, 2.2, Math.PI * 1.15, Math.PI * 1.78);
-    ctx.arc(cx + eyeSpacing, eyeY - 2.9, 2.2, Math.PI * 1.22, Math.PI * 1.85);
-    ctx.stroke();
-
-    // 6. Delicate anime mouth with subtle lip gloss
+    // 6. Cute Pixel Nose & Smiling Mouth
+    this.drawPixel(ctx, px, py + 2, 1, 1, shadowSkin);
     if (isHappy) {
-      const mouthGrad = ctx.createLinearGradient(cx, cy + ry * 0.48, cx, cy + ry * 0.78);
-      mouthGrad.addColorStop(0, '#e74c3c');
-      mouthGrad.addColorStop(1, '#ff7675');
-      ctx.fillStyle = mouthGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy + ry * 0.5, 2.5, 0, Math.PI);
-      ctx.fill();
-      ctx.strokeStyle = '#8b263e';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-      // Lip shine highlight
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(cx - 0.6, cy + ry * 0.5 + 1.2, 1.2, 0.8);
+      this.drawPixel(ctx, px - 1, py + 4, 3, 1, '#8b263e');
+      this.drawPixel(ctx, px, py + 5, 1, 1, '#ff7675');
     } else {
-      // Soft gentle smile with subtle pink tint
-      ctx.fillStyle = 'rgba(235, 110, 110, 0.3)';
-      ctx.beginPath();
-      ctx.ellipse(cx, cy + ry * 0.57, 1.6, 0.75, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.strokeStyle = '#8b4513';
-      ctx.lineWidth = 0.75;
-      ctx.beginPath();
-      ctx.arc(cx, cy + ry * 0.52, 1.4, 0.15, Math.PI - 0.15);
-      ctx.stroke();
-
-      // Lower lip tiny shine glint
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-      ctx.fillRect(cx - 0.4, cy + ry * 0.58, 0.9, 0.6);
+      this.drawPixel(ctx, px - 1, py + 4, 2, 1, '#a33045');
+      this.drawPixel(ctx, px + 1, py + 4, 1, 1, '#d63031');
     }
   }
 
-  // Smooth Curved Limb Capsule Helper (Arms & Legs with organic joints)
+  // Standard Pixel Art Limbs (Arms & Legs with integer grid snapping)
   drawCurvedLimb(ctx, x1, y1, x2, y2, r1, r2, color) {
-    ctx.fillStyle = color;
-    const angle = Math.atan2(y2 - y1, x2 - x1);
-    const perp = angle + Math.PI / 2;
-    const p1x = x1 + Math.cos(perp) * r1;
-    const p1y = y1 + Math.sin(perp) * r1;
-    const p2x = x2 + Math.cos(perp) * r2;
-    const p2y = y2 + Math.sin(perp) * r2;
-    const p3x = x2 - Math.cos(perp) * r2;
-    const p3y = y2 - Math.sin(perp) * r2;
-    const p4x = x1 - Math.cos(perp) * r1;
-    const p4y = y1 - Math.sin(perp) * r1;
+    const rx1 = Math.round(x1);
+    const ry1 = Math.round(y1);
+    const rx2 = Math.round(x2);
+    const ry2 = Math.round(y2);
+    const w = Math.max(2, Math.round(r1 + r2));
+    const h = Math.abs(ry2 - ry1);
+    const minX = Math.min(rx1, rx2);
+    const minY = Math.min(ry1, ry2);
 
-    ctx.beginPath();
-    ctx.moveTo(p1x, p1y);
-    ctx.lineTo(p2x, p2y);
-    ctx.arc(x2, y2, r2, perp, perp + Math.PI);
-    ctx.lineTo(p4x, p4y);
-    ctx.arc(x1, y1, r1, perp + Math.PI, perp);
-    ctx.closePath();
-    ctx.fill();
+    ctx.fillStyle = color;
+    if (h >= 1) {
+      ctx.fillRect(minX, minY, w, h);
+      // Outer shadow strip
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(minX + w - 1, minY, 1, h);
+    } else {
+      const len = Math.abs(rx2 - rx1);
+      ctx.fillRect(minX, minY, Math.max(w, len), w);
+    }
   }
 
-  // Smooth Curved Foot / Shoe Helper
+  // Standard Pixel Art Shoes & Footwear (with clean soles & highlights)
   drawCurvedShoe(ctx, x, y, len, h, color, soleColor = '#ffffff') {
-    // Upper shoe
+    const sx = Math.round(x - len * 0.4);
+    const sy = Math.round(y);
+    const sw = Math.round(len);
+    const sh = Math.max(3, Math.round(h));
+
+    // Upper shoe vamp
     ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x - len * 0.4, y);
-    ctx.quadraticCurveTo(x, y - h, x + len * 0.5, y);
-    ctx.lineTo(x + len * 0.6, y + h * 0.4);
-    ctx.lineTo(x - len * 0.4, y + h * 0.4);
-    ctx.closePath();
-    ctx.fill();
+    ctx.fillRect(sx, sy, sw, sh - 1);
+    ctx.fillRect(sx + 1, sy - 1, sw - 2, 1);
 
-    // Outsole with tread bevel
+    // Sole
     ctx.fillStyle = soleColor;
-    ctx.beginPath();
-    ctx.roundRect(x - len * 0.45, y + h * 0.4, len * 1.1, h * 0.4, 1.5);
-    ctx.fill();
+    ctx.fillRect(sx, sy + sh - 1, sw + 1, 1);
+
+    // Gloss highlight pixel
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.fillRect(sx + sw - 2, sy, 1, 1);
   }
 
-  // Soft fabric finish: gentle rim light, draping folds, and crease shading
+  // Standard Pixel Art Fabric Creases & Shading
   drawFabricFinish(ctx, cx, top, width, height, baseShade = 'rgba(0, 0, 0, 0.16)') {
+    const px = Math.round(cx - width / 2);
+    const py = Math.round(top);
+    const w = Math.round(width);
+    const h = Math.round(height);
+
     ctx.save();
-    const grad = ctx.createLinearGradient(cx - width * 0.6, top, cx + width * 0.6, top + height);
-    grad.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
-    grad.addColorStop(0.35, 'rgba(255, 255, 255, 0.03)');
-    grad.addColorStop(0.75, 'rgba(0, 0, 0, 0.05)');
-    grad.addColorStop(1, baseShade);
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.roundRect(cx - width / 2, top, width, height, [3, 3, 3, 3]);
-    ctx.fill();
-
-    // Organic soft draping crease curves
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.13)';
-    ctx.lineWidth = 0.6;
-    ctx.beginPath();
-    ctx.moveTo(cx - width * 0.22, top + height * 0.15);
-    ctx.quadraticCurveTo(cx - width * 0.3, top + height * 0.52, cx - width * 0.18, top + height * 0.88);
-    ctx.moveTo(cx + width * 0.24, top + height * 0.16);
-    ctx.quadraticCurveTo(cx + width * 0.32, top + height * 0.54, cx + width * 0.2, top + height * 0.86);
-    ctx.stroke();
-
-    // Soft highlight on fold crests
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(cx - width * 0.18, top + height * 0.18);
-    ctx.quadraticCurveTo(cx - width * 0.26, top + height * 0.52, cx - width * 0.14, top + height * 0.86);
-    ctx.stroke();
-
+    // Shaded side fold
+    ctx.fillStyle = baseShade;
+    ctx.fillRect(px, py, 1, h);
+    ctx.fillRect(px + w - 1, py, 1, h);
+    // Subtle vertical crease
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(Math.round(cx), py + 2, 1, h - 4);
+    // Subtle highlight fold
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.fillRect(Math.round(cx) - 1, py + 1, 1, h - 3);
     ctx.restore();
   }
 
-  // Silk hair gloss: soft multi-layered angel halo ring with gradient transparency & specular catchlights
+  // Standard Anime Pixel Hair Halo / Sheen Band
   drawHairGloss(ctx, cx, cy, scale = 1) {
-    ctx.save();
-    // 1. Soft diffused halo glow along crown
-    const haloGrad = ctx.createLinearGradient(cx - 6 * scale, cy - 3 * scale, cx + 6 * scale, cy);
-    haloGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
-    haloGrad.addColorStop(0.3, 'rgba(255, 248, 225, 0.45)');
-    haloGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.7)');
-    haloGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    ctx.strokeStyle = haloGrad;
-    ctx.lineWidth = 1.6 * scale;
-    ctx.beginPath();
-    ctx.arc(cx, cy - 1 * scale, 6.5 * scale, Math.PI * 1.15, Math.PI * 1.85);
-    ctx.stroke();
+    const px = Math.round(cx);
+    const py = Math.round(cy);
+    const span = Math.round(5 * scale);
 
-    // 2. Crisp specular hair streaks (angel's ring highlight)
-    ctx.globalAlpha = 0.85;
+    ctx.save();
+    // Stepped pixel hair shine band
+    ctx.fillStyle = 'rgba(255, 245, 220, 0.45)';
+    ctx.fillRect(px - span, py, span * 2 + 1, 1);
+    // Specular catchlight pixels
     ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.ellipse(cx - 1.8 * scale, cy - 2.4 * scale, 3.8 * scale, 1.2 * scale, -0.38, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + 2.2 * scale, cy - 1.6 * scale, 2.4 * scale, 0.8 * scale, -0.22, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillRect(px - Math.round(span * 0.4), py, 2, 1);
+    ctx.fillRect(px + Math.round(span * 0.3), py, 1, 1);
     ctx.restore();
   }
 
-  // HYHY - BARISTA CHỦ QUÁN (Toàn thân chi tiết: giày Oxford viền chỉ, vớ đen, váy xếp ly viền vàng, tạp dề xanh ngọc bích, tóc bóng halo)
+  // HYHY - BARISTA CHỦ QUÁN (Pixel Art Sprite: Giày Oxford viền chỉ, vớ đen, váy xếp ly navy viền vàng, tạp dề ngọc bích, tóc hạt dẻ halo)
   drawHyhy(ctx) {
     const hx = 78;
     const hy = 78;
-    const bob = Math.sin(this.tick * 0.12) * 1.5;
+    const bob = Math.round(Math.sin(this.tick * 0.1) * 1); // Crisp integer breathing bob
     const isBlinking = (this.tick % 80) < 4;
 
-    // 1. FEET & OXFORD BROGUES (Đứng vững chãi trên vỉa hè)
-    // Left Oxford shoe
-    this.drawCurvedShoe(ctx, hx + 3, 144, 7.5, 3.5, '#2e180d', '#1a0c06');
-    // Right Oxford shoe
-    this.drawCurvedShoe(ctx, hx + 10, 144, 7.5, 3.5, '#2e180d', '#1a0c06');
+    // 1. FEET & OXFORD BROGUES (Giày da Oxford nâu bóng viền chỉ vàng)
+    this.drawCurvedShoe(ctx, hx + 3, 144, 7, 3, '#2e180d', '#1a0c06');
+    this.drawCurvedShoe(ctx, hx + 10, 144, 7, 3, '#2e180d', '#1a0c06');
+    this.drawPixel(ctx, hx + 4, 143, 2, 1, '#f4c430'); // Gold buckle
+    this.drawPixel(ctx, hx + 11, 143, 2, 1, '#f4c430');
+    this.drawPixel(ctx, hx + 5, 142, 2, 1, 'rgba(255, 255, 255, 0.45)'); // Leather shine
 
-    // Polished Brass Buckles & Shoe Gloss
-    ctx.fillStyle = '#f4c430';
-    ctx.fillRect(hx + 2.5, 143, 2, 1);
-    ctx.fillRect(hx + 9.5, 143, 2, 1);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.fillRect(hx + 4, 142.5, 2, 0.8);
-    ctx.fillRect(hx + 11, 142.5, 2, 0.8);
+    // 2. SLENDER LEGS IN CHIC DARK TIGHTS (Vớ đen Barista cao cấp)
+    this.drawCurvedLimb(ctx, hx + 4, 120 + bob, hx + 4, 144, 1.5, 1.5, '#1e1822');
+    this.drawCurvedLimb(ctx, hx + 11, 120 + bob, hx + 11, 144, 1.5, 1.5, '#1e1822');
+    this.drawPixel(ctx, hx + 4, 131 + bob, 1, 2, '#382a40'); // Knee highlights
+    this.drawPixel(ctx, hx + 11, 131 + bob, 1, 2, '#382a40');
 
-    // 2. SLENDER CURVED LEGS IN CHIC DARK TIGHTS (Vớ đen barista cao cấp)
-    this.drawCurvedLimb(ctx, hx + 3, 118 + bob, hx + 3, 144, 2.4, 1.8, '#1e1822');
-    this.drawCurvedLimb(ctx, hx + 10, 118 + bob, hx + 10, 144, 2.4, 1.8, '#1e1822');
-
-    // Soft knee highlights
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.beginPath();
-    ctx.ellipse(hx + 3, 131 + bob, 1.4, 2.5, 0, 0, Math.PI * 2);
-    ctx.ellipse(hx + 10, 131 + bob, 1.4, 2.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 3. FLARED PLEATED SKIRT (Chân váy xếp ly xanh navy viền chỉ vàng satin)
-    ctx.fillStyle = '#151c2e';
-    ctx.beginPath();
-    ctx.moveTo(hx - 2, 107 + bob);
-    ctx.lineTo(hx + 15, 107 + bob);
-    ctx.quadraticCurveTo(hx + 18, 114 + bob, hx + 17, 121 + bob);
-    ctx.lineTo(hx - 4, 121 + bob);
-    ctx.quadraticCurveTo(hx - 5, 114 + bob, hx - 2, 107 + bob);
-    ctx.fill();
-
-    // Gold satin hemline ribbon
-    ctx.strokeStyle = '#f1c40f';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(hx - 3.5, 120 + bob);
-    ctx.lineTo(hx + 16.5, 120 + bob);
-    ctx.stroke();
-
-    // Crisp vertical pleat fold lines
-    ctx.strokeStyle = '#0f1422';
-    ctx.lineWidth = 1;
-    for (let px = hx - 1; px <= hx + 14; px += 3) {
-      ctx.beginPath();
-      ctx.moveTo(px, 107 + bob);
-      ctx.lineTo(px + (px < hx + 6 ? -1 : 1), 120 + bob);
-      ctx.stroke();
+    // 3. PLEATED NAVY SKIRT (Chân váy xếp ly xanh navy viền vàng satin)
+    const skirtTop = 108 + bob;
+    this.drawPixel(ctx, hx - 2, skirtTop, 19, 13, '#151c2e');
+    // Vertical pleats
+    for (let px = hx - 1; px <= hx + 15; px += 3) {
+      this.drawPixel(ctx, px, skirtTop, 1, 12, '#0c121e');
+      this.drawPixel(ctx, px + 1, skirtTop + 1, 1, 11, '#1e2942');
     }
+    // Gold satin hemline
+    this.drawPixel(ctx, hx - 3, skirtTop + 12, 21, 1, '#f1c40f');
+    this.drawPixel(ctx, hx - 2, skirtTop + 13, 19, 1, '#b78b02');
 
-    // Apron Ribbon Bow tied at back of waist
-    ctx.fillStyle = '#1e824c';
-    ctx.beginPath();
-    ctx.ellipse(hx - 4, 108 + bob, 3, 2, -0.4, 0, Math.PI * 2);
-    ctx.ellipse(hx - 4, 112 + bob, 2.5, 1.5, 0.4, 0, Math.PI * 2);
-    ctx.fill();
+    // 4. WHITE SILK BLOUSE WITH RUFFLED PETER PAN COLLAR
+    const torsoTop = hy + 16 + bob;
+    this.drawPixel(ctx, hx - 1, torsoTop, 17, 18, '#ffffff');
+    this.drawPixel(ctx, hx - 1, torsoTop, 1, 18, '#dcdde1'); // side seam
+    this.drawPixel(ctx, hx + 15, torsoTop, 1, 18, '#dcdde1');
 
-    // 4. TORSO & BLOUSE: White Silk Blouse with Ruffled Collar
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.roundRect(hx - 2, hy + 16 + bob, 17, 20, [5, 5, 0, 0]);
-    ctx.fill();
+    // Peter Pan Collar
+    this.drawPixel(ctx, hx + 2, torsoTop, 5, 3, '#f5f6fa');
+    this.drawPixel(ctx, hx + 8, torsoTop, 5, 3, '#f5f6fa');
+    this.drawPixel(ctx, hx + 1, torsoTop + 2, 6, 1, '#dfe4ea');
+    this.drawPixel(ctx, hx + 8, torsoTop + 2, 6, 1, '#dfe4ea');
 
-    // Peter Pan Collar with fine scalloped lace edge
-    ctx.fillStyle = '#f8f9fa';
-    ctx.beginPath();
-    ctx.ellipse(hx + 4, hy + 17 + bob, 3.8, 2.2, -0.2, 0, Math.PI * 2);
-    ctx.ellipse(hx + 9, hy + 17 + bob, 3.8, 2.2, 0.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#e9ecef';
-    ctx.lineWidth = 0.6;
-    ctx.stroke();
+    // Ruby Silk Brooch Ribbon with golden jewel center
+    this.drawPixel(ctx, hx + 5, torsoTop + 2, 5, 3, '#c0392b');
+    this.drawPixel(ctx, hx + 6, torsoTop + 1, 3, 2, '#e74c3c');
+    this.drawPixel(ctx, hx + 7, torsoTop + 2, 1, 1, '#f1c40f');
 
-    // Ruby Silk Brooch Ribbon with golden filigree jewel
-    ctx.fillStyle = '#e74c3c';
-    ctx.beginPath();
-    ctx.arc(hx + 6.5, hy + 18 + bob, 1.8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#f1c40f'; // Golden jewel center
-    ctx.beginPath();
-    ctx.arc(hx + 6.5, hy + 18 + bob, 0.8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 5. EMERALD GREEN BARISTA APRON (Tạp dề xanh ngọc bích sang trọng)
-    ctx.fillStyle = '#27ae60';
-    ctx.beginPath();
-    ctx.moveTo(hx + 1, hy + 18 + bob);
-    ctx.lineTo(hx + 12, hy + 18 + bob);
-    ctx.quadraticCurveTo(hx + 14, hy + 26 + bob, hx + 15, hy + 38 + bob);
-    ctx.lineTo(hx - 2, hy + 38 + bob);
-    ctx.quadraticCurveTo(hx - 1, hy + 26 + bob, hx + 1, hy + 18 + bob);
-    ctx.closePath();
-    ctx.fill();
+    // 5. EMERALD GREEN BARISTA APRON (Tạp dề Barista ngọc bích)
+    this.drawPixel(ctx, hx, torsoTop + 3, 15, 17, '#1e824c');
+    this.drawPixel(ctx, hx, torsoTop + 3, 1, 17, '#145a32'); // shadow border
+    this.drawPixel(ctx, hx + 14, torsoTop + 3, 1, 17, '#145a32');
 
     // Tan Leather Cross Straps & Brass Buckles
-    ctx.fillStyle = '#d35400';
-    ctx.fillRect(hx + 2, hy + 18 + bob, 2, 7);
-    ctx.fillRect(hx + 9, hy + 18 + bob, 2, 7);
-    ctx.fillStyle = '#f4c430'; // Brass buckles
-    ctx.fillRect(hx + 1.8, hy + 22 + bob, 2.4, 1.2);
-    ctx.fillRect(hx + 8.8, hy + 22 + bob, 2.4, 1.2);
+    this.drawPixel(ctx, hx + 2, torsoTop + 2, 2, 7, '#d35400');
+    this.drawPixel(ctx, hx + 11, torsoTop + 2, 2, 7, '#d35400');
+    this.drawPixel(ctx, hx + 2, torsoTop + 5, 2, 1, '#f4c430'); // brass buckles
+    this.drawPixel(ctx, hx + 11, torsoTop + 5, 2, 1, '#f4c430');
 
-    // Front utility pocket with gold embroidered boba cup insignia
-    ctx.fillStyle = '#1e824c';
-    ctx.beginPath();
-    ctx.roundRect(hx + 2, hy + 26 + bob, 9, 8, [1, 1, 4, 4]);
-    ctx.fill();
-    ctx.strokeStyle = '#2ecc71';
-    ctx.lineWidth = 0.6;
-    ctx.stroke();
+    // Front Utility Pocket
+    this.drawPixel(ctx, hx + 3, torsoTop + 9, 9, 8, '#145a32');
+    this.drawPixel(ctx, hx + 4, torsoTop + 10, 7, 6, '#196f3d');
+    // Mini Gold Boba Cup Insignia on Pocket
+    this.drawPixel(ctx, hx + 6, torsoTop + 12, 3, 3, '#f4c430');
+    this.drawPixel(ctx, hx + 7, torsoTop + 11, 1, 1, '#ffffff'); // straw
 
-    // Gold Boba Cup Insignia on pocket
-    ctx.fillStyle = '#f4c430';
-    ctx.beginPath();
-    ctx.roundRect(hx + 5.5, hy + 28 + bob, 2.2, 3.2, 0.5);
-    ctx.fill();
-    ctx.fillRect(hx + 6.2, hy + 26.8 + bob, 0.8, 1.2); // mini straw
+    // 6. NECK
+    this.drawPixel(ctx, hx + 5, hy + 13 + bob, 5, 4, '#ffe0bd');
+    this.drawPixel(ctx, hx + 5, hy + 15 + bob, 5, 2, '#e8a882');
 
-    // 6. SLENDER CURVED NECK
-    ctx.fillStyle = '#ffe0bd';
-    ctx.beginPath();
-    ctx.roundRect(hx + 4, hy + 12 + bob, 5, 5, 2);
-    ctx.fill();
+    // 7. CHESTNUT HAIR (Back Dome)
+    const headX = hx + 7;
+    const headY = hy + 7 + bob;
+    this.drawPixel(ctx, headX - 7, headY - 8, 15, 12, '#3e1c0c');
+    this.drawPixel(ctx, headX - 8, headY - 5, 17, 10, '#3e1c0c');
 
-    // 7. HEAD & SWEET EXPRESSIVE FACE with Amethyst Violet Eyes
-    this.drawOrganicHead(ctx, hx + 6.5, hy + 7 + bob, 7.5, 8.5, '#ffe0bd', 'rgba(255, 123, 123, 0.45)', isBlinking, '#8e44ad');
+    // 8. PIXEL ART HEAD & EXPRESSIVE ANIME FACE (Amethyst Violet Eyes with Specular Shine)
+    this.drawOrganicHead(ctx, headX, headY, 7, 7, '#ffe0bd', 'rgba(255, 123, 123, 0.45)', isBlinking, '#8e44ad', false);
 
-    // 8. SOFT CHESTNUT BOB HAIRCUT WITH ANGEL'S HALO SHINE (Vòng sáng tóc thiên thần)
-    ctx.fillStyle = '#3e1c0c';
-    // Back hair dome
-    ctx.beginPath();
-    ctx.arc(hx + 6.5, hy + 5 + bob, 9.5, Math.PI * 0.8, Math.PI * 2.2);
-    ctx.fill();
-    // Flowing curved side locks
-    ctx.beginPath();
-    ctx.moveTo(hx - 2, hy + 4 + bob);
-    ctx.quadraticCurveTo(hx - 4, hy + 12 + bob, hx - 1, hy + 16 + bob);
-    ctx.quadraticCurveTo(hx, hy + 10 + bob, hx - 1, hy + 6 + bob);
-    ctx.fill();
-    // Sweeping bangs across forehead
-    ctx.beginPath();
-    ctx.moveTo(hx - 2, hy + 3 + bob);
-    ctx.quadraticCurveTo(hx + 4, hy + 8 + bob, hx + 9, hy + 4 + bob);
-    ctx.quadraticCurveTo(hx + 14, hy + 9 + bob, hx + 15, hy + 6 + bob);
-    ctx.quadraticCurveTo(hx + 13, hy, hx + 6, hy - 2 + bob);
-    ctx.closePath();
-    ctx.fill();
+    // 9. CHESTNUT HAIR (Front Bangs, Side Locks & Hair Halo)
+    // Left side lock
+    this.drawPixel(ctx, headX - 7, headY - 3, 3, 10, '#4a2411');
+    this.drawPixel(ctx, headX - 8, headY + 1, 2, 7, '#3e1c0c');
+    // Right side lock
+    this.drawPixel(ctx, headX + 5, headY - 3, 3, 9, '#4a2411');
+    this.drawPixel(ctx, headX + 7, headY + 1, 2, 6, '#3e1c0c');
+    // Sweeping Bangs
+    this.drawPixel(ctx, headX - 6, headY - 6, 13, 3, '#5c2d15');
+    this.drawPixel(ctx, headX - 5, headY - 3, 4, 3, '#4a2411');
+    this.drawPixel(ctx, headX + 1, headY - 3, 5, 2, '#4a2411');
+    this.drawPixel(ctx, headX - 1, headY - 1, 3, 2, '#3e1c0c');
 
-    // Angel's Halo Hair Specular Ring (Vòng sáng tóc anime)
-    ctx.strokeStyle = 'rgba(255, 240, 220, 0.65)';
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.arc(hx + 6.5, hy + 1 + bob, 7.5, Math.PI * 1.15, Math.PI * 1.65);
-    ctx.stroke();
+    // Anime Hair Halo Specular Shine Band
+    this.drawHairGloss(ctx, headX, headY - 5, 1);
 
-    // Cute Gold Boba Hairpin on Side Bangs
-    ctx.fillStyle = '#f1c40f';
-    ctx.beginPath();
-    ctx.arc(hx + 12, hy + 4 + bob, 1.4, 0, Math.PI * 2);
-    ctx.fill();
+    // Cute Gold Boba Hairpin
+    this.drawPixel(ctx, headX + 4, headY - 4, 2, 2, '#f1c40f');
+    this.drawPixel(ctx, headX + 5, headY - 5, 1, 1, '#ffffff');
 
-    // Fine chestnut hair sheen, painted before the beret so the accessory remains crisp.
-    this.drawHairGloss(ctx, hx + 6.5, hy + 1 + bob, 0.9);
+    // 10. CHIC PARISIAN BARISTA BERET (Mũ nồi xanh ngọc bích)
+    this.drawPixel(ctx, headX - 8, headY - 10, 17, 4, '#27ae60');
+    this.drawPixel(ctx, headX - 6, headY - 12, 13, 3, '#2ecc71');
+    this.drawPixel(ctx, headX - 8, headY - 7, 17, 2, '#1e824c');
+    // Embossed Gold Star Brooch on Beret
+    this.drawPixel(ctx, headX + 4, headY - 9, 3, 3, '#f4c430');
+    this.drawPixel(ctx, headX + 5, headY - 9, 1, 1, '#ffffff');
 
-    // 9. CHIC PARISIAN BARISTA BERET (Mũ nồi xanh lá đính huy hiệu sao vàng)
-    ctx.fillStyle = '#27ae60';
-    ctx.beginPath();
-    ctx.ellipse(hx + 7, hy - 2 + bob, 9.5, 4.5, -0.15, 0, Math.PI * 2);
-    ctx.fill();
-    // Beret shadow fold
-    ctx.fillStyle = '#1e824c';
-    ctx.beginPath();
-    ctx.ellipse(hx + 6.5, hy - 1 + bob, 8.5, 3.5, -0.15, 0, Math.PI * 2);
-    ctx.fill();
+    // 11. UPPER ARMS (Down behind counter)
+    this.drawCurvedLimb(ctx, hx - 2, hy + 18 + bob, hx - 1, hy + 25 + bob, 1.5, 1.5, '#ffe0bd');
+    this.drawCurvedLimb(ctx, hx + 14, hy + 18 + bob, hx + 13, hy + 24 + bob, 1.5, 1.5, '#ffe0bd');
 
-    // 3D Embossed Gold Star Boba Brooch on Beret
-    ctx.fillStyle = '#f4c430';
-    ctx.beginPath();
-    ctx.arc(hx + 12, hy - 1 + bob, 2.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(hx + 11.5, hy - 1.5 + bob, 1, 1);
-
-    // 10. UPPER ARMS (Down to elbow level behind counter)
-    this.drawCurvedLimb(ctx, hx - 2, hy + 18 + bob, hx - 1, hy + 25 + bob, 2.4, 2.0, '#ffe0bd');
-    this.drawCurvedLimb(ctx, hx + 14, hy + 18 + bob, hx + 13, hy + 24 + bob, 2.4, 2.0, '#ffe0bd');
-
-    // Fabric drape finishing on apron and blouse for depth.
-    this.drawFabricFinish(ctx, hx + 6.5, hy + 18 + bob, 14, 20, 'rgba(0, 0, 0, 0.22)');
+    this.drawFabricFinish(ctx, hx + 7, hy + 18 + bob, 14, 20, 'rgba(0, 0, 0, 0.18)');
   }
 
-  // --- HYHY FOREARMS & INTERACTIVE ACTIONS (Resting / shaking over countertop) ---
+  // --- HYHY FOREARMS & INTERACTIVE ACTIONS (Pixel Art Forearms & Shaker) ---
   drawHyhyForearms(ctx) {
     const hx = 78;
     const hy = 78;
-    const bob = Math.sin(this.tick * 0.12) * 1.5;
-    const shakeArm = this.isShaking ? Math.sin(this.tick * 0.8) * 4 : 0;
+    const bob = Math.round(Math.sin(this.tick * 0.1) * 1);
+    const shakeArm = this.isShaking ? Math.round(Math.sin(this.tick * 0.8) * 4) : 0;
 
     if (this.isShaking) {
-      // Rapid animated curved forearms vigorously shaking shaker above the counter!
-      this.drawCurvedLimb(ctx, hx + 13, hy + 24 + bob, hx + 17, hy + 16 + bob + shakeArm, 2.4, 2.0, '#ffe0bd');
-      this.drawCurvedLimb(ctx, hx - 1, hy + 25 + bob, hx + 13, hy + 18 + bob + shakeArm, 2.4, 2.0, '#ffe0bd');
+      // Rapid animated forearms shaking cocktail shaker
+      this.drawCurvedLimb(ctx, hx + 13, hy + 24 + bob, hx + 17, hy + 16 + bob + shakeArm, 1.5, 1.5, '#ffe0bd');
+      this.drawCurvedLimb(ctx, hx - 1, hy + 25 + bob, hx + 13, hy + 18 + bob + shakeArm, 1.5, 1.5, '#ffe0bd');
 
-      // Stainless steel cocktail shaker with specular gloss & silicone ring
-      const shakerX = hx + 14;
-      const shakerY = hy + 10 + bob + shakeArm;
-      ctx.fillStyle = '#bdc3c7';
-      ctx.beginPath();
-      ctx.roundRect(shakerX, shakerY, 8.5, 15, [4, 4, 2, 2]);
-      ctx.fill();
-      // Metallic reflection stripe
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(shakerX + 1.5, shakerY + 1, 1.8, 13);
-      // Red silicone grip ring
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(shakerX, shakerY + 6, 8.5, 2.5);
-      // Shaker cap knob
-      ctx.fillStyle = '#7f8c8d';
-      ctx.beginPath();
-      ctx.arc(shakerX + 4.25, shakerY - 1, 2.5, Math.PI, 0);
-      ctx.fill();
+      // Stainless steel shaker in pixel art
+      const shakerX = hx + 13;
+      const shakerY = hy + 8 + bob + shakeArm;
+      this.drawPixel(ctx, shakerX, shakerY, 8, 15, '#bdc3c7');
+      this.drawPixel(ctx, shakerX + 1, shakerY, 2, 15, '#ffffff'); // metallic specular line
+      this.drawPixel(ctx, shakerX + 6, shakerY, 2, 15, '#7f8c8d'); // metallic shadow
+      this.drawPixel(ctx, shakerX, shakerY + 6, 8, 3, '#e74c3c');  // silicone grip ring
+      this.drawPixel(ctx, shakerX + 2, shakerY - 2, 4, 3, '#95a5a6'); // cap knob
+      this.drawPixel(ctx, shakerX + 3, shakerY - 3, 2, 2, '#bdc3c7');
 
-      // Dynamic Shaking Motion Blur Action Lines & Sparkles
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(shakerX - 3, shakerY + 4);
-      ctx.lineTo(shakerX - 5, shakerY + 8);
-      ctx.moveTo(shakerX + 11, shakerY + 4);
-      ctx.lineTo(shakerX + 13, shakerY + 8);
-      ctx.stroke();
+      // Action motion blur lines in pixel art
+      this.drawPixel(ctx, shakerX - 3, shakerY + 3, 2, 1, '#ffffff');
+      this.drawPixel(ctx, shakerX - 4, shakerY + 7, 2, 1, '#ffffff');
+      this.drawPixel(ctx, shakerX + 9, shakerY + 3, 2, 1, '#ffffff');
+      this.drawPixel(ctx, shakerX + 10, shakerY + 7, 2, 1, '#ffffff');
     } else {
-      // Resting left forearm with rose gold bracelet holding a silver jigger
-      this.drawCurvedLimb(ctx, hx - 1, hy + 24 + bob, hx + 2, hy + 31 + bob, 2.4, 2.0, '#ffe0bd');
-      // Rose gold bracelet
-      ctx.strokeStyle = '#e17055';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(hx + 1.5, hy + 30 + bob, 2.2, 0, Math.PI * 2);
-      ctx.stroke();
+      // Resting left forearm holding silver jigger
+      this.drawCurvedLimb(ctx, hx - 1, hy + 24 + bob, hx + 2, hy + 31 + bob, 1.5, 1.5, '#ffe0bd');
+      this.drawPixel(ctx, hx + 1, hy + 30 + bob, 3, 1, '#e17055'); // rose gold bracelet
+      this.drawPixel(ctx, hx + 2, hy + 31 + bob, 3, 3, '#ffe0bd'); // hand
 
-      ctx.fillStyle = '#ffe0bd';
-      ctx.beginPath();
-      ctx.arc(hx + 2, hy + 32 + bob, 2.2, 0, Math.PI * 2);
-      ctx.fill();
+      // Silver dual-ended jigger
+      this.drawPixel(ctx, hx + 4, hy + 28 + bob, 4, 2, '#bdc3c7');
+      this.drawPixel(ctx, hx + 5, hy + 30 + bob, 2, 2, '#95a5a6');
+      this.drawPixel(ctx, hx + 4, hy + 32 + bob, 4, 3, '#bdc3c7');
+      this.drawPixel(ctx, hx + 5, hy + 28 + bob, 1, 7, '#ffffff'); // shine line
 
-      // Silver dual-ended barista jigger (ly đong siro)
-      ctx.fillStyle = '#bdc3c7';
-      ctx.beginPath();
-      ctx.moveTo(hx + 4, hy + 28 + bob);
-      ctx.lineTo(hx + 8, hy + 28 + bob);
-      ctx.lineTo(hx + 6.5, hy + 31 + bob);
-      ctx.lineTo(hx + 8.5, hy + 34 + bob);
-      ctx.lineTo(hx + 3.5, hy + 34 + bob);
-      ctx.lineTo(hx + 5.5, hy + 31 + bob);
-      ctx.closePath();
-      ctx.fill();
-
-      // Resting right arm gracefully on the marble countertop
-      this.drawCurvedLimb(ctx, hx + 13, hy + 23 + bob, hx + 17, hy + 30 + bob, 2.4, 2.0, '#ffe0bd');
-      ctx.fillStyle = '#ffe0bd';
-      ctx.beginPath();
-      ctx.arc(hx + 17, hy + 31 + bob, 2.2, 0, Math.PI * 2);
-      ctx.fill();
+      // Resting right arm
+      this.drawCurvedLimb(ctx, hx + 13, hy + 23 + bob, hx + 17, hy + 30 + bob, 1.5, 1.5, '#ffe0bd');
+      this.drawPixel(ctx, hx + 16, hy + 30 + bob, 3, 3, '#ffe0bd'); // hand
     }
   }
 
-  // 10 CUSTOMER ARCHETYPES WITH CURVED ANATOMY & REALISTIC ATTIRE
+  // 10 CUSTOMER ARCHETYPES WITH AUTHENTIC RETRO PIXEL ART GRAPHICS
   drawCustomer(ctx, x, y, type, isFront = true, quote = '') {
     const isMoving = isFront ? (x < this.targetCustomerX) : false;
     const walkBob = (this.customerState === 'waiting' && isMoving)
-      ? Math.sin(this.tick * 0.45) * 3
-      : 0;
+      ? Math.round(Math.sin(this.tick * 0.45) * 2)
+      : (this.tick % 60 < 30 ? 1 : 0);
 
-    // Soft drop shadow
-    ctx.fillStyle = 'rgba(10, 5, 12, 0.35)';
-    ctx.beginPath();
-    ctx.ellipse(x + 10, y + 42, 13, 3.8, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Pixel art ground drop shadow
+    const shadowX = Math.round(x);
+    const shadowY = Math.round(y + 41);
+    this.drawPixel(ctx, shadowX - 2, shadowY, 24, 3, 'rgba(10, 5, 12, 0.35)');
+    this.drawPixel(ctx, shadowX, shadowY - 1, 20, 5, 'rgba(10, 5, 12, 0.2)');
 
     const isBlinking = (this.tick % 90) < 4;
     const isHappy = isFront && this.isDrinking;
-    const petBob = (this.customerState === 'waiting' && isMoving) ? Math.sin(this.tick * 0.45) * 2 : 0;
-    const petTail = Math.sin(this.tick * 0.25) * 3;
+    const petBob = (this.customerState === 'waiting' && isMoving) ? Math.round(Math.sin(this.tick * 0.45) * 2) : 0;
+    const petTail = Math.round(Math.sin(this.tick * 0.25) * 2);
 
     switch (type) {
-      case 0: { // BÉ LAN - NỮ SINH CẤP 3 (Áo thủy thủ viền kép, váy xếp ly viền ribbon, nơ lụa đỏ, balo có charm boba lắc lư)
-        // Slender curved legs in ribbed white knee-high socks
-        this.drawCurvedLimb(ctx, x + 6, y + 23 + walkBob, x + 6, y + 38 + walkBob, 2.6, 2.0, '#ffffff');
-        this.drawCurvedLimb(ctx, x + 13, y + 23 - walkBob, x + 13, y + 38 - walkBob, 2.6, 2.0, '#ffffff');
-        // Sock top ribbing
-        ctx.fillStyle = '#dfe6e9';
-        ctx.fillRect(x + 4.5, y + 23 + walkBob, 3.2, 1);
-        ctx.fillRect(x + 11.5, y + 23 - walkBob, 3.2, 1);
+      case 0: { // BÉ LAN - NỮ SINH CẤP 3 (Áo thủy thủ Sailor Fuku, váy xếp ly navy viền ribbon, nơ đỏ, tóc đuôi ngựa, balo boba)
+        // Knee-high white socks
+        this.drawCurvedLimb(ctx, x + 5, y + 23 + walkBob, x + 5, y + 38 + walkBob, 1.6, 1.6, '#ffffff');
+        this.drawCurvedLimb(ctx, x + 12, y + 23 - walkBob, x + 12, y + 38 - walkBob, 1.6, 1.6, '#ffffff');
+        this.drawPixel(ctx, x + 4, y + 23 + walkBob, 4, 1, '#dfe6e9');
+        this.drawPixel(ctx, x + 11, y + 23 - walkBob, 4, 1, '#dfe6e9');
 
-        // Glossy Mary Jane Shoes with rounded toe and gold buckle
-        this.drawCurvedShoe(ctx, x + 7, y + 38 + walkBob, 7.5, 3.2, '#1e0c1b', '#3d1b37');
-        this.drawCurvedShoe(ctx, x + 14, y + 38 - walkBob, 7.5, 3.2, '#1e0c1b', '#3d1b37');
-        ctx.fillStyle = '#f4c430'; // Gold buckles
-        ctx.fillRect(x + 6, y + 37 + walkBob, 2, 1.5);
-        ctx.fillRect(x + 13, y + 37 - walkBob, 2, 1.5);
+        // Mary Jane Shoes with gold buckles
+        this.drawCurvedShoe(ctx, x + 6, y + 38 + walkBob, 7, 3, '#1a1016', '#331826');
+        this.drawCurvedShoe(ctx, x + 13, y + 38 - walkBob, 7, 3, '#1a1016', '#331826');
+        this.drawPixel(ctx, x + 6, y + 38 + walkBob, 2, 1, '#f4c430');
+        this.drawPixel(ctx, x + 13, y + 38 - walkBob, 2, 1, '#f4c430');
 
-        // Flared knife-pleated navy skirt with white satin hemline ribbon
-        ctx.fillStyle = '#1e3799';
-        ctx.beginPath();
-        ctx.moveTo(x + 3, y + 19);
-        ctx.lineTo(x + 16, y + 19);
-        ctx.quadraticCurveTo(x + 19, y + 23, x + 20, y + 27);
-        ctx.lineTo(x - 1, y + 27);
-        ctx.quadraticCurveTo(x - 2, y + 23, x + 3, y + 19);
-        ctx.closePath();
-        ctx.fill();
+        // Navy knife-pleated skirt with white ribbon hem
+        this.drawPixel(ctx, x + 2, y + 18, 16, 9, '#1e3799');
+        this.drawPixel(ctx, x + 5, y + 18, 1, 9, '#0c2461');
+        this.drawPixel(ctx, x + 9, y + 18, 1, 9, '#0c2461');
+        this.drawPixel(ctx, x + 13, y + 18, 1, 9, '#0c2461');
+        this.drawPixel(ctx, x + 1, y + 26, 18, 1, '#ffffff'); // white satin ribbon
 
-        // White satin hemline ribbon on skirt
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(x - 0.5, y + 26);
-        ctx.lineTo(x + 19.5, y + 26);
-        ctx.stroke();
+        // White Sailor Blouse & Navy Collar with Twin Ribbon Stripes
+        this.drawPixel(ctx, x + 2, y + 8, 16, 11, '#ffffff');
+        this.drawPixel(ctx, x + 1, y + 7, 18, 3, '#1e3799');
+        this.drawPixel(ctx, x + 2, y + 10, 4, 3, '#1e3799');
+        this.drawPixel(ctx, x + 14, y + 10, 4, 3, '#1e3799');
+        this.drawPixel(ctx, x + 2, y + 11, 4, 1, '#ffffff');
+        this.drawPixel(ctx, x + 14, y + 11, 4, 1, '#ffffff');
 
-        // Pleat vertical lines
-        ctx.strokeStyle = '#0c2461';
-        ctx.lineWidth = 0.8;
-        for (let px = x + 3; px <= x + 16; px += 3) {
-          ctx.beginPath();
-          ctx.moveTo(px, y + 19);
-          ctx.lineTo(px + (px < x + 10 ? -1 : 1), y + 26);
-          ctx.stroke();
+        // Ruby Red Silk Bowtie with gold center
+        this.drawPixel(ctx, x + 8, y + 10, 4, 3, '#e84118');
+        this.drawPixel(ctx, x + 9, y + 11, 2, 1, '#f4c430');
+
+        // Back Hair Dome
+        this.drawPixel(ctx, x + 3, y - 9, 14, 8, '#2c1e13');
+
+        // Pixel Anime Head & Face (Chocolate Eyes)
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 123, 123, 0.45)', isBlinking, '#5d3a1a', isHappy);
+
+        // Front Bangs & Side Strands
+        this.drawPixel(ctx, x + 4, y - 6, 12, 3, '#3e271a');
+        this.drawPixel(ctx, x + 4, y - 3, 3, 2, '#2c1e13');
+        this.drawPixel(ctx, x + 12, y - 3, 3, 2, '#2c1e13');
+        this.drawHairGloss(ctx, x + 10, y - 5, 0.85);
+
+        // High Ponytail Swaying with step cycle
+        const pTailSway = Math.round(Math.sin(this.tick * 0.25) * 2);
+        this.drawPixel(ctx, x + 15, y - 7, 4, 3, '#2c1e13');
+        this.drawPixel(ctx, x + 16 + pTailSway, y - 5, 4, 9, '#2c1e13');
+        this.drawPixel(ctx, x + 17 + pTailSway, y + 4, 3, 6, '#3e271a');
+        this.drawPixel(ctx, x + 15, y - 6, 3, 3, '#e84118'); // red scrunchie
+        this.drawPixel(ctx, x + 5, y - 6, 2, 2, '#f1c40f'); // gold star clip
+
+        // Pastel Pink Schoolbag with Bouncing Boba Charm
+        this.drawPixel(ctx, x - 4, y + 9, 6, 13, '#ff9ff3');
+        this.drawPixel(ctx, x - 4, y + 9, 1, 13, '#f368e0');
+        const charmSwing = Math.round(Math.sin(this.tick * 0.2) * 2);
+        this.drawPixel(ctx, x - 4 + charmSwing, y + 19, 4, 4, '#8b4513');
+        this.drawPixel(ctx, x - 4 + charmSwing, y + 18, 3, 1, '#ffffff');
+        break;
+      }
+
+      case 1: { // ANH NAM - VĂN PHÒNG / IT (Sơ mi baby blue, cà vạt đỏ đô, quần âu xám than, kính đồi mồi, smartwatch OLED, thẻ nhân viên)
+        // Tailored charcoal slacks
+        this.drawCurvedLimb(ctx, x + 5, y + 24 + walkBob, x + 5, y + 38 + walkBob, 1.8, 1.8, '#1e272c');
+        this.drawCurvedLimb(ctx, x + 12, y + 24 - walkBob, x + 12, y + 38 - walkBob, 1.8, 1.8, '#1e272c');
+        this.drawPixel(ctx, x + 6, y + 24 + walkBob, 1, 14, '#2d3436');
+        this.drawPixel(ctx, x + 13, y + 24 - walkBob, 1, 14, '#2d3436');
+
+        // Polished walnut Derby shoes
+        this.drawCurvedShoe(ctx, x + 6, y + 38 + walkBob, 8, 3, '#2c1e13', '#111');
+        this.drawCurvedShoe(ctx, x + 13, y + 38 - walkBob, 8, 3, '#2c1e13', '#111');
+        this.drawPixel(ctx, x + 7, y + 38 + walkBob, 2, 1, '#5d4037');
+        this.drawPixel(ctx, x + 14, y + 38 - walkBob, 2, 1, '#5d4037');
+
+        // Baby Blue Dress Shirt & Crimson Tie
+        this.drawPixel(ctx, x + 2, y + 8, 16, 17, '#74b9ff');
+        this.drawPixel(ctx, x + 6, y + 7, 3, 2, '#ffffff'); // white collar points
+        this.drawPixel(ctx, x + 11, y + 7, 3, 2, '#ffffff');
+        this.drawPixel(ctx, x + 9, y + 8, 2, 10, '#c0392b'); // crimson knit tie
+        this.drawPixel(ctx, x + 9, y + 12, 3, 1, '#ecf0f1'); // silver tie clip
+
+        // Head & Dark Hair
+        this.drawPixel(ctx, x + 3, y - 9, 14, 7, '#1e1e1e');
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 150, 150, 0.25)', isBlinking, '#2c3e50', isHappy);
+        this.drawPixel(ctx, x + 4, y - 6, 9, 2, '#2d3436'); // side-part bangs
+
+        // Tortoiseshell Glasses with cyan reflection glint
+        this.drawPixel(ctx, x + 5, y - 2, 4, 3, '#5d3a1a');
+        this.drawPixel(ctx, x + 11, y - 2, 4, 3, '#5d3a1a');
+        this.drawPixel(ctx, x + 9, y - 2, 2, 1, '#5d3a1a');
+        this.drawPixel(ctx, x + 6, y - 2, 1, 1, '#81ecec');
+        this.drawPixel(ctx, x + 12, y - 2, 1, 1, '#81ecec');
+
+        // Smartwatch OLED & Blue Lanyard Badge
+        this.drawPixel(ctx, x + 1, y + 17, 3, 2, '#00cec9');
+        this.drawPixel(ctx, x + 7, y + 9, 1, 8, '#0984e3');
+        this.drawPixel(ctx, x + 7, y + 17, 3, 4, '#ffffff');
+        break;
+      }
+
+      case 2: { // CÔ BA - HÀNG XÓM (Áo bà ba vàng gấm hoa sen, cúc ngọc trai, quần lụa đen, nón lá quai hồng, khăn rằn, giỏ sen)
+        // Flowing black silk trousers & traditional wooden clogs
+        this.drawCurvedLimb(ctx, x + 5, y + 24 + walkBob, x + 5, y + 38 + walkBob, 1.8, 1.8, '#1e131d');
+        this.drawCurvedLimb(ctx, x + 12, y + 24 - walkBob, x + 12, y + 38 - walkBob, 1.8, 1.8, '#1e131d');
+        this.drawCurvedShoe(ctx, x + 6, y + 38 + walkBob, 7, 3, '#8e44ad', '#d35400');
+        this.drawCurvedShoe(ctx, x + 13, y + 38 - walkBob, 7, 3, '#8e44ad', '#d35400');
+
+        // Golden Yellow Silk Áo Bà Ba with Pearl Buttons
+        this.drawPixel(ctx, x + 2, y + 8, 16, 18, '#f1c40f');
+        this.drawPixel(ctx, x + 2, y + 8, 1, 18, '#d4ac0d');
+        this.drawPixel(ctx, x + 17, y + 8, 1, 18, '#d4ac0d');
+        // Pearl buttons down the center
+        for (let by = y + 9; by <= y + 21; by += 3) {
+          this.drawPixel(ctx, x + 9, by, 2, 1, '#ffffff');
         }
 
-        // White Sailor Blouse with curved silhouette
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.roundRect(x + 2, y + 7, 15, 13, [4, 4, 2, 2]);
-        ctx.fill();
+        // Checkered Khăn Rằn around neck
+        this.drawPixel(ctx, x + 6, y + 7, 8, 2, '#dfe6e9');
+        this.drawPixel(ctx, x + 7, y + 7, 2, 1, '#2d3436');
+        this.drawPixel(ctx, x + 11, y + 7, 2, 1, '#2d3436');
 
-        // Navy Sailor Collar with twin white ribbon stripes
-        ctx.fillStyle = '#1e3799';
-        ctx.beginPath();
-        ctx.moveTo(x + 1, y + 7);
-        ctx.lineTo(x + 18, y + 7);
-        ctx.lineTo(x + 17, y + 13);
-        ctx.lineTo(x + 13, y + 14);
-        ctx.lineTo(x + 9.5, y + 9);
-        ctx.lineTo(x + 6, y + 14);
-        ctx.lineTo(x + 2, y + 13);
-        ctx.closePath();
-        ctx.fill();
+        // Head, Hair Bun & Pearl Earrings
+        this.drawPixel(ctx, x + 3, y - 8, 14, 7, '#1e1e1e');
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 123, 123, 0.4)', isBlinking, '#2c1e13', isHappy);
+        this.drawPixel(ctx, x + 15, y - 2, 4, 5, '#1e1e1e'); // low hair bun
+        this.drawPixel(ctx, x + 17, y - 3, 2, 1, '#b2bec3'); // silver hairpin
+        this.drawPixel(ctx, x + 2, y, 1, 2, '#ffffff'); // pearl earring
 
-        // Twin white ribbon stripes on sailor collar
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 0.6;
-        ctx.beginPath();
-        ctx.moveTo(x + 2, y + 12);
-        ctx.lineTo(x + 5.5, y + 13);
-        ctx.moveTo(x + 17, y + 12);
-        ctx.lineTo(x + 13.5, y + 13);
-        ctx.stroke();
+        // Conical Hat (Nón Lá) slung on back with pink silk ribbon
+        this.drawPixel(ctx, x - 4, y + 6, 6, 14, '#f5cd79');
+        this.drawPixel(ctx, x - 3, y + 8, 4, 10, '#e5ba65');
+        this.drawPixel(ctx, x + 1, y + 12, 2, 6, '#ff7675'); // pink ribbon
 
-        // Ruby Red Silk Bowtie with fluttering ribbon tails
-        ctx.fillStyle = '#e84118';
-        ctx.beginPath();
-        ctx.ellipse(x + 9.5, y + 10, 3, 2, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(x + 8, y + 11);
-        ctx.quadraticCurveTo(x + 5.5, y + 15, x + 6.5, y + 18);
-        ctx.lineTo(x + 9, y + 12);
-        ctx.moveTo(x + 11, y + 11);
-        ctx.quadraticCurveTo(x + 13.5, y + 15, x + 12.5, y + 18);
-        ctx.lineTo(x + 10, y + 12);
-        ctx.fill();
-        ctx.fillStyle = '#f4c430'; // Gold brooch jewel
-        ctx.beginPath();
-        ctx.arc(x + 9.5, y + 10, 0.8, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Curved head & anime face with chocolate eyes
-        this.drawOrganicHead(ctx, x + 9.5, y - 2, 7.5, 8.5, '#ffe0bd', 'rgba(255, 123, 123, 0.45)', isBlinking, '#5d3a1a', isHappy);
-
-        // Silky dark brown hair, curved bangs & high ponytail
-        ctx.fillStyle = '#2c1e13';
-        ctx.beginPath();
-        ctx.arc(x + 9.5, y - 4, 8.5, Math.PI * 0.75, Math.PI * 2.25);
-        ctx.fill();
-        // Bangs
-        ctx.beginPath();
-        ctx.moveTo(x + 2, y - 5);
-        ctx.quadraticCurveTo(x + 7, y, x + 11, y - 4);
-        ctx.quadraticCurveTo(x + 15, y + 1, x + 17, y - 4);
-        ctx.quadraticCurveTo(x + 16, y - 8, x + 10, y - 10);
-        ctx.closePath();
-        ctx.fill();
-
-        // High ponytail swaying with natural bounce
-        const pTailSway = Math.sin(this.tick * 0.25) * 2.8;
-        ctx.beginPath();
-        ctx.moveTo(x + 15, y - 7);
-        ctx.quadraticCurveTo(x + 23 + pTailSway, y - 3, x + 21 + pTailSway, y + 11);
-        ctx.quadraticCurveTo(x + 16 + pTailSway, y + 6, x + 15, y - 5);
-        ctx.fill();
-
-        // Red silk scrunchie & gold star hairpins
-        ctx.fillStyle = '#e84118';
-        ctx.beginPath();
-        ctx.arc(x + 15, y - 6, 2.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#f1c40f'; // Star hairpin
-        ctx.fillRect(x + 4, y - 6, 1.8, 1.8);
-
-        // Pastel Pink Canvas Schoolbag with Boba Plushie Charm
-        ctx.fillStyle = '#ff9ff3';
-        ctx.beginPath();
-        ctx.roundRect(x - 4, y + 9, 6, 13, [3, 1, 1, 3]);
-        ctx.fill();
-        ctx.strokeStyle = '#f368e0';
-        ctx.lineWidth = 0.6;
-        ctx.stroke();
-
-        // Boba Plushie charm bouncing
-        const charmSwing = Math.sin(this.tick * 0.2) * 2.5;
-        ctx.fillStyle = '#8b4513';
-        ctx.beginPath();
-        ctx.arc(x - 3 + charmSwing, y + 19, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff'; // mini dome lid
-        ctx.fillRect(x - 4 + charmSwing, y + 17, 2, 0.8);
+        // Bamboo Basket with Fresh Lotus Blossoms
+        this.drawPixel(ctx, x + 16, y + 16, 7, 7, '#d35400');
+        this.drawPixel(ctx, x + 17, y + 13, 3, 3, '#ff7675');
+        this.drawPixel(ctx, x + 20, y + 14, 3, 3, '#fd79a8');
+        this.drawPixel(ctx, x + 18, y + 16, 2, 1, '#2ecc71');
         break;
       }
 
-      case 1: { // ANH NAM - VĂN PHÒNG / IT (Sơ mi xanh baby, cravat dệt kim đỏ đô, kẹp cà vạt bạc, đồng hồ smartwatch OLED, kính gọng đồi mồi)
-        // Tailored charcoal slacks with crisp center crease
-        this.drawCurvedLimb(ctx, x + 6, y + 24 + walkBob, x + 6, y + 38 + walkBob, 2.8, 2.2, '#1e272c');
-        this.drawCurvedLimb(ctx, x + 13, y + 24 - walkBob, x + 13, y + 38 - walkBob, 2.8, 2.2, '#1e272c');
-        // Slacks vertical crease line
-        ctx.strokeStyle = '#2d3436';
-        ctx.lineWidth = 0.6;
-        ctx.beginPath();
-        ctx.moveTo(x + 6, y + 25 + walkBob); ctx.lineTo(x + 6, y + 37 + walkBob);
-        ctx.moveTo(x + 13, y + 25 - walkBob); ctx.lineTo(x + 13, y + 37 - walkBob);
-        ctx.stroke();
+      case 3: { // TÚ - TIKTOKER REVIEWER (Hoodie ombre lavender-pink, tóc bạch kim, tai nghe DJ RGB đổi màu, smartphone quay video REC)
+        // Dark athletic shorts & striped tube socks
+        this.drawCurvedLimb(ctx, x + 5, y + 24 + walkBob, x + 5, y + 33 + walkBob, 2, 2, '#2d3436');
+        this.drawCurvedLimb(ctx, x + 12, y + 24 - walkBob, x + 12, y + 33 - walkBob, 2, 2, '#2d3436');
+        this.drawPixel(ctx, x + 5, y + 33 + walkBob, 3, 4, '#ffffff');
+        this.drawPixel(ctx, x + 5, y + 34 + walkBob, 3, 1, '#00cec9');
+        this.drawPixel(ctx, x + 12, y + 33 - walkBob, 3, 4, '#ffffff');
+        this.drawPixel(ctx, x + 12, y + 34 - walkBob, 3, 1, '#00cec9');
+        this.drawCurvedShoe(ctx, x + 6, y + 38 + walkBob, 8, 4, '#dfe6e9', '#00cec9');
+        this.drawCurvedShoe(ctx, x + 13, y + 38 - walkBob, 8, 4, '#dfe6e9', '#00cec9');
 
-        // Polished Walnut Derby shoes with leather gloss
-        this.drawCurvedShoe(ctx, x + 7, y + 38 + walkBob, 8, 3.2, '#2c1e13', '#111');
-        this.drawCurvedShoe(ctx, x + 14, y + 38 - walkBob, 8, 3.2, '#2c1e13', '#111');
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillRect(x + 7, y + 37 + walkBob, 2.5, 0.8);
-        ctx.fillRect(x + 14, y + 37 - walkBob, 2.5, 0.8);
+        // Gradient Pastel Hoodie (Lavender to Coral Pink)
+        this.drawPixel(ctx, x + 2, y + 8, 16, 9, '#a29bfe');
+        this.drawPixel(ctx, x + 2, y + 17, 16, 8, '#fd79a8');
+        this.drawPixel(ctx, x + 7, y + 10, 1, 6, '#ffffff'); // drawstrings
+        this.drawPixel(ctx, x + 12, y + 10, 1, 6, '#ffffff');
 
-        // Baby Blue Oxford Dress Shirt
-        ctx.fillStyle = '#74b9ff';
-        ctx.beginPath();
-        ctx.roundRect(x + 2, y + 7, 16, 18, [3, 3, 1, 1]);
-        ctx.fill();
+        // Head & Platinum-Blonde Hair with Pink Dip-Dye Tips
+        this.drawPixel(ctx, x + 3, y - 9, 14, 7, '#dfe6e9');
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 118, 117, 0.4)', isBlinking, '#2d3436', isHappy);
+        this.drawPixel(ctx, x + 2, y - 11, 4, 3, '#fd79a8'); // pink dyed tips
+        this.drawPixel(ctx, x + 10, y - 11, 4, 3, '#fd79a8');
 
-        // Crisp White Collar Points
-        ctx.fillStyle = '#f8f9fa';
-        ctx.beginPath();
-        ctx.moveTo(x + 6, y + 7);
-        ctx.lineTo(x + 8.5, y + 10);
-        ctx.lineTo(x + 10, y + 7);
-        ctx.closePath();
-        ctx.moveTo(x + 14, y + 7);
-        ctx.lineTo(x + 11.5, y + 10);
-        ctx.lineTo(x + 10, y + 7);
-        ctx.closePath();
-        ctx.fill();
+        // DJ Over-Ear Headphones with Animated RGB Glow
+        const rgbColors = ['#00cec9', '#fd79a8', '#fdcb6e', '#a29bfe'];
+        const rgbCur = rgbColors[Math.floor(this.tick * 0.1) % 4];
+        this.drawPixel(ctx, x + 4, y - 10, 12, 2, '#2d3436');
+        this.drawPixel(ctx, x + 1, y - 3, 3, 5, '#2d3436');
+        this.drawPixel(ctx, x + 2, y - 2, 1, 3, rgbCur);
+        this.drawPixel(ctx, x + 16, y - 3, 3, 5, '#2d3436');
+        this.drawPixel(ctx, x + 17, y - 2, 1, 3, rgbCur);
 
-        // Burgundy Silk Tie with Silver Tie Clip
-        ctx.fillStyle = '#800020'; // Burgundy
-        ctx.beginPath();
-        ctx.moveTo(x + 9, y + 8);
-        ctx.lineTo(x + 11, y + 8);
-        ctx.lineTo(x + 11.5, y + 20);
-        ctx.lineTo(x + 10, y + 22);
-        ctx.lineTo(x + 8.5, y + 20);
-        ctx.closePath();
-        ctx.fill();
-
-        // Polished Silver Tie Clip
-        ctx.fillStyle = '#ecf0f1';
-        ctx.fillRect(x + 8.8, y + 14, 2.4, 1.0);
-
-        // Smartwatch on wrist with glowing cyan OLED screen
-        ctx.fillStyle = '#2d3436';
-        ctx.beginPath();
-        ctx.roundRect(x + 16, y + 20 - walkBob, 3.2, 4, 1);
-        ctx.fill();
-        ctx.fillStyle = '#00cec9'; // Glowing OLED
-        ctx.fillRect(x + 16.5, y + 21 - walkBob, 2.2, 2);
-
-        // Head & Handsome Jawline
-        this.drawOrganicHead(ctx, x + 10, y - 2, 7.5, 8.5, '#ffe0bd', 'rgba(255, 150, 150, 0.25)', isBlinking, '#2c3e50', isHappy);
-
-        // Undercut hairstyle with curved swept volume
-        ctx.fillStyle = '#2d3436';
-        ctx.beginPath();
-        ctx.moveTo(x + 2, y - 6);
-        ctx.quadraticCurveTo(x + 6, y - 12, x + 14, y - 10);
-        ctx.quadraticCurveTo(x + 18, y - 7, x + 17, y - 3);
-        ctx.quadraticCurveTo(x + 13, y - 7, x + 6, y - 5);
-        ctx.quadraticCurveTo(x + 13, y - 7, x + 6, y - 5);
-        ctx.closePath();
-        ctx.fill();
-
-        // Tortoiseshell Glasses with Anti-glare Cyan Reflection
-        ctx.strokeStyle = '#6d4c41';
-        ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.ellipse(x + 7.5, y - 2, 2.5, 2.2, 0, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.ellipse(x + 12.5, y - 2, 2.5, 2.2, 0, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(x + 10, y - 2);
-        ctx.lineTo(x + 10, y - 2);
-        ctx.stroke();
-        ctx.fillStyle = '#81ecec'; // Lens anti-glare reflection
-        ctx.fillRect(x + 8, y - 3, 1.2, 1);
-        ctx.fillRect(x + 13, y - 3, 1.2, 1);
-
-        // Premium Leather Messenger Bag with brass hardware
-        ctx.fillStyle = '#5d4037';
-        ctx.beginPath();
-        ctx.roundRect(x - 5, y + 20, 7.5, 12, 2);
-        ctx.fill();
-        ctx.fillStyle = '#f4c430'; // Brass buckles
-        ctx.fillRect(x - 3.5, y + 23, 2, 1.5);
-        ctx.fillRect(x - 3.5, y + 28, 2, 1.5);
-        break;
-      }
-
-      case 2: { // CÔ BA - HÀNG XÓM (Áo bà ba gấm vàng hoa sen, nút ngọc trai, nón lá quai lụa hồng, khăn rằn tua rua, giỏ hoa sen tươi)
-        // Black satin flowing trousers with soft flutter
-        this.drawCurvedLimb(ctx, x + 6, y + 24 + walkBob, x + 6, y + 38 + walkBob, 2.8, 2.2, '#1e131d');
-        this.drawCurvedLimb(ctx, x + 13, y + 24 - walkBob, x + 13, y + 38 - walkBob, 2.8, 2.2, '#1e131d');
-
-        // Radiant Golden Silk Áo Bà Ba with embossed lotus brocade
-        ctx.fillStyle = '#f1c40f';
-        ctx.beginPath();
-        ctx.moveTo(x + 3, y + 7);
-        ctx.lineTo(x + 16, y + 7);
-        ctx.quadraticCurveTo(x + 17, y + 16, x + 19, y + 26);
-        ctx.lineTo(x + 13, y + 25);
-        ctx.quadraticCurveTo(x + 10, y + 17, x + 6, y + 25);
-        ctx.lineTo(x, y + 26);
-        ctx.quadraticCurveTo(x + 2, y + 16, x + 3, y + 7);
-        ctx.closePath();
-        ctx.fill();
-
-        // Shimmering Lotus Brocade Gold Petal Accents
-        ctx.fillStyle = '#f39c12';
-        ctx.beginPath();
-        ctx.arc(x + 5, y + 14, 1.5, 0, Math.PI * 2);
-        ctx.arc(x + 14, y + 18, 1.5, 0, Math.PI * 2);
-        ctx.arc(x + 11, y + 12, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Pearl Buttons down center with specular highlight
-        for (let pb = y + 10; pb <= y + 22; pb += 4) {
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.arc(x + 9.5, pb, 1.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        // Southern Checkered Scarf (Khăn Rằn) draped with fine fringe tassels
-        ctx.fillStyle = '#ecf0f1';
-        ctx.beginPath();
-        ctx.roundRect(x + 2, y + 8, 4, 15, 2);
-        ctx.fill();
-        ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(x + 3, y + 11, 2, 2);
-        ctx.fillRect(x + 3, y + 15, 2, 2);
-        ctx.fillRect(x + 3, y + 19, 2, 2);
-        // Fringe tassels at scarf end
-        ctx.fillStyle = '#bdc3c7';
-        ctx.fillRect(x + 2.5, y + 23, 3, 2.5);
-
-        // Head & Warm Gentle Smile
-        this.drawOrganicHead(ctx, x + 9.5, y - 2, 7.2, 8.2, '#ffe0bd', 'rgba(255, 123, 123, 0.4)', isBlinking, '#2c1e13', isHappy);
-
-        // Conical Leaf Hat (Nón Lá) with fine straw weave rings & pink silk ribbon
-        const hatSway = Math.sin(this.tick * 0.1) * 1.5;
-        ctx.fillStyle = '#f5deb3';
-        ctx.beginPath();
-        ctx.moveTo(x + 9.5, y - 16 + hatSway);
-        ctx.lineTo(x - 5, y - 4 + hatSway);
-        ctx.quadraticCurveTo(x + 9.5, y - 1 + hatSway, x + 24, y - 4 + hatSway);
-        ctx.closePath();
-        ctx.fill();
-        // Straw weave rings
-        ctx.strokeStyle = '#d7ba89';
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(x - 1, y - 7 + hatSway);
-        ctx.quadraticCurveTo(x + 9.5, y - 4 + hatSway, x + 20, y - 7 + hatSway);
-        ctx.stroke();
-
-        // Pastel Magenta Silk Chin Ribbon
-        ctx.fillStyle = '#ff79c6';
-        ctx.beginPath();
-        ctx.arc(x + 9.5, y + 4 + hatSway, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Shimmering Emerald Jade Bangle on wrist
-        ctx.fillStyle = '#2ecc71';
-        ctx.beginPath();
-        ctx.ellipse(x + 16, y + 21 - walkBob, 2.5, 1.8, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 16, y + 20 - walkBob, 1, 0.8);
-
-        // Wicker Basket with fresh blooming lotus blossoms
-        ctx.fillStyle = '#b7791f';
-        ctx.beginPath();
-        ctx.roundRect(x + 17, y + 16, 9.5, 9.5, [2, 2, 4, 4]);
-        ctx.fill();
-        // Pink Lotus blooms peeking out
-        ctx.fillStyle = '#ff7675';
-        ctx.beginPath();
-        ctx.arc(x + 20, y + 14, 2.8, 0, Math.PI * 2);
-        ctx.arc(x + 24, y + 15, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#2ecc71'; // Lotus leaf
-        ctx.beginPath();
-        ctx.ellipse(x + 21, y + 17, 3, 1.5, 0.2, 0, Math.PI * 2);
-        ctx.fill();
-        break;
-      }
-
-      case 3: { // TÚ - TIKTOKER REVIEWER (Hoodie ombre pastel, tóc bạch kim ombre hồng, tai nghe DJ RGB đổi màu, smartphone quay video có sóng âm REC)
-        // Baggy cargo joggers with ankle cuffs & Chunky Dad Sneakers
-        this.drawCurvedLimb(ctx, x + 6, y + 24 + walkBob, x + 6, y + 38 + walkBob, 3.2, 2.4, '#2d3436');
-        this.drawCurvedLimb(ctx, x + 13, y + 24 - walkBob, x + 13, y + 38 - walkBob, 3.2, 2.4, '#2d3436');
-        // Chunky Dad Sneakers with neon turquoise curved air soles
-        this.drawCurvedShoe(ctx, x + 6, y + 38 + walkBob, 8.5, 3.6, '#dfe6e9', '#00cec9');
-        this.drawCurvedShoe(ctx, x + 13, y + 38 - walkBob, 8.5, 3.6, '#dfe6e9', '#00cec9');
-
-        // Oversized Pastel Gradient Hoodie (Lavender fading to Soft Peach)
-        const hoodGrad = ctx.createLinearGradient(x, y + 6, x, y + 25);
-        hoodGrad.addColorStop(0, '#a29bfe'); // Lavender
-        hoodGrad.addColorStop(1, '#fab1a0'); // Soft Peach
-        ctx.fillStyle = hoodGrad;
-        ctx.beginPath();
-        ctx.roundRect(x, y + 6, 19, 19, [6, 6, 4, 4]);
-        ctx.fill();
-
-        // White hoodie drawstrings with silver aglets
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x + 7, y + 10); ctx.lineTo(x + 6, y + 17);
-        ctx.moveTo(x + 12, y + 10); ctx.lineTo(x + 13, y + 17);
-        ctx.stroke();
-        ctx.fillStyle = '#bdc3c7'; // Silver aglets
-        ctx.fillRect(x + 5.5, y + 17, 1.2, 2);
-        ctx.fillRect(x + 12.5, y + 17, 1.2, 2);
-
-        // Front Kangaroo curved pouch with heart pin
-        ctx.fillStyle = 'rgba(108, 92, 231, 0.45)';
-        ctx.beginPath();
-        ctx.roundRect(x + 4, y + 15, 11, 6.5, [2, 2, 3, 3]);
-        ctx.fill();
-        ctx.fillStyle = '#ff7675'; // Enamel heart pin
-        ctx.beginPath();
-        ctx.arc(x + 9.5, y + 18, 1.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Head & Trendy Anime Face
-        this.drawOrganicHead(ctx, x + 9.5, y - 2, 7.5, 8.5, '#ffe0bd', 'rgba(255, 118, 117, 0.4)', isBlinking, '#2d3436', isHappy);
-
-        // Platinum Blonde to Pastel Pink Ombré Wavy Hair
-        ctx.fillStyle = '#ffeaa7'; // Platinum blonde roots
-        ctx.beginPath();
-        ctx.arc(x + 9.5, y - 5, 8.5, Math.PI * 0.8, Math.PI * 2.2);
-        ctx.fill();
-        // Pink Ombre wavy tips
-        ctx.fillStyle = '#ff7675';
-        ctx.beginPath();
-        ctx.moveTo(x + 1, y - 4);
-        ctx.quadraticCurveTo(x - 1, y + 4, x + 2, y + 8);
-        ctx.lineTo(x + 3, y - 2);
-        ctx.moveTo(x + 18, y - 4);
-        ctx.quadraticCurveTo(x + 20, y + 4, x + 17, y + 8);
-        ctx.lineTo(x + 16, y - 2);
-        ctx.fill();
-
-        // Over-Ear DJ Headphones with Cycling RGB Rainbow Glow
-        const rgbHue = (this.tick * 4) % 360;
-        ctx.strokeStyle = '#2d3436';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.arc(x + 9.5, y - 6, 8.5, Math.PI * 1.1, Math.PI * 1.9);
-        ctx.stroke();
-        // Cycling RGB Glowing earcups!
-        ctx.fillStyle = `hsl(${rgbHue}, 100%, 65%)`;
-        ctx.beginPath();
-        ctx.roundRect(x - 1, y - 4, 3.5, 6, 2);
-        ctx.roundRect(x + 16.5, y - 4, 3.5, 6, 2);
-        ctx.fill();
-
-        // Smartphone Gimbal with glowing screen & pulsing RED REC light
-        ctx.fillStyle = '#1e272e';
-        ctx.beginPath();
-        ctx.roundRect(x + 17, y + 8, 6.5, 13, 1.5);
-        ctx.fill();
-        // Screen with audio waveform
-        ctx.fillStyle = '#74b9ff';
-        ctx.fillRect(x + 18, y + 10, 4.5, 9);
-        // Audio wave ticks
-        ctx.fillStyle = '#00cec9';
-        const waveTick = (this.tick % 6);
-        ctx.fillRect(x + 18.5, y + 14 - waveTick * 0.5, 1, 3 + waveTick * 0.5);
-        ctx.fillRect(x + 20, y + 13 + waveTick * 0.3, 1, 4 - waveTick * 0.3);
-
-        // Flashing RED REC recording dot!
-        if ((this.tick % 24) < 12) {
-          ctx.fillStyle = '#ff4757';
-          ctx.beginPath();
-          ctx.arc(x + 20.5, y + 9.5, 1.2, 0, Math.PI * 2);
-          ctx.fill();
+        // Smartphone with Flashing Red "REC" Dot
+        this.drawPixel(ctx, x + 17, y + 10, 5, 9, '#1e272e');
+        this.drawPixel(ctx, x + 18, y + 11, 3, 7, '#74b9ff');
+        if ((this.tick % 30) < 15) {
+          this.drawPixel(ctx, x + 19, y + 12, 1, 1, '#ff4757');
         }
         break;
       }
 
-      case 4: { // ANH SHIPPER (Sporty windbreaker, 3M reflective safety stripes, cat-ear helmet with rainbow iridescent visor, live GPS navigation, thermal bag)
-        // Waterproof Riding Cargo Trousers with reinforced knee patches & walk bounce
-        this.drawCurvedLimb(ctx, x + 6, y + 24 + walkBob, x + 6, y + 38 + walkBob, 3.0, 2.4, '#1e272e');
-        this.drawCurvedLimb(ctx, x + 13, y + 24 - walkBob, x + 13, y + 38 - walkBob, 3.0, 2.4, '#1e272e');
-        // Reinforced motorcycle knee pads
-        ctx.fillStyle = '#2f3640';
-        ctx.beginPath();
-        ctx.ellipse(x + 6, y + 30 + walkBob, 2.2, 3, 0, 0, Math.PI * 2);
-        ctx.ellipse(x + 13, y + 30 - walkBob, 2.2, 3, 0, 0, Math.PI * 2);
-        ctx.fill();
+      case 4: { // ANH SHIPPER (Áo khoác gió thể thao 3M phản quang, mũ bảo hiểm kính cong, túi bao tử, thùng hàng boba, live GPS)
+        // Sturdy cargo pants & grip sneakers
+        this.drawCurvedLimb(ctx, x + 5, y + 24 + walkBob, x + 5, y + 38 + walkBob, 2, 2, '#1e272e');
+        this.drawCurvedLimb(ctx, x + 12, y + 24 - walkBob, x + 12, y + 38 - walkBob, 2, 2, '#1e272e');
+        this.drawCurvedShoe(ctx, x + 6, y + 38 + walkBob, 8, 3, '#0f1416', '#718093');
+        this.drawCurvedShoe(ctx, x + 13, y + 38 - walkBob, 8, 3, '#0f1416', '#718093');
 
-        // Heavy-duty Motorcycle Touring Boots with high-traction treads
-        this.drawCurvedShoe(ctx, x + 6.5, y + 38 + walkBob, 8.5, 3.6, '#0f1416', '#718093');
-        this.drawCurvedShoe(ctx, x + 13.5, y + 38 - walkBob, 8.5, 3.6, '#0f1416', '#718093');
-        // Fluorescent yellow boot accents
-        ctx.fillStyle = '#f1c40f';
-        ctx.fillRect(x + 7.5, y + 39 + walkBob, 2.5, 1);
-        ctx.fillRect(x + 14.5, y + 39 - walkBob, 2.5, 1);
+        // Green Delivery Windbreaker & 3M Reflective Safety Stripes
+        this.drawPixel(ctx, x + 2, y + 8, 16, 17, '#00b894');
+        this.drawPixel(ctx, x + 2, y + 12, 16, 2, '#ffffff'); // 3M silver stripe
+        this.drawPixel(ctx, x - 1, y + 14, 3, 2, '#ffffff');
+        this.drawPixel(ctx, x + 16, y + 14, 3, 2, '#ffffff');
 
-        // Sporty Dual-Tone Delivery Windbreaker (Emerald & Graphite)
-        const jacketGrad = ctx.createLinearGradient(x + 1, y + 7, x + 18, y + 26);
-        jacketGrad.addColorStop(0, '#00b894');
-        jacketGrad.addColorStop(0.6, '#00a884');
-        jacketGrad.addColorStop(1, '#2d3436');
-        ctx.fillStyle = jacketGrad;
-        ctx.beginPath();
-        ctx.roundRect(x + 1, y + 7, 17, 19, [4, 4, 3, 3]);
-        ctx.fill();
+        // Thermal Insulated Delivery Backpack
+        this.drawPixel(ctx, x - 6, y + 5, 8, 17, '#00a885');
+        this.drawPixel(ctx, x - 4, y + 10, 4, 5, '#ffffff');
+        this.drawPixel(ctx, x - 3, y + 11, 2, 3, '#e17055');
 
-        // 3M Fluorescent Hi-Vis Reflective Safety Stripes with soft neon glow
-        ctx.fillStyle = '#55efc4';
-        ctx.beginPath();
-        ctx.roundRect(x + 1, y + 13, 17, 2.2, 1);
-        ctx.roundRect(x + 1, y + 19, 17, 2.2, 1);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 2, y + 13.5, 15, 1); // high specular core
-        ctx.fillRect(x + 2, y + 19.5, 15, 1);
+        // Delivery Helmet with Tinted Visor
+        this.drawPixel(ctx, x + 2, y - 11, 16, 8, '#00a885');
+        this.drawPixel(ctx, x + 4, y - 13, 12, 3, '#00b894');
+        this.drawPixel(ctx, x + 4, y - 5, 12, 4, '#1e272e');
+        this.drawPixel(ctx, x + 6, y - 4, 5, 1, '#55efc4'); // visor glint
+        this.drawPixel(ctx, x + 5, y - 1, 1, 4, '#2d3436'); // chin strap
 
-        // Central metal zipper & company crest badge
-        ctx.strokeStyle = '#dfe6e9';
-        ctx.lineWidth = 0.9;
-        ctx.beginPath();
-        ctx.moveTo(x + 9.5, y + 7);
-        ctx.lineTo(x + 9.5, y + 26);
-        ctx.stroke();
-        // Golden Express Delivery Crest on chest
-        ctx.fillStyle = '#f39c12';
-        ctx.beginPath();
-        ctx.arc(x + 5.5, y + 10.5, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(x + 5.5, y + 10.5, 0.8, 0, Math.PI * 2);
-        ctx.fill();
+        // Head inside helmet
+        this.drawOrganicHead(ctx, x + 10, y - 2, 6, 6, '#ffe0bd', null, isBlinking, '#2c3e50', isHappy);
 
-        // Aerodynamic Full-Face Helmet with Gloss Shell & 3D Cat Ears
-        ctx.fillStyle = '#00a884';
-        ctx.beginPath();
-        ctx.arc(x + 9.5, y - 2, 9.5, 0, Math.PI * 2);
-        ctx.fill();
-        // Helmet rim shadow & trim
-        ctx.strokeStyle = '#1e272e';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-
-        // Rainbow Iridescent Curved Visor (Chroma Mirror Coating)
-        const visorGrad = ctx.createLinearGradient(x + 5, y - 5, x + 15, y + 2);
-        visorGrad.addColorStop(0, '#00cec9');
-        visorGrad.addColorStop(0.4, '#6c5ce7');
-        visorGrad.addColorStop(0.8, '#fd79a8');
-        visorGrad.addColorStop(1, '#ffeaa7');
-        ctx.fillStyle = visorGrad;
-        ctx.beginPath();
-        ctx.roundRect(x + 4.5, y - 4.5, 10, 6.5, 2.5);
-        ctx.fill();
-        // Specular glossy reflection sweep across visor
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.beginPath();
-        ctx.moveTo(x + 6, y - 4);
-        ctx.lineTo(x + 13, y - 4);
-        ctx.lineTo(x + 11, y - 2);
-        ctx.lineTo(x + 6, y - 2);
-        ctx.closePath();
-        ctx.fill();
-
-        // 3D Cute Cat Ears on helmet with pastel pink inner cushions
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.moveTo(x + 3.5, y - 7.5);
-        ctx.lineTo(x + 6.5, y - 14.5);
-        ctx.lineTo(x + 9, y - 8);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(x + 10.5, y - 8);
-        ctx.lineTo(x + 13, y - 14.5);
-        ctx.lineTo(x + 16, y - 7.5);
-        ctx.closePath();
-        ctx.fill();
-        // Pink inner cushions
-        ctx.fillStyle = '#ff7675';
-        ctx.beginPath();
-        ctx.moveTo(x + 4.8, y - 8.5);
-        ctx.lineTo(x + 6.5, y - 13);
-        ctx.lineTo(x + 8.2, y - 8.8);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(x + 11.2, y - 8.8);
-        ctx.lineTo(x + 13, y - 13);
-        ctx.lineTo(x + 14.8, y - 8.5);
-        ctx.closePath();
-        ctx.fill();
-
-        // Professional Orange Thermal Delivery Backpack on Hip
-        ctx.fillStyle = '#e17055';
-        ctx.beginPath();
-        ctx.roundRect(x - 7, y + 11, 8.5, 15, 2.5);
-        ctx.fill();
-        // Reflective white safety stripe on thermal pack
-        ctx.fillStyle = '#f5f6fa';
-        ctx.fillRect(x - 7, y + 17, 8.5, 2);
-        // Mesh side drink pocket
-        ctx.fillStyle = '#d63031';
-        ctx.fillRect(x - 6, y + 20, 6.5, 4.5);
-
-        // Smartphone Mount displaying Live GPS Route
-        ctx.fillStyle = '#1e272e';
-        ctx.beginPath();
-        ctx.roundRect(x + 17, y + 13, 6, 10, 1.2);
-        ctx.fill();
-        // Cyan GPS map screen
-        ctx.fillStyle = '#0984e3';
-        ctx.fillRect(x + 17.8, y + 14, 4.4, 8);
-        // Glowing cyan route track
-        ctx.strokeStyle = '#00cec9';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x + 18.5, y + 21);
-        ctx.lineTo(x + 20, y + 18);
-        ctx.lineTo(x + 19.5, y + 15.5);
-        ctx.stroke();
-        // Pulsing Destination Waypoint Dot
-        ctx.fillStyle = ((this.tick % 20) < 10) ? '#ff4757' : '#ffa502';
-        ctx.beginPath();
-        ctx.arc(x + 19.5, y + 15.5, 1.1, 0, Math.PI * 2);
-        ctx.fill();
+        // Handheld GPS Navigation Phone
+        this.drawPixel(ctx, x + 16, y + 12, 5, 8, '#2d3436');
+        this.drawPixel(ctx, x + 17, y + 13, 3, 6, '#2ed573');
+        this.drawPixel(ctx, x + 18, y + 15, 1, 1, '#ff4757');
         break;
       }
 
       case 5: { // BÁC BA TRƯỞNG PHỐ (Royal sapphire blue brocade Áo Dài with golden cloud embroidery, black Khăn Đóng, flowing silver beard, calligraphy bamboo fan, jade prayer beads)
-        // Pristine White Silk inner pants with flowing drape & walk bob
-        this.drawCurvedLimb(ctx, x + 6, y + 25 + walkBob, x + 6, y + 38 + walkBob, 2.8, 2.2, '#f5f6fa');
-        this.drawCurvedLimb(ctx, x + 13, y + 25 - walkBob, x + 13, y + 38 - walkBob, 2.8, 2.2, '#f5f6fa');
+        const pBob = Math.round(walkBob);
+        const pBeard = Math.round(Math.sin(this.tick * 0.15));
+        const pFan = Math.round(Math.sin(this.tick * 0.2) * 2);
+
+        // Pristine White Silk inner pants with walking step
+        this.drawPixel(ctx, x + 5, y + 25 + pBob, 4, 13, '#dfe4ea');
+        this.drawPixel(ctx, x + 6, y + 25 + pBob, 2, 13, '#ffffff');
+        this.drawPixel(ctx, x + 11, y + 25 - pBob, 4, 13, '#dfe4ea');
+        this.drawPixel(ctx, x + 12, y + 25 - pBob, 2, 13, '#ffffff');
+
         // Traditional Embroidered Silk Slip-On Slippers
-        this.drawCurvedShoe(ctx, x + 6.5, y + 38 + walkBob, 7.5, 3.2, '#8b4513', '#d4a373');
-        this.drawCurvedShoe(ctx, x + 13.5, y + 38 - walkBob, 7.5, 3.2, '#8b4513', '#d4a373');
-        ctx.fillStyle = '#f1c40f'; // Golden embroidered toe tip
-        ctx.fillRect(x + 10, y + 39 + walkBob, 2, 1.2);
-        ctx.fillRect(x + 17, y + 39 - walkBob, 2, 1.2);
+        this.drawPixel(ctx, x + 4, y + 38 + pBob, 6, 3, '#573312');
+        this.drawPixel(ctx, x + 5, y + 38 + pBob, 5, 2, '#8b4513');
+        this.drawPixel(ctx, x + 8, y + 39 + pBob, 2, 1, '#f1c40f'); // Golden embroidered toe tip
 
-        // Traditional Royal Sapphire Blue Brocade Áo Dài Gấm The with sweeping split panels
-        const aoDaiGrad = ctx.createLinearGradient(x + 2, y + 6, x + 18, y + 34);
-        aoDaiGrad.addColorStop(0, '#1e3799');
-        aoDaiGrad.addColorStop(0.5, '#0984e3');
-        aoDaiGrad.addColorStop(1, '#0c2461');
-        ctx.fillStyle = aoDaiGrad;
-        ctx.beginPath();
-        ctx.moveTo(x + 2, y + 6);
-        ctx.lineTo(x + 17, y + 6);
-        ctx.quadraticCurveTo(x + 18.5, y + 20, x + 19.5, y + 33);
-        ctx.lineTo(x + 13, y + 32);
-        ctx.quadraticCurveTo(x + 9.5, y + 21, x + 6, y + 32);
-        ctx.lineTo(x + 1, y + 33);
-        ctx.quadraticCurveTo(x + 1.5, y + 20, x + 2, y + 6);
-        ctx.closePath();
-        ctx.fill();
+        this.drawPixel(ctx, x + 11, y + 38 - pBob, 6, 3, '#573312');
+        this.drawPixel(ctx, x + 12, y + 38 - pBob, 5, 2, '#8b4513');
+        this.drawPixel(ctx, x + 15, y + 39 - pBob, 2, 1, '#f1c40f');
 
-        // Intricate Golden Dragon & Cloud Brocade Embroidery (Chữ Vạn & mây vàng)
-        ctx.fillStyle = '#f1c40f';
-        ctx.beginPath();
-        ctx.arc(x + 6, y + 12, 1.3, 0, Math.PI * 2);
-        ctx.arc(x + 8, y + 14, 1.1, 0, Math.PI * 2);
-        ctx.arc(x + 14, y + 17, 1.4, 0, Math.PI * 2);
-        ctx.arc(x + 12, y + 24, 1.2, 0, Math.PI * 2);
-        ctx.arc(x + 5, y + 26, 1.3, 0, Math.PI * 2);
-        ctx.fill();
+        // Traditional Royal Sapphire Blue Brocade Áo Dài Gấm The with split panels
+        // Outline / Dark shadow
+        this.drawPixel(ctx, x + 2, y + 6, 16, 27, '#0c2461');
+        // Base royal sapphire blue
+        this.drawPixel(ctx, x + 3, y + 7, 14, 25, '#1e3799');
+        // Center slit creating left and right flaps
+        this.drawPixel(ctx, x + 9, y + 22, 2, 11, '#0c2461');
+        // Upper chest highlight
+        this.drawPixel(ctx, x + 4, y + 8, 12, 6, '#2e86de');
+
+        // Golden Cloud & Dragon Brocade Embroidery
+        this.drawPixel(ctx, x + 5, y + 11, 2, 2, '#f1c40f');
+        this.drawPixel(ctx, x + 13, y + 13, 2, 2, '#f1c40f');
+        this.drawPixel(ctx, x + 6, y + 18, 2, 2, '#f1c40f');
+        this.drawPixel(ctx, x + 12, y + 23, 2, 2, '#f1c40f');
+        this.drawPixel(ctx, x + 5, y + 27, 2, 2, '#f1c40f');
         // Golden hemline piping
-        ctx.strokeStyle = '#f1c40f';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(x + 1, y + 33);
-        ctx.lineTo(x + 6, y + 32);
-        ctx.moveTo(x + 13, y + 32);
-        ctx.lineTo(x + 19.5, y + 33);
-        ctx.stroke();
+        this.drawPixel(ctx, x + 3, y + 31, 6, 1, '#f1c40f');
+        this.drawPixel(ctx, x + 11, y + 31, 6, 1, '#f1c40f');
 
         // Traditional golden frog buttons down right shoulder
-        ctx.fillStyle = '#f5cd79';
-        ctx.beginPath();
-        ctx.arc(x + 12.5, y + 8.5, 1.3, 0, Math.PI * 2);
-        ctx.arc(x + 12.5, y + 13.5, 1.3, 0, Math.PI * 2);
-        ctx.arc(x + 12.5, y + 18.5, 1.3, 0, Math.PI * 2);
-        ctx.fill();
+        this.drawPixel(ctx, x + 12, y + 8, 2, 2, '#f5cd79');
+        this.drawPixel(ctx, x + 12, y + 12, 2, 2, '#f5cd79');
+        this.drawPixel(ctx, x + 12, y + 16, 2, 2, '#f5cd79');
 
         // Head & Wise Aged Face
-        this.drawOrganicHead(ctx, x + 9.5, y - 2, 7.5, 8.5, '#ffe0bd', 'rgba(255, 170, 150, 0.22)', isBlinking, '#2c3e50', isHappy);
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#ffe0bd', 'rgba(255, 170, 150, 0.22)', isBlinking, '#2c3e50', isHappy);
 
-        // Traditional Multi-Layered Black Khăn Đóng (headwrap) with silk pleats
-        ctx.fillStyle = '#111111';
-        ctx.beginPath();
-        ctx.ellipse(x + 9.5, y - 6.5, 8.5, 3.6, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#333333';
-        ctx.lineWidth = 0.7;
-        ctx.beginPath();
-        ctx.ellipse(x + 9.5, y - 7.5, 7.5, 2.8, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        // Traditional Multi-Layered Black Khăn Đóng (headwrap)
+        this.drawPixel(ctx, x + 3, y - 9, 14, 4, '#111111');
+        this.drawPixel(ctx, x + 4, y - 10, 12, 2, '#1e272e');
+        this.drawPixel(ctx, x + 5, y - 8, 10, 1, '#485460'); // Fabric fold highlight
 
-        // Flowing Long White Silver Beard cascading over chest with gentle swaying
-        const beardSway = Math.sin(this.tick * 0.15) * 1.5;
-        const beardGrad = ctx.createLinearGradient(x + 9.5, y + 3, x + 9.5, y + 22);
-        beardGrad.addColorStop(0, '#ffffff');
-        beardGrad.addColorStop(1, '#dcdde1');
-        ctx.fillStyle = beardGrad;
-        ctx.beginPath();
-        ctx.moveTo(x + 6.5, y + 3);
-        ctx.quadraticCurveTo(x + 5 + beardSway, y + 14, x + 9.5 + beardSway, y + 22);
-        ctx.quadraticCurveTo(x + 14 + beardSway, y + 14, x + 12.5, y + 3);
-        ctx.closePath();
-        ctx.fill();
-        // Whisker hair strands
-        ctx.strokeStyle = '#b2bec3';
-        ctx.lineWidth = 0.6;
-        ctx.beginPath();
-        ctx.moveTo(x + 8.5, y + 6);
-        ctx.lineTo(x + 9.5 + beardSway, y + 19);
-        ctx.stroke();
+        // Flowing Long White Silver Beard cascading over chest
+        this.drawPixel(ctx, x + 7 + pBeard, y + 4, 6, 6, '#ffffff');
+        this.drawPixel(ctx, x + 8 + pBeard, y + 10, 4, 7, '#f5f6fa');
+        this.drawPixel(ctx, x + 9 + pBeard, y + 17, 2, 5, '#dcdde1');
+        // Whisker accent
+        this.drawPixel(ctx, x + 8 + pBeard, y + 6, 1, 8, '#d2dae2');
 
-        // Calligraphy Bamboo Fan with dangling red silk tassel waving gently
-        const fanWave = Math.sin(this.tick * 0.2) * 3.5;
-        ctx.fillStyle = '#f5deb3';
-        ctx.beginPath();
-        ctx.ellipse(x + 19 + fanWave, y + 15, 6.5, 4.5, 0.4, 0, Math.PI * 2);
-        ctx.fill();
-        // Bamboo ribs & calligraphy stroke
-        ctx.strokeStyle = '#8b5a2b';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(x + 16, y + 18);
-        ctx.lineTo(x + 22 + fanWave, y + 12);
-        ctx.moveTo(x + 16, y + 18);
-        ctx.lineTo(x + 20 + fanWave, y + 11);
-        ctx.stroke();
+        // Calligraphy Bamboo Fan with dangling red silk tassel waving
+        this.drawPixel(ctx, x + 18 + pFan, y + 12, 6, 7, '#f5deb3');
+        this.drawPixel(ctx, x + 19 + pFan, y + 13, 4, 5, '#ffeaa7');
+        this.drawPixel(ctx, x + 17 + pFan, y + 17, 2, 3, '#8b5a2b'); // Fan handle
         // Dangling Red Silk Tassel
-        ctx.strokeStyle = '#e74c3c';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x + 16, y + 18);
-        ctx.lineTo(x + 15 + fanWave * 0.5, y + 23);
-        ctx.stroke();
-        ctx.fillStyle = '#e74c3c';
-        ctx.beginPath();
-        ctx.arc(x + 15 + fanWave * 0.5, y + 23.5, 1.2, 0, Math.PI * 2);
-        ctx.fill();
+        this.drawPixel(ctx, x + 17 + pFan, y + 20, 1, 3, '#e74c3c');
+        this.drawPixel(ctx, x + 16 + pFan, y + 23, 3, 2, '#c0392b');
 
         // Shimmering Jade Prayer Beads on wrist
-        ctx.fillStyle = '#00b894';
-        for (let b = 0; b < 4; b++) {
-          ctx.beginPath();
-          ctx.arc(x + 15 + b * 1.5, y + 19 - b * 0.5, 1.1, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        this.drawPixel(ctx, x + 15, y + 18, 2, 2, '#00b894');
+        this.drawPixel(ctx, x + 16, y + 19, 2, 2, '#55efc4');
+        this.drawPixel(ctx, x + 17, y + 18, 2, 2, '#00b894');
 
-        // Curved Bamboo Birdcage with chirping yellow canary
-        ctx.strokeStyle = '#cd853f';
-        ctx.lineWidth = 1.1;
-        ctx.beginPath();
-        ctx.arc(x - 5, y + 12, 4.5, Math.PI, 0);
-        ctx.lineTo(x - 0.5, y + 22);
-        ctx.lineTo(x - 9.5, y + 22);
-        ctx.closePath();
-        ctx.stroke();
+        // Bamboo Birdcage with chirping yellow canary
+        this.drawPixel(ctx, x - 7, y + 9, 8, 1, '#cd853f'); // top bar
+        this.drawPixel(ctx, x - 7, y + 9, 1, 14, '#cd853f'); // left cage rib
+        this.drawPixel(ctx, x - 3, y + 9, 1, 14, '#cd853f'); // mid cage rib
+        this.drawPixel(ctx, x, y + 9, 1, 14, '#cd853f'); // right cage rib
+        this.drawPixel(ctx, x - 7, y + 22, 8, 2, '#8b5a2b'); // cage base
         // Canary bird inside
-        ctx.fillStyle = '#f1fa8c';
-        ctx.beginPath();
-        ctx.arc(x - 5, y + 17, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#e17055'; // beak
-        ctx.fillRect(x - 3.2, y + 16.5, 1.2, 1);
+        this.drawPixel(ctx, x - 5, y + 15, 3, 3, '#f1fa8c');
+        this.drawPixel(ctx, x - 6, y + 16, 2, 2, '#f6e58d');
+        this.drawPixel(ctx, x - 3, y + 16, 1, 1, '#e17055'); // beak
         break;
       }
 
       case 6: { // HOÀNG QUÂN GYMER (Compression tank top with pectoral & deltoid muscle contours, athletic joggers with white racing side stripes, shaker bottle, smartwatch heart rate ♥ 115 bpm)
-        // Charcoal athletic tapered joggers with double white racing stripes & walk bounce
-        this.drawCurvedLimb(ctx, x + 6, y + 24 + walkBob, x + 6, y + 38 + walkBob, 3.4, 2.6, '#2d3436');
-        this.drawCurvedLimb(ctx, x + 13, y + 24 - walkBob, x + 13, y + 38 - walkBob, 3.4, 2.6, '#2d3436');
-        // Double white side racing stripes along outer legs
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 4.2, y + 25 + walkBob, 0.8, 12);
-        ctx.fillRect(x + 14.8, y + 25 - walkBob, 0.8, 12);
+        const pBob = Math.round(walkBob);
 
-        // Chunky Training Sneakers with red/white air-cushion bounce soles
-        this.drawCurvedShoe(ctx, x + 6.5, y + 38 + walkBob, 8.5, 3.6, '#ff4757', '#ffffff');
-        this.drawCurvedShoe(ctx, x + 13.5, y + 38 - walkBob, 8.5, 3.6, '#ff4757', '#ffffff');
-        ctx.fillStyle = '#2f3542'; // Laces
-        ctx.fillRect(x + 8.5, y + 37.5 + walkBob, 2.5, 0.8);
-        ctx.fillRect(x + 15.5, y + 37.5 - walkBob, 2.5, 0.8);
+        // Charcoal athletic tapered joggers with double white racing stripes
+        this.drawPixel(ctx, x + 5, y + 24 + pBob, 4, 14, '#2d3436');
+        this.drawPixel(ctx, x + 4, y + 25 + pBob, 1, 12, '#ffffff'); // Left racing stripe
+        this.drawPixel(ctx, x + 11, y + 24 - pBob, 4, 14, '#2d3436');
+        this.drawPixel(ctx, x + 15, y + 25 - pBob, 1, 12, '#ffffff'); // Right racing stripe
 
-        // Broad Muscular Tanned Torso with curved athletic taper
-        ctx.fillStyle = '#e0a96d';
-        ctx.beginPath();
-        ctx.roundRect(x - 1.5, y + 5, 22, 20, [7, 7, 3, 3]);
-        ctx.fill();
+        // Chunky Training Sneakers with red/white air-cushion soles
+        this.drawPixel(ctx, x + 3, y + 38 + pBob, 7, 3, '#c0392b');
+        this.drawPixel(ctx, x + 4, y + 37 + pBob, 5, 2, '#ff4757');
+        this.drawPixel(ctx, x + 3, y + 40 + pBob, 7, 1, '#ffffff'); // Air sole
+        this.drawPixel(ctx, x + 6, y + 37 + pBob, 2, 1, '#2f3542'); // Laces
 
-        // Deep Crimson Muscle Cut-off Tank Top fitting tightly to frame
-        const tankGrad = ctx.createLinearGradient(x + 2, y + 5, x + 17, y + 24);
-        tankGrad.addColorStop(0, '#ff4757');
-        tankGrad.addColorStop(1, '#c0392b');
-        ctx.fillStyle = tankGrad;
-        ctx.beginPath();
-        ctx.moveTo(x + 3.5, y + 5);
-        ctx.lineTo(x + 15.5, y + 5);
-        ctx.quadraticCurveTo(x + 17, y + 14, x + 15.5, y + 24);
-        ctx.lineTo(x + 3.5, y + 24);
-        ctx.quadraticCurveTo(x + 2, y + 14, x + 3.5, y + 5);
-        ctx.closePath();
-        ctx.fill();
+        this.drawPixel(ctx, x + 10, y + 38 - pBob, 7, 3, '#c0392b');
+        this.drawPixel(ctx, x + 11, y + 37 - pBob, 5, 2, '#ff4757');
+        this.drawPixel(ctx, x + 10, y + 40 - pBob, 7, 1, '#ffffff');
+        this.drawPixel(ctx, x + 13, y + 37 - pBob, 2, 1, '#2f3542');
 
-        // Pectoral Muscle Contour Line & Clavicle Shading
-        ctx.strokeStyle = '#a32b20';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x + 9.5, y + 9);
-        ctx.lineTo(x + 9.5, y + 16);
-        ctx.moveTo(x + 5.5, y + 15);
-        ctx.quadraticCurveTo(x + 9.5, y + 17, x + 13.5, y + 15);
-        ctx.stroke();
+        // Broad Muscular Tanned Torso & Arms
+        this.drawPixel(ctx, x - 2, y + 8, 4, 10, '#d49b61'); // Left deltoid/arm
+        this.drawPixel(ctx, x + 18, y + 8, 4, 10, '#d49b61'); // Right deltoid/arm
 
-        // Sculpted Deltoids & Bulging Biceps
-        ctx.fillStyle = '#d49b61';
-        ctx.beginPath();
-        ctx.ellipse(x - 2.5, y + 10.5, 3.2, 5, 0.15, 0, Math.PI * 2);
-        ctx.ellipse(x + 21.5, y + 10.5, 3.2, 5, -0.15, 0, Math.PI * 2);
-        ctx.fill();
+        // Deep Crimson Muscle Cut-off Tank Top
+        this.drawPixel(ctx, x + 2, y + 5, 16, 19, '#962d22'); // Tank outline
+        this.drawPixel(ctx, x + 3, y + 6, 14, 18, '#ff4757'); // Tank body
+        this.drawPixel(ctx, x + 5, y + 6, 10, 3, '#e0a96d'); // Exposed chest/collarbone
+        // Pectoral contours
+        this.drawPixel(ctx, x + 9, y + 9, 2, 8, '#c0392b');
+        this.drawPixel(ctx, x + 5, y + 14, 10, 1, '#c0392b');
+        this.drawPixel(ctx, x + 4, y + 8, 2, 14, '#ff6b81'); // Left tank highlight
 
         // Head & Confident Handsome Expression
-        this.drawOrganicHead(ctx, x + 9.5, y - 2, 7.8, 8.5, '#e0a96d', 'rgba(230, 100, 100, 0.25)', isBlinking, '#111', isHappy);
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#e0a96d', 'rgba(230, 100, 100, 0.25)', isBlinking, '#111', isHappy);
 
         // Modern Undercut Fade Hairstyle
-        ctx.fillStyle = '#1e272c';
-        ctx.beginPath();
-        ctx.arc(x + 9.5, y - 6.5, 8.2, Math.PI * 0.9, Math.PI * 2.1);
-        ctx.fill();
+        this.drawPixel(ctx, x + 4, y - 10, 12, 4, '#1e272c');
+        this.drawPixel(ctx, x + 3, y - 8, 14, 3, '#2f3542');
 
         // White Performance Sweat Headband with Crimson Logo
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.roundRect(x + 2, y - 6.5, 15, 3.5, 1.5);
-        ctx.fill();
-        ctx.fillStyle = '#ff4757';
-        ctx.fillRect(x + 8.5, y - 5.5, 2, 1.5); // Brand emblem
+        this.drawPixel(ctx, x + 3, y - 6, 14, 3, '#ffffff');
+        this.drawPixel(ctx, x + 9, y - 5, 2, 1, '#ff4757'); // Brand emblem
 
         // Smartwatch on wrist with Live Heart Rate Monitor (♥ 115 bpm)
-        ctx.fillStyle = '#1e272e';
-        ctx.beginPath();
-        ctx.roundRect(x - 5.5, y + 17, 3.5, 4.5, 1);
-        ctx.fill();
-        // Glowing OLED screen displaying pulsing red heart
-        ctx.fillStyle = '#ff4757';
+        this.drawPixel(ctx, x - 4, y + 16, 4, 5, '#1e272e');
+        this.drawPixel(ctx, x - 3, y + 17, 2, 3, '#000000');
         if ((this.tick % 16) < 8) {
-          ctx.beginPath();
-          ctx.arc(x - 4, y + 19, 0.9, 0, Math.PI * 2);
-          ctx.fill();
+          this.drawPixel(ctx, x - 3, y + 18, 2, 1, '#ff4757'); // Pulsing heart pixel
         }
 
-        // Ergonomic Translucent Protein Shaker Bottle with Neon Cap
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-        ctx.beginPath();
-        ctx.roundRect(x + 19, y + 14, 6, 11, [2, 2, 3, 3]);
-        ctx.fill();
-        // Shake fluid inside (Chocolate whey)
-        ctx.fillStyle = '#8b5a2b';
-        ctx.fillRect(x + 19.5, y + 17, 5, 7.5);
-        // Measurement markings on bottle
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 23.5, y + 18, 1, 0.7);
-        ctx.fillRect(x + 23.5, y + 20, 1, 0.7);
-        ctx.fillRect(x + 23.5, y + 22, 1, 0.7);
-        // Vibrant Neon Orange Flip-Cap
-        ctx.fillStyle = '#ff793f';
-        ctx.beginPath();
-        ctx.roundRect(x + 18.5, y + 12, 7, 3, 1.5);
-        ctx.fill();
+        // Translucent Protein Shaker Bottle with Neon Cap
+        this.drawPixel(ctx, x + 19, y + 14, 6, 11, '#ffffff');
+        this.drawPixel(ctx, x + 20, y + 16, 4, 8, '#8b5a2b'); // Chocolate whey shake
+        this.drawPixel(ctx, x + 23, y + 17, 1, 1, '#ffffff'); // Measurement tick
+        this.drawPixel(ctx, x + 23, y + 19, 1, 1, '#ffffff');
+        this.drawPixel(ctx, x + 23, y + 21, 1, 1, '#ffffff');
+        this.drawPixel(ctx, x + 19, y + 12, 6, 3, '#ff793f'); // Neon orange flip cap
+        this.drawPixel(ctx, x + 20, y + 11, 2, 2, '#e67e22');
         break;
       }
 
-      case 7: { // CẶP ĐÔI GÀ BÔNG (Duy & Linh: Matching cream & strawberry hoodies, interlocking hands with pulsing pink love aura, shared jumbo boba cup with crossing heart straws)
-        // Boy (Left) and Girl (Right) standing snugly side-by-side
+      case 7: { // CẶP ĐÔI GÀ BÔNG (Duy & Linh: Matching cream & strawberry hoodies, interlocking hands, shared jumbo boba cup)
+        const pBob = Math.round(walkBob);
+
         // Duy: Cuffed dark denim jeans & high-top sneakers
-        this.drawCurvedLimb(ctx, x + 4, y + 25 + walkBob, x + 4, y + 38 + walkBob, 2.6, 2.0, '#2d3436');
-        this.drawCurvedShoe(ctx, x + 4, y + 38 + walkBob, 6.8, 3.2, '#1e272e', '#ffffff');
-        // Linh: Flirty knife-pleated white tennis skirt & knee-high socks
-        this.drawCurvedLimb(ctx, x + 15, y + 25 - walkBob, x + 15, y + 38 - walkBob, 2.6, 2.0, '#ffffff');
-        this.drawCurvedShoe(ctx, x + 15, y + 38 - walkBob, 6.8, 3.2, '#ff6b81', '#ffffff');
-        // Knife-pleated skirt for Linh
-        ctx.fillStyle = '#f1f2f6';
-        ctx.beginPath();
-        ctx.moveTo(x + 12, y + 24);
-        ctx.lineTo(x + 19, y + 24);
-        ctx.lineTo(x + 20.5, y + 29);
-        ctx.lineTo(x + 10.5, y + 29);
-        ctx.closePath();
-        ctx.fill();
+        this.drawPixel(ctx, x + 3, y + 25 + pBob, 4, 13, '#2d3436');
+        this.drawPixel(ctx, x + 2, y + 38 + pBob, 6, 3, '#1e272e');
+        this.drawPixel(ctx, x + 2, y + 40 + pBob, 6, 1, '#ffffff');
+
+        // Linh: Flirty knife-pleated white tennis skirt & knee-high socks & pink shoes
+        this.drawPixel(ctx, x + 14, y + 25 - pBob, 4, 13, '#f5f6fa');
+        this.drawPixel(ctx, x + 13, y + 38 - pBob, 6, 3, '#ff6b81');
+        this.drawPixel(ctx, x + 13, y + 40 - pBob, 6, 1, '#ffffff');
+        // Tennis skirt
+        this.drawPixel(ctx, x + 11, y + 23, 9, 6, '#dfe4ea');
+        this.drawPixel(ctx, x + 12, y + 23, 7, 5, '#ffffff');
+        this.drawPixel(ctx, x + 13, y + 24, 1, 4, '#c8d6e5');
+        this.drawPixel(ctx, x + 16, y + 24, 1, 4, '#c8d6e5');
 
         // Matching Couple Hoodies (Duy wears Cream #ffeaa7, Linh wears Strawberry #ff7675)
-        // Duy's Hoodie (Left half)
-        ctx.fillStyle = '#ffeaa7';
-        ctx.beginPath();
-        ctx.roundRect(x - 2, y + 7, 12, 18, [5, 2, 2, 4]);
-        ctx.fill();
-        // Linh's Hoodie (Right half)
-        ctx.fillStyle = '#ff7675';
-        ctx.beginPath();
-        ctx.roundRect(x + 10, y + 7, 12, 17, [2, 5, 4, 2]);
-        ctx.fill();
+        // Duy's Hoodie (Left)
+        this.drawPixel(ctx, x - 2, y + 7, 12, 17, '#f6e58d');
+        this.drawPixel(ctx, x - 1, y + 8, 10, 15, '#ffeaa7');
+        // Linh's Hoodie (Right)
+        this.drawPixel(ctx, x + 10, y + 7, 12, 16, '#ee5253');
+        this.drawPixel(ctx, x + 11, y + 8, 10, 14, '#ff7675');
 
         // Interlocking Embroidered Full Heart stitched across the seam
-        ctx.fillStyle = '#e84118';
-        ctx.beginPath();
-        ctx.arc(x + 8.5, y + 13, 2.2, Math.PI, 0);
-        ctx.arc(x + 11.5, y + 13, 2.2, Math.PI, 0);
-        ctx.lineTo(x + 10, y + 17.5);
-        ctx.closePath();
-        ctx.fill();
+        this.drawPixel(ctx, x + 8, y + 12, 4, 3, '#e84118');
+        this.drawPixel(ctx, x + 9, y + 15, 2, 2, '#e84118');
 
         // Warm Shared Chunky Knit Scarf looping tenderly around both necks
-        ctx.fillStyle = '#f7d794';
-        ctx.beginPath();
-        ctx.roundRect(x - 1, y + 4.5, 22, 5.5, 2.5);
-        ctx.fill();
-        // Scarf knit fringe tassels
-        ctx.strokeStyle = '#eccc68';
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
+        this.drawPixel(ctx, x - 1, y + 4, 22, 5, '#f7d794');
+        this.drawPixel(ctx, x, y + 5, 20, 3, '#fed330');
 
         // Duy Head (Left)
-        this.drawOrganicHead(ctx, x + 5, y - 2, 5.5, 6.8, '#ffe0bd', null, isBlinking, '#2c1e13', isHappy);
-        // Duy's fluffy textured boy hair
-        ctx.fillStyle = '#3d312a';
-        ctx.beginPath();
-        ctx.arc(x + 5, y - 4.5, 6.2, Math.PI * 0.9, Math.PI * 2.1);
-        ctx.fill();
+        this.drawOrganicHead(ctx, x + 5, y - 2, 6, 7, '#ffe0bd', null, isBlinking, '#2c1e13', isHappy);
+        // Duy's fluffy hair
+        this.drawPixel(ctx, x + 1, y - 9, 8, 4, '#3d312a');
+        this.drawPixel(ctx, x, y - 7, 9, 3, '#2c1e13');
 
         // Linh Head (Right)
-        this.drawOrganicHead(ctx, x + 15, y - 2, 5.5, 6.8, '#ffe0bd', 'rgba(255, 107, 129, 0.45)', isBlinking, '#2c1e13', isHappy);
-        // Linh's soft dark hair with cute twin low buns & cherry hairpin
-        ctx.fillStyle = '#2c1e13';
-        ctx.beginPath();
-        ctx.arc(x + 15, y - 4.5, 6.2, Math.PI * 0.9, Math.PI * 2.1);
-        ctx.fill();
-        // Cute twin buns
-        ctx.beginPath();
-        ctx.arc(x + 11, y - 7, 2.5, 0, Math.PI * 2);
-        ctx.arc(x + 19, y - 7, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        // Cherry Red Hairpin
-        ctx.fillStyle = '#ff3838';
-        ctx.beginPath();
-        ctx.arc(x + 17.5, y - 6, 1.5, 0, Math.PI * 2);
-        ctx.fill();
+        this.drawOrganicHead(ctx, x + 15, y - 2, 6, 7, '#ffe0bd', 'rgba(255, 107, 129, 0.45)', isBlinking, '#2c1e13', isHappy);
+        // Linh's hair & twin buns
+        this.drawPixel(ctx, x + 11, y - 9, 8, 4, '#2c1e13');
+        this.drawPixel(ctx, x + 10, y - 7, 9, 3, '#1a1008');
+        this.drawPixel(ctx, x + 10, y - 8, 3, 3, '#2c1e13'); // Left bun
+        this.drawPixel(ctx, x + 17, y - 8, 3, 3, '#2c1e13'); // Right bun
+        this.drawPixel(ctx, x + 17, y - 7, 2, 2, '#ff3838'); // Cherry hairpin
 
-        // Interlocking Hands at the Center with Pulsing Pink Love Aura
-        const lovePulse = Math.sin(this.tick * 0.2) * 1.5;
-        ctx.fillStyle = `rgba(255, 121, 121, ${0.4 + lovePulse * 0.1})`;
-        ctx.beginPath();
-        ctx.arc(x + 10, y + 21, 3.5 + lovePulse, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Joint Jumbo Boba Cup with 2 Crossing Heart-Shaped Straws (Coral Red & Sky Blue)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.beginPath();
-        ctx.roundRect(x + 7, y + 15, 6, 8.5, [1, 1, 2.5, 2.5]);
-        ctx.fill();
-        // Milk tea with chewy black tapioca pearls
-        ctx.fillStyle = '#d2a679';
-        ctx.fillRect(x + 7.5, y + 17.5, 5, 5.5);
-        ctx.fillStyle = '#2c1e13';
-        ctx.beginPath();
-        ctx.arc(x + 8.5, y + 22, 0.8, 0, Math.PI * 2);
-        ctx.arc(x + 10, y + 22, 0.8, 0, Math.PI * 2);
-        ctx.arc(x + 11.5, y + 22, 0.8, 0, Math.PI * 2);
-        ctx.fill();
-        // Red Straw for Linh & Blue Straw for Duy
-        ctx.strokeStyle = '#ff4757';
-        ctx.lineWidth = 1.1;
-        ctx.beginPath();
-        ctx.moveTo(x + 7.5, y + 11);
-        ctx.lineTo(x + 9.5, y + 16.5);
-        ctx.stroke();
-        ctx.strokeStyle = '#0984e3';
-        ctx.beginPath();
-        ctx.moveTo(x + 12.5, y + 11);
-        ctx.lineTo(x + 10.5, y + 16.5);
-        ctx.stroke();
+        // Joint Jumbo Boba Cup with 2 Crossing Heart Straws
+        this.drawPixel(ctx, x + 7, y + 15, 6, 9, '#ffffff');
+        this.drawPixel(ctx, x + 8, y + 17, 4, 6, '#d2a679'); // Boba liquid
+        this.drawPixel(ctx, x + 8, y + 21, 2, 2, '#2c1e13'); // Pearls
+        this.drawPixel(ctx, x + 10, y + 21, 2, 2, '#2c1e13');
+        // Straws
+        this.drawPixel(ctx, x + 8, y + 12, 1, 4, '#0984e3'); // Blue straw (Duy)
+        this.drawPixel(ctx, x + 11, y + 12, 1, 4, '#ff4757'); // Red straw (Linh)
         break;
       }
 
-      case 8: { // DAVID TÂY BA-LÔ (Hawaiian Aloha shirt with hibiscus floral print, Panama straw hat, 35mm rangefinder camera with glass reflection, aviator sunglasses)
-        // Multi-pocket utility cargo shorts in sand-tan & walk bounce
-        this.drawCurvedLimb(ctx, x + 6, y + 24 + walkBob, x + 6, y + 33 + walkBob, 2.8, 2.4, '#d2b48c');
-        this.drawCurvedLimb(ctx, x + 13, y + 24 - walkBob, x + 13, y + 33 - walkBob, 2.8, 2.4, '#d2b48c');
-        // Tanned legs & sturdy leather trekking sandals with buckles
-        this.drawCurvedLimb(ctx, x + 6, y + 33 + walkBob, x + 6, y + 38 + walkBob, 2.2, 1.8, '#ffe0bd');
-        this.drawCurvedLimb(ctx, x + 13, y + 33 - walkBob, x + 13, y + 38 - walkBob, 2.2, 1.8, '#ffe0bd');
-        this.drawCurvedShoe(ctx, x + 6.5, y + 38 + walkBob, 8, 3.2, '#5d4037', '#d2b48c');
-        this.drawCurvedShoe(ctx, x + 13.5, y + 38 - walkBob, 8, 3.2, '#5d4037', '#d2b48c');
+      case 8: { // DAVID TÂY BA-LÔ (Hawaiian Aloha shirt with hibiscus floral print, Panama straw hat, 35mm rangefinder camera)
+        const pBob = Math.round(walkBob);
 
-        // Vibrant Sunshine-Yellow Hawaiian Tropical Floral Aloha Shirt
-        ctx.fillStyle = '#f1c40f';
-        ctx.beginPath();
-        ctx.roundRect(x + 1, y + 7, 18, 18, [5, 5, 2, 2]);
-        ctx.fill();
-        // Lush Monstera Palm Leaves & Pink Hibiscus Blossom Prints
-        ctx.fillStyle = '#2ed573';
-        ctx.beginPath();
-        ctx.ellipse(x + 4, y + 12, 2.5, 1.5, 0.4, 0, Math.PI * 2);
-        ctx.ellipse(x + 15, y + 18, 2.5, 1.5, -0.4, 0, Math.PI * 2);
-        ctx.ellipse(x + 9, y + 22, 2.2, 1.3, 0.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#ff4757';
-        ctx.beginPath();
-        ctx.arc(x + 13, y + 11.5, 2.2, 0, Math.PI * 2);
-        ctx.arc(x + 5, y + 19, 2.0, 0, Math.PI * 2);
-        ctx.fill();
-        // White flower center stamen
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 12.5, y + 11, 1, 1);
-        ctx.fillRect(x + 4.5, y + 18.5, 1, 1);
+        // Multi-pocket utility cargo shorts in sand-tan
+        this.drawPixel(ctx, x + 5, y + 24 + pBob, 4, 9, '#bfa17c');
+        this.drawPixel(ctx, x + 6, y + 24 + pBob, 2, 8, '#d2b48c');
+        this.drawPixel(ctx, x + 11, y + 24 - pBob, 4, 9, '#bfa17c');
+        this.drawPixel(ctx, x + 12, y + 24 - pBob, 2, 8, '#d2b48c');
 
-        // Open camp-collar neckline revealing tanned chest
-        ctx.fillStyle = '#ffe0bd';
-        ctx.beginPath();
-        ctx.moveTo(x + 7.5, y + 7);
-        ctx.lineTo(x + 9.5, y + 13);
-        ctx.lineTo(x + 11.5, y + 7);
-        ctx.closePath();
-        ctx.fill();
+        // Tanned legs & sturdy leather trekking sandals
+        this.drawPixel(ctx, x + 6, y + 33 + pBob, 3, 5, '#e0a96d');
+        this.drawPixel(ctx, x + 12, y + 33 - pBob, 3, 5, '#e0a96d');
+        this.drawPixel(ctx, x + 4, y + 38 + pBob, 7, 3, '#5d4037');
+        this.drawPixel(ctx, x + 5, y + 39 + pBob, 5, 1, '#d2b48c'); // Sandal buckle
+        this.drawPixel(ctx, x + 11, y + 38 - pBob, 7, 3, '#5d4037');
+        this.drawPixel(ctx, x + 12, y + 39 - pBob, 5, 1, '#d2b48c');
+
+        // Sunshine-Yellow Hawaiian Tropical Floral Aloha Shirt
+        this.drawPixel(ctx, x + 1, y + 7, 18, 18, '#d4ac0d');
+        this.drawPixel(ctx, x + 2, y + 8, 16, 16, '#f1c40f');
+        // Palm Leaf & Floral Patterns
+        this.drawPixel(ctx, x + 4, y + 11, 3, 2, '#2ed573');
+        this.drawPixel(ctx, x + 13, y + 13, 3, 3, '#ff4757');
+        this.drawPixel(ctx, x + 14, y + 14, 1, 1, '#ffffff'); // Stamen
+        this.drawPixel(ctx, x + 5, y + 18, 3, 3, '#ff4757');
+        this.drawPixel(ctx, x + 6, y + 19, 1, 1, '#ffffff');
+        this.drawPixel(ctx, x + 11, y + 20, 3, 2, '#2ed573');
+
+        // Open collar revealing chest
+        this.drawPixel(ctx, x + 8, y + 8, 4, 4, '#ffe0bd');
 
         // Head & Blue Anime Eyes
-        this.drawOrganicHead(ctx, x + 9.5, y - 2, 7.5, 8.5, '#ffe0bd', 'rgba(255, 140, 100, 0.3)', isBlinking, '#0984e3', isHappy);
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#ffe0bd', 'rgba(255, 140, 100, 0.3)', isBlinking, '#0984e3', isHappy);
 
-        // Sun-bleached Golden Blonde Wavy Beach Hair
-        ctx.fillStyle = '#f9ca24';
-        ctx.beginPath();
-        ctx.arc(x + 4.5, y - 4, 3.8, 0, Math.PI * 2);
-        ctx.arc(x + 14.5, y - 4, 3.8, 0, Math.PI * 2);
-        ctx.arc(x + 9.5, y - 6.5, 7.8, 0, Math.PI * 2);
-        ctx.fill();
+        // Sun-bleached Golden Blonde Hair
+        this.drawPixel(ctx, x + 3, y - 6, 14, 4, '#f9ca24');
+        this.drawPixel(ctx, x + 2, y - 4, 3, 4, '#e1b12c');
+        this.drawPixel(ctx, x + 15, y - 4, 3, 4, '#e1b12c');
 
-        // Panama Straw Sun Hat with textured weave rings & red-navy ribbon
-        ctx.fillStyle = '#f5deb3';
-        ctx.beginPath();
-        ctx.ellipse(x + 9.5, y - 8, 11.5, 3.8, 0, 0, Math.PI * 2);
-        ctx.roundRect(x + 4.5, y - 14.5, 10, 6.5, [3, 3, 0, 0]);
-        ctx.fill();
-        // Red-and-Navy grosgrain hatband
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(x + 4.5, y - 10, 10, 2);
-        ctx.fillStyle = '#1e3799';
-        ctx.fillRect(x + 4.5, y - 9, 10, 1);
+        // Panama Straw Sun Hat with navy/red ribbon
+        this.drawPixel(ctx, x, y - 8, 20, 2, '#f5deb3');
+        this.drawPixel(ctx, x + 4, y - 13, 12, 5, '#f5deb3');
+        this.drawPixel(ctx, x + 5, y - 14, 10, 1, '#ffeaa7'); // Crown highlight
+        this.drawPixel(ctx, x + 4, y - 9, 12, 1, '#e74c3c'); // Red ribbon
+        this.drawPixel(ctx, x + 4, y - 10, 12, 1, '#1e3799'); // Navy ribbon
 
-        // Polarized Aviator Sunglasses perched on head or eyes
-        ctx.fillStyle = '#00d2d3';
-        ctx.beginPath();
-        ctx.ellipse(x + 7.5, y - 3, 2.2, 1.8, 0.1, 0, Math.PI * 2);
-        ctx.ellipse(x + 11.5, y - 3, 2.2, 1.8, -0.1, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#f1c40f'; // Golden frame
-        ctx.lineWidth = 0.7;
-        ctx.beginPath();
-        ctx.moveTo(x + 5, y - 3.5);
-        ctx.lineTo(x + 14, y - 3.5);
-        ctx.stroke();
+        // Polarized Aviator Sunglasses
+        this.drawPixel(ctx, x + 6, y - 3, 3, 2, '#00d2d3');
+        this.drawPixel(ctx, x + 11, y - 3, 3, 2, '#00d2d3');
+        this.drawPixel(ctx, x + 5, y - 4, 10, 1, '#f1c40f'); // Golden frame
 
-        // Vintage 35mm Rangefinder Camera with leather strap & glass reflection
-        // Leather neck strap
-        ctx.strokeStyle = '#8b5a2b';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x + 5, y + 9);
-        ctx.lineTo(x + 7, y + 15);
-        ctx.moveTo(x + 14, y + 9);
-        ctx.lineTo(x + 12, y + 15);
-        ctx.stroke();
-        // Camera metal body
-        ctx.fillStyle = '#2d3436';
-        ctx.beginPath();
-        ctx.roundRect(x + 5.5, y + 14.5, 9, 7.5, 1.8);
-        ctx.fill();
-        ctx.fillStyle = '#bdc3c7'; // Silver top plate
-        ctx.fillRect(x + 5.5, y + 14.5, 9, 2);
-        // Circular glass lens with anti-reflective optical cyan sheen
-        ctx.fillStyle = '#00cec9';
-        ctx.beginPath();
-        ctx.arc(x + 10, y + 18.5, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        // Glass specular glint
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 9, y + 17.5, 1.2, 1);
+        // Vintage 35mm Rangefinder Camera
+        this.drawPixel(ctx, x + 5, y + 9, 1, 6, '#8b5a2b'); // Leather strap
+        this.drawPixel(ctx, x + 14, y + 9, 1, 6, '#8b5a2b');
+        this.drawPixel(ctx, x + 5, y + 14, 10, 7, '#2d3436');
+        this.drawPixel(ctx, x + 5, y + 14, 10, 2, '#bdc3c7'); // Silver top plate
+        this.drawPixel(ctx, x + 8, y + 16, 4, 4, '#00cec9'); // Cyan lens
+        this.drawPixel(ctx, x + 9, y + 17, 1, 1, '#ffffff'); // Glass catchlight
         break;
       }
 
-      case 9: { // BÉ HẠNH VÉ SỐ & CÚN VÀNG (Denim dungaree overalls with embroidered cartoon duckling, sunshine yellow striped tee, reverse cat-ear cap, lucky lottery ticket display board, golden puppy at her feet)
-        // Dark Indigo Denim Dungarees with brass rivets & walk bounce
-        this.drawCurvedLimb(ctx, x + 6, y + 24 + walkBob, x + 6, y + 38 + walkBob, 2.8, 2.2, '#2c3e50');
-        this.drawCurvedLimb(ctx, x + 13, y + 24 - walkBob, x + 13, y + 38 - walkBob, 2.8, 2.2, '#2c3e50');
+      case 9: { // BÉ HẠNH VÉ SỐ & CÚN VÀNG (Denim dungaree overalls with embroidered cartoon duckling, sunshine yellow striped tee, Nón Tai Bèo, lucky lottery board, golden puppy)
+        const pBob = Math.round(walkBob);
 
-        // Legendary Vietnamese Honeycomb Sandals (Dép Tổ Ong trắng huyền thoại với lỗ tổ ong chi tiết)
-        this.drawCurvedShoe(ctx, x + 6.5, y + 38 + walkBob, 7.8, 3, '#f5f6fa', '#dcdde1');
-        this.drawCurvedShoe(ctx, x + 13.5, y + 38 - walkBob, 7.8, 3, '#f5f6fa', '#dcdde1');
-        // Honeycomb perforation grid dots
-        ctx.fillStyle = '#bdc3c7';
-        ctx.fillRect(x + 8.5, y + 38.5 + walkBob, 0.8, 0.8);
-        ctx.fillRect(x + 10, y + 38.5 + walkBob, 0.8, 0.8);
-        ctx.fillRect(x + 15.5, y + 38.5 - walkBob, 0.8, 0.8);
-        ctx.fillRect(x + 17, y + 38.5 - walkBob, 0.8, 0.8);
+        // Dark Indigo Denim Dungarees
+        this.drawPixel(ctx, x + 5, y + 24 + pBob, 4, 14, '#2c3e50');
+        this.drawPixel(ctx, x + 11, y + 24 - pBob, 4, 14, '#2c3e50');
+
+        // Legendary Vietnamese Honeycomb Sandals (Dép Tổ Ong trắng huyền thoại)
+        this.drawPixel(ctx, x + 4, y + 38 + pBob, 7, 3, '#f5f6fa');
+        this.drawPixel(ctx, x + 5, y + 39 + pBob, 1, 1, '#bdc3c7'); // Honeycomb dots
+        this.drawPixel(ctx, x + 7, y + 39 + pBob, 1, 1, '#bdc3c7');
+        this.drawPixel(ctx, x + 9, y + 39 + pBob, 1, 1, '#bdc3c7');
+
+        this.drawPixel(ctx, x + 10, y + 38 - pBob, 7, 3, '#f5f6fa');
+        this.drawPixel(ctx, x + 11, y + 39 - pBob, 1, 1, '#bdc3c7');
+        this.drawPixel(ctx, x + 13, y + 39 - pBob, 1, 1, '#bdc3c7');
+        this.drawPixel(ctx, x + 15, y + 39 - pBob, 1, 1, '#bdc3c7');
 
         // Sunshine Yellow & White Striped Tee
-        ctx.fillStyle = '#f1c40f';
-        ctx.beginPath();
-        ctx.roundRect(x + 1, y + 7, 17, 19, [4, 4, 2, 2]);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 1, y + 9, 17, 2);
-        ctx.fillRect(x + 1, y + 13, 17, 2);
+        this.drawPixel(ctx, x + 2, y + 7, 16, 17, '#f1c40f');
+        this.drawPixel(ctx, x + 2, y + 9, 16, 2, '#ffffff');
+        this.drawPixel(ctx, x + 2, y + 13, 16, 2, '#ffffff');
 
         // Denim Dungaree Overalls on top with brass buckles
-        ctx.fillStyle = '#2980b9';
-        ctx.beginPath();
-        ctx.roundRect(x + 3.5, y + 14, 12, 11, [2, 2, 1, 1]);
-        ctx.fill();
-        // Dungaree shoulder straps
-        ctx.fillRect(x + 4, y + 8, 2.2, 7);
-        ctx.fillRect(x + 13, y + 8, 2.2, 7);
-        // Brass overall buttons
-        ctx.fillStyle = '#f39c12';
-        ctx.beginPath();
-        ctx.arc(x + 5.1, y + 14.5, 1, 0, Math.PI * 2);
-        ctx.arc(x + 14.1, y + 14.5, 1, 0, Math.PI * 2);
-        ctx.fill();
+        this.drawPixel(ctx, x + 4, y + 14, 12, 11, '#2980b9');
+        this.drawPixel(ctx, x + 4, y + 8, 2, 7, '#2980b9'); // Left strap
+        this.drawPixel(ctx, x + 14, y + 8, 2, 7, '#2980b9'); // Right strap
+        this.drawPixel(ctx, x + 4, y + 14, 2, 2, '#f39c12'); // Brass buttons
+        this.drawPixel(ctx, x + 14, y + 14, 2, 2, '#f39c12');
 
-        // Embroidered Cute Little Yellow Duckling on dungaree bib pocket
-        ctx.fillStyle = '#ffeaa7';
-        ctx.beginPath();
-        ctx.arc(x + 9.5, y + 18, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#e17055'; // duck beak
-        ctx.fillRect(x + 10.8, y + 17.5, 1, 0.8);
+        // Embroidered Cute Little Yellow Duckling on bib pocket
+        this.drawPixel(ctx, x + 9, y + 17, 3, 3, '#ffeaa7');
+        this.drawPixel(ctx, x + 12, y + 17, 1, 1, '#e17055'); // duck beak
 
-        // Traditional Southern Black & White Checkered Khăn Rằn around neck
-        ctx.fillStyle = '#f5f6fa';
-        ctx.beginPath();
-        ctx.roundRect(x + 3, y + 6, 13, 3.8, 2);
-        ctx.fill();
-        ctx.fillStyle = '#2f3640';
-        ctx.fillRect(x + 4.5, y + 6, 1.5, 3.8);
-        ctx.fillRect(x + 8.5, y + 6, 1.5, 3.8);
-        ctx.fillRect(x + 12.5, y + 6, 1.5, 3.8);
+        // Traditional Checkered Khăn Rằn around neck
+        this.drawPixel(ctx, x + 4, y + 5, 12, 3, '#f5f6fa');
+        this.drawPixel(ctx, x + 6, y + 5, 2, 3, '#2f3640');
+        this.drawPixel(ctx, x + 10, y + 5, 2, 3, '#2f3640');
         // Dangling knotted fringe tassel
-        ctx.fillStyle = '#f5f6fa';
-        ctx.fillRect(x + 2.5, y + 9, 2.5, 9);
-        ctx.fillStyle = '#2f3640';
-        ctx.fillRect(x + 2.5, y + 11, 2.5, 1.5);
-        ctx.fillRect(x + 2.5, y + 14, 2.5, 1.5);
+        this.drawPixel(ctx, x + 3, y + 8, 2, 7, '#f5f6fa');
+        this.drawPixel(ctx, x + 3, y + 10, 2, 2, '#2f3640');
+        this.drawPixel(ctx, x + 3, y + 13, 2, 2, '#2f3640');
 
         // Head & Radiant Sun-kissed Smiling Face with Rosy Cheeks
-        this.drawOrganicHead(ctx, x + 9.5, y - 2, 7.2, 8.2, '#ffe0bd', 'rgba(255, 107, 129, 0.4)', isBlinking, '#2c1e13', true);
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#ffe0bd', 'rgba(255, 107, 129, 0.4)', isBlinking, '#2c1e13', true);
 
-        // Weathered Olive-Green Floppy Bucket Hat (Nón Tai Bèo) with lucky 4-leaf clover pin
-        ctx.fillStyle = '#556b2f';
-        ctx.beginPath();
-        ctx.ellipse(x + 9.5, y - 7, 11.5, 3.8, 0, 0, Math.PI * 2);
-        ctx.roundRect(x + 4, y - 13.5, 11, 7, [4, 4, 1, 1]);
-        ctx.fill();
-        // Emerald 4-leaf lucky clover badge
-        ctx.fillStyle = '#2ecc71';
-        ctx.beginPath();
-        ctx.arc(x + 12.5, y - 10, 1.2, 0, Math.PI * 2);
-        ctx.arc(x + 14, y - 10, 1.2, 0, Math.PI * 2);
-        ctx.fill();
+        // Weathered Olive-Green Floppy Bucket Hat (Nón Tai Bèo) with lucky clover
+        this.drawPixel(ctx, x, y - 7, 20, 2, '#556b2f');
+        this.drawPixel(ctx, x + 4, y - 13, 12, 6, '#556b2f');
+        this.drawPixel(ctx, x + 5, y - 14, 10, 1, '#6b8e23'); // Highlight crown
+        this.drawPixel(ctx, x + 13, y - 10, 2, 2, '#2ecc71'); // Lucky clover pin
 
-        // Clear Acrylic Display Board with Lucky Rainbow Lottery Tickets (Bảng Vé Số May Mắn)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.beginPath();
-        ctx.roundRect(x + 16, y + 12, 8, 14, 1.5);
-        ctx.fill();
-        // Colorful tickets in rows (Red, Yellow, Blue)
-        ctx.fillStyle = '#ff7675';
-        ctx.fillRect(x + 17, y + 13.5, 6, 2.2);
-        ctx.fillStyle = '#ffeaa7';
-        ctx.fillRect(x + 17, y + 16.5, 6, 2.2);
-        ctx.fillStyle = '#74b9ff';
-        ctx.fillRect(x + 17, y + 19.5, 6, 2.2);
-        // Red rubber band holding them firmly
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(x + 16, y + 18, 8, 1.2);
+        // Clear Acrylic Display Board with Lucky Rainbow Lottery Tickets
+        this.drawPixel(ctx, x + 16, y + 12, 8, 14, '#dfe4ea');
+        this.drawPixel(ctx, x + 17, y + 13, 6, 12, '#ffffff');
+        this.drawPixel(ctx, x + 17, y + 14, 6, 2, '#ff7675'); // Red tickets
+        this.drawPixel(ctx, x + 17, y + 17, 6, 2, '#ffeaa7'); // Yellow tickets
+        this.drawPixel(ctx, x + 17, y + 20, 6, 2, '#74b9ff'); // Blue tickets
+        this.drawPixel(ctx, x + 16, y + 18, 8, 1, '#e74c3c'); // Rubber band
 
-        // Adorable Golden Puppy (Chú Cún Vàng) sitting faithfully at her feet!
-        const pupTail = Math.sin(this.tick * 0.3) * 2;
-        ctx.fillStyle = '#f39c12';
-        // Puppy body & head
-        ctx.beginPath();
-        ctx.ellipse(x - 6, y + 33, 4, 3, 0, 0, Math.PI * 2);
-        ctx.arc(x - 7.5, y + 29, 2.8, 0, Math.PI * 2);
-        ctx.fill();
-        // Floppy puppy ears
-        ctx.fillStyle = '#d35400';
-        ctx.beginPath();
-        ctx.ellipse(x - 9.5, y + 29, 1.2, 2.2, 0.2, 0, Math.PI * 2);
-        ctx.fill();
-        // Tiny dark nose & eye
-        ctx.fillStyle = '#111';
-        ctx.fillRect(x - 8.5, y + 28.5, 0.8, 0.8);
+        // Adorable Golden Puppy (Chú Cún Vàng) sitting faithfully at her feet
+        const pupTail = Math.round(Math.sin(this.tick * 0.3));
+        this.drawPixel(ctx, x - 9, y + 31, 7, 6, '#f39c12'); // Puppy body
+        this.drawPixel(ctx, x - 10, y + 27, 5, 5, '#f39c12'); // Puppy head
+        this.drawPixel(ctx, x - 11, y + 28, 2, 4, '#d35400'); // Floppy ear
+        this.drawPixel(ctx, x - 8, y + 28, 1, 1, '#111111'); // Puppy eye
+        this.drawPixel(ctx, x - 10, y + 30, 1, 1, '#111111'); // Puppy nose
+        // Red collar & bell
+        this.drawPixel(ctx, x - 9, y + 31, 3, 1, '#e74c3c');
+        this.drawPixel(ctx, x - 8, y + 32, 1, 1, '#f1c40f');
         // Wagging tail
-        ctx.strokeStyle = '#f39c12';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.moveTo(x - 2.5, y + 33);
-        ctx.lineTo(x - 0.5, y + 30 + pupTail);
-        ctx.stroke();
-        // Red cute collar with tiny golden bell
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(x - 8.5, y + 30.5, 2.5, 1);
-        ctx.fillStyle = '#f1c40f';
-        ctx.beginPath();
-        ctx.arc(x - 7.2, y + 31.8, 0.8, 0, Math.PI * 2);
-        ctx.fill();
+        this.drawPixel(ctx, x - 3, y + 31 + pupTail, 2, 2, '#f39c12');
         break;
       }
     }
@@ -3086,38 +2246,27 @@ class GameCanvas {
 
     // --- CUSTOMER DRINKING HAPPINESS EFFECTS (Floating Hearts & Sipping Boba) ---
     if (isHappy) {
-      // Floating Pink Hearts drifting above head
+      // Floating Pixel Pink Hearts drifting above head
       for (let h = 0; h < 3; h++) {
-        const hOffset = Math.sin(this.tick * 0.15 + h * 2) * 4;
-        const hY = y - 14 - h * 7 - ((this.tick * 0.6) % 12);
-        const hX = x + 3 + h * 7 + hOffset;
-        ctx.fillStyle = '#ff7675';
-        ctx.beginPath();
-        ctx.arc(hX - 1.5, hY, 1.8, Math.PI, 0);
-        ctx.arc(hX + 1.5, hY, 1.8, Math.PI, 0);
-        ctx.lineTo(hX, hY + 3.5);
-        ctx.closePath();
-        ctx.fill();
+        const hOffset = Math.round(Math.sin(this.tick * 0.15 + h * 2) * 3);
+        const hY = Math.round(y - 14 - h * 7 - ((this.tick * 0.6) % 12));
+        const hX = Math.round(x + 3 + h * 7 + hOffset);
+        this.drawPixel(ctx, hX - 2, hY, 2, 2, '#ff7675');
+        this.drawPixel(ctx, hX + 1, hY, 2, 2, '#ff7675');
+        this.drawPixel(ctx, hX - 2, hY + 2, 5, 2, '#ff7675');
+        this.drawPixel(ctx, hX - 1, hY + 4, 3, 1, '#ff7675');
+        this.drawPixel(ctx, hX, hY + 5, 1, 1, '#ff7675');
       }
 
       // Customer holds mini boba cup and sips with straw
       const cupX = x + 7;
       const cupY = y + 8;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.roundRect(cupX, cupY, 7, 10, 1.5);
-      ctx.fill();
-      ctx.fillStyle = '#f39c12'; // milk tea inside
-      ctx.fillRect(cupX + 1, cupY + 3, 5, 6);
-      ctx.fillStyle = '#111'; // boba pearls
-      ctx.fillRect(cupX + 2, cupY + 7, 3, 2);
-      // Straw leading up to mouth
-      ctx.strokeStyle = '#e74c3c';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(cupX + 3.5, cupY + 3);
-      ctx.lineTo(x + 9.5, y + 2);
-      ctx.stroke();
+      this.drawPixel(ctx, cupX, cupY, 7, 10, '#ffffff');
+      this.drawPixel(ctx, cupX + 1, cupY + 3, 5, 6, '#f39c12'); // milk tea
+      this.drawPixel(ctx, cupX + 2, cupY + 7, 3, 2, '#111111'); // boba pearls
+      // Pixel straw leading up to mouth
+      this.drawPixel(ctx, cupX + 3, cupY - 2, 1, 5, '#e74c3c');
+      this.drawPixel(ctx, cupX + 4, cupY - 4, 1, 2, '#e74c3c');
     }
 
     // --- CUTE PET COMPANION (Mèo Tam Thể hoặc Cún Poodle đi theo khách hàng dẫn đầu) ---
@@ -3892,155 +3041,86 @@ class GameCanvas {
   drawThief(ctx) {
     if (!this.thief) return;
     const t = this.thief;
-    const tx = t.x;
+    const tx = Math.round(t.x);
     const ty = 138;
 
-    // 1. Street Ground Shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
-    ctx.beginPath();
-    ctx.ellipse(tx + 8, ty + 24, 13, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Motion parameters
+    // Motion parameters with stepped integer pixel animations
     const isEscaping = t.state === 'escaping';
     const bob = isEscaping 
-      ? Math.sin(t.tick * 0.45) * 3 
-      : Math.sin(t.tick * 0.18) * 1.4;
+      ? Math.round(Math.sin(t.tick * 0.45) * 2) 
+      : Math.round(Math.sin(t.tick * 0.18));
+
+    // 1. Street Ground Shadow
+    this.drawPixel(ctx, tx - 2, ty + 24, 20, 3, 'rgba(0, 0, 0, 0.35)');
 
     // 2. Black Cargo Pants & Tactical Sneakers
-    ctx.fillStyle = '#1e1e24'; // Deep charcoal black pants
-    const legSwing = isEscaping ? Math.sin(t.tick * 0.45) * 6 : Math.sin(t.tick * 0.18) * 3;
-    
-    // Left leg
-    ctx.beginPath();
-    ctx.roundRect(tx + 4 - legSwing, ty + 12 + bob, 3.5, 9, 1);
-    ctx.fill();
-    // Right leg
-    ctx.beginPath();
-    ctx.roundRect(tx + 9 + legSwing, ty + 12 + bob, 3.5, 9, 1);
-    ctx.fill();
+    const legSwing = isEscaping ? Math.round(Math.sin(t.tick * 0.45) * 4) : Math.round(Math.sin(t.tick * 0.18) * 2);
 
-    // Black High-Top Sneakers with Clean White Rubber Sole
-    ctx.fillStyle = '#0f0f14';
-    ctx.fillRect(tx + 3 - legSwing, ty + 19 + bob, 5.5, 3.5);
-    ctx.fillRect(tx + 8 + legSwing, ty + 19 + bob, 5.5, 3.5);
-    ctx.fillStyle = '#ffffff'; // White soles
-    ctx.fillRect(tx + 3 - legSwing, ty + 22 + bob, 5.5, 1);
-    ctx.fillRect(tx + 8 + legSwing, ty + 22 + bob, 5.5, 1);
+    // Left & Right legs
+    this.drawPixel(ctx, tx + 4 - legSwing, ty + 12 + bob, 4, 8, '#1e1e24');
+    this.drawPixel(ctx, tx + 9 + legSwing, ty + 12 + bob, 4, 8, '#1e1e24');
+
+    // Black High-Top Sneakers with Clean White Sole
+    this.drawPixel(ctx, tx + 3 - legSwing, ty + 19 + bob, 6, 3, '#0f0f14');
+    this.drawPixel(ctx, tx + 3 - legSwing, ty + 22 + bob, 6, 1, '#ffffff');
+    this.drawPixel(ctx, tx + 8 + legSwing, ty + 19 + bob, 6, 3, '#0f0f14');
+    this.drawPixel(ctx, tx + 8 + legSwing, ty + 22 + bob, 6, 1, '#ffffff');
 
     // 3. Burlap Sack (Rustic thief loot bag slung over back)
-    const bagX = isEscaping ? tx - 5 : (t.state === 'pacing_left' || t.state === 'approaching_pet' ? tx + 12 : tx - 4);
-    const bagWiggle = isEscaping ? Math.sin(t.tick * 0.5) * 2 : 0;
-    
-    // Burlap Sack Body
-    ctx.fillStyle = '#9c6634';
-    ctx.beginPath();
-    ctx.ellipse(bagX, ty + 7 + bob + bagWiggle, 7, 8.5, 0.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#6b411d';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    const bagX = isEscaping ? tx - 6 : (t.state === 'pacing_left' || t.state === 'approaching_pet' ? tx + 13 : tx - 5);
+    const bagWiggle = isEscaping ? Math.round(Math.sin(t.tick * 0.5)) : 0;
 
-    // Sack rope tie
-    ctx.fillStyle = '#f5cd79';
-    ctx.fillRect(bagX - 1.5, ty - 1.5 + bob, 3, 2.5);
+    // Burlap Sack Body
+    this.drawPixel(ctx, bagX, ty + 6 + bob + bagWiggle, 8, 10, '#6b411d');
+    this.drawPixel(ctx, bagX + 1, ty + 7 + bob + bagWiggle, 6, 8, '#9c6634');
+    this.drawPixel(ctx, bagX + 2, ty + 4 + bob + bagWiggle, 4, 3, '#f5cd79'); // Sack rope tie
 
     // If pet has been snatched, draw cute pet ears or tail struggling inside sack!
     if (t.state === 'snatching' || (isEscaping && this.isPetStolen)) {
-      ctx.fillStyle = '#e58e26'; // Little paw or tail peeking
-      ctx.beginPath();
-      ctx.arc(bagX - 2, ty + 2 + bob + bagWiggle, 2.2, 0, Math.PI * 2);
-      ctx.fill();
+      this.drawPixel(ctx, bagX - 1, ty + 2 + bob + bagWiggle, 3, 3, '#e58e26');
     }
 
     // 4. Black Oversized Hoodie Body (Hunched sneak posture)
-    ctx.fillStyle = '#121217'; // Pitch black hoodie
-    ctx.beginPath();
-    ctx.roundRect(tx + 2, ty + 2 + bob, 13, 12, 3);
-    ctx.fill();
-
-    // Hoodie pocket fold & shadows
-    ctx.strokeStyle = '#272730';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(tx + 4, ty + 10 + bob);
-    ctx.lineTo(tx + 13, ty + 10 + bob);
-    ctx.stroke();
+    this.drawPixel(ctx, tx + 2, ty + 2 + bob, 13, 11, '#0a0a0e');
+    this.drawPixel(ctx, tx + 3, ty + 3 + bob, 11, 9, '#18181f');
+    this.drawPixel(ctx, tx + 4, ty + 10 + bob, 9, 1, '#272730'); // Pocket fold
 
     // 5. Oversized Black Hood & Head
-    ctx.fillStyle = '#0a0a0e';
-    ctx.beginPath();
-    ctx.arc(tx + 8.5, ty - 2 + bob, 7.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Deep Face Cavity Shadow
-    ctx.fillStyle = '#040406';
-    ctx.beginPath();
-    ctx.ellipse(tx + 8.5, ty - 1 + bob, 5, 4.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    this.drawPixel(ctx, tx + 3, ty - 6 + bob, 12, 9, '#0a0a0e');
+    this.drawPixel(ctx, tx + 4, ty - 5 + bob, 10, 7, '#121217');
+    this.drawPixel(ctx, tx + 5, ty - 3 + bob, 8, 4, '#040406'); // Deep face cavity shadow
 
     // 6. Shifty Suspicious Eyes (Glancing back and forth)
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.ellipse(tx + 6.5, ty - 2.5 + bob, 2, 1.4, 0, 0, Math.PI * 2);
-    ctx.ellipse(tx + 10.5, ty - 2.5 + bob, 2, 1.4, 0, 0, Math.PI * 2);
-    ctx.fill();
+    this.drawPixel(ctx, tx + 6, ty - 3 + bob, 2, 2, '#ffffff');
+    this.drawPixel(ctx, tx + 10, ty - 3 + bob, 2, 2, '#ffffff');
 
-    // Moving Black Pupils looking around suspiciously
-    const glanceOffset = isEscaping ? 1.2 : (t.state === 'pacing_left' || t.state === 'approaching_pet' ? -1.0 : (t.state === 'pacing_right' ? 1.0 : Math.sin(t.tick * 0.1) * 1.0));
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(tx + 6.5 + glanceOffset, ty - 2.5 + bob, 0.9, 0, Math.PI * 2);
-    ctx.arc(tx + 10.5 + glanceOffset, ty - 2.5 + bob, 0.9, 0, Math.PI * 2);
-    ctx.fill();
+    const glanceOffset = isEscaping ? 1 : (t.state === 'pacing_left' || t.state === 'approaching_pet' ? -1 : (t.state === 'pacing_right' ? 1 : (Math.sin(t.tick * 0.1) > 0 ? 1 : 0)));
+    this.drawPixel(ctx, tx + 6 + glanceOffset, ty - 3 + bob, 1, 2, '#000000');
+    this.drawPixel(ctx, tx + 10 + glanceOffset, ty - 3 + bob, 1, 2, '#000000');
 
-    // 7. Black Face Mask / Surgical Mask (User Prompt requirement: "đeo khẩu trang")
-    ctx.fillStyle = '#18181f';
-    ctx.beginPath();
-    ctx.roundRect(tx + 5, ty - 1.2 + bob, 7, 4.2, 1.5);
-    ctx.fill();
-    // Mask pleat & ear loop lines
-    ctx.strokeStyle = '#2f3542';
-    ctx.lineWidth = 0.6;
-    ctx.stroke();
+    // 7. Black Face Mask / Surgical Mask
+    this.drawPixel(ctx, tx + 5, ty - 1 + bob, 8, 4, '#18181f');
+    this.drawPixel(ctx, tx + 6, ty + bob, 6, 1, '#2f3542');
 
     // 8. Sweat Drops & Speed Lines if Escaping
     if (isEscaping) {
-      ctx.fillStyle = '#00d2d3';
-      ctx.beginPath();
-      ctx.arc(tx - 6, ty - 4 + bob, 1.2, 0, Math.PI * 2);
-      ctx.arc(tx - 11, ty + 2 + bob, 1.4, 0, Math.PI * 2);
-      ctx.fill();
+      this.drawPixel(ctx, tx - 5, ty - 4 + bob, 2, 2, '#00d2d3');
+      this.drawPixel(ctx, tx - 9, ty + 2 + bob, 2, 2, '#00d2d3');
     }
 
     // 9. Speech / Thought Bubble
     if (t.bubble) {
-      const bubbleW = t.bubble.length * 5.2 + 10;
+      const bubbleW = t.bubble.length * 6 + 8;
       const bx = tx - 4;
       const by = ty - 20 + bob;
 
-      // Bubble background with drop shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      ctx.beginPath();
-      ctx.roundRect(bx + 1, by + 1, bubbleW, 11, 3);
-      ctx.fill();
+      this.drawPixel(ctx, bx + 1, by + 1, bubbleW, 11, 'rgba(0, 0, 0, 0.3)');
+      this.drawPixel(ctx, bx, by, bubbleW, 11, isEscaping ? '#ff4757' : '#ffffff');
+      this.drawPixel(ctx, bx + 8, by + 11, 4, 3, isEscaping ? '#ff4757' : '#ffffff');
 
-      ctx.fillStyle = isEscaping ? '#ff4757' : '#ffffff';
-      ctx.beginPath();
-      ctx.roundRect(bx, by, bubbleW, 11, 3);
-      ctx.fill();
-
-      // Tail pointing to thief's hood
-      ctx.beginPath();
-      ctx.moveTo(bx + 10, by + 11);
-      ctx.lineTo(bx + 8, by + 15);
-      ctx.lineTo(bx + 14, by + 11);
-      ctx.fill();
-
-      // Bubble text
       ctx.fillStyle = isEscaping ? '#ffffff' : '#2f3542';
-      ctx.font = 'bold 7px sans-serif';
-      ctx.fillText(t.bubble, bx + 5, by + 8);
+      ctx.font = 'bold 7px monospace';
+      ctx.fillText(t.bubble, bx + 4, by + 8);
     }
   }
 }
