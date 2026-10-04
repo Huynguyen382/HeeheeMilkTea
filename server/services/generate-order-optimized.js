@@ -164,7 +164,7 @@ async function generateOrderOptimized(db, storeId) {
 
     // Price calculation
     let price = recipe.basePrice;
-    const baseToppingCount = (recipe.toppings && recipe.toppings.length > 0) ? 1 : 0;
+    const baseToppingCount = (recipe.toppings && recipe.toppings.length > 0) ? recipe.toppings.length : 0;
     const toppingDiff = orderToppings.length - baseToppingCount;
     
     if (toppingDiff > 0) {

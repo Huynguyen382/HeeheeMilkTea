@@ -188,6 +188,8 @@ class BaristaWorkstation {
       thach_la_dua: 'Thạch Lá Dứa',
       tranchau_duongden: 'Đường Đen',
       dao_mieng: 'Đào Miếng',
+      cam_vang: 'Cam Vàng',
+      sa_tuoi: 'Sả Tươi',
       suong_sao: 'Sương Sáo'
     };
     return map[key] || 'Topping';
@@ -627,6 +629,20 @@ class BaristaWorkstation {
         ctx.beginPath();
         ctx.ellipse(px, py, 6, 3.5, 0.4, 0, Math.PI * 2);
         ctx.fill();
+      } else if (p.type === 'cam_vang') {
+        ctx.fillStyle = '#ff9f43';
+        ctx.beginPath();
+        ctx.arc(px, py, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#feca57';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      } else if (p.type === 'sa_tuoi') {
+        ctx.fillStyle = '#a8e6cf';
+        ctx.fillRect(px - 4, py - 2, 8, 4);
+        ctx.strokeStyle = '#1dd1a1';
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(px - 4, py - 2, 8, 4);
       } else if (p.type === 'suong_sao') {
         ctx.fillStyle = '#111111';
         ctx.fillRect(px - 5, py - 4, 10, 8);

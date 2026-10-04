@@ -63,8 +63,8 @@ const RECIPES = {
     basePrice: 28000,
     cost: 9000,
     tea: 'lai',
-    toppings: ['dao_mieng'],
-    desc: '🌸 Cốt trà: [Lục Trà Lài] • Lục trà lài thanh tao, sả đập dập thơm lừng kèm những miếng đào giòn tan'
+    toppings: ['dao_mieng', 'cam_vang', 'sa_tuoi'],
+    desc: '🌸 Cốt trà: [Lục Trà Lài] • Bắt buộc đủ 3 món: Đào Miếng + Cam Vàng + Sả Tươi thơm nức mũi'
   },
   tra_olong_nuong: {
     id: 'tra_olong_nuong',
@@ -84,6 +84,8 @@ const SHELF_TOPPINGS = [
   'thach_la_dua',
   'tranchau_duongden',
   'dao_mieng',
+  'cam_vang',
+  'sa_tuoi',
   'suong_sao'
 ];
 
@@ -102,6 +104,11 @@ const CORE_RECIPES = [
 
 // Helper to generate realistic multi-topping combinations for customers
 function generateCustomerToppings(cust, recipe) {
+  // Trà đào cam sả bắt buộc phải có đủ bộ 3: Đào miếng, Cam vàng, Sả tươi
+  if (recipe && recipe.id === 'tra_dao_cam_sa') {
+    return ['dao_mieng', 'cam_vang', 'sa_tuoi'];
+  }
+
   // Track performance
   cpuOptimizer.performance.mathRandomCalls++;
   
@@ -639,7 +646,7 @@ async function generateOrder(storeId) {
 
     // Price with multi-toppings, tip buff & Pet buffs
     let price = recipe.basePrice;
-    const baseToppingCount = (recipe.toppings && recipe.toppings.length > 0) ? 1 : 0;
+    const baseToppingCount = (recipe.toppings && recipe.toppings.length > 0) ? recipe.toppings.length : 0;
     const toppingDiff = orderToppings.length - baseToppingCount;
     if (toppingDiff > 0) {
       price += toppingDiff * 3000; // Thêm topping: +3.000đ mỗi loại

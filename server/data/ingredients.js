@@ -108,6 +108,28 @@ const INGREDIENTS = [
     desc: 'Miếng đào vàng ươm mọng nước, vị chua ngọt giòn tan'
   },
   {
+    id: 'cam_vang',
+    name: 'Cam Vàng Tươi Cắt Lát',
+    category: 'topping',
+    price: 2000,
+    unit: 'phần',
+    packSize: 10,
+    icon: '🍊',
+    pixelColor: '#ff9f43',
+    desc: 'Lát cam vàng mọng nước, vị chua ngọt thanh mát tạo tầng hương cho Trà Đào Cam Sả'
+  },
+  {
+    id: 'sa_tuoi',
+    name: 'Sả Tươi Đập Dập',
+    category: 'topping',
+    price: 1500,
+    unit: 'phần',
+    packSize: 10,
+    icon: '🌱',
+    pixelColor: '#a8e063',
+    desc: 'Nhánh sả tươi đập dập cay the dịu nhẹ, linh hồn không thể thiếu của Trà Đào Cam Sả'
+  },
+  {
     id: 'suong_sao',
     name: 'Thạch Sương Sáo Thanh Mát',
     category: 'topping',
@@ -143,6 +165,8 @@ const DEFAULT_INVENTORY = {
   thach_la_dua: 25,
   tranchau_duongden: 25,
   dao_mieng: 20,
+  cam_vang: 20,
+  sa_tuoi: 20,
   suong_sao: 20,
   ly_nap: 60
 };

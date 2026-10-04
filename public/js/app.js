@@ -880,6 +880,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     thach_la_dua: '🍃 Thạch Lá Dứa',
     tranchau_duongden: '🍯 Đường Đen',
     dao_mieng: '🍑 Đào Miếng',
+    cam_vang: '🍊 Cam Vàng',
+    sa_tuoi: '🌱 Sả Tươi',
     suong_sao: '🍮 Sương Sáo'
   };
 
@@ -2543,6 +2545,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         rect(8, 7, 4, 5, '#ffa502');
         rect(9, 8, 2, 3, '#ff6348');
         px(11, 6, '#2ed573');
+        break;
+      case 'cam_vang':
+        rect(4, 4, 8, 8, '#ff9f43');
+        rect(5, 5, 6, 6, '#feca57');
+        rect(6, 6, 4, 4, '#ff9f43');
+        px(4, 4, '#ee5253'); px(11, 4, '#ee5253'); px(4, 11, '#ee5253'); px(11, 11, '#ee5253');
+        px(8, 2, '#10ac84'); px(9, 3, '#1dd1a1');
+        break;
+      case 'sa_tuoi':
+        rect(5, 3, 3, 10, '#a8e6cf');
+        rect(6, 2, 2, 11, '#1dd1a1');
+        rect(8, 5, 3, 8, '#c8d6e5');
+        rect(9, 4, 2, 9, '#10ac84');
+        px(5, 2, '#2ed573'); px(8, 3, '#2ed573');
         break;
       case 'suong_sao':
         rect(4, 7, 4, 4, '#2f3542');

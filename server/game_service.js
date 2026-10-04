@@ -51,7 +51,7 @@ const RECIPES = {
     basePrice: 28000,
     cost: 9000,
     tea: 'lai',
-    toppings: ['dao_mieng'],
+    toppings: ['dao_mieng', 'cam_vang', 'sa_tuoi'],
     desc: 'Sả tươi đập dập, lát cam vàng óng và những miếng đào giòn tan'
   },
   tra_olong_nuong: {
