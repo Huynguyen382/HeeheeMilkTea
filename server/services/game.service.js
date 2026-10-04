@@ -547,7 +547,8 @@ async function generateOrder(storeId) {
     const orderId = 'ORD-' + crypto.randomBytes(4).toString('hex');
     
     // Patience with active buff & Capybara pet
-    let patienceMs = cust.patience;
+    // Base patience is extended x2 + 15s to cover the 3 extra steps (shake, pour, seal)
+    let patienceMs = cust.patience * 2 + 15000;
     if (activeBuffs.patience_boost && activeBuffs.patience_boost > 0) {
       patienceMs = Math.floor(patienceMs * 1.4); // +40% patience
     }
@@ -555,7 +556,9 @@ async function generateOrder(storeId) {
     if (upgrades.active_pet === 'capybara' && !upgrades.is_pet_stolen) {
       patienceMs = Math.floor(patienceMs * 1.4); // Capybara +40% patience
     }
-    const expiresAt = now + patienceMs + (i * 7000); // subsequent queue members wait longer
+    // The client only starts a customer's countdown when it reaches the front of the queue,
+    // so the server deadline must include all waiting time of earlier customers in the wave.
+    const expiresAt = now + patienceMs + 10000 + (i * (patienceMs + 5000));
 
     // Price with multi-toppings, tip buff & Pet buffs
     let price = recipe.basePrice;
