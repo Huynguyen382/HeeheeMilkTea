@@ -150,7 +150,7 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
 
   const now = Date.now();
   const safePausedTime = Math.max(0, Math.min(Number(pausedTimeMs || 0), 3600000));
-  const effectiveExpiry = Number(order.expires_at) + safePausedTime + 30000;
+  const effectiveExpiry = Number(order.expires_at) + safePausedTime + 60000;
   if (now > effectiveExpiry) {
     await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
     return { success: false, message: 'Đơn hàng đã hết thời gian chờ, khách đã rời đi!' };

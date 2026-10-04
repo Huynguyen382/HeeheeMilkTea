@@ -416,15 +416,15 @@ async function generateOrder(storeId) {
     const orderId = 'ORD-' + crypto.randomBytes(4).toString('hex');
     
     // Patience with active buff & Capybara pet
-    let patienceMs = cust.patience;
+    let patienceMs = Math.floor(cust.patience * 2.5 + 25000);
     if (activeBuffs.patience_boost && activeBuffs.patience_boost > 0) {
-      patienceMs = Math.floor(patienceMs * 1.4); // +40% patience
+      patienceMs = Math.floor(patienceMs * 1.5); // +50% patience
     }
     const upgrades = JSON.parse(save.upgrades || '{}');
     if (upgrades.active_pet === 'capybara' && !upgrades.is_pet_stolen) {
-      patienceMs = Math.floor(patienceMs * 1.4); // Capybara +40% patience
+      patienceMs = Math.floor(patienceMs * 1.5); // Capybara +50% patience
     }
-    const expiresAt = now + patienceMs + (i * 7000); // subsequent queue members wait longer
+    const expiresAt = now + patienceMs + 60000 + (i * (patienceMs + 15000));
 
     // Price with tip buff & Pet buffs
     let price = recipe.basePrice;

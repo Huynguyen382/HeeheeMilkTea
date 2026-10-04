@@ -152,15 +152,15 @@ async function generateOrderOptimized(db, storeId) {
     const orderId = idGenerator.next();
     
     // Patience with active buff & Capybara pet
-    let patienceMs = cust.patience * 2 + 15000;
+    let patienceMs = Math.floor(cust.patience * 2.5 + 25000);
     if (activeBuffs.patience_boost && activeBuffs.patience_boost > 0) {
-      patienceMs = Math.floor(patienceMs * 1.4); // +40% patience
+      patienceMs = Math.floor(patienceMs * 1.5); // +50% patience
     }
     if (upgrades.active_pet === 'capybara' && !upgrades.is_pet_stolen) {
-      patienceMs = Math.floor(patienceMs * 1.4); // Capybara +40% patience
+      patienceMs = Math.floor(patienceMs * 1.5); // Capybara +50% patience
     }
     
-    const expiresAt = now + patienceMs + 10000 + (i * (patienceMs + 5000));
+    const expiresAt = now + patienceMs + 60000 + (i * (patienceMs + 15000));
 
     // Price calculation
     let price = recipe.basePrice;
