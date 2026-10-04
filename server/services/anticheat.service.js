@@ -1,4 +1,4 @@
-﻿const crypto = require('crypto');
+const crypto = require('crypto');
 const db = require('../models/db');
 
 const SECRET_KEY = process.env.HYHY_SECRET || 'hyhy_super_secret_anti_cheat_key_2026';
@@ -124,7 +124,7 @@ async function acceptPenalty(storeId) {
 }
 
 // Validate order completion against anti-cheat rules
-async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clientRecipeId, clientSugar, clientIce) {
+async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clientRecipeId, clientSugar, clientIce, clientToppings = []) {
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
@@ -153,7 +153,23 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   // 3. Check ingredient matching
   if (order.recipe_id !== clientRecipeId || order.sugar !== clientSugar || order.ice !== clientIce) {
     await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
-    return { success: false, message: 'Pha sai công thức, độ đường hoặc lượng đá! Khách càu nhàu trả lại ly.' };
+    return { success: false, message: 'Pha sai cốt trà, độ đường hoặc lượng đá! Khách càu nhàu trả lại ly.' };
+  }
+
+  // 3b. Check toppings matching
+  let orderToppings = [];
+  try {
+    orderToppings = typeof order.toppings === 'string' ? JSON.parse(order.toppings) : (order.toppings || []);
+  } catch (e) {
+    orderToppings = [];
+  }
+  const safeClientToppings = Array.isArray(clientToppings) ? clientToppings : [];
+  const sortedOrderTops = [...orderToppings].sort().join(',');
+  const sortedClientTops = [...safeClientToppings].sort().join(',');
+
+  if (sortedOrderTops !== sortedClientTops) {
+    await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
+    return { success: false, message: 'Pha sai loại topping yêu cầu của khách! Khách càu nhàu trả lại ly.' };
   }
 
   // 4. Daily earnings: No limit! Full price payout every order

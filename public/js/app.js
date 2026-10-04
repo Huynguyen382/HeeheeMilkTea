@@ -726,12 +726,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  const TOPPING_LABELS = {
+    tranchau_den: '⚫ Trân Châu Đen',
+    thach_la_dua: '🍃 Thạch Lá Dứa',
+    tranchau_duongden: '🍯 Đường Đen',
+    dao_mieng: '🍑 Đào Miếng',
+    suong_sao: '🍮 Sương Sáo'
+  };
+
   function renderOrderTicket() {
     updateWorkflowButtons();
     if (!currentOrder) {
       elOrderSection.innerHTML = `<div class="order-box no-order">Đang ngóng chờ khách hàng tiếp theo ghé quầy... 🧋</div>`;
       return;
     }
+
+    const orderToppingNames = (currentOrder.toppings && currentOrder.toppings.length > 0)
+      ? currentOrder.toppings.map(t => TOPPING_LABELS[t] || t).join(' + ')
+      : 'Không lấy topping';
 
     elOrderSection.innerHTML = `
       <div class="order-box">
@@ -748,7 +760,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="order-specs">
           <span class="spec-badge">Đường: <b>${currentOrder.sugar}</b></span>
           <span class="spec-badge">Đá: <b>${currentOrder.ice}</b></span>
-          <span class="spec-badge">Topping: <b>${currentOrder.toppings.length ? currentOrder.toppings.join(', ') : 'Không'}</b></span>
+          <span class="spec-badge" style="grid-column: 1 / -1; text-align: left;">Topping: <b>${orderToppingNames}</b></span>
         </div>
         <div class="patience-timer-bg">
           <div id="order-timer-fill" class="patience-timer-fill"></div>
@@ -1052,6 +1064,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Hãy bấm [3. Dập Nắp] để niêm phong ly trước khi giao!');
       return;
     }
+    // Kiểm tra topping với yêu cầu của khách
+    const requiredToppings = currentOrder.toppings || [];
+    const normRequired = [...requiredToppings].sort().join(',');
+    const normSelected = [...selectedToppings].sort().join(',');
+
+    if (normRequired !== normSelected) {
+      sound.fail();
+      elBtnServe.disabled = false;
+      const reqNames = requiredToppings.length > 0 
+        ? requiredToppings.map(t => TOPPING_LABELS[t] || t).join(' + ')
+        : 'Không lấy topping';
+      const curNames = selectedToppings.length > 0
+        ? selectedToppings.map(t => TOPPING_LABELS[t] || t).join(' + ')
+        : 'Không lấy topping';
+      showToast(`⚠️ Topping chưa đúng! Khách gọi: [${reqNames}]. Bạn đang chọn: [${curNames}].`, 4000);
+      return;
+    }
+
     elBtnServe.disabled = true;
 
     const timeTaken = Date.now() - orderStartTime;
@@ -1059,9 +1089,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check recipe mapping from chosen tea
     let chosenRecipeId = 'tra_sua_truyen_thong';
     if (selectedTea === 'den') {
-      if (currentOrder && currentOrder.recipeId === 'hong_tra_tac' && !selectedToppings.includes('tranchau_den')) {
-        chosenRecipeId = 'hong_tra_tac';
-      } else if (selectedToppings.length === 0) {
+      if (currentOrder && currentOrder.recipeId === 'hong_tra_tac') {
         chosenRecipeId = 'hong_tra_tac';
       } else {
         chosenRecipeId = 'tra_sua_truyen_thong';
@@ -1079,7 +1107,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         timeTaken,
         chosenRecipeId,
         selectedSugar,
-        selectedIce
+        selectedIce,
+        selectedToppings
       );
 
       if (res && res.isJailed) {
@@ -1114,7 +1143,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         isShaken = false;
         isPoured = false;
         isSealed = false;
-        if (workstation) workstation.resetCupState();
+        if (workstation) {
+          workstation.resetCup();
+        } else {
+          selectedTea = 'den';
+          selectedSugar = '50%';
+          selectedIce = 'Vừa đá';
+          selectedToppings = [];
+        }
+        updateMixingButtonsState();
         renderOrderTicket();
         updateWorkflowButtons();
 

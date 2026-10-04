@@ -64,10 +64,78 @@ const RECIPES = {
     basePrice: 35000,
     cost: 11000,
     tea: 'olong_nuong',
-    toppings: ['suong_sao', 'tranchau_hoangkim'],
+    toppings: ['suong_sao'],
     desc: 'Trà sao cháy thơm mùi khói mộc mạc hòa quyện thạch sương sáo mềm mướt'
   }
 };
+
+// Shelf toppings available on the barista workstation
+const SHELF_TOPPINGS = [
+  'tranchau_den',
+  'thach_la_dua',
+  'tranchau_duongden',
+  'dao_mieng',
+  'suong_sao'
+];
+
+// 5 Canonical Tea Bases (Balanced at ~20% each)
+const TEA_BASES = ['den', 'thai_xanh', 'sua_tuoi', 'lai', 'olong_nuong'];
+
+// Core Drink Recipes covering all tea bases
+const CORE_RECIPES = [
+  'tra_sua_truyen_thong',
+  'hong_tra_tac',
+  'tra_thai_xanh',
+  'sua_tuoi_duong_den',
+  'tra_dao_cam_sa',
+  'tra_olong_nuong'
+];
+
+// Helper to generate realistic multi-topping combinations for customers
+function generateCustomerToppings(cust, recipe) {
+  const roll = Math.random();
+  let toppingCount = 1;
+
+  if (cust && cust.type === 5) {
+    // Bác Ba Cụ Đồ thích thanh đạm: 40% không topping, 60% 1 topping
+    toppingCount = roll < 0.40 ? 0 : 1;
+  } else if (cust && cust.isTiktoker) {
+    // Tú TikToker chuộng visual hoành tráng nhiều tầng: 45% 2 topping, 55% 3 topping
+    toppingCount = roll < 0.45 ? 2 : 3;
+  } else if (cust && cust.type === 6) {
+    // Chú Quân Gymer siết cơ: 30% không topping, 50% 1 topping, 20% 2 topping
+    toppingCount = roll < 0.30 ? 0 : (roll < 0.80 ? 1 : 2);
+  } else {
+    // Phổ thông: 12% không topping, 43% 1 topping, 35% 2 topping, 10% 3 topping
+    if (roll < 0.12) toppingCount = 0;
+    else if (roll < 0.55) toppingCount = 1;
+    else if (roll < 0.90) toppingCount = 2;
+    else toppingCount = 3;
+  }
+
+  if (toppingCount === 0) return [];
+
+  const baseTopping = recipe.toppings && recipe.toppings.length > 0 ? recipe.toppings[0] : null;
+  const chosen = [];
+
+  // Giữ lại topping đặc trưng của món nếu có trên kệ
+  if (baseTopping && SHELF_TOPPINGS.includes(baseTopping)) {
+    chosen.push(baseTopping);
+  }
+
+  // Chọn thêm ngẫu nhiên các loại topping khác không trùng lặp
+  const pool = SHELF_TOPPINGS.filter(t => !chosen.includes(t));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  while (chosen.length < toppingCount && pool.length > 0) {
+    chosen.push(pool.pop());
+  }
+
+  return chosen;
+}
 
 // 10 Customer archetypes with 40 authentic dialogues
 const CUSTOMERS = [
@@ -251,8 +319,8 @@ async function getOrCreateStore(storeName, inputCode) {
 
     await db.prepare(`
       INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, recipes, save_hash, updated_at)
-      VALUES (?, 1, 1, 200000, 3000000, 5.0, '["tra_sua_truyen_thong"]', ?, ?)
-    `).run(storeId, hash, now);
+      VALUES (?, 1, 1, 200000, 3000000, 5.0, ?, ?, ?)
+    `).run(storeId, JSON.stringify(CORE_RECIPES), hash, now);
 
     store = await db.prepare('SELECT * FROM stores WHERE id = ?').get(storeId);
   }
@@ -285,8 +353,8 @@ async function getStoreState(storeId) {
 
     await db.prepare(`
       INSERT INTO game_saves (store_id, chapter, day_in_game, money, debt_remaining, reputation, recipes, save_hash, updated_at)
-      VALUES (?, 1, 1, 200000, 3000000, 5.0, '["tra_sua_truyen_thong"]', ?, ?)
-    `).run(id, hash, now);
+      VALUES (?, 1, 1, 200000, 3000000, 5.0, ?, ?, ?)
+    `).run(id, JSON.stringify(CORE_RECIPES), hash, now);
 
     save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(id);
   }
@@ -313,7 +381,7 @@ async function getStoreState(storeId) {
       active_buffs: JSON.parse(save.active_buffs || '{}'),
       inventory: JSON.parse(save.inventory || '{}'),
       upgrades: JSON.parse(save.upgrades || '{}'),
-      recipes: JSON.parse(save.recipes || '[]'),
+      recipes: Array.from(new Set([...CORE_RECIPES, ...JSON.parse(save.recipes || '[]')])),
       properties: JSON.parse(save.properties || '{}'),
       decorations: JSON.parse(save.decorations || '[]')
     },
@@ -367,9 +435,14 @@ async function generateOrder(storeId) {
     };
   }
 
-  const unlocked = JSON.parse(save.recipes || '["tra_sua_truyen_thong"]');
-  const availableKeys = Object.keys(RECIPES).filter(k => unlocked.includes(k));
-  const validKeys = availableKeys.length > 0 ? availableKeys : ['tra_sua_truyen_thong'];
+  let unlocked = [];
+  try {
+    unlocked = JSON.parse(save.recipes || '[]');
+  } catch (e) {
+    unlocked = [];
+  }
+  const combinedRecipes = Array.from(new Set([...CORE_RECIPES, ...unlocked]));
+  const validKeys = combinedRecipes.filter(k => !!RECIPES[k]);
 
   // 2. Wave size calculation: 1 to 4 customers per wave
   let waveSize = 1;
@@ -407,15 +480,25 @@ async function generateOrder(storeId) {
       cust = CUSTOMERS.find(c => c.isTiktoker) || CUSTOMERS[3];
     }
 
-    // Customer picks a drink that exists in the store's unlocked menu!
-    const custUnlockedFavs = (cust.fav || []).filter(k => validKeys.includes(k));
+    // 1. Cân bằng tỷ lệ các loại cốt trà của cửa hàng (Mỗi loại cốt trà ~20% cơ hội)
+    const targetTea = TEA_BASES[Math.floor(Math.random() * TEA_BASES.length)];
+    const teaRecipes = validKeys.filter(k => RECIPES[k] && RECIPES[k].tea === targetTea);
+    const custFavsForTea = (cust.fav || []).filter(k => teaRecipes.includes(k));
+
     let selectedKey;
-    if (custUnlockedFavs.length > 0 && Math.random() < 0.75) {
-      selectedKey = custUnlockedFavs[Math.floor(Math.random() * custUnlockedFavs.length)];
+    if (custFavsForTea.length > 0 && Math.random() < 0.70) {
+      // Ưu tiên chọn món yêu thích của NPC thuộc dòng trà này
+      selectedKey = custFavsForTea[Math.floor(Math.random() * custFavsForTea.length)];
+    } else if (teaRecipes.length > 0) {
+      // Chọn ngẫu nhiên công thức có cốt trà được cân bằng
+      selectedKey = teaRecipes[Math.floor(Math.random() * teaRecipes.length)];
     } else {
       selectedKey = validKeys[Math.floor(Math.random() * validKeys.length)];
     }
     const recipe = RECIPES[selectedKey] || RECIPES['tra_sua_truyen_thong'];
+
+    // 2. NPC chọn nhiều loại topping (0 đến 3 topping kết hợp phong phú)
+    const orderToppings = generateCustomerToppings(cust, recipe);
     
     let quote = cust.dialogues[Math.floor(Math.random() * cust.dialogues.length)];
     if (isInvitedTiktoker && i === 0) {
@@ -441,8 +524,16 @@ async function generateOrder(storeId) {
     }
     const expiresAt = now + patienceMs + (i * 7000); // subsequent queue members wait longer
 
-    // Price with tip buff & Pet buffs
+    // Price with multi-toppings, tip buff & Pet buffs
     let price = recipe.basePrice;
+    const baseToppingCount = (recipe.toppings && recipe.toppings.length > 0) ? 1 : 0;
+    const toppingDiff = orderToppings.length - baseToppingCount;
+    if (toppingDiff > 0) {
+      price += toppingDiff * 3000; // Thêm topping: +3.000đ mỗi loại
+    } else if (toppingDiff < 0) {
+      price = Math.max(10000, price - 2000); // Không lấy topping: giảm 2.000đ
+    }
+
     if (cust.tipMult) price = Math.floor(price * cust.tipMult);
     if (activeBuffs.tip_bonus && activeBuffs.tip_bonus > 0) {
       price = Math.floor(price * 1.1); // +10% money
@@ -476,7 +567,7 @@ async function generateOrder(storeId) {
         originalPrice: price,
         discountAmount,
         line,
-        offerToppings: recipe.toppings,
+        offerToppings: orderToppings,
         status: 'pending'
       };
     }
@@ -497,7 +588,7 @@ async function generateOrder(storeId) {
     await db.prepare(`
       INSERT INTO active_orders (id, store_id, recipe_id, customer_name, sugar, ice, toppings, price, original_price, negotiation, created_at, expires_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(orderId, storeId, recipe.id, cust.name, sugar, ice, JSON.stringify(recipe.toppings), price, price, JSON.stringify(negotiation || null), now, expiresAt);
+    `).run(orderId, storeId, recipe.id, cust.name, sugar, ice, JSON.stringify(orderToppings), price, price, JSON.stringify(negotiation || null), now, expiresAt);
 
     orders.push({
       orderId,
@@ -510,7 +601,7 @@ async function generateOrder(storeId) {
       recipeName: recipe.name,
       sugar,
       ice,
-      toppings: recipe.toppings,
+      toppings: orderToppings,
       price,
       originalPrice: price,
       negotiation,

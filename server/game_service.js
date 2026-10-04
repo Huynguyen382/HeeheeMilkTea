@@ -61,7 +61,7 @@ const RECIPES = {
     basePrice: 35000,
     cost: 11000,
     tea: 'olong_nuong',
-    toppings: ['suong_sao', 'tranchau_hoangkim'],
+    toppings: ['suong_sao'],
     desc: 'Trà sao cháy thơm mùi khói mộc mạc hòa quyện thạch sương sáo mềm mướt'
   }
 };

@@ -13,9 +13,9 @@ const handle = (label, fn) => async (req, res) => {
 router.get('/order', authStore, handle('Generate order', req => gameService.generateOrder(req.store.id).then(order => ({ order }))));
 router.post('/serve', authStore, async (req, res) => {
   try {
-    const { orderId, timeTaken, recipeId, sugar, ice } = req.body;
+    const { orderId, timeTaken, recipeId, sugar, ice, toppings } = req.body;
     if (!orderId || !timeTaken || !recipeId || !sugar || !ice) return res.status(400).json({ error: 'Thiếu thông tin đơn hàng' });
-    res.json(await anticheat.validateAndCompleteOrder(req.store.id, orderId, Number(timeTaken), recipeId, sugar, ice));
+    res.json(await anticheat.validateAndCompleteOrder(req.store.id, orderId, Number(timeTaken), recipeId, sugar, ice, toppings));
   } catch (err) { console.error('Serve order error:', err); res.status(500).json({ error: err.message }); }
 });
 router.post('/snack-decision', authStore, handle('Snack decision', req => gameService.handleSnackDecision(req.store.id, !!req.body.accept)));
