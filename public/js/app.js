@@ -1344,11 +1344,42 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
-    // Sound Toggle
-    document.getElementById('nav-sound').addEventListener('click', () => {
-      const isPlaying = sound.toggleBGM();
-      document.getElementById('nav-sound').innerText = isPlaying ? '🎵 Nhạc: Bật' : '🔇 Nhạc: Tắt';
-    });
+    // Sound & Playlist Controller
+    const btnNavSound = document.getElementById('nav-sound');
+    function updateSoundButtonUI(status) {
+      if (!btnNavSound) return;
+      if (status && status.enabled && status.track) {
+        btnNavSound.innerHTML = `🎵 ${status.track.name}`;
+        btnNavSound.style.color = '#50fa7b';
+      } else {
+        btnNavSound.innerHTML = '🔇 Nhạc: Tắt';
+        btnNavSound.style.color = 'var(--text-muted)';
+      }
+    }
+
+    if (btnNavSound) {
+      const initialTrack = sound.getCurrentTrack();
+      if (sound.bgmEnabled && initialTrack) {
+        updateSoundButtonUI({ enabled: true, track: initialTrack });
+      } else {
+        updateSoundButtonUI({ enabled: false, track: null });
+      }
+
+      sound.setTrackChangeCallback((newTrack) => {
+        updateSoundButtonUI({ enabled: true, track: newTrack });
+        showToast(`🎶 Đang phát: ${newTrack.icon} ${newTrack.name} (${newTrack.style})`, 3000);
+      });
+
+      btnNavSound.addEventListener('click', () => {
+        const result = sound.cycleBGM();
+        updateSoundButtonUI(result);
+        if (result.enabled && result.track) {
+          showToast(`🎵 Đổi bài: ${result.track.icon} ${result.track.name} (${result.track.style})`, 3000);
+        } else {
+          showToast('🔇 Đã tắt nhạc nền.', 2000);
+        }
+      });
+    }
 
     // --- 7. PET SYSTEM & THIEF ENCOUNTER MECHANICS ---
     function checkThiefEncounter() {
