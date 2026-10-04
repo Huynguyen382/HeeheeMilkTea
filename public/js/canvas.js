@@ -1309,7 +1309,7 @@ class GameCanvas {
   }
 
   // Standard Pixel Art Head & Expressive Anime Pixel Face
-  drawOrganicHead(ctx, cx, cy, rx, ry, skinColor, blushColor, isBlinking, eyeColor = '#1a1016', isHappy = false) {
+  drawOrganicHead(ctx, cx, cy, rx, ry, skinColor, blushColor, isBlinking, eyeColor = '#1a1016', isHappy = false, browColor = null) {
     const px = Math.round(cx);
     const py = Math.round(cy);
     const w = Math.round(rx * 2);
@@ -1318,9 +1318,10 @@ class GameCanvas {
     const top = py - Math.floor(h / 2);
 
     const baseSkin = skinColor || '#ffe0bd';
+    const isTanned = (baseSkin === '#e0a96d' || baseSkin === '#d49b61');
     const outlineColor = '#3a1e28'; // Warm dark outline
-    const shadowSkin = '#e8a882';   // Warm peach chin/neck shadow
-    const highlightSkin = '#fff6ee'; // Soft forehead / cheek light
+    const shadowSkin = isTanned ? '#b87333' : '#e8a882';   // Warm chin/neck shadow
+    const highlightSkin = isTanned ? '#f5c699' : '#fff6ee'; // Soft forehead / cheek light
 
     // 1. Pixel Art Head Silhouette & Outline
     this.drawPixel(ctx, left + 3, top, w - 6, 1, outlineColor);
@@ -1362,11 +1363,14 @@ class GameCanvas {
       this.drawPixel(ctx, left + w - 4, py + 3, 2, 1, blush);
     }
 
-    // 5. Expressive Pixel Eyes
+    // 5. Expressive Pixel Eyes & Eyebrows
     const eyeSpacing = Math.round(rx * 0.44);
     const eyeY = py - 1;
     const leftEyeX = px - eyeSpacing - 2;
     const rightEyeX = px + eyeSpacing - 1;
+
+    // Eyebrow color determination
+    const defaultBrow = browColor || (isTanned ? '#2d3436' : (eyeColor === '#dfe6e9' ? '#8c7b75' : (eyeColor === '#0984e3' ? '#c2921a' : '#3e271a')));
 
     if (isHappy) {
       // Joyful curved anime eyes: ^ ^ with happy eyelashes
@@ -1378,6 +1382,12 @@ class GameCanvas {
       };
       drawHappyEye(leftEyeX);
       drawHappyEye(rightEyeX);
+
+      // Cheerful high arched eyebrows
+      this.drawPixel(ctx, leftEyeX, eyeY - 4, 3, 1, defaultBrow);
+      this.drawPixel(ctx, leftEyeX + 3, eyeY - 3, 1, 1, defaultBrow);
+      this.drawPixel(ctx, rightEyeX + 1, eyeY - 4, 3, 1, defaultBrow);
+      this.drawPixel(ctx, rightEyeX, eyeY - 3, 1, 1, defaultBrow);
     } else if (isBlinking) {
       // Resting blink: sweet closed lash line _ _
       this.drawPixel(ctx, leftEyeX, eyeY + 1, 4, 1, '#1e1018');
@@ -1386,6 +1396,10 @@ class GameCanvas {
       this.drawPixel(ctx, rightEyeX, eyeY + 1, 4, 1, '#1e1018');
       this.drawPixel(ctx, rightEyeX + 3, eyeY, 1, 1, '#1e1018');
       this.drawPixel(ctx, rightEyeX + 4, eyeY - 1, 1, 1, '#1e1018');
+
+      // Relaxed gentle eyebrows
+      this.drawPixel(ctx, leftEyeX, eyeY - 3, 3, 1, defaultBrow);
+      this.drawPixel(ctx, rightEyeX + 1, eyeY - 3, 3, 1, defaultBrow);
     } else {
       // High-End Anime Pixel Eyes with 2-tone Iris & Dual Specular Catchlights
       const drawStandardEye = (ex) => {
@@ -1409,9 +1423,11 @@ class GameCanvas {
       drawStandardEye(leftEyeX);
       drawStandardEye(rightEyeX);
 
-      // Delicate expressive pixel eyebrows
-      this.drawPixel(ctx, leftEyeX, eyeY - 3, 3, 1, '#4a2818');
-      this.drawPixel(ctx, rightEyeX + 1, eyeY - 3, 3, 1, '#4a2818');
+      // Delicate expressive pixel eyebrows with outer taper
+      this.drawPixel(ctx, leftEyeX, eyeY - 3, 3, 1, defaultBrow);
+      this.drawPixel(ctx, leftEyeX + 3, eyeY - 4, 1, 1, defaultBrow);
+      this.drawPixel(ctx, rightEyeX + 1, eyeY - 3, 3, 1, defaultBrow);
+      this.drawPixel(ctx, rightEyeX - 1, eyeY - 4, 1, 1, defaultBrow);
     }
 
     // 6. Cute Pixel Nose & Smiling Cupid's Bow Mouth
@@ -1425,6 +1441,52 @@ class GameCanvas {
       this.drawPixel(ctx, px - 1, py + 4, 2, 1, '#a33045');
       this.drawPixel(ctx, px + 1, py + 4, 1, 1, '#d63031');
       this.drawPixel(ctx, px, py + 4, 1, 1, '#ff7675'); // Lip center tone
+    }
+  }
+
+  // Standard Pixel Art Neck Pillar connecting head to torso
+  drawNeck(ctx, cx, y, w = 5, h = 4, skinColor = '#ffe0bd', shadowColor = null) {
+    const nx = Math.round(cx - Math.floor(w / 2));
+    const ny = Math.round(y);
+    const baseSkin = skinColor || '#ffe0bd';
+    const isTanned = (baseSkin === '#e0a96d' || baseSkin === '#d49b61');
+    const shadow = shadowColor || (isTanned ? '#b87333' : '#e8a882');
+
+    // Neck column
+    this.drawPixel(ctx, nx, ny, w, h, baseSkin);
+    // Shadow under the jawline
+    this.drawPixel(ctx, nx, ny, w, 2, shadow);
+    // Dark outline on sides of neck for clear silhouette
+    this.drawPixel(ctx, nx - 1, ny + 1, 1, h - 1, '#3a1e28');
+    this.drawPixel(ctx, nx + w, ny + 1, 1, h - 1, '#3a1e28');
+    // Collarbone notch / throat contour
+    this.drawPixel(ctx, Math.round(cx), ny + h - 1, 1, 1, shadow);
+  }
+
+  // Standard Pixel Art Hand (with palm, fingers, knuckles, grip)
+  drawHand(ctx, x, y, skinColor = '#ffe0bd', pose = 'relaxed') {
+    const hx = Math.round(x);
+    const hy = Math.round(y);
+    const baseSkin = skinColor || '#ffe0bd';
+    const isTanned = (baseSkin === '#e0a96d' || baseSkin === '#d49b61');
+    const shadowSkin = isTanned ? '#b87333' : '#e8a882';
+
+    if (pose === 'grip' || pose === 'fist') {
+      // 3x3 curled grip hand around handle/object
+      this.drawPixel(ctx, hx, hy, 3, 3, baseSkin);
+      this.drawPixel(ctx, hx, hy + 2, 3, 1, shadowSkin); // finger creases
+      this.drawPixel(ctx, hx, hy, 1, 2, shadowSkin);     // thumb knuckle
+      this.drawPixel(ctx, hx + 1, hy, 1, 1, '#ffffff');  // knuckle highlight
+    } else if (pose === 'peace' || pose === 'v') {
+      this.drawPixel(ctx, hx, hy + 2, 3, 2, baseSkin);
+      this.drawPixel(ctx, hx, hy, 1, 2, baseSkin); // index finger
+      this.drawPixel(ctx, hx + 2, hy, 1, 2, baseSkin); // middle finger
+    } else {
+      // Relaxed anime hand
+      this.drawPixel(ctx, hx, hy, 3, 3, baseSkin);
+      this.drawPixel(ctx, hx + 1, hy + 3, 2, 1, baseSkin); // fingers
+      this.drawPixel(ctx, hx + 2, hy + 1, 1, 2, shadowSkin); // palm shadow
+      this.drawPixel(ctx, hx + 1, hy + 1, 1, 1, '#ffffff'); // skin glint
     }
   }
 
@@ -1738,25 +1800,43 @@ class GameCanvas {
         this.drawPixel(ctx, x + 8, y + 13, 2, 2, '#c23616'); // Ribbon tails
         this.drawPixel(ctx, x + 10, y + 13, 2, 2, '#c23616');
 
-        // 6. Back Hair Dome (Rich Chocolate Brown)
+        // 6. Neck Pillar connecting chin to collar
+        this.drawNeck(ctx, x + 10, y + 4, 5, 4, '#ffe0bd', '#e8a882');
+
+        // 7. Arms & Cute Pixel Hands (White puffed sleeves, bare forearms)
+        // Left arm holding backpack strap
+        this.drawPixel(ctx, x - 1, y + 8, 3, 5, '#ffffff');
+        this.drawPixel(ctx, x - 1, y + 13, 3, 1, '#1e3799'); // Navy cuff
+        this.drawPixel(ctx, x - 1, y + 14, 2, 4, '#ffe0bd'); // Bare skin forearm
+        this.drawHand(ctx, x - 1, y + 18, '#ffe0bd', 'grip');
+        // Right arm
+        this.drawPixel(ctx, x + 16, y + 8, 3, 5, '#ffffff');
+        this.drawPixel(ctx, x + 16, y + 13, 3, 1, '#1e3799'); // Navy cuff
+        this.drawPixel(ctx, x + 17, y + 14, 2, 4, '#ffe0bd');
+        this.drawHand(ctx, x + 16, y + 18, '#ffe0bd', 'relaxed');
+
+        // 8. Back Hair Dome (Rich Chocolate Brown)
         this.drawPixel(ctx, x + 3, y - 9, 14, 8, '#2c1e13');
         this.drawPixel(ctx, x + 2, y - 7, 16, 6, '#2c1e13');
 
-        // 7. Pixel Anime Head & Expressive Face (Warm Chocolate Eyes)
-        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 123, 123, 0.45)', isBlinking, '#5d3a1a', isHappy);
+        // 9. Pixel Anime Head & Expressive Face (Warm Chocolate Eyes & Styled Brows)
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 123, 123, 0.45)', isBlinking, '#5d3a1a', isHappy, '#3e271a');
 
-        // 8. Layered Bangs & Side Locks
+        // 10. Layered Bangs & Side Locks framing face
         this.drawPixel(ctx, x + 4, y - 6, 12, 3, '#3e271a');
         this.drawPixel(ctx, x + 4, y - 3, 3, 3, '#2c1e13'); // Left fringe
         this.drawPixel(ctx, x + 12, y - 3, 3, 3, '#2c1e13'); // Right fringe
         this.drawPixel(ctx, x + 8, y - 4, 2, 2, '#3e271a'); // Center parting strand
+        // Side locks framing cheeks
+        this.drawPixel(ctx, x + 3, y - 2, 2, 7, '#2c1e13');
+        this.drawPixel(ctx, x + 15, y - 2, 2, 7, '#2c1e13');
         this.drawHairGloss(ctx, x + 10, y - 5, 0.9);
 
         // Gold Star Hairpin on Bangs
         this.drawPixel(ctx, x + 5, y - 6, 2, 2, '#f1c40f');
         this.drawPixel(ctx, x + 6, y - 6, 1, 1, '#ffffff');
 
-        // 9. Bouncy Twin Pigtails with Crimson Silk Ribbons
+        // 11. Bouncy Twin Pigtails with Crimson Silk Ribbons
         const pTailSway = Math.round(Math.sin(this.tick * 0.25) * 2);
         // Left Pigtail
         this.drawPixel(ctx, x + 1, y - 7, 3, 3, '#e84118'); // Left Red Ribbon
@@ -1767,7 +1847,7 @@ class GameCanvas {
         this.drawPixel(ctx, x + 17 + pTailSway, y - 5, 3, 8, '#2c1e13');
         this.drawPixel(ctx, x + 18 + pTailSway, y + 3, 2, 5, '#3e271a');
 
-        // 10. Pastel Pink School Backpack with Swinging Boba Charm
+        // 12. Pastel Pink School Backpack with Swinging Boba Charm
         this.drawPixel(ctx, x - 4, y + 9, 6, 13, '#ff9ff3');
         this.drawPixel(ctx, x - 4, y + 9, 1, 13, '#f368e0'); // Backpack shadow
         this.drawPixel(ctx, x - 3, y + 12, 4, 5, '#f368e0'); // Pocket flap
@@ -1814,38 +1894,52 @@ class GameCanvas {
         this.drawPixel(ctx, x + 9, y + 12, 3, 1, '#ecf0f1'); // Silver tie bar
         this.drawPixel(ctx, x + 10, y + 19, 1, 1, '#962d22'); // Pointed tie tip
 
-        // 5. Head & Styled Side-Part Pompadour
+        // 5. Neck Pillar connecting chin to shirt collar
+        this.drawNeck(ctx, x + 10, y + 4, 5, 4, '#ffe0bd', '#e8a882');
+
+        // 6. Arms & Hands (Dress shirt sleeves, white cuffs, smartwatch & briefcase grip)
+        // Left arm
+        this.drawPixel(ctx, x - 1, y + 8, 3, 8, '#74b9ff');
+        this.drawPixel(ctx, x - 1, y + 16, 3, 1, '#ffffff'); // White cuff
+        this.drawPixel(ctx, x - 1, y + 17, 3, 2, '#00cec9'); // OLED Smartwatch
+        this.drawPixel(ctx, x, y + 17, 1, 1, '#ff7675');    // Activity ring
+        this.drawHand(ctx, x - 1, y + 19, '#ffe0bd', 'relaxed');
+        // Right arm
+        this.drawPixel(ctx, x + 16, y + 8, 3, 6, '#74b9ff');
+        this.drawPixel(ctx, x + 16, y + 14, 3, 1, '#ffffff'); // White cuff
+        this.drawHand(ctx, x + 18, y + 14, '#ffe0bd', 'grip'); // Hand firmly gripping briefcase handle!
+
+        // 7. Executive Leather Briefcase in Hand
+        this.drawPixel(ctx, x + 17, y + 17, 6, 8, '#4a2e18');
+        this.drawPixel(ctx, x + 18, y + 18, 4, 6, '#5d3a1a');
+        this.drawPixel(ctx, x + 19, y + 15, 2, 2, '#d35400'); // Briefcase handle
+        this.drawPixel(ctx, x + 18, y + 20, 1, 1, '#f1c40f'); // Brass locks
+        this.drawPixel(ctx, x + 21, y + 20, 1, 1, '#f1c40f');
+
+        // 8. Head & Styled Side-Part Pompadour
         this.drawPixel(ctx, x + 3, y - 9, 14, 7, '#1e1e1e');
         this.drawPixel(ctx, x + 2, y - 7, 16, 5, '#1e1e1e');
-        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 150, 150, 0.25)', isBlinking, '#2c3e50', isHappy);
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 150, 150, 0.25)', isBlinking, '#2c3e50', isHappy, '#2d3436');
+        // Sideburns
+        this.drawPixel(ctx, x + 2, y - 2, 2, 4, '#1e1e1e');
+        this.drawPixel(ctx, x + 16, y - 2, 2, 4, '#1e1e1e');
         // Modern side-part bangs with gloss
         this.drawPixel(ctx, x + 4, y - 6, 9, 2, '#2d3436');
         this.drawPixel(ctx, x + 5, y - 5, 6, 1, '#353b48');
         this.drawHairGloss(ctx, x + 10, y - 6, 0.7);
 
-        // 6. Tortoiseshell Spectacles with Cyan Lens Reflections
+        // 9. Tortoiseshell Spectacles with Cyan Lens Reflections
         this.drawPixel(ctx, x + 5, y - 2, 4, 3, '#5d3a1a');
         this.drawPixel(ctx, x + 11, y - 2, 4, 3, '#5d3a1a');
         this.drawPixel(ctx, x + 9, y - 2, 2, 1, '#5d3a1a'); // Bridge
         this.drawPixel(ctx, x + 6, y - 2, 1, 1, '#81ecec'); // Cyan reflection glint
         this.drawPixel(ctx, x + 12, y - 2, 1, 1, '#81ecec');
 
-        // 7. Company ID Card on Navy Lanyard
+        // 10. Company ID Card on Navy Lanyard
         this.drawPixel(ctx, x + 8, y + 9, 1, 8, '#0984e3'); // Lanyard cord
         this.drawPixel(ctx, x + 7, y + 17, 3, 4, '#ffffff'); // ID Badge
         this.drawPixel(ctx, x + 8, y + 18, 1, 1, '#3498db'); // Mini photo
         this.drawPixel(ctx, x + 7, y + 20, 3, 1, '#2c3e50'); // Barcode line
-
-        // 8. OLED Smartwatch with Fitness Rings on Right Wrist
-        this.drawPixel(ctx, x + 1, y + 17, 3, 2, '#00cec9');
-        this.drawPixel(ctx, x + 2, y + 17, 1, 1, '#ff7675'); // Activity ring
-
-        // 9. Executive Leather Briefcase in Hand
-        this.drawPixel(ctx, x + 17, y + 17, 6, 8, '#4a2e18');
-        this.drawPixel(ctx, x + 18, y + 18, 4, 6, '#5d3a1a');
-        this.drawPixel(ctx, x + 19, y + 15, 2, 2, '#d35400'); // Briefcase handle
-        this.drawPixel(ctx, x + 18, y + 20, 1, 1, '#f1c40f'); // Brass locks
-        this.drawPixel(ctx, x + 21, y + 20, 1, 1, '#f1c40f');
         break;
       }
 
@@ -1889,21 +1983,19 @@ class GameCanvas {
         this.drawPixel(ctx, x + 10, y + 7, 2, 2, '#2f3640');
         this.drawPixel(ctx, x + 12, y + 8, 2, 1, '#2f3640');
 
-        // 4. Head, Traditional Low Hair Bun & Pearl Jewelry
-        this.drawPixel(ctx, x + 3, y - 8, 14, 7, '#1e1e1e');
-        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 123, 123, 0.4)', isBlinking, '#2c1e13', isHappy);
-        // Low hair bun
-        this.drawPixel(ctx, x + 15, y - 2, 4, 6, '#1e1e1e');
-        this.drawPixel(ctx, x + 16, y - 1, 2, 4, '#2d3436');
-        this.drawPixel(ctx, x + 17, y - 3, 3, 1, '#dfe6e9'); // Silver hairpin
-        this.drawPixel(ctx, x + 2, y, 1, 2, '#ffffff'); // Pearl earring
+        // 4. Neck Pillar connecting chin to collar
+        this.drawNeck(ctx, x + 10, y + 4, 5, 4, '#ffe0bd', '#e8a882');
 
-        // 5. Authentic Woven Conical Hat (Nón Lá) slung on back with Pink Silk Ribbon
-        this.drawPixel(ctx, x - 5, y + 5, 7, 15, '#f5cd79');
-        this.drawPixel(ctx, x - 4, y + 7, 5, 11, '#e5ba65');
-        this.drawPixel(ctx, x - 3, y + 9, 3, 7, '#d4a046');
-        this.drawPixel(ctx, x + 1, y + 11, 2, 7, '#ff7675'); // Dangling pink silk ribbon
-        this.drawPixel(ctx, x + 2, y + 17, 1, 3, '#e84118');
+        // 5. Arms & Hands (Silk bà ba sleeves, jade bangle & carrying lotus basket)
+        // Left arm
+        this.drawPixel(ctx, x - 1, y + 8, 3, 8, '#f1c40f');
+        this.drawPixel(ctx, x - 1, y + 16, 3, 1, '#d4ac0d'); // Sleeve cuff
+        this.drawPixel(ctx, x - 1, y + 17, 3, 1, '#2ecc71'); // Jade bangle
+        this.drawHand(ctx, x - 1, y + 18, '#ffe0bd', 'relaxed');
+        // Right arm carrying lotus basket
+        this.drawPixel(ctx, x + 16, y + 8, 3, 6, '#f1c40f');
+        this.drawPixel(ctx, x + 16, y + 14, 3, 1, '#d4ac0d');
+        this.drawHand(ctx, x + 17, y + 14, '#ffe0bd', 'grip'); // Firmly gripping basket handle
 
         // 6. Bamboo Basket with Fresh Lotus Blossoms & Foliage
         this.drawPixel(ctx, x + 16, y + 15, 8, 8, '#d35400');
@@ -1913,6 +2005,24 @@ class GameCanvas {
         this.drawPixel(ctx, x + 19, y + 14, 1, 1, '#f1c40f'); // Golden pistil
         this.drawPixel(ctx, x + 21, y + 13, 3, 3, '#ff9ff3'); // Lotus bud
         this.drawPixel(ctx, x + 18, y + 16, 3, 1, '#2ecc71'); // Green leaf
+
+        // 7. Head, Traditional Low Hair Bun & Pearl Jewelry
+        this.drawPixel(ctx, x + 3, y - 8, 14, 7, '#1e1e1e');
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 123, 123, 0.4)', isBlinking, '#2c1e13', isHappy, '#2c1e13');
+        // Side strands framing face
+        this.drawPixel(ctx, x + 3, y - 2, 2, 6, '#1e1e1e');
+        // Low hair bun
+        this.drawPixel(ctx, x + 15, y - 2, 4, 6, '#1e1e1e');
+        this.drawPixel(ctx, x + 16, y - 1, 2, 4, '#2d3436');
+        this.drawPixel(ctx, x + 17, y - 3, 3, 1, '#dfe6e9'); // Silver hairpin
+        this.drawPixel(ctx, x + 2, y, 1, 2, '#ffffff'); // Pearl earring
+
+        // 8. Authentic Woven Conical Hat (Nón Lá) slung on back with Pink Silk Ribbon
+        this.drawPixel(ctx, x - 5, y + 5, 7, 15, '#f5cd79');
+        this.drawPixel(ctx, x - 4, y + 7, 5, 11, '#e5ba65');
+        this.drawPixel(ctx, x - 3, y + 9, 3, 7, '#d4a046');
+        this.drawPixel(ctx, x + 1, y + 11, 2, 7, '#ff7675'); // Dangling pink silk ribbon
+        this.drawPixel(ctx, x + 2, y + 17, 1, 3, '#e84118');
         break;
       }
 
@@ -1949,10 +2059,36 @@ class GameCanvas {
         this.drawPixel(ctx, x + 8, y + 9, 4, 1, '#dfe6e9');
         this.drawPixel(ctx, x + 9, y + 10, 2, 1, '#dfe6e9');
 
-        // 3. Platinum-Blonde Wolf-Cut Hair with Dip-Dyed Pink Tips
+        // 3. Neck Pillar connecting chin to hoodie
+        this.drawNeck(ctx, x + 10, y + 4, 5, 4, '#ffe0bd', '#e8a882');
+
+        // 4. Arms & Hands (Ombre hoodie sleeves, pink cuffs, gimbal phone stabilizer grip)
+        // Left arm in pouch
+        this.drawPixel(ctx, x - 1, y + 8, 3, 9, '#a29bfe');
+        this.drawPixel(ctx, x - 1, y + 17, 3, 2, '#fd79a8'); // Cuff
+        this.drawHand(ctx, x + 1, y + 19, '#ffe0bd', 'grip');
+        // Right arm holding gimbal
+        this.drawPixel(ctx, x + 16, y + 8, 3, 7, '#a29bfe');
+        this.drawPixel(ctx, x + 16, y + 15, 3, 2, '#fd79a8');
+        this.drawHand(ctx, x + 17, y + 17, '#ffe0bd', 'grip'); // Gripping gimbal handle!
+
+        // 5. Smartphone on Mini Gimbal Stabilizer with Flashing "● REC" Dot
+        this.drawPixel(ctx, x + 17, y + 10, 6, 9, '#1e272e'); // Phone body
+        this.drawPixel(ctx, x + 18, y + 11, 4, 7, '#74b9ff'); // Camera viewfinder screen
+        this.drawPixel(ctx, x + 18, y + 19, 2, 3, '#636e72'); // Gimbal handle
+        if ((this.tick % 30) < 15) {
+          this.drawPixel(ctx, x + 19, y + 12, 2, 1, '#ff4757'); // Pulsing RED recording light
+        }
+
+        // 6. Platinum-Blonde Wolf-Cut Hair with Dip-Dyed Pink Tips
         this.drawPixel(ctx, x + 3, y - 9, 14, 7, '#dfe6e9');
         this.drawPixel(ctx, x + 2, y - 7, 16, 5, '#dfe6e9');
-        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 118, 117, 0.4)', isBlinking, '#2d3436', isHappy);
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 7, '#ffe0bd', 'rgba(255, 118, 117, 0.4)', isBlinking, '#2d3436', isHappy, '#b2bec3');
+        // Side locks framing face with dip-dyed pink tips
+        this.drawPixel(ctx, x + 2, y - 4, 2, 5, '#dfe6e9');
+        this.drawPixel(ctx, x + 2, y + 1, 2, 2, '#fd79a8');
+        this.drawPixel(ctx, x + 16, y - 4, 2, 5, '#dfe6e9');
+        this.drawPixel(ctx, x + 16, y + 1, 2, 2, '#fd79a8');
         // Spiky fringe bangs & dip-dyed pink tips
         this.drawPixel(ctx, x + 2, y - 11, 4, 3, '#fd79a8');
         this.drawPixel(ctx, x + 10, y - 11, 4, 3, '#fd79a8');
@@ -1961,7 +2097,7 @@ class GameCanvas {
         this.drawPixel(ctx, x + 11, y - 4, 2, 2, '#fd79a8'); // Pink tip on right bang
         this.drawHairGloss(ctx, x + 10, y - 5, 0.8);
 
-        // 4. Cat-Ear RGB Gamer Headset with Cycling LEDs
+        // 7. Cat-Ear RGB Gamer Headset with Cycling LEDs
         const rgbColors = ['#00cec9', '#fd79a8', '#fdcb6e', '#a29bfe'];
         const rgbCur = rgbColors[Math.floor(this.tick * 0.1) % 4];
         this.drawPixel(ctx, x + 4, y - 10, 12, 2, '#2d3436'); // Headband
@@ -1975,14 +2111,6 @@ class GameCanvas {
         this.drawPixel(ctx, x + 17, y - 2, 1, 3, rgbCur);
         this.drawPixel(ctx, x + 15, y - 12, 3, 3, '#2d3436');
         this.drawPixel(ctx, x + 16, y - 11, 1, 1, rgbCur);
-
-        // 5. Smartphone on Mini Gimbal Stabilizer with Flashing "● REC" Dot
-        this.drawPixel(ctx, x + 17, y + 10, 6, 9, '#1e272e'); // Phone body
-        this.drawPixel(ctx, x + 18, y + 11, 4, 7, '#74b9ff'); // Camera viewfinder screen
-        this.drawPixel(ctx, x + 18, y + 19, 2, 3, '#636e72'); // Gimbal handle
-        if ((this.tick % 30) < 15) {
-          this.drawPixel(ctx, x + 19, y + 12, 2, 1, '#ff4757'); // Pulsing RED recording light
-        }
         break;
       }
 
@@ -2008,14 +2136,28 @@ class GameCanvas {
         this.drawPixel(ctx, x - 1, y + 14, 3, 2, '#f5f6fa');
         this.drawPixel(ctx, x + 16, y + 14, 3, 2, '#f5f6fa');
 
-        // 3. Thermal Insulated Delivery Backpack with Boba Emblem
+        // 3. Neck Pillar connecting chin to collar
+        this.drawNeck(ctx, x + 10, y + 4, 5, 4, '#ffe0bd', '#e8a882');
+
+        // 4. Arms & Gloved Hands (Windbreaker sleeves, 3M stripes, driving gloves holding phone)
+        // Left arm
+        this.drawPixel(ctx, x - 1, y + 8, 3, 8, '#00b894');
+        this.drawPixel(ctx, x - 1, y + 12, 3, 1, '#f5f6fa'); // Silver reflective stripe
+        this.drawPixel(ctx, x - 1, y + 16, 3, 3, '#1e272e'); // Black driving glove
+        this.drawPixel(ctx, x - 1, y + 19, 2, 2, '#f1c40f'); // Dangling motorbike keys
+        // Right arm holding GPS phone
+        this.drawPixel(ctx, x + 16, y + 8, 3, 6, '#00b894');
+        this.drawPixel(ctx, x + 16, y + 11, 3, 1, '#f5f6fa');
+        this.drawPixel(ctx, x + 16, y + 14, 3, 4, '#1e272e'); // Gloved hand holding phone
+
+        // 5. Thermal Insulated Delivery Backpack with Boba Emblem
         this.drawPixel(ctx, x - 6, y + 5, 8, 17, '#00a885');
         this.drawPixel(ctx, x - 6, y + 5, 1, 17, '#00796b');
         this.drawPixel(ctx, x - 4, y + 9, 4, 5, '#ffffff'); // Square white patch
         this.drawPixel(ctx, x - 3, y + 10, 2, 3, '#e17055'); // Boba cup logo
         this.drawPixel(ctx, x - 3, y + 10, 1, 1, '#ffffff'); // Straw
 
-        // 4. Delivery Helmet with Tinted Visor & Visor Glint
+        // 6. Delivery Helmet with Tinted Visor & Visor Glint
         this.drawPixel(ctx, x + 2, y - 11, 16, 8, '#00a885');
         this.drawPixel(ctx, x + 4, y - 13, 12, 3, '#00b894');
         this.drawPixel(ctx, x + 5, y - 14, 10, 1, '#55efc4'); // Specular gloss on helmet
@@ -2024,10 +2166,10 @@ class GameCanvas {
         this.drawPixel(ctx, x + 6, y - 4, 6, 1, '#55efc4'); // Cyan curved reflection glint
         this.drawPixel(ctx, x + 5, y - 1, 1, 4, '#2d3436'); // Nylon chin strap
 
-        // Head inside helmet
-        this.drawOrganicHead(ctx, x + 10, y - 2, 6, 6, '#ffe0bd', null, isBlinking, '#2c3e50', isHappy);
+        // Head inside helmet with focused shipper eyes
+        this.drawOrganicHead(ctx, x + 10, y - 2, 6, 6, '#ffe0bd', null, isBlinking, '#2c3e50', isHappy, '#2c3e50');
 
-        // 5. Handheld GPS Navigation Phone with Route & Blinking Destination Pin
+        // 7. Handheld GPS Navigation Phone with Route & Blinking Destination Pin
         this.drawPixel(ctx, x + 16, y + 12, 6, 9, '#2d3436');
         this.drawPixel(ctx, x + 17, y + 13, 4, 7, '#000000'); // Screen
         this.drawPixel(ctx, x + 18, y + 14, 1, 4, '#0984e3'); // Blue GPS route
@@ -2079,16 +2221,29 @@ class GameCanvas {
         this.drawPixel(ctx, x + 12, y + 12, 2, 2, '#f5cd79');
         this.drawPixel(ctx, x + 12, y + 16, 2, 2, '#f5cd79');
 
-        // 4. Head & Wise Aged Face
-        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#ffe0bd', 'rgba(255, 170, 150, 0.22)', isBlinking, '#2c3e50', isHappy);
+        // 4. Neck Pillar connecting chin to high collar
+        this.drawNeck(ctx, x + 10, y + 4, 5, 4, '#ffe0bd', '#e8a882');
 
-        // 5. Traditional Multi-Layered Black Khăn Đóng (headwrap)
+        // 5. Arms & Scholarly Hands (Flowing sapphire sleeves with gold borders, birdcage string & fan grip)
+        // Left arm holding birdcage string
+        this.drawPixel(ctx, x - 1, y + 7, 4, 11, '#1e3799');
+        this.drawPixel(ctx, x - 1, y + 18, 4, 2, '#f1c40f'); // Gold brocade border
+        this.drawHand(ctx, x - 2, y + 19, '#ffe0bd', 'grip');
+        // Right arm holding calligraphy fan
+        this.drawPixel(ctx, x + 16, y + 7, 4, 9, '#1e3799');
+        this.drawPixel(ctx, x + 16, y + 16, 4, 2, '#f1c40f');
+        this.drawHand(ctx, x + 17 + pFan, y + 16, '#ffe0bd', 'grip'); // Gripping fan handle!
+
+        // 6. Head & Wise Aged Face with Silver Eyebrows
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#ffe0bd', 'rgba(255, 170, 150, 0.22)', isBlinking, '#2c3e50', isHappy, '#dcdde1');
+
+        // 7. Traditional Multi-Layered Black Khăn Đóng (headwrap)
         this.drawPixel(ctx, x + 3, y - 9, 14, 4, '#111111');
         this.drawPixel(ctx, x + 4, y - 10, 12, 2, '#1e272e');
         this.drawPixel(ctx, x + 5, y - 8, 10, 1, '#485460'); // Fabric fold highlight
         this.drawPixel(ctx, x + 6, y - 10, 8, 1, '#636e72');
 
-        // 6. Flowing Long White Silver Beard Cascading over Chest
+        // 8. Flowing Long White Silver Beard Cascading over Chest
         this.drawPixel(ctx, x + 7 + pBeard, y + 4, 6, 6, '#ffffff');
         this.drawPixel(ctx, x + 8 + pBeard, y + 10, 4, 7, '#f5f6fa');
         this.drawPixel(ctx, x + 9 + pBeard, y + 17, 2, 5, '#dcdde1');
@@ -2096,7 +2251,7 @@ class GameCanvas {
         this.drawPixel(ctx, x + 8 + pBeard, y + 6, 1, 8, '#d2dae2');
         this.drawPixel(ctx, x + 11 + pBeard, y + 7, 1, 6, '#d2dae2');
 
-        // 7. Calligraphy Bamboo Fan with dangling Red Silk Tassel Waving
+        // 9. Calligraphy Bamboo Fan with dangling Red Silk Tassel Waving
         this.drawPixel(ctx, x + 18 + pFan, y + 12, 6, 7, '#f5deb3');
         this.drawPixel(ctx, x + 19 + pFan, y + 13, 4, 5, '#ffeaa7');
         this.drawPixel(ctx, x + 20 + pFan, y + 14, 2, 3, '#2d3436'); // Ink character "Phúc"
@@ -2105,12 +2260,12 @@ class GameCanvas {
         this.drawPixel(ctx, x + 17 + pFan, y + 20, 1, 4, '#e74c3c');
         this.drawPixel(ctx, x + 16 + pFan, y + 24, 3, 2, '#c0392b');
 
-        // 8. Shimmering Jade Prayer Beads on Wrist
+        // 10. Shimmering Jade Prayer Beads on Wrist
         this.drawPixel(ctx, x + 15, y + 18, 2, 2, '#00b894');
         this.drawPixel(ctx, x + 16, y + 19, 2, 2, '#55efc4');
         this.drawPixel(ctx, x + 17, y + 18, 2, 2, '#00b894');
 
-        // 9. Bamboo Birdcage with chirping Yellow Canary
+        // 11. Bamboo Birdcage with chirping Yellow Canary
         this.drawPixel(ctx, x - 7, y + 9, 8, 1, '#cd853f'); // Top bar
         this.drawPixel(ctx, x - 7, y + 9, 1, 14, '#cd853f'); // Left rib
         this.drawPixel(ctx, x - 3, y + 9, 1, 14, '#cd853f'); // Mid rib
@@ -2143,9 +2298,9 @@ class GameCanvas {
         this.drawPixel(ctx, x + 10, y + 40 - pBob, 7, 1, '#ffffff');
         this.drawPixel(ctx, x + 13, y + 37 - pBob, 2, 1, '#2f3542');
 
-        // 3. Broad Muscular Tanned Torso & Arms
-        this.drawPixel(ctx, x - 2, y + 8, 4, 10, '#d49b61'); // Left deltoid/arm
-        this.drawPixel(ctx, x + 18, y + 8, 4, 10, '#d49b61'); // Right deltoid/arm
+        // 3. Broad Muscular Tanned Torso
+        this.drawPixel(ctx, x - 2, y + 8, 4, 8, '#d49b61'); // Left deltoid
+        this.drawPixel(ctx, x + 18, y + 8, 4, 7, '#d49b61'); // Right deltoid
 
         // 4. Deep Crimson Muscle Cut-off Tank Top
         this.drawPixel(ctx, x + 2, y + 5, 16, 19, '#962d22'); // Tank outline
@@ -2160,23 +2315,20 @@ class GameCanvas {
         this.drawPixel(ctx, x - 3, y + 7, 3, 11, '#ffffff');
         this.drawPixel(ctx, x - 3, y + 17, 3, 2, '#dfe4ea'); // Towel fringe
 
-        // 5. Head & Confident Handsome Expression
-        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#e0a96d', 'rgba(230, 100, 100, 0.25)', isBlinking, '#111', isHappy);
+        // 5. Muscular Tanned Neck Pillar
+        this.drawNeck(ctx, x + 10, y + 4, 6, 4, '#e0a96d', '#b87333');
 
-        // Modern Undercut Fade Hairstyle
-        this.drawPixel(ctx, x + 4, y - 10, 12, 4, '#1e272c');
-        this.drawPixel(ctx, x + 3, y - 8, 14, 3, '#2f3542');
-
-        // White Performance Sweat Headband with Crimson Logo
-        this.drawPixel(ctx, x + 3, y - 6, 14, 3, '#ffffff');
-        this.drawPixel(ctx, x + 9, y - 5, 2, 1, '#ff4757'); // Brand emblem
-
-        // 6. Smartwatch on Wrist with Live Heart Rate Monitor (♥ 115 bpm)
-        this.drawPixel(ctx, x - 4, y + 16, 4, 5, '#1e272e');
-        this.drawPixel(ctx, x - 3, y + 17, 2, 3, '#000000');
+        // 6. Muscular Arms & Gym Gloved Hands (Biceps, smartwatch & shaker bottle grip)
+        // Left arm
+        this.drawPixel(ctx, x - 3, y + 15, 3, 4, '#e0a96d'); // Forearm
+        this.drawPixel(ctx, x - 4, y + 18, 4, 2, '#1e272e'); // Smartwatch band
         if ((this.tick % 16) < 8) {
           this.drawPixel(ctx, x - 3, y + 18, 2, 1, '#ff4757'); // Pulsing heart pixel
         }
+        this.drawHand(ctx, x - 3, y + 19, '#2d3436', 'fist'); // Black gym glove
+        // Right arm holding protein shaker
+        this.drawPixel(ctx, x + 18, y + 14, 3, 4, '#e0a96d');
+        this.drawHand(ctx, x + 18, y + 17, '#2d3436', 'grip'); // Glove firmly gripping shaker bottle!
 
         // 7. Translucent Protein Shaker Bottle with Neon Cap & Graduation Ticks
         this.drawPixel(ctx, x + 19, y + 14, 6, 11, '#ffffff');
@@ -2186,6 +2338,17 @@ class GameCanvas {
         this.drawPixel(ctx, x + 23, y + 21, 1, 1, '#ffffff');
         this.drawPixel(ctx, x + 19, y + 12, 6, 3, '#ff793f'); // Neon orange flip cap
         this.drawPixel(ctx, x + 20, y + 11, 2, 2, '#e67e22');
+
+        // 8. Head & Confident Handsome Expression
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#e0a96d', 'rgba(230, 100, 100, 0.25)', isBlinking, '#111', isHappy, '#1e272c');
+
+        // Modern Undercut Fade Hairstyle
+        this.drawPixel(ctx, x + 4, y - 10, 12, 4, '#1e272c');
+        this.drawPixel(ctx, x + 3, y - 8, 14, 3, '#2f3542');
+
+        // White Performance Sweat Headband with Crimson Logo
+        this.drawPixel(ctx, x + 3, y - 6, 14, 3, '#ffffff');
+        this.drawPixel(ctx, x + 9, y - 5, 2, 1, '#ff4757'); // Brand emblem
         break;
       }
 
@@ -2226,15 +2389,31 @@ class GameCanvas {
         this.drawPixel(ctx, x + 4, y + 8, 3, 4, '#fed330'); // Scarf hanging tail
         this.drawPixel(ctx, x + 4, y + 12, 3, 1, '#f7d794'); // Fringe tassels
 
-        // 6. Duy Head (Left)
-        this.drawOrganicHead(ctx, x + 5, y - 2, 6, 7, '#ffe0bd', null, isBlinking, '#2c1e13', isHappy);
+        // 6. Necks for both Duy & Linh
+        this.drawNeck(ctx, x + 5, y + 4, 4, 4, '#ffe0bd', '#e8a882');
+        this.drawNeck(ctx, x + 15, y + 4, 4, 4, '#ffe0bd', '#e8a882');
+
+        // 7. Arms & Interlocking Sweet Hands
+        // Duy's left arm
+        this.drawPixel(ctx, x - 3, y + 8, 3, 8, '#ffeaa7');
+        this.drawPixel(ctx, x - 3, y + 16, 3, 2, '#f6e58d');
+        this.drawHand(ctx, x - 3, y + 18, '#ffe0bd', 'relaxed');
+        // Duy & Linh interlocking hands in the center
+        this.drawHand(ctx, x + 8, y + 17, '#ffe0bd', 'grip');
+        // Linh's right arm holding the shared jumbo boba cup
+        this.drawPixel(ctx, x + 20, y + 8, 3, 8, '#ff7675');
+        this.drawPixel(ctx, x + 20, y + 16, 3, 2, '#ee5253');
+        this.drawHand(ctx, x + 12, y + 18, '#ffe0bd', 'grip');
+
+        // 8. Duy Head (Left)
+        this.drawOrganicHead(ctx, x + 5, y - 2, 6, 7, '#ffe0bd', null, isBlinking, '#2c1e13', isHappy, '#3d312a');
         // Duy's fluffy hair
         this.drawPixel(ctx, x + 1, y - 9, 8, 4, '#3d312a');
         this.drawPixel(ctx, x, y - 7, 9, 3, '#2c1e13');
         this.drawHairGloss(ctx, x + 5, y - 7, 0.7);
 
-        // 7. Linh Head (Right)
-        this.drawOrganicHead(ctx, x + 15, y - 2, 6, 7, '#ffe0bd', 'rgba(255, 107, 129, 0.45)', isBlinking, '#2c1e13', isHappy);
+        // 9. Linh Head (Right)
+        this.drawOrganicHead(ctx, x + 15, y - 2, 6, 7, '#ffe0bd', 'rgba(255, 107, 129, 0.45)', isBlinking, '#2c1e13', isHappy, '#2c1e13');
         // Linh's hair & twin buns
         this.drawPixel(ctx, x + 11, y - 9, 8, 4, '#2c1e13');
         this.drawPixel(ctx, x + 10, y - 7, 9, 3, '#1a1008');
@@ -2244,7 +2423,7 @@ class GameCanvas {
         this.drawPixel(ctx, x + 18, y - 8, 1, 1, '#2ecc71'); // Cherry green stem
         this.drawHairGloss(ctx, x + 15, y - 7, 0.7);
 
-        // 8. Joint Jumbo Boba Cup with 2 Crossing Heart Straws
+        // 10. Joint Jumbo Boba Cup with 2 Crossing Heart Straws
         this.drawPixel(ctx, x + 7, y + 15, 6, 9, '#ffffff');
         this.drawPixel(ctx, x + 8, y + 17, 4, 6, '#d2a679'); // Boba liquid
         this.drawPixel(ctx, x + 8, y + 21, 2, 2, '#2c1e13'); // Pearls
@@ -2296,30 +2475,44 @@ class GameCanvas {
         this.drawPixel(ctx, x + 7, y + 8, 6, 4, '#e0a96d');
         this.drawPixel(ctx, x + 9, y + 9, 2, 3, '#d49b61');
 
-        // 4. Head & Deep Sky Blue Anime Eyes
-        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#ffe0bd', 'rgba(255, 140, 100, 0.3)', isBlinking, '#0984e3', isHappy);
+        // 4. Tanned Neck Pillar
+        this.drawNeck(ctx, x + 10, y + 4, 5, 4, '#ffe0bd', '#d49b61');
 
-        // 5. Sun-Bleached Wavy Golden Blonde Surfer Hair
+        // 5. Arms & Hands (Short Aloha sleeves, bare tanned forearms, camera adjustment)
+        // Left arm
+        this.drawPixel(ctx, x - 1, y + 8, 3, 5, '#f1c40f');
+        this.drawPixel(ctx, x - 1, y + 13, 3, 5, '#e0a96d'); // Tanned forearm
+        this.drawPixel(ctx, x - 1, y + 17, 3, 1, '#8b5a2b'); // Leather bracelet
+        this.drawHand(ctx, x - 1, y + 18, '#ffe0bd', 'relaxed');
+        // Right arm holding camera
+        this.drawPixel(ctx, x + 16, y + 8, 3, 5, '#f1c40f');
+        this.drawPixel(ctx, x + 16, y + 13, 3, 4, '#e0a96d');
+        this.drawHand(ctx, x + 14, y + 15, '#ffe0bd', 'grip'); // Adjusting camera top plate
+
+        // 6. Head & Deep Sky Blue Anime Eyes with Golden Surfer Brows
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#ffe0bd', 'rgba(255, 140, 100, 0.3)', isBlinking, '#0984e3', isHappy, '#d4ac0d');
+
+        // 7. Sun-Bleached Wavy Golden Blonde Surfer Hair
         this.drawPixel(ctx, x + 3, y - 6, 14, 4, '#f9ca24');
         this.drawPixel(ctx, x + 2, y - 4, 3, 5, '#e1b12c');
         this.drawPixel(ctx, x + 15, y - 4, 3, 5, '#e1b12c');
         this.drawHairGloss(ctx, x + 10, y - 5, 0.85);
 
-        // 6. Panama Woven Straw Sun Hat with Navy & Crimson Ribbons
+        // 8. Panama Woven Straw Sun Hat with Navy & Crimson Ribbons
         this.drawPixel(ctx, x, y - 8, 20, 2, '#f5deb3');
         this.drawPixel(ctx, x + 4, y - 13, 12, 5, '#f5deb3');
         this.drawPixel(ctx, x + 5, y - 14, 10, 1, '#ffeaa7'); // Crown highlight
         this.drawPixel(ctx, x + 4, y - 9, 12, 1, '#e74c3c'); // Crimson ribbon
         this.drawPixel(ctx, x + 4, y - 10, 12, 1, '#1e3799'); // Navy ribbon
 
-        // 7. Polarized Aviator Sunglasses with Gold Frame & Cyan Mirror Glint
+        // 9. Polarized Aviator Sunglasses with Gold Frame & Cyan Mirror Glint
         this.drawPixel(ctx, x + 5, y - 4, 10, 1, '#f1c40f'); // Golden double bridge
         this.drawPixel(ctx, x + 6, y - 3, 3, 2, '#00d2d3');
         this.drawPixel(ctx, x + 7, y - 3, 1, 1, '#ffffff'); // Glass glint
         this.drawPixel(ctx, x + 11, y - 3, 3, 2, '#00d2d3');
         this.drawPixel(ctx, x + 12, y - 3, 1, 1, '#ffffff');
 
-        // 8. Vintage 35mm Rangefinder Camera Slung with Leather Strap
+        // 10. Vintage 35mm Rangefinder Camera Slung with Leather Strap
         this.drawPixel(ctx, x + 5, y + 9, 1, 6, '#8b5a2b'); // Saddle leather strap
         this.drawPixel(ctx, x + 14, y + 9, 1, 6, '#8b5a2b');
         this.drawPixel(ctx, x + 5, y + 14, 10, 7, '#2d3436'); // Camera body
@@ -2376,17 +2569,31 @@ class GameCanvas {
         this.drawPixel(ctx, x + 3, y + 10, 2, 2, '#2f3640');
         this.drawPixel(ctx, x + 3, y + 13, 2, 2, '#2f3640');
 
-        // 6. Head & Radiant Sun-Kissed Smiling Face with Rosy Cheeks
-        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#ffe0bd', 'rgba(255, 107, 129, 0.4)', isBlinking, '#2c1e13', true);
+        // 6. Neck Pillar
+        this.drawNeck(ctx, x + 10, y + 4, 5, 4, '#ffe0bd', '#e8a882');
 
-        // 7. Weathered Olive-Green Floppy Bucket Hat (Nón Tai Bèo) with Lucky Clover
+        // 7. Arms & Hardworking Hands (Striped sleeves, protective blue sun sleeves & lottery board grip)
+        // Left arm holding lucky red ticket
+        this.drawPixel(ctx, x - 1, y + 8, 3, 5, '#f1c40f');
+        this.drawPixel(ctx, x - 1, y + 13, 3, 4, '#74b9ff'); // Sun sleeve
+        this.drawHand(ctx, x - 1, y + 17, '#ffe0bd', 'grip');
+        this.drawPixel(ctx, x - 2, y + 16, 2, 3, '#ff7675'); // Lucky red lottery ticket
+        // Right arm holding lottery display board
+        this.drawPixel(ctx, x + 16, y + 8, 3, 5, '#f1c40f');
+        this.drawPixel(ctx, x + 16, y + 13, 3, 3, '#74b9ff');
+        this.drawHand(ctx, x + 16, y + 16, '#ffe0bd', 'grip'); // Gripping lottery board!
+
+        // 8. Head & Radiant Sun-Kissed Smiling Face with Rosy Cheeks
+        this.drawOrganicHead(ctx, x + 10, y - 2, 7, 8, '#ffe0bd', 'rgba(255, 107, 129, 0.4)', isBlinking, '#2c1e13', true, '#2c1e13');
+
+        // 9. Weathered Olive-Green Floppy Bucket Hat (Nón Tai Bèo) with Lucky Clover
         this.drawPixel(ctx, x, y - 7, 20, 2, '#556b2f');
         this.drawPixel(ctx, x + 4, y - 13, 12, 6, '#556b2f');
         this.drawPixel(ctx, x + 5, y - 14, 10, 1, '#6b8e23'); // Crown highlight
         this.drawPixel(ctx, x + 13, y - 10, 2, 2, '#2ecc71'); // Lucky 4-leaf clover pin
         this.drawPixel(ctx, x + 14, y - 10, 1, 1, '#55efc4');
 
-        // 8. Clear Acrylic Display Board with Lucky Rainbow Lottery Tickets
+        // 10. Clear Acrylic Display Board with Lucky Rainbow Lottery Tickets
         this.drawPixel(ctx, x + 16, y + 12, 8, 14, '#dfe4ea');
         this.drawPixel(ctx, x + 17, y + 13, 6, 12, '#ffffff');
         this.drawPixel(ctx, x + 17, y + 14, 6, 2, '#ff7675'); // Red tickets
@@ -2394,7 +2601,7 @@ class GameCanvas {
         this.drawPixel(ctx, x + 17, y + 20, 6, 2, '#74b9ff'); // Blue tickets
         this.drawPixel(ctx, x + 16, y + 18, 8, 1, '#e74c3c'); // Rubber band
 
-        // 9. Adorable Golden Puppy (Chú Cún Vàng) Faithful at Her Feet
+        // 11. Adorable Golden Puppy (Chú Cún Vàng) Faithful at Her Feet
         const pupTail = Math.round(Math.sin(this.tick * 0.3));
         this.drawPixel(ctx, x - 9, y + 31, 7, 6, '#f39c12'); // Puppy body
         this.drawPixel(ctx, x - 10, y + 27, 5, 5, '#f39c12'); // Puppy head
@@ -2431,7 +2638,7 @@ class GameCanvas {
       this.drawFabricFinish(ctx, x + 9.5, y + 7, 17, 18);
     }
 
-    // --- CUSTOMER DRINKING HAPPINESS EFFECTS (Floating Hearts & Sipping Boba) ---
+    // --- CUSTOMER DRINKING HAPPINESS EFFECTS (Floating Hearts, Hands Holding Boba & Sipping) ---
     if (isHappy) {
       // Floating Pixel Pink Hearts drifting above head
       for (let h = 0; h < 3; h++) {
@@ -2445,15 +2652,28 @@ class GameCanvas {
         this.drawPixel(ctx, hX, hY + 5, 1, 1, '#ff7675');
       }
 
-      // Customer holds mini boba cup and sips with straw
+      // Customer holds mini boba cup with both hands and sips with straw
       const cupX = x + 7;
       const cupY = y + 8;
+      const drinkSkin = (type === 6 || type === 8) ? '#e0a96d' : '#ffe0bd';
+
+      // Forearms bringing hands up to cup
+      this.drawPixel(ctx, cupX - 4, cupY + 6, 3, 2, drinkSkin);
+      this.drawPixel(ctx, cupX + 8, cupY + 6, 3, 2, drinkSkin);
+
+      // Mini boba cup body & milk tea
       this.drawPixel(ctx, cupX, cupY, 7, 10, '#ffffff');
-      this.drawPixel(ctx, cupX + 1, cupY + 3, 5, 6, '#f39c12'); // milk tea
-      this.drawPixel(ctx, cupX + 2, cupY + 7, 3, 2, '#111111'); // boba pearls
+      this.drawPixel(ctx, cupX + 1, cupY, 5, 1, '#dfe4ea'); // Dome lid
+      this.drawPixel(ctx, cupX + 1, cupY + 3, 5, 6, '#f39c12'); // Milk tea
+      this.drawPixel(ctx, cupX + 1, cupY + 3, 1, 6, 'rgba(255, 255, 255, 0.45)'); // Specular gloss strip
+      this.drawPixel(ctx, cupX + 2, cupY + 7, 3, 2, '#111111'); // Boba pearls
       // Pixel straw leading up to mouth
       this.drawPixel(ctx, cupX + 3, cupY - 2, 1, 5, '#e74c3c');
       this.drawPixel(ctx, cupX + 4, cupY - 4, 1, 2, '#e74c3c');
+
+      // Both hands gripping the sides of the boba cup!
+      this.drawHand(ctx, cupX - 2, cupY + 4, drinkSkin, 'grip');
+      this.drawHand(ctx, cupX + 6, cupY + 4, drinkSkin, 'grip');
     }
 
     // --- CUTE PET COMPANION (Mèo Tam Thể hoặc Cún Poodle đi theo khách hàng dẫn đầu) ---
