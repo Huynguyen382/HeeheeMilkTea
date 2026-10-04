@@ -128,7 +128,7 @@ async function acceptPenalty(storeId) {
 }
 
 // Validate order completion against anti-cheat rules
-async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clientRecipeId, clientSugar, clientIce, clientToppings = []) {
+async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clientRecipeId, clientSugar, clientIce, clientToppings = [], pausedTimeMs = 0) {
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
@@ -149,7 +149,9 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   }
 
   const now = Date.now();
-  if (now > order.expires_at) {
+  const safePausedTime = Math.max(0, Math.min(Number(pausedTimeMs || 0), 3600000));
+  const effectiveExpiry = Number(order.expires_at) + safePausedTime + 30000;
+  if (now > effectiveExpiry) {
     await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
     return { success: false, message: 'Đơn hàng đã hết thời gian chờ, khách đã rời đi!' };
   }

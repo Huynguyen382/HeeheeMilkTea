@@ -67,14 +67,15 @@ const API = {
     return await this.request('/game/order');
   },
 
-  async serveOrder(orderId, timeTaken, recipeId, sugar, ice, toppings = []) {
+  async serveOrder(orderId, timeTaken, recipeId, sugar, ice, toppings = [], pausedTimeMs = 0) {
     return await this.request('/game/serve', 'POST', {
       orderId,
       timeTaken,
       recipeId,
       sugar,
       ice,
-      toppings
+      toppings,
+      pausedTimeMs
     });
   },
 

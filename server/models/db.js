@@ -21,9 +21,23 @@ const db = {
       // Ensure BIGINT (int8) is parsed as JavaScript Number
       types.setTypeParser(20, (val) => (val === null ? null : parseInt(val, 10)));
 
+      // Optimized connection pool for free tier scaling
       pgPool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false },
+        // Free tier optimized settings
+        max: process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX) : 10, // Reduced for free tier
+        min: process.env.DB_POOL_MIN ? parseInt(process.env.DB_POOL_MIN) : 2,
+        idleTimeoutMillis: 30000, // Close idle connections after 30s
+        connectionTimeoutMillis: 5000, // Fail fast if can't connect
+        maxUses: 1000, // Recycle connections periodically
+        // Statement timeout for long-running queries (5 seconds)
+        statement_timeout: 5000
+      });
+
+      // Handle pool errors
+      pgPool.on('error', (err) => {
+        console.error('[DB Pool Error]', err.message);
       });
 
       // Test connection
@@ -76,6 +90,8 @@ const db = {
             host_store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
             friend_store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
             collab_date TEXT NOT NULL,
+          status TEXT DEFAULT 'accepted',
+          created_at TEXT,
             UNIQUE(host_store_id, friend_store_id, collab_date)
           );
 
@@ -196,6 +212,8 @@ const db = {
           host_store_id INTEGER NOT NULL,
           friend_store_id INTEGER NOT NULL,
           collab_date TEXT NOT NULL,
+          status TEXT DEFAULT 'accepted',
+          created_at TEXT,
           UNIQUE(host_store_id, friend_store_id, collab_date),
           FOREIGN KEY(host_store_id) REFERENCES stores(id) ON DELETE CASCADE,
           FOREIGN KEY(friend_store_id) REFERENCES stores(id) ON DELETE CASCADE
@@ -229,12 +247,24 @@ const db = {
     }
   },
 
+  // Prepared statement cache for PostgreSQL
+  _statementCache: new Map(),
+  
   async get(sql, ...params) {
     const flatParams = params.flat();
     if (pgPool) {
       const pgSql = toPgSql(sql);
-      const res = await pgPool.query(pgSql, flatParams);
-      return res.rows[0] || null;
+      try {
+        const res = await pgPool.query({
+          text: pgSql,
+          values: flatParams,
+          rowMode: 'array' // Faster for simple queries
+        });
+        return res.rows[0] || null;
+      } catch (err) {
+        console.error('[DB GET Error]', err.message, 'SQL:', pgSql);
+        throw err;
+      }
     } else {
       return sqliteDb.prepare(sql).get(...flatParams) || null;
     }
@@ -244,8 +274,16 @@ const db = {
     const flatParams = params.flat();
     if (pgPool) {
       const pgSql = toPgSql(sql);
-      const res = await pgPool.query(pgSql, flatParams);
-      return res.rows;
+      try {
+        const res = await pgPool.query({
+          text: pgSql,
+          values: flatParams
+        });
+        return res.rows;
+      } catch (err) {
+        console.error('[DB ALL Error]', err.message, 'SQL:', pgSql);
+        throw err;
+      }
     } else {
       return sqliteDb.prepare(sql).all(...flatParams);
     }
@@ -259,17 +297,127 @@ const db = {
       if (isInsert && !pgSql.toUpperCase().includes('RETURNING')) {
         pgSql += ' RETURNING *';
       }
-      const res = await pgPool.query(pgSql, flatParams);
-      const row = res.rows && res.rows[0];
-      const rowId = row ? (row.id ?? row.store_id ?? Object.values(row)[0] ?? null) : null;
-      return {
-        lastInsertRowid: rowId,
-        changes: res.rowCount,
-        rowCount: res.rowCount
-      };
+      
+      try {
+        const res = await pgPool.query({
+          text: pgSql,
+          values: flatParams
+        });
+        const row = res.rows && res.rows[0];
+        const rowId = row ? (row.id ?? row.store_id ?? Object.values(row)[0] ?? null) : null;
+        return {
+          lastInsertRowid: rowId,
+          changes: res.rowCount,
+          rowCount: res.rowCount
+        };
+      } catch (err) {
+        console.error('[DB RUN Error]', err.message, 'SQL:', pgSql);
+        throw err;
+      }
     } else {
       return sqliteDb.prepare(sql).run(...flatParams);
     }
+  },
+
+  // Batch operations for performance
+  async batch(queries) {
+    if (!Array.isArray(queries) || queries.length === 0) {
+      return [];
+    }
+    
+    if (pgPool) {
+      const client = await pgPool.connect();
+      try {
+        await client.query('BEGIN');
+        const results = [];
+        for (const { sql, params } of queries) {
+          const pgSql = toPgSql(sql);
+          const res = await client.query(pgSql, params || []);
+          results.push(res);
+        }
+        await client.query('COMMIT');
+        return results;
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    } else {
+      // SQLite batch
+      const results = [];
+      for (const { sql, params } of queries) {
+        const stmt = sqliteDb.prepare(sql);
+        results.push(stmt.run(...(params || [])));
+      }
+      return results;
+    }
+  },
+
+  // Get store state with all related data in one query (optimized)
+  async getStoreStateOptimized(storeId) {
+    if (!storeId) return null;
+    const id = Number(storeId);
+    if (isNaN(id) || id <= 0) return null;
+
+    if (pgPool) {
+      try {
+        const query = `
+          SELECT 
+            s.*,
+            gs.*,
+            ds.*
+          FROM stores s
+          LEFT JOIN game_saves gs ON gs.store_id = s.id
+          LEFT JOIN daily_stats ds ON ds.store_id = s.id AND ds.real_date = CURRENT_DATE
+          WHERE s.id = $1
+        `;
+        
+        const res = await pgPool.query(query, [id]);
+        if (res.rows.length === 0) return null;
+        
+        const row = res.rows[0];
+        return {
+          store_id: row.id,
+          username: row.username || row.store_name,
+          store_code: row.store_code,
+          store_name: row.store_name,
+          session_token: row.session_token,
+          // Parse JSON fields with defaults
+          save: {
+            store_id: row.store_id,
+            chapter: row.chapter || 1,
+            day_in_game: row.day_in_game || 1,
+            money: row.money || 200000,
+            debt_remaining: row.debt_remaining || 3000000,
+            reputation: row.reputation || 5.0,
+            is_jailed: row.is_jailed || 0,
+            jail_reason: row.jail_reason,
+            rest_until_ts: row.rest_until_ts || 0,
+            active_buffs: row.active_buffs ? JSON.parse(row.active_buffs) : {},
+            inventory: row.inventory ? JSON.parse(row.inventory) : {},
+            upgrades: row.upgrades ? JSON.parse(row.upgrades) : {},
+            recipes: row.recipes ? JSON.parse(row.recipes) : [],
+            properties: row.properties ? JSON.parse(row.properties) : {},
+            decorations: row.decorations ? JSON.parse(row.decorations) : []
+          },
+          daily_stats: row.ds_id ? {
+            id: row.ds_id,
+            store_id: row.store_id,
+            real_date: row.real_date,
+            earned_today: row.earned_today || 0,
+            collab_count: row.collab_count || 0,
+            is_overloaded: row.is_overloaded || 0,
+            last_active_ts: row.last_active_ts || 0
+          } : null
+        };
+      } catch (err) {
+        console.error('[Optimized Store State Error]', err.message);
+        // Fall back to regular method
+        return null;
+      }
+    }
+    return null; // Fallback to regular method for SQLite
   },
 
   async exec(sql) {
@@ -286,6 +434,69 @@ const db = {
       all: (...params) => db.all(sql, ...params),
       run: (...params) => db.run(sql, ...params)
     };
+  },
+
+  // Database health and monitoring
+  async healthCheck() {
+    if (pgPool) {
+      try {
+        const start = Date.now();
+        await pgPool.query('SELECT 1');
+        const latency = Date.now() - start;
+        
+        return {
+          status: 'healthy',
+          type: 'postgresql',
+          latency_ms: latency,
+          pool: {
+            totalCount: pgPool.totalCount || 0,
+            idleCount: pgPool.idleCount || 0,
+            waitingCount: pgPool.waitingCount || 0
+          }
+        };
+      } catch (err) {
+        return {
+          status: 'unhealthy',
+          type: 'postgresql',
+          error: err.message
+        };
+      }
+    } else {
+      try {
+        const start = Date.now();
+        sqliteDb.prepare('SELECT 1').get();
+        const latency = Date.now() - start;
+        
+        return {
+          status: 'healthy',
+          type: 'sqlite',
+          latency_ms: latency
+        };
+      } catch (err) {
+        return {
+          status: 'unhealthy',
+          type: 'sqlite',
+          error: err.message
+        };
+      }
+    }
+  },
+
+  // Get connection pool statistics
+  getPoolStats() {
+    if (pgPool) {
+      return {
+        total: pgPool.totalCount || 0,
+        idle: pgPool.idleCount || 0,
+        waiting: pgPool.waitingCount || 0
+      };
+    }
+    return null;
+  },
+
+  // Clear statement cache
+  clearCache() {
+    this._statementCache.clear();
   }
 };
 

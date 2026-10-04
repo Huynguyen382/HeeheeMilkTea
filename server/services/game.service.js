@@ -1,9 +1,18 @@
 const crypto = require('crypto');
 const db = require('../models/db');
 const anticheat = require('./anticheat.service');
+const { gameCache } = require('./cache.service');
 const { LOCATIONS, DECORATIONS } = require('../data/locations');
 const { INGREDIENTS, DEFAULT_INVENTORY } = require('../data/ingredients');
 const NEGOTIATION = require('../data/negotiation');
+const cpuOptimizer = require('./cpu-optimizer');
+
+// Use optimized utilities
+const fastRandom = cpuOptimizer.fastRandom;
+const jsonOptimizer = cpuOptimizer.jsonOptimizer;
+const idGenerator = cpuOptimizer.idGenerator;
+const probabilityDistributions = cpuOptimizer.probabilityDistributions;
+const orderPool = cpuOptimizer.orderPool;
 
 // Drink Recipes Database
 const RECIPES = {
@@ -93,24 +102,23 @@ const CORE_RECIPES = [
 
 // Helper to generate realistic multi-topping combinations for customers
 function generateCustomerToppings(cust, recipe) {
-  const roll = Math.random();
-  let toppingCount = 1;
-
+  // Track performance
+  cpuOptimizer.performance.mathRandomCalls++;
+  
+  let toppingCount;
+  
   if (cust && cust.type === 5) {
-    // Bác Ba Cụ Đồ thích thanh đạm: 40% không topping, 60% 1 topping
-    toppingCount = roll < 0.40 ? 0 : 1;
+    // Bác Ba Cụ Đồ thích thanh đạm
+    toppingCount = probabilityDistributions.getToppingCount(fastRandom, 'elder');
   } else if (cust && cust.isTiktoker) {
-    // Tú TikToker chuộng visual hoành tráng nhiều tầng: 45% 2 topping, 55% 3 topping
-    toppingCount = roll < 0.45 ? 2 : 3;
+    // Tú TikToker chuộng visual hoành tráng nhiều tầng
+    toppingCount = probabilityDistributions.getToppingCount(fastRandom, 'tiktoker');
   } else if (cust && cust.type === 6) {
-    // Chú Quân Gymer siết cơ: 30% không topping, 50% 1 topping, 20% 2 topping
-    toppingCount = roll < 0.30 ? 0 : (roll < 0.80 ? 1 : 2);
+    // Chú Quân Gymer siết cơ
+    toppingCount = probabilityDistributions.getToppingCount(fastRandom, 'gymmer');
   } else {
-    // Phổ thông: 12% không topping, 43% 1 topping, 35% 2 topping, 10% 3 topping
-    if (roll < 0.12) toppingCount = 0;
-    else if (roll < 0.55) toppingCount = 1;
-    else if (roll < 0.90) toppingCount = 2;
-    else toppingCount = 3;
+    // Phổ thông
+    toppingCount = probabilityDistributions.getToppingCount(fastRandom, 'normal');
   }
 
   if (toppingCount === 0) return [];
@@ -124,14 +132,21 @@ function generateCustomerToppings(cust, recipe) {
   }
 
   // Chọn thêm ngẫu nhiên các loại topping khác không trùng lặp
-  const pool = SHELF_TOPPINGS.filter(t => !chosen.includes(t));
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-
-  while (chosen.length < toppingCount && pool.length > 0) {
-    chosen.push(pool.pop());
+  const availableToppings = SHELF_TOPPINGS.filter(t => !chosen.includes(t));
+  const neededCount = toppingCount - chosen.length;
+  
+  if (availableToppings.length > 0 && neededCount > 0) {
+    const shuffled = [...availableToppings];
+    // Simple Fisher-Yates shuffle with fastRandom
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = fastRandom.int(0, i);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
+    // Take first N toppings
+    for (let i = 0; i < Math.min(neededCount, shuffled.length); i++) {
+      chosen.push(shuffled[i]);
+    }
   }
 
   return chosen;
@@ -328,12 +343,37 @@ async function getOrCreateStore(storeName, inputCode) {
   return await getStoreState(store.id);
 }
 
-// Get full state of a store
+// Get full state of a store with caching
 async function getStoreState(storeId) {
   if (!storeId) return null;
   const id = Number(storeId);
   if (isNaN(id) || id <= 0) return null;
 
+  // Try cache first (5 second TTL for fast-changing data)
+  const cacheKey = `store:${id}`;
+  const cached = gameCache.storeState.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // Try optimized query first
+  let optimizedResult = await db.getStoreStateOptimized(id);
+  if (optimizedResult) {
+    // Add static data from cache
+    const staticData = getStaticData();
+    optimizedResult.recipes_db = staticData.recipes_db;
+    optimizedResult.customers_db = staticData.customers_db;
+    optimizedResult.locations = staticData.locations;
+    optimizedResult.ingredients = staticData.ingredients;
+    optimizedResult.decorations_db = staticData.decorations_db;
+    optimizedResult.negotiation = staticData.negotiation;
+    
+    // Cache for 5 seconds (reduced for game state that changes frequently)
+    gameCache.storeState.set(cacheKey, optimizedResult, 5000);
+    return optimizedResult;
+  }
+
+  // Fallback to original method if optimized fails
   const store = await db.prepare('SELECT * FROM stores WHERE id = ?').get(id);
   if (!store) return null;
 
@@ -361,8 +401,11 @@ async function getStoreState(storeId) {
 
   const chapter = save ? (save.chapter || 1) : 1;
   const daily = await anticheat.getOrCreateDailyStats(id, chapter);
+  
+  // Get static data from cache
+  const staticData = getStaticData();
 
-  return {
+  const result = {
     store_id: store.id,
     username: store.username || store.store_name,
     store_code: store.store_code,
@@ -396,13 +439,47 @@ async function getStoreState(storeId) {
       decorations: JSON.parse(save.decorations || '[]')
     },
     daily_stats: daily,
+    recipes_db: staticData.recipes_db,
+    customers_db: staticData.customers_db,
+    locations: staticData.locations,
+    ingredients: staticData.ingredients,
+    decorations_db: staticData.decorations_db,
+    negotiation: staticData.negotiation
+  };
+
+  // Cache for 5 seconds
+  gameCache.storeState.set(cacheKey, result, 5000);
+  return result;
+}
+
+// Clear store cache when store data changes
+function invalidateStoreCache(storeId) {
+  if (storeId) {
+    gameCache.storeState.delete(`store:${storeId}`);
+  }
+}
+
+// Cache static data that doesn't change often
+function getStaticData() {
+  const cacheKey = 'static:all';
+  const cached = gameCache.staticData.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  
+  const staticData = {
     recipes_db: RECIPES,
     customers_db: CUSTOMERS,
     locations: LOCATIONS,
     ingredients: INGREDIENTS,
     decorations_db: DECORATIONS,
-    negotiation: NEGOTIATION
+    negotiation: NEGOTIATION,
+    upgrades: UPGRADES
   };
+  
+  // Cache static data for 5 minutes (300000ms)
+  gameCache.staticData.set(cacheKey, staticData, 300000);
+  return staticData;
 }
 
 // Generate new random customer order wave (1 - 4 customers)
@@ -1127,6 +1204,9 @@ async function payDebt(storeId, amount) {
     WHERE store_id = ?
   `).run(newMoney, newDebt, newChapter, hash, new Date().toISOString(), storeId);
 
+  // Invalidate cache
+  invalidateStoreCache(storeId);
+
   return {
     success: true,
     money: newMoney,
@@ -1247,6 +1327,9 @@ async function buyUpgrade(storeId, upgradeId) {
     SET money = ?, upgrades = ?, recipes = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
   `).run(newMoney, JSON.stringify(upgrades), JSON.stringify(recipes), hash, new Date().toISOString(), storeId);
+
+  // Invalidate cache
+  invalidateStoreCache(storeId);
 
   return {
     success: true,
@@ -1505,6 +1588,9 @@ async function endShift(storeId) {
     WHERE store_id = ?
   `).run(nextDay, newMoney, JSON.stringify(activeBuffs), restUntilTs, hash, new Date().toISOString(), storeId);
 
+  // Invalidate cache
+  invalidateStoreCache(storeId);
+
   // Clear any existing active orders so store closes cleanly for the night
   try {
     await db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
@@ -1539,6 +1625,15 @@ async function endShift(storeId) {
   };
 }
 
+// Add cache stats endpoint
+async function getCacheStats() {
+  return {
+    cache: gameCache.getStats(),
+    database: await db.healthCheck(),
+    timestamp: new Date().toISOString()
+  };
+}
+
 module.exports = {
   RECIPES,
   CUSTOMERS,
@@ -1563,5 +1658,7 @@ module.exports = {
   shooThief,
   inviteTiktoker,
   buyIngredients,
-  endShift
+  endShift,
+  getCacheStats,
+  invalidateStoreCache
 };

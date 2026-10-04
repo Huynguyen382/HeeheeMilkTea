@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let restTimerInterval = null;
   let nextOrderTimeout = null;
   let isGamePaused = false;
+  let pauseStartTime = 0;
+  let totalWavePausedTime = 0;
   let orderStartTime = 0;
   
   // Mixing & Workflow Selection State
@@ -59,16 +61,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => { toast.style.display = 'none'; }, duration);
   }
 
-  // Keep the page from scrolling behind an open mobile modal.
-  function syncModalScrollLock() {
-    const modalOpen = [...document.querySelectorAll('.modal-overlay')]
-      .some(modal => getComputedStyle(modal).display !== 'none');
-    document.body.classList.toggle('modal-open', modalOpen);
+  // Centralized Modal & Pause State Controller
+  function isAnyModalOpen() {
+    return [...document.querySelectorAll('.modal-overlay')]
+      .some(modal => modal.id !== 'modal-auth' && getComputedStyle(modal).display !== 'none');
   }
 
-  const modalObserver = new MutationObserver(syncModalScrollLock);
+  function syncGamePauseState() {
+    const modalOpen = isAnyModalOpen();
+    const hasClass = document.body.classList.contains('modal-open');
+    if (hasClass !== modalOpen) {
+      document.body.classList.toggle('modal-open', modalOpen);
+    }
+
+    if (modalOpen) {
+      if (!isGamePaused) {
+        isGamePaused = true;
+        pauseStartTime = Date.now();
+        if (nextOrderTimeout) {
+          clearTimeout(nextOrderTimeout);
+          nextOrderTimeout = null;
+        }
+      }
+    } else {
+      if (isGamePaused) {
+        // If rest overlay is active, startRestCountdown manages its own timer
+        const overlayResting = document.getElementById('overlay-resting');
+        if (overlayResting && getComputedStyle(overlayResting).display !== 'none') {
+          return;
+        }
+
+        if (pauseStartTime > 0) {
+          const pausedDuration = Date.now() - pauseStartTime;
+          if (pausedDuration > 0) {
+            orderStartTime += pausedDuration;
+            totalWavePausedTime += pausedDuration;
+          }
+          pauseStartTime = 0;
+        }
+        isGamePaused = false;
+
+        // If no active customer and queue empty, resume order scheduling
+        if (!currentOrder && (!orderQueue || orderQueue.length === 0)) {
+          scheduleNextOrder(1500);
+        }
+      }
+    }
+  }
+
+  const modalObserver = new MutationObserver(syncGamePauseState);
   modalObserver.observe(document.body, { attributes: true, attributeFilter: ['style', 'class'], subtree: true });
-  syncModalScrollLock();
+  syncGamePauseState();
+
+  // Allow clicking modal backdrop to close non-critical modals
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay && overlay.id !== 'modal-auth' && overlay.id !== 'overlay-resting' && overlay.id !== 'modal-jail') {
+        overlay.style.display = 'none';
+      }
+    });
+  });
 
   // 1. Initialize or Load Store
   async function initStore() {
@@ -583,6 +635,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Wave with 1 to 4 customers
       if (res.order.orders && res.order.orders.length > 0) {
+        totalWavePausedTime = 0;
         orderQueue = res.order.orders;
         canvas.setCustomerQueue(orderQueue);
         startNextOrderInQueue();
@@ -627,9 +680,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (orderTimerInterval) clearInterval(orderTimerInterval);
     orderTimerInterval = setInterval(() => {
+      const timerFill = document.getElementById('order-timer-fill');
+      if (isGamePaused) {
+        if (timerFill) timerFill.style.opacity = '0.5';
+        return;
+      }
+      if (timerFill && timerFill.style.opacity === '0.5') {
+        timerFill.style.opacity = '1';
+      }
+
       elapsed += interval;
       const remainingPct = Math.max(0, 100 - (elapsed / duration) * 100);
-      const timerFill = document.getElementById('order-timer-fill');
       if (timerFill) {
         timerFill.style.width = remainingPct + '%';
         if (remainingPct < 30) {
@@ -1196,7 +1257,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         chosenRecipeId,
         selectedSugar,
         selectedIce,
-        selectedToppings
+        selectedToppings,
+        totalWavePausedTime
       );
 
       if (res && res.isJailed) {
@@ -1691,6 +1753,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- 7. PET SYSTEM & THIEF ENCOUNTER MECHANICS ---
     function checkThiefEncounter() {
+      if (isGamePaused) return;
       if (!storeState || !storeState.save || !storeState.save.upgrades) return;
       const up = storeState.save.upgrades;
       if (!up.active_pet || up.is_pet_stolen) return;
@@ -2579,9 +2642,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!shiftContent || !storeState) return;
 
     // ⏸️ Tạm dừng game khi mở bảng Kết ca
-    isGamePaused = true;
     if (nextOrderTimeout) clearTimeout(nextOrderTimeout);
-    if (orderTimerInterval) clearInterval(orderTimerInterval);
 
     const save = storeState.save || {};
     const daily = storeState.daily_stats || {};

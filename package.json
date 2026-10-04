@@ -5,7 +5,13 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:circuit-breaker": "node server/scripts/test-circuit-breaker.js",
+    "test:load": "node server/scripts/load-test.js http://localhost:3000",
+    "test:load:light": "node server/scripts/load-test.js http://localhost:3000 --light",
+    "test:load:heavy": "node server/scripts/load-test.js http://localhost:3000 --heavy",
+    "test:all": "npm run test:circuit-breaker && echo 'Circuit breaker test passed' && npm run test:load:light && echo 'Load test passed'",
+    "dev": "nodemon server/server.js"
   },
   "engines": {
     "node": ">=22.0.0"
