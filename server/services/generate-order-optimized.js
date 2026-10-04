@@ -238,6 +238,8 @@ async function generateOrderOptimized(db, storeId) {
     orderObj.isShipper = !!cust.isShipper;
     orderObj.recipeId = recipe.id;
     orderObj.recipeName = recipe.name;
+    orderObj.tea = recipe.tea;
+    orderObj.recipeDesc = recipe.desc;
     orderObj.sugar = sugar;
     orderObj.ice = ice;
     orderObj.toppings = orderToppings;

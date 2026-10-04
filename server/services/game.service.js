@@ -24,7 +24,7 @@ const RECIPES = {
     cost: 5000,
     tea: 'den',
     toppings: ['tranchau_den'],
-    desc: 'Cốt trà đen đậm đà, sữa đặc thơm béo, trân châu dẻo quánh'
+    desc: '🍵 Cốt trà: [Trà Đen Đậm] • Cốt trà đen đậm đà hòa quyện sữa đặc béo ngậy, trân châu đen dẻo dai'
   },
   hong_tra_tac: {
     id: 'hong_tra_tac',
@@ -34,7 +34,7 @@ const RECIPES = {
     cost: 4000,
     tea: 'den',
     toppings: [],
-    desc: 'Giải khát thanh mát, vị chua dịu của tắc và xí muội mằn mặn'
+    desc: '🍵 Cốt trà: [Trà Đen Đậm] • Trà đen giải khát thanh mát, vị tắc chua thanh & xí muội mằn mặn'
   },
   tra_thai_xanh: {
     id: 'tra_thai_xanh',
@@ -44,7 +44,7 @@ const RECIPES = {
     cost: 6000,
     tea: 'thai_xanh',
     toppings: ['thach_la_dua'],
-    desc: 'Màu xanh mát mắt, hương hoa lài thơm mát đặc trưng'
+    desc: '🌿 Cốt trà: [Thái Xanh] • Màu xanh mát mắt, hương hoa lài thơm mát nồng nàn cùng thạch lá dứa'
   },
   sua_tuoi_duong_den: {
     id: 'sua_tuoi_duong_den',
@@ -54,7 +54,7 @@ const RECIPES = {
     cost: 8000,
     tea: 'sua_tuoi',
     toppings: ['tranchau_duongden'],
-    desc: 'Đường đen cô đặc sánh mịn quanh thành ly cùng sữa tươi thanh trùng'
+    desc: '🥛 Cốt trà: [Sữa Tươi] • Sữa tươi thanh trùng cùng trân châu nấu đường đen dẻo quánh hot trend'
   },
   tra_dao_cam_sa: {
     id: 'tra_dao_cam_sa',
@@ -64,7 +64,7 @@ const RECIPES = {
     cost: 9000,
     tea: 'lai',
     toppings: ['dao_mieng'],
-    desc: 'Sả tươi đập dập, lát cam vàng óng và những miếng đào giòn tan'
+    desc: '🌸 Cốt trà: [Lục Trà Lài] • Lục trà lài thanh tao, sả đập dập thơm lừng kèm những miếng đào giòn tan'
   },
   tra_olong_nuong: {
     id: 'tra_olong_nuong',
@@ -74,7 +74,7 @@ const RECIPES = {
     cost: 11000,
     tea: 'olong_nuong',
     toppings: ['suong_sao'],
-    desc: 'Trà sao cháy thơm mùi khói mộc mạc hòa quyện thạch sương sáo mềm mướt'
+    desc: '🔥 Cốt trà: [Ô Long Nướng] • Vị khói sao cháy mộc mạc thượng hạng hòa quyện thạch sương sáo mềm mướt'
   }
 };
 
@@ -712,6 +712,8 @@ async function generateOrder(storeId) {
       isShipper: !!cust.isShipper,
       recipeId: recipe.id,
       recipeName: recipe.name,
+      tea: recipe.tea,
+      recipeDesc: recipe.desc,
       sugar,
       ice,
       toppings: orderToppings,

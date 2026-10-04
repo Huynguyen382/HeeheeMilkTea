@@ -883,6 +883,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     suong_sao: '🍮 Sương Sáo'
   };
 
+  const TEA_LABELS = {
+    den: '🍵 Trà Đen Đậm',
+    thai_xanh: '🌿 Thái Xanh',
+    sua_tuoi: '🥛 Sữa Tươi',
+    lai: '🌸 Lục Trà Lài',
+    olong_nuong: '🔥 Ô Long Nướng'
+  };
+
+  const RECIPE_TEA_MAP = {
+    tra_sua_truyen_thong: { teaId: 'den', teaName: 'Trà Đen Đậm', icon: '🍵', btnLabel: 'Trà Đen Đậm' },
+    hong_tra_tac: { teaId: 'den', teaName: 'Trà Đen Đậm', icon: '🍊', btnLabel: 'Trà Đen Đậm' },
+    tra_thai_xanh: { teaId: 'thai_xanh', teaName: 'Thái Xanh', icon: '🌿', btnLabel: 'Thái Xanh' },
+    sua_tuoi_duong_den: { teaId: 'sua_tuoi', teaName: 'Sữa Tươi', icon: '🥛', btnLabel: 'Sữa Tươi' },
+    tra_dao_cam_sa: { teaId: 'lai', teaName: 'Lục Trà Lài', icon: '🌸', btnLabel: 'Lục Trà Lài' },
+    tra_olong_nuong: { teaId: 'olong_nuong', teaName: 'Ô Long Nướng', icon: '🔥', btnLabel: 'Ô Long Nướng' }
+  };
+
   function renderOrderTicket() {
     updateWorkflowButtons();
     if (!currentOrder) {
@@ -893,6 +910,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const orderToppingNames = (currentOrder.toppings && currentOrder.toppings.length > 0)
       ? currentOrder.toppings.map(t => TOPPING_LABELS[t] || t).join(' + ')
       : 'Không lấy topping';
+
+    const teaGuide = RECIPE_TEA_MAP[currentOrder.recipeId] || {
+      teaId: currentOrder.tea || 'den',
+      teaName: currentOrder.tea === 'thai_xanh' ? 'Thái Xanh' : (currentOrder.tea === 'sua_tuoi' ? 'Sữa Tươi' : (currentOrder.tea === 'lai' ? 'Lục Trà Lài' : (currentOrder.tea === 'olong_nuong' ? 'Ô Long Nướng' : 'Trà Đen Đậm'))),
+      icon: '🍵',
+      btnLabel: 'Trà'
+    };
 
     elOrderSection.innerHTML = `
       <div class="order-box">
@@ -905,6 +929,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
         <div style="font-weight: bold; font-size: 1.15rem; color: #8b4513;">
           🍹 ${currentOrder.recipeName}
+        </div>
+        <div style="background: rgba(80, 250, 123, 0.12); border: 1px dashed #50fa7b; border-radius: 6px; padding: 4px 8px; margin: 4px 0 6px 0; font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
+          <span style="color: #ffb86c; font-weight: bold;">🍵 Cốt Trà Cần Chọn:</span>
+          <span style="background: #1c0e1a; border: 1px solid #50fa7b; padding: 2px 7px; border-radius: 4px; font-weight: bold; color: #50fa7b;">
+            ${teaGuide.icon} ${teaGuide.teaName}
+          </span>
         </div>
         <div class="order-specs">
           <span class="spec-badge">Đường: <b>${currentOrder.sugar}</b></span>
@@ -1228,6 +1258,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         ? selectedToppings.map(t => TOPPING_LABELS[t] || t).join(' + ')
         : 'Không lấy topping';
       showToast(`⚠️ Topping chưa đúng! Khách gọi: [${reqNames}]. Bạn đang chọn: [${curNames}].`, 4000);
+      return;
+    }
+
+    // Kiểm tra cốt trà với yêu cầu của món
+    const expectedTea = RECIPE_TEA_MAP[currentOrder.recipeId]?.teaId || currentOrder.tea || 'den';
+    if (selectedTea !== expectedTea) {
+      sound.fail();
+      elBtnServe.disabled = false;
+      const expectedInfo = RECIPE_TEA_MAP[currentOrder.recipeId] || { teaName: 'Trà Đen Đậm', btnLabel: 'Trà Đen Đậm', icon: '🍵' };
+      const curTeaName = TEA_LABELS[selectedTea] || selectedTea;
+      showToast(`⚠️ Cốt trà chưa đúng! Món [${currentOrder.recipeName}] yêu cầu [${expectedInfo.icon} ${expectedInfo.teaName}]. Bạn đang chọn [${curTeaName}]. Hãy bấm chọn lại ở kệ 1!`, 4500);
       return;
     }
 
