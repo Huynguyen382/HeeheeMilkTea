@@ -71,7 +71,9 @@ const db = {
             jail_reason TEXT,
             updated_at TEXT,
             rest_until_ts BIGINT DEFAULT 0,
-            active_buffs TEXT DEFAULT '{}'
+            active_buffs TEXT DEFAULT '{}',
+            properties TEXT DEFAULT '{}',
+            decorations TEXT DEFAULT '[]'
           );
 
           CREATE TABLE IF NOT EXISTS daily_stats (
@@ -259,8 +261,7 @@ const db = {
       try {
         const res = await pgPool.query({
           text: pgSql,
-          values: flatParams,
-          rowMode: 'array' // Faster for simple queries
+          values: flatParams
         });
         return res.rows[0] || null;
       } catch (err) {
@@ -358,68 +359,8 @@ const db = {
 
   // Get store state with all related data in one query (optimized)
   async getStoreStateOptimized(storeId) {
-    if (!storeId) return null;
-    const id = Number(storeId);
-    if (isNaN(id) || id <= 0) return null;
-
-    if (pgPool) {
-      try {
-        const query = `
-          SELECT 
-            s.*,
-            gs.*,
-            ds.*
-          FROM stores s
-          LEFT JOIN game_saves gs ON gs.store_id = s.id
-          LEFT JOIN daily_stats ds ON ds.store_id = s.id AND ds.real_date = CURRENT_DATE
-          WHERE s.id = $1
-        `;
-        
-        const res = await pgPool.query(query, [id]);
-        if (res.rows.length === 0) return null;
-        
-        const row = res.rows[0];
-        return {
-          store_id: row.id,
-          username: row.username || row.store_name,
-          store_code: row.store_code,
-          store_name: row.store_name,
-          session_token: row.session_token,
-          // Parse JSON fields with defaults
-          save: {
-            store_id: row.store_id,
-            chapter: row.chapter || 1,
-            day_in_game: row.day_in_game || 1,
-            money: row.money || 200000,
-            debt_remaining: row.debt_remaining || 3000000,
-            reputation: row.reputation || 5.0,
-            is_jailed: row.is_jailed || 0,
-            jail_reason: row.jail_reason,
-            rest_until_ts: row.rest_until_ts || 0,
-            active_buffs: row.active_buffs ? JSON.parse(row.active_buffs) : {},
-            inventory: row.inventory ? JSON.parse(row.inventory) : {},
-            upgrades: row.upgrades ? JSON.parse(row.upgrades) : {},
-            recipes: row.recipes ? JSON.parse(row.recipes) : [],
-            properties: row.properties ? JSON.parse(row.properties) : {},
-            decorations: row.decorations ? JSON.parse(row.decorations) : []
-          },
-          daily_stats: row.ds_id ? {
-            id: row.ds_id,
-            store_id: row.store_id,
-            real_date: row.real_date,
-            earned_today: row.earned_today || 0,
-            collab_count: row.collab_count || 0,
-            is_overloaded: row.is_overloaded || 0,
-            last_active_ts: row.last_active_ts || 0
-          } : null
-        };
-      } catch (err) {
-        console.error('[Optimized Store State Error]', err.message);
-        // Fall back to regular method
-        return null;
-      }
-    }
-    return null; // Fallback to regular method for SQLite
+    // Return null to let getStoreState use robust individual queries with self-healing & in-memory caching
+    return null;
   },
 
   async exec(sql) {

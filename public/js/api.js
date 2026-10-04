@@ -14,6 +14,10 @@ const API = {
     try {
       const res = await fetch('/api' + endpoint, config);
       const data = await res.json();
+      if (res.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
+        this.token = null;
+        localStorage.removeItem('hyhy_session_token');
+      }
       return data;
     } catch (err) {
       console.error('API Error:', err);

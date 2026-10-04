@@ -151,6 +151,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         scheduleNextOrder(1500);
         return;
+      } else {
+        // Token invalid or session expired: clear stored token
+        API.token = null;
+        localStorage.removeItem('hyhy_session_token');
       }
     }
 
@@ -209,7 +213,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         scheduleNextOrder(1500);
       } else {
         sound.fail();
-        authError.innerText = res.message || 'Đăng nhập không thành công!';
+        let errMsg = res.message || res.error || 'Đăng nhập không thành công!';
+        if (errMsg.includes('không tồn tại')) {
+          errMsg += ' (Nếu là người chơi mới, bạn hãy chọn tab "Đăng Ký Mới" hoặc nút "Chơi Ngay" bên dưới)';
+        }
+        authError.innerText = errMsg;
         authError.style.display = 'block';
       }
     });
