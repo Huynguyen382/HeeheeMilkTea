@@ -256,13 +256,14 @@ class RateLimitService {
    * Check resource-based limits
    */
   checkResourceLimits() {
-    // Check memory usage
+    // Check memory usage relative to container limit (default 512MB on Render free tier)
+    const containerMaxBytes = (parseInt(process.env.MAX_MEMORY_MB) || 512) * 1024 * 1024;
     const memoryUsage = process.memoryUsage();
-    const memoryPercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
+    const memoryPercent = (memoryUsage.rss / containerMaxBytes) * 100;
     
-    if (memoryPercent > 80) {
+    if (memoryPercent > 85) {
       // High memory usage - throttle requests
-      const throttlePercent = Math.min(90, (memoryPercent - 80) * 5); // 0-50% throttle
+      const throttlePercent = Math.min(90, (memoryPercent - 85) * 5); // 0-50% throttle
       if (Math.random() * 100 < throttlePercent) {
         return {
           allowed: false,
@@ -382,20 +383,21 @@ class RateLimitService {
    * Monitor resource usage
    */
   monitorResources() {
+    const containerMaxBytes = (parseInt(process.env.MAX_MEMORY_MB) || 512) * 1024 * 1024;
     const memoryUsage = process.memoryUsage();
     this.resourceUsage = {
-      memory: (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100,
+      memory: (memoryUsage.rss / containerMaxBytes) * 100,
       cpu: 0, // Would need external monitoring
       connections: this.concurrentUsers.size
     };
     
     // Auto-adjust limits based on resource usage
-    if (this.resourceUsage.memory > 70) {
-      // Reduce concurrent user limit when memory is high
-      const reduction = Math.floor((this.resourceUsage.memory - 70) / 10 * this.config.maxConcurrentUsers * 0.1);
+    if (this.resourceUsage.memory > 80) {
+      // Reduce concurrent user limit when memory is high (>80% of container)
+      const reduction = Math.floor((this.resourceUsage.memory - 80) / 10 * this.config.maxConcurrentUsers * 0.1);
       this.config.maxConcurrentUsers = Math.max(100, this.config.maxConcurrentUsers - reduction);
-    } else if (this.resourceUsage.memory < 50 && this.config.maxConcurrentUsers < 300) {
-      // Increase limit when memory is low
+    } else if (this.resourceUsage.memory < 60 && this.config.maxConcurrentUsers < 300) {
+      // Increase limit when memory is normal
       this.config.maxConcurrentUsers = Math.min(300, this.config.maxConcurrentUsers + 10);
     }
   }

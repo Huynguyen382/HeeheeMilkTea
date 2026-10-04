@@ -72,9 +72,10 @@ class MonitoringService {
       const now = Date.now();
       const uptime = process.uptime();
       
-      // System metrics
+      // System metrics (relative to container RAM limit, default 512MB on Render free tier)
+      const containerMaxBytes = (parseInt(process.env.MAX_MEMORY_MB) || 512) * 1024 * 1024;
       const memoryUsage = process.memoryUsage();
-      const memoryPercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
+      const memoryPercent = Math.min(100, (memoryUsage.rss / containerMaxBytes) * 100);
       const cpuUsage = process.cpuUsage();
       
       // Application metrics
@@ -269,24 +270,26 @@ class MonitoringService {
       });
     }
     
-    // Error rate threshold
+    // Error rate threshold (require at least 20 requests to avoid false alarms on startup)
     const errorRate = metrics.application.errorRate;
-    if (errorRate > this.thresholds.errorRate.critical) {
-      alerts.push({
-        level: 'critical',
-        type: 'error_rate',
-        message: `Error rate critical: ${(errorRate * 100).toFixed(1)}%`,
-        value: errorRate,
-        timestamp: now
-      });
-    } else if (errorRate > this.thresholds.errorRate.warning) {
-      alerts.push({
-        level: 'warning',
-        type: 'error_rate',
-        message: `Error rate high: ${(errorRate * 100).toFixed(1)}%`,
-        value: errorRate,
-        timestamp: now
-      });
+    if (this.metrics.requests.total >= 20) {
+      if (errorRate > this.thresholds.errorRate.critical) {
+        alerts.push({
+          level: 'critical',
+          type: 'error_rate',
+          message: `Error rate critical: ${(errorRate * 100).toFixed(1)}%`,
+          value: errorRate,
+          timestamp: now
+        });
+      } else if (errorRate > this.thresholds.errorRate.warning) {
+        alerts.push({
+          level: 'warning',
+          type: 'error_rate',
+          message: `Error rate high: ${(errorRate * 100).toFixed(1)}%`,
+          value: errorRate,
+          timestamp: now
+        });
+      }
     }
     
     // Database connection pool threshold
@@ -619,9 +622,10 @@ function errorTrackingMiddleware(err, req, res, next) {
   next(err);
 }
 
-module.exports = {
-  MonitoringService,
-  monitoringService,
-  monitoringMiddleware,
-  errorTrackingMiddleware
-};
+// Attach helpers directly onto the monitoringService singleton instance
+monitoringService.MonitoringService = MonitoringService;
+monitoringService.monitoringService = monitoringService;
+monitoringService.monitoringMiddleware = monitoringMiddleware;
+monitoringService.errorTrackingMiddleware = errorTrackingMiddleware;
+
+module.exports = monitoringService;

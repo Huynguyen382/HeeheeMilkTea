@@ -208,12 +208,12 @@ class CacheService {
    * Monitor memory usage and evict if needed
    */
   monitorMemory() {
-    const usedMB = process.memoryUsage().heapUsed / (1024 * 1024);
-    const totalMB = process.memoryUsage().heapTotal / (1024 * 1024);
-    const usagePercent = (usedMB / totalMB) * 100;
+    const containerMaxBytes = (parseInt(process.env.MAX_MEMORY_MB) || 512) * 1024 * 1024;
+    const rss = process.memoryUsage().rss;
+    const usagePercent = (rss / containerMaxBytes) * 100;
     
-    // If memory usage is high, clear some cache
-    if (usagePercent > 80) {
+    // If real memory usage is high (>85% of container), clear some cache
+    if (usagePercent > 85) {
       const targetClear = Math.floor(this.cache.size * 0.3); // Clear 30%
       console.log(`[Cache] High memory usage (${usagePercent.toFixed(1)}%), clearing ${targetClear} entries`);
       

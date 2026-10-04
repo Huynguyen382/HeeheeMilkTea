@@ -4,7 +4,8 @@
  * Implements 80% threshold rule for free tier protection
  */
 
-const monitoringService = require('../services/monitoring.service');
+const monitoringModule = require('../services/monitoring.service');
+const monitoringService = monitoringModule.monitoringService || monitoringModule;
 const rateLimitService = require('../services/rate-limit.service');
 const { gameCache } = require('../services/cache.service');
 
