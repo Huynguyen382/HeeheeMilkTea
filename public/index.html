@@ -515,21 +515,39 @@
   <div class="modal-overlay" id="modal-tiktoker">
     <div class="modal-content" style="max-width: 420px;">
       <div class="modal-header">
-        <div class="modal-title" style="color: #ff79c6;">📣 Mời Tú (TikToker Reviewer) Kéo Sao</div>
+        <div class="modal-title" style="color: #ff79c6;">📣 Mời Tú (TikToker Reviewer)</div>
         <button class="btn-close" id="close-tiktoker">&times;</button>
       </div>
       <div style="text-align: center; margin: 8px 0;">
         <span style="font-size: 2.8rem;">📱🎥✨</span>
       </div>
-      <p style="font-size: 1rem; color: var(--milk-cream); line-height: 1.5; margin-bottom: 12px; text-align: center;">
-        Chủ động book lịch <b>Tú (TikToker 500k Followers)</b> đến quán để làm clip review thực tế kéo lại đánh giá cho tiệm!
+      <p style="font-size: 0.95rem; color: var(--milk-cream); line-height: 1.4; margin-bottom: 10px; text-align: center;">
+        Chủ động book lịch <b>Tú (TikToker 500k Followers)</b> ghé quán làm clip review thực tế kéo bão khách và đẩy sao đánh giá!
       </p>
-      <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 0.92rem; line-height: 1.6;">
-        <div style="color: var(--gold); margin-bottom: 4px;">💰 <b>Chi phí PR:</b> 25.000đ</div>
-        <div style="color: #50fa7b; margin-bottom: 4px;">🌟 <b>Phục vụ tốt & đúng giờ:</b> Kéo lại đánh giá quán <b>(+0.4⭐)</b>, nổ tip x2 và kích hoạt <b>Cơn Sốt Viral x2.5 Khách</b> (trong 8 lượt)!</div>
-        <div style="color: #ff5555;">⚠️ <b>Rủi ro:</b> Nếu để trễ giờ hoặc hủy đơn, Tú sẽ bóc phốt phục vụ chậm <b>(-0.35⭐)</b>!</div>
+      
+      <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 0.9rem; line-height: 1.6;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: #8be9fd;">📅 <b>Hạn mức trong ngày:</b></span>
+          <span id="tiktoker-quota-display" style="font-weight: bold; color: #ff79c6;">0/2 lần (Ngày 1)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: var(--gold);">💰 <b>Chi phí book lịch:</b></span>
+          <span id="tiktoker-cost-display" style="font-weight: bold; color: var(--gold);">25.000đ</span>
+        </div>
+        <div id="tiktoker-tier-desc" style="font-size: 0.82rem; color: #bd93f9; margin-bottom: 6px; font-style: italic;">
+          🎁 Ưu đãi trải nghiệm đặc biệt dành cho quán mới!
+        </div>
+        <div style="color: #50fa7b; margin-bottom: 4px;" id="tiktoker-benefit-desc">
+          🌟 <b>Cam kết hoàn vốn 300%:</b> Đợt khách nườm nượp kéo đến liên tục cho đến khi quán kiếm được gấp 3 lần vốn bỏ ra <b>(75.000đ)</b>!
+        </div>
+        <div style="color: #ffb86c; font-size: 0.84rem;">
+          ⭐ Phục vụ Tú đúng giờ nhận thêm <b>+0.40⭐</b> đánh giá uy tín!
+        </div>
+        <div style="color: #ff5555; font-size: 0.82rem; margin-top: 4px;">
+          ⚠️ Rủi ro: Nếu để trễ giờ hoặc hủy đơn, Tú sẽ bóc phốt <b>(-0.35⭐)</b> và khiến tiệm bị flop vắng khách!
+        </div>
       </div>
-      <button class="btn-action-wide" id="btn-confirm-invite-tiktoker" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff; font-weight: bold; width: 100%; font-size: 1.05rem;">🚀 Book Tú TikToker Ghé Quán (25.000đ)</button>
+      <button class="btn-action-wide" id="btn-confirm-invite-tiktoker" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff; font-weight: bold; width: 100%; font-size: 1rem;">🚀 Book Tú TikToker Ghé Quán (25.000đ)</button>
     </div>
   </div>
 

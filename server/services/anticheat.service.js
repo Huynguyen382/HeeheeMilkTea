@@ -180,14 +180,29 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
 
   // 5. Check customer archetype effects (Tú TikToker review & Buff decrements)
   let tiktokerViral = false;
+  let tiktokerGoalReached = false;
   let repGain = 0.02;
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
   const isTiktokerCustomer = !!(order.customer_name && order.customer_name.includes('Tú'));
   if (isTiktokerCustomer) {
     activeBuffs.tiktoker_status = 'viral';
-    activeBuffs.tiktoker_waves = 8; // 8 waves of high viral traffic
     tiktokerViral = true;
     repGain = 0.40; // +0.40⭐ Big review boost to rescue and pull rating up!
+    const cost = activeBuffs.tiktoker_cost || 25000;
+    activeBuffs.tiktoker_target = cost * 3;
+    activeBuffs.tiktoker_earned = (activeBuffs.tiktoker_earned || 0) + payout;
+    if (activeBuffs.tiktoker_earned >= activeBuffs.tiktoker_target) {
+      tiktokerGoalReached = true;
+      delete activeBuffs.tiktoker_status;
+      delete activeBuffs.tiktoker_waves;
+    }
+  } else if (activeBuffs.tiktoker_status === 'viral') {
+    activeBuffs.tiktoker_earned = (activeBuffs.tiktoker_earned || 0) + payout;
+    if (activeBuffs.tiktoker_target && activeBuffs.tiktoker_earned >= activeBuffs.tiktoker_target) {
+      tiktokerGoalReached = true;
+      delete activeBuffs.tiktoker_status;
+      delete activeBuffs.tiktoker_waves;
+    }
   }
   if (activeBuffs.tip_bonus) {
     activeBuffs.tip_bonus -= 1;
@@ -277,9 +292,12 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     dailyEarned: daily.earned_today + payout,
     effectiveCap: daily.effective_cap,
     tiktokerViral,
+    tiktokerGoalReached,
     message: tiktokerViral 
       ? `🎉 Tú (TikToker) khen nức nở và đăng clip triệu view! Đánh giá quán tăng vọt +${repGain}⭐, kéo bão khách nườm nượp kéo đến!`
-      : null,
+      : (tiktokerGoalReached
+          ? `🎉 Cơn sốt TikToker đã hoàn thành mục tiêu! Bạn đã thu về tổng cộng ${(activeBuffs.tiktoker_earned || 0).toLocaleString('vi-VN')}đ (gấp 3 lần vốn bỏ ra)!`
+          : null),
     activeBuffs
   };
 }

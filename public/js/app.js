@@ -299,7 +299,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     let hasAny = false;
     if (buffs.tiktoker_status === 'viral') {
       bTiktok.style.display = 'inline-block';
-      bTiktok.innerText = `🔥 TikTok Viral (${buffs.tiktoker_waves || 1} đợt: x2.5 Khách)`;
+      const earned = buffs.tiktoker_earned || 0;
+      const target = buffs.tiktoker_target || (buffs.tiktoker_cost ? buffs.tiktoker_cost * 3 : 75000);
+      const percent = Math.min(100, Math.round((earned / target) * 100));
+      bTiktok.innerText = `🔥 Bão Khách TikToker (${percent}%: ${earned.toLocaleString('vi-VN')}đ / ${target.toLocaleString('vi-VN')}đ - x3 Vốn)`;
       bFlop.style.display = 'none';
       hasAny = true;
     } else if (buffs.tiktoker_status === 'flop') {
@@ -396,6 +399,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Active buffs
     updateBuffsUI(save.active_buffs);
+
+    // TikToker Banner Button
+    const btnInviteBanner = document.getElementById('btn-invite-tiktoker-banner');
+    if (btnInviteBanner) {
+      const buffs = save.active_buffs || {};
+      const daily = buffs.tiktoker_daily || { day: save.day_in_game, count: 0, nextCost: 25000 };
+      if (buffs.tiktoker_status === 'viral') {
+        btnInviteBanner.style.display = 'none';
+      } else if (daily.count >= 2) {
+        btnInviteBanner.style.display = 'inline-block';
+        btnInviteBanner.innerText = '📣 TikToker (2/2 lần)';
+        btnInviteBanner.style.opacity = '0.6';
+      } else if (daily.count === 0) {
+        btnInviteBanner.style.display = 'inline-block';
+        btnInviteBanner.innerText = '📣 Mời TikToker (25k)';
+        btnInviteBanner.style.opacity = '1';
+      } else {
+        btnInviteBanner.style.display = 'inline-block';
+        const costM = ((daily.nextCost || 2000000) / 1000000).toFixed(1);
+        btnInviteBanner.innerText = `📣 Mời TikToker (${costM}Tr)`;
+        btnInviteBanner.style.opacity = '1';
+      }
+    }
+
+    if (typeof renderTiktokerModal === 'function') {
+      renderTiktokerModal();
+    }
 
     // Queue Indicator
     const elQueueInd = document.getElementById('queue-indicator');
@@ -517,7 +547,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentOrder = null;
       renderOrderTicket();
       updateUI();
-      scheduleNextOrder(3000);
+      const save = storeState ? (storeState.save || storeState) : {};
+      const buffs = save.active_buffs || {};
+      const isViral = buffs.tiktoker_status === 'viral';
+      const isBigCampaign = isViral && (buffs.tiktoker_cost || 0) >= 1000000;
+      scheduleNextOrder(isBigCampaign ? 1200 : (isViral ? 2000 : 3000));
       return;
     }
 
@@ -593,7 +627,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (orderQueue.length > 0) {
         startNextOrderInQueue();
       } else {
-        scheduleNextOrder(3500);
+        const save = storeState ? (storeState.save || storeState) : {};
+        const buffs = save.active_buffs || {};
+        const isViral = buffs.tiktoker_status === 'viral';
+        const isBigCampaign = isViral && (buffs.tiktoker_cost || 0) >= 1000000;
+        scheduleNextOrder(isBigCampaign ? 1500 : (isViral ? 2200 : 3500));
       }
     }, 1000);
   }
@@ -1134,6 +1172,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           }, 800);
         }
 
+        if (res.tiktokerGoalReached) {
+          setTimeout(() => {
+            sound.coin();
+            showToast(res.message || `🎉 CHÚC MỪNG! Quán đã đạt doanh thu gấp 3 LẦN vốn từ chiến dịch TikToker!`, 7000);
+          }, 1200);
+        }
+
         // Refresh store state
         storeState = await API.getState();
         updateUI();
@@ -1160,7 +1205,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (orderQueue.length > 0) {
             startNextOrderInQueue();
           } else {
-            scheduleNextOrder(3000);
+            const save = storeState ? (storeState.save || storeState) : {};
+            const buffs = save.active_buffs || {};
+            const isViral = buffs.tiktoker_status === 'viral';
+            const isBigCampaign = isViral && (buffs.tiktoker_cost || 0) >= 1000000;
+            const nextDelay = isBigCampaign ? 1200 : (isViral ? 2000 : 3000);
+            scheduleNextOrder(nextDelay);
           }
         }, 1200);
       } else {
@@ -1495,14 +1545,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeTiktoker = document.getElementById('close-tiktoker');
     const btnConfirmInviteTiktoker = document.getElementById('btn-confirm-invite-tiktoker');
 
+    function renderTiktokerModal() {
+      if (!storeState) return;
+      const save = storeState.save || storeState;
+      const buffs = save.active_buffs || {};
+      const currentDay = save.day_in_game || 1;
+      let daily = buffs.tiktoker_daily;
+      if (!daily || daily.day !== currentDay) {
+        daily = { day: currentDay, count: 0, nextCost: 25000 };
+      }
+
+      const quotaDisplay = document.getElementById('tiktoker-quota-display');
+      const costDisplay = document.getElementById('tiktoker-cost-display');
+      const tierDesc = document.getElementById('tiktoker-tier-desc');
+      const benefitDesc = document.getElementById('tiktoker-benefit-desc');
+
+      const count = daily.count || 0;
+      const cost = count === 0 ? 25000 : (daily.nextCost || 2000000);
+      const targetRevenue = cost * 3;
+
+      if (quotaDisplay) {
+        quotaDisplay.innerText = `${count}/2 lần (Ngày ${currentDay})`;
+      }
+
+      if (costDisplay) {
+        costDisplay.innerText = `${cost.toLocaleString('vi-VN')}đ`;
+      }
+
+      if (tierDesc) {
+        if (count === 0) {
+          tierDesc.innerText = '🎁 Lần 1 trong ngày: Gói ưu đãi trải nghiệm đặc biệt dành cho quán mới!';
+          tierDesc.style.color = '#bd93f9';
+        } else if (count === 1) {
+          tierDesc.innerText = '🔥 Lần 2 trong ngày: Chiến dịch Viral VIP quy mô lớn (2 - 5 triệu đ)!';
+          tierDesc.style.color = '#ffb86c';
+        } else {
+          tierDesc.innerText = `🛑 Đã đạt giới hạn tối đa 2 lần mời TikToker trong Ngày ${currentDay}! Hãy kết ca sang ngày mới để đặt tiếp.`;
+          tierDesc.style.color = '#ff5555';
+        }
+      }
+
+      if (benefitDesc) {
+        benefitDesc.innerHTML = `🌟 <b>Cam kết hoàn vốn 300%:</b> Đợt khách nườm nượp kéo đến liên tục cho đến khi quán kiếm được gấp 3 lần vốn bỏ ra <b>(${targetRevenue.toLocaleString('vi-VN')}đ)</b>!`;
+      }
+
+      if (btnConfirmInviteTiktoker) {
+        if (buffs.tiktoker_status === 'viral') {
+          btnConfirmInviteTiktoker.disabled = true;
+          btnConfirmInviteTiktoker.innerText = '🔥 Đang trong cơn sốt TikToker Viral!';
+          btnConfirmInviteTiktoker.style.background = '#4a5568';
+        } else if (count >= 2) {
+          btnConfirmInviteTiktoker.disabled = true;
+          btnConfirmInviteTiktoker.innerText = `Đã hết lượt hôm nay (${count}/2 lần)`;
+          btnConfirmInviteTiktoker.style.background = '#4a5568';
+        } else if ((save.money !== undefined ? save.money : save.cash) < cost) {
+          btnConfirmInviteTiktoker.disabled = true;
+          btnConfirmInviteTiktoker.innerText = `Không đủ tiền (${cost.toLocaleString('vi-VN')}đ)`;
+          btnConfirmInviteTiktoker.style.background = '#4a5568';
+        } else {
+          btnConfirmInviteTiktoker.disabled = false;
+          btnConfirmInviteTiktoker.innerText = `🚀 Book Tú TikToker Ghé Quán (${cost.toLocaleString('vi-VN')}đ)`;
+          btnConfirmInviteTiktoker.style.background = 'linear-gradient(135deg, #ff79c6, #bd93f9)';
+        }
+      }
+    }
+
+    // Expose for updateUI
+    window.renderTiktokerModal = renderTiktokerModal;
+
     if (navInviteTiktoker) {
       navInviteTiktoker.addEventListener('click', () => {
+        renderTiktokerModal();
         if (modalTiktoker) modalTiktoker.style.display = 'flex';
       });
     }
 
     if (btnInviteBanner) {
       btnInviteBanner.addEventListener('click', () => {
+        renderTiktokerModal();
         if (modalTiktoker) modalTiktoker.style.display = 'flex';
       });
     }
@@ -1525,17 +1645,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (modalTiktoker) modalTiktoker.style.display = 'none';
             storeState = await API.getState();
             updateUI();
+            renderTiktokerModal();
             // Schedule immediate arrival of Tú (TikToker)!
-            scheduleNextOrder(1200);
+            scheduleNextOrder(1000);
           } else {
             showToast('❌ ' + (res.message || 'Không thể mời TikToker lúc này!'));
+            renderTiktokerModal();
           }
         } catch (err) {
           console.error('Invite tiktoker error:', err);
           showToast('❌ Lỗi kết nối khi gửi lời mời!');
-        } finally {
-          btnConfirmInviteTiktoker.disabled = false;
-          btnConfirmInviteTiktoker.innerText = '🚀 Book Tú TikToker Ghé Quán (25.000đ)';
+          renderTiktokerModal();
         }
       });
     }

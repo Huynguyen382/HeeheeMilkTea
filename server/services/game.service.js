@@ -378,7 +378,17 @@ async function getStoreState(storeId) {
       is_jailed: save.is_jailed,
       jail_reason: save.jail_reason,
       rest_until_ts: save.rest_until_ts || 0,
-      active_buffs: JSON.parse(save.active_buffs || '{}'),
+      active_buffs: (() => {
+        const buffs = JSON.parse(save.active_buffs || '{}');
+        if (!buffs.tiktoker_daily || buffs.tiktoker_daily.day !== save.day_in_game) {
+          buffs.tiktoker_daily = {
+            day: save.day_in_game,
+            count: 0,
+            nextCost: 25000
+          };
+        }
+        return buffs;
+      })(),
       inventory: { ...DEFAULT_INVENTORY, ...JSON.parse(save.inventory || '{}') },
       upgrades: JSON.parse(save.upgrades || '{}'),
       recipes: Array.from(new Set([...CORE_RECIPES, ...JSON.parse(save.recipes || '[]')])),
@@ -449,10 +459,18 @@ async function generateOrder(storeId) {
   const randWave = Math.random();
 
   if (activeBuffs.tiktoker_status === 'viral') {
-    // High traffic boost (1.5x - 3x customers): 2 to 4 customers
-    if (randWave < 0.35) waveSize = 4;
-    else if (randWave < 0.70) waveSize = 3;
-    else waveSize = 2;
+    const isBigCampaign = (activeBuffs.tiktoker_cost || 0) >= 1000000;
+    if (isBigCampaign) {
+      // Khi mời TikToker với số tiền lớn (2-5 triệu): đợt khách kéo đến nườm nượp (3 - 4 khách)
+      if (randWave < 0.60) waveSize = 4;
+      else if (randWave < 0.90) waveSize = 3;
+      else waveSize = 2;
+    } else {
+      // Gói ưu đãi 25k: 2 đến 4 khách
+      if (randWave < 0.35) waveSize = 4;
+      else if (randWave < 0.70) waveSize = 3;
+      else waveSize = 2;
+    }
   } else if (activeBuffs.tiktoker_status === 'flop') {
     // Bad review debuff: mostly single customer
     waveSize = randWave < 0.8 ? 1 : 2;
@@ -611,8 +629,8 @@ async function generateOrder(storeId) {
     });
   }
 
-  // Decrement TikToker waves count
-  if (activeBuffs.tiktoker_status) {
+  // Decrement TikToker flop waves count (viral status ends only when target revenue 3x capital is earned)
+  if (activeBuffs.tiktoker_status === 'flop') {
     activeBuffs.tiktoker_waves = (activeBuffs.tiktoker_waves || 1) - 1;
     if (activeBuffs.tiktoker_waves <= 0) {
       delete activeBuffs.tiktoker_status;
@@ -744,14 +762,58 @@ async function inviteTiktoker(storeId) {
   if (activeBuffs.tiktoker_invited) {
     return { success: false, message: 'Bạn đã gửi lời mời Tú (TikToker) rồi! Tú đang trên đường đến quán, hãy chuẩn bị đón tiếp nhé!' };
   }
+  if (activeBuffs.tiktoker_status === 'viral') {
+    return { success: false, message: 'Quán đang trong Cơn Sốt Viral của Tú TikToker! Hãy phục vụ hết đợt khách này trước khi mời tiếp nhé!' };
+  }
 
-  const cost = 25000;
+  // 1. Giới hạn 1 ngày người chơi chỉ có thể mời TikToker 2 lần
+  if (!activeBuffs.tiktoker_daily || activeBuffs.tiktoker_daily.day !== save.day_in_game) {
+    activeBuffs.tiktoker_daily = {
+      day: save.day_in_game,
+      count: 0,
+      nextCost: 25000
+    };
+  }
+
+  const daily = activeBuffs.tiktoker_daily;
+  if (daily.count >= 2) {
+    return { 
+      success: false, 
+      message: 'Hôm nay bạn đã mời Tú (TikToker) tối đa 2/2 lần! Hãy đợi sang ngày mới (hoặc bấm Kết ca) để tiếp tục mời nhé!' 
+    };
+  }
+
+  // 2. Xác định chi phí: Lần đầu 25k (ưu đãi cho người mới chơi), lần thứ 2 dao động 2 - 5 triệu
+  let cost = 25000;
+  if (daily.count === 0) {
+    cost = 25000;
+  } else {
+    cost = daily.nextCost;
+    if (!cost || cost < 2000000 || cost > 5000000) {
+      cost = 2000000 + Math.floor(Math.random() * 31) * 100000; // 2.000.000đ - 5.000.000đ
+    }
+  }
+
   if (save.money < cost) {
-    return { success: false, message: `Bạn cần tối thiểu ${cost.toLocaleString('vi-VN')}đ tiền mặt để book lịch mời TikToker!` };
+    return { 
+      success: false, 
+      message: `Bạn cần tối thiểu ${cost.toLocaleString('vi-VN')}đ tiền mặt để book lịch mời TikToker (Lần ${daily.count + 1}/2)!` 
+    };
   }
 
   const newMoney = save.money - cost;
   activeBuffs.tiktoker_invited = true;
+  activeBuffs.tiktoker_cost = cost;
+  activeBuffs.tiktoker_target = cost * 3; // Cam kết kéo khách cho đến khi thu về gấp 3 lần số vốn bỏ ra
+  activeBuffs.tiktoker_earned = 0;
+
+  daily.count += 1;
+  if (daily.count === 1) {
+    // Chi phí lần 2 dao động từ 2 - 5 triệu (bước 100k)
+    daily.nextCost = 2000000 + Math.floor(Math.random() * 31) * 100000;
+  } else {
+    daily.nextCost = null;
+  }
 
   const updatedSave = {
     store_id: storeId,
@@ -773,7 +835,13 @@ async function inviteTiktoker(storeId) {
     success: true,
     newMoney,
     cost,
-    message: '🎉 Đã book thành công Tú (TikToker Reviewer)! Tú đang cầm máy quay đến quán của bạn để trải nghiệm và làm clip review kéo sao!'
+    target: cost * 3,
+    dailyCount: daily.count,
+    nextCost: daily.nextCost,
+    activeBuffs,
+    message: daily.count === 1
+      ? `🎉 Đã book thành công Tú (TikToker) với giá ưu đãi ${cost.toLocaleString('vi-VN')}đ! Tú đang tới, bão khách sẽ kéo đến cho đến khi quán kiếm được ${(cost * 3).toLocaleString('vi-VN')}đ (gấp 3 lần vốn)!`
+      : `🚀 Đã book thành công Tú (TikToker) với gói Marketing VIP ${cost.toLocaleString('vi-VN')}đ! Bão khách cực khủng sắp đổ bộ cho đến khi quán kiếm được ${(cost * 3).toLocaleString('vi-VN')}đ (gấp 3 lần vốn)!`
   };
 }
 
@@ -1230,6 +1298,13 @@ async function endShift(storeId) {
 
   const newMoney = Math.max(0, save.money - rentCost);
 
+  const activeBuffs = JSON.parse(save.active_buffs || '{}');
+  activeBuffs.tiktoker_daily = {
+    day: nextDay,
+    count: 0,
+    nextCost: 25000
+  };
+
   const updatedSave = {
     store_id: storeId,
     chapter: save.chapter,
@@ -1242,9 +1317,9 @@ async function endShift(storeId) {
 
   await db.prepare(`
     UPDATE game_saves 
-    SET day_in_game = ?, money = ?, save_hash = ?, updated_at = ?
+    SET day_in_game = ?, money = ?, active_buffs = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
-  `).run(nextDay, newMoney, hash, new Date().toISOString(), storeId);
+  `).run(nextDay, newMoney, JSON.stringify(activeBuffs), hash, new Date().toISOString(), storeId);
 
   // Reset shift counters for the new day
   try {
