@@ -412,15 +412,30 @@ async function generateOrder(storeId) {
 
   const now = Date.now();
 
-  // 1. Check 15-minute rest condition (Đau bụng effect)
-  if (save.rest_until_ts && now < save.rest_until_ts) {
-    const remainingSec = Math.ceil((save.rest_until_ts - now) / 1000);
-    return {
-      resting: true,
-      restUntil: save.rest_until_ts,
-      remainingSeconds: remainingSec,
-      message: `HeeHee đang bị đau bụng do ăn vặt vỉa hè! Quán tạm nghỉ ngơi (${Math.floor(remainingSec / 60)} phút ${remainingSec % 60} giây còn lại).`
-    };
+  // 1. Check rest condition (Nghỉ ngơi kết ca 2 phút hoặc Đau bụng ăn vặt 15 phút)
+  if (save.rest_until_ts) {
+    if (now < save.rest_until_ts) {
+      const remainingSec = Math.ceil((save.rest_until_ts - now) / 1000);
+      const activeBuffs = JSON.parse(save.active_buffs || '{}');
+      const isEndShift = activeBuffs.rest_reason === 'end_shift';
+      return {
+        resting: true,
+        restUntil: save.rest_until_ts,
+        remainingSeconds: remainingSec,
+        restReason: isEndShift ? 'end_shift' : 'snack_sick',
+        message: isEndShift
+          ? `Quán đang nghỉ ngơi sau một ngày làm việc mệt mỏi (${Math.floor(remainingSec / 60)} phút ${remainingSec % 60} giây còn lại).`
+          : `HeeHee đang bị đau bụng do ăn vặt vỉa hè! Quán tạm nghỉ ngơi (${Math.floor(remainingSec / 60)} phút ${remainingSec % 60} giây còn lại).`
+      };
+    } else {
+      // Rest period has expired, clean up
+      const activeBuffs = JSON.parse(save.active_buffs || '{}');
+      delete activeBuffs.rest_reason;
+      delete activeBuffs.rest_until;
+      await db.prepare('UPDATE game_saves SET rest_until_ts = 0, active_buffs = ? WHERE store_id = ?')
+        .run(JSON.stringify(activeBuffs), storeId);
+      save.rest_until_ts = 0;
+    }
   }
 
   const daily = await anticheat.getOrCreateDailyStats(storeId, save.chapter);
@@ -694,10 +709,12 @@ async function handleSnackDecision(storeId, accept) {
         message: '✨ Ăn vặt tràn đầy năng lượng, pha chế siêu tốc! Khách uống tấm tắc khen ngợi, tip thêm +10% doanh thu mỗi ly!'
       };
     }
-  } else {
     // 25% bad effect: Đau bụng -> buộc nghỉ 15 phút thực
     const restUntil = now + (15 * 60 * 1000);
-    await db.prepare('UPDATE game_saves SET rest_until_ts = ? WHERE store_id = ?').run(restUntil, storeId);
+    activeBuffs.rest_reason = 'snack_sick';
+    activeBuffs.rest_until = restUntil;
+    await db.prepare('UPDATE game_saves SET rest_until_ts = ?, active_buffs = ? WHERE store_id = ?')
+      .run(restUntil, JSON.stringify(activeBuffs), storeId);
     await db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
 
     return {
@@ -1298,12 +1315,17 @@ async function endShift(storeId) {
 
   const newMoney = Math.max(0, save.money - rentCost);
 
+  const restDurationMs = 2 * 60 * 1000; // 2 phút nghỉ ngơi sau một ngày làm việc
+  const restUntilTs = Date.now() + restDurationMs;
+
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
   activeBuffs.tiktoker_daily = {
     day: nextDay,
     count: 0,
     nextCost: 25000
   };
+  activeBuffs.rest_reason = 'end_shift';
+  activeBuffs.rest_until = restUntilTs;
 
   const updatedSave = {
     store_id: storeId,
@@ -1317,9 +1339,14 @@ async function endShift(storeId) {
 
   await db.prepare(`
     UPDATE game_saves 
-    SET day_in_game = ?, money = ?, active_buffs = ?, save_hash = ?, updated_at = ?
+    SET day_in_game = ?, money = ?, active_buffs = ?, rest_until_ts = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
-  `).run(nextDay, newMoney, JSON.stringify(activeBuffs), hash, new Date().toISOString(), storeId);
+  `).run(nextDay, newMoney, JSON.stringify(activeBuffs), restUntilTs, hash, new Date().toISOString(), storeId);
+
+  // Clear any existing active orders so store closes cleanly for the night
+  try {
+    await db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
+  } catch (e) {}
 
   // Reset shift counters for the new day
   try {
@@ -1342,7 +1369,11 @@ async function endShift(storeId) {
     totalCosts,
     netProfit,
     newMoney,
-    message: `🎉 Kết ca Ngày ${save.day_in_game} thành công! Lợi nhuận ròng: ${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString('vi-VN')}đ. Đã sang Ngày ${nextDay}!`
+    resting: true,
+    restUntil: restUntilTs,
+    restReason: 'end_shift',
+    restDurationSeconds: 120,
+    message: `🎉 Kết ca Ngày ${save.day_in_game} thành công! Lợi nhuận ròng: ${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString('vi-VN')}đ. HeeHee đang nghỉ ngơi 2 phút sau một ngày làm việc mệt mỏi trước khi bắt đầu Ngày ${nextDay}!`
   };
 }
 

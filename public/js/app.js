@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentOrder = null;
   let orderTimerInterval = null;
   let restTimerInterval = null;
+  let nextOrderTimeout = null;
+  let isGamePaused = false;
   let orderStartTime = 0;
   
   // Mixing & Workflow Selection State
@@ -240,24 +242,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Check 15-minute real-world resting countdown
+  // Check real-world resting countdown (End Shift 2 minutes or Snack Bellyache 15 minutes)
   function checkRestStatus(save) {
     if (!save || !save.rest_until_ts) return false;
     const now = Date.now();
     if (now < save.rest_until_ts) {
-      startRestCountdown(save.rest_until_ts);
+      const buffs = save.active_buffs || {};
+      const reason = buffs.rest_reason || 'snack_sick';
+      startRestCountdown(save.rest_until_ts, reason);
       return true;
     }
     return false;
   }
 
-  function startRestCountdown(restUntil) {
+  function startRestCountdown(restUntil, reason = 'snack_sick') {
+    isGamePaused = true;
     const overlay = document.getElementById('overlay-resting');
     const disp = document.getElementById('rest-timer-display');
-    overlay.style.display = 'flex';
+    const iconEl = document.getElementById('rest-icon');
+    const titleEl = document.getElementById('rest-title');
+    const descEl = document.getElementById('rest-desc');
+    const labelEl = document.getElementById('rest-timer-label');
+    const boxEl = document.getElementById('rest-timer-box');
+    const modalContent = document.getElementById('rest-modal-content');
+
+    const isEndShift = reason === 'end_shift';
+
+    if (iconEl) iconEl.innerText = isEndShift ? '🛌🌙☕✨' : '🤢💊🚽';
+    if (titleEl) {
+      titleEl.innerText = isEndShift 
+        ? 'NGHỈ NGƠI SAU MỘT NGÀY LÀM VIỆC MỆT MỎI' 
+        : 'HEEHEE ĐANG BỊ ĐAU BỤNG!';
+      titleEl.style.color = isEndShift ? '#ffb86c' : '#ff5555';
+    }
+    if (descEl) {
+      descEl.innerText = isEndShift
+        ? 'Ca làm việc hôm nay đã kết thúc! HeeHee và đội ngũ phụ bếp đang dọn dẹp quán, chợp mắt nghỉ ngơi sau một ngày làm việc mệt mỏi để nạp lại năng lượng cho ngày mới!'
+        : 'Do ăn đồ ăn vặt cay béo vỉa hè của anh Shipper, bụng dạ HeeHee đang sôi ùng ục! Bác sĩ bắt buộc phải tạm đóng quầy nghỉ ngơi hồi sức.';
+    }
+    if (labelEl) {
+      labelEl.innerText = isEndShift ? 'THỜI GIAN NGHỈ NGƠI CÒN LẠI:' : 'THỜI GIAN MỞ LẠI QUẦY TRÀ SỮA:';
+      labelEl.style.color = isEndShift ? '#bd93f9' : '#ffb86c';
+    }
+    if (boxEl) {
+      boxEl.style.borderColor = isEndShift ? '#ffb86c' : '#ff5555';
+    }
+    if (modalContent) {
+      modalContent.style.borderColor = isEndShift ? '#ffb86c' : '#ff5555';
+      modalContent.style.background = isEndShift ? '#1e1425' : '#260c16';
+    }
+
+    if (overlay) overlay.style.display = 'flex';
 
     if (orderTimerInterval) clearInterval(orderTimerInterval);
     if (restTimerInterval) clearInterval(restTimerInterval);
+    if (nextOrderTimeout) clearTimeout(nextOrderTimeout);
 
     currentOrder = null;
     orderQueue = [];
@@ -268,12 +307,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       const remainingSec = Math.max(0, Math.ceil((restUntil - Date.now()) / 1000));
       const m = Math.floor(remainingSec / 60).toString().padStart(2, '0');
       const s = (remainingSec % 60).toString().padStart(2, '0');
-      disp.innerText = `${m}:${s}`;
+      if (disp) disp.innerText = `${m}:${s}`;
 
       if (remainingSec <= 0) {
         clearInterval(restTimerInterval);
-        overlay.style.display = 'none';
-        showToast('✨ HeeHee đã khỏe lại rồi! Tiệm trà sữa mở cửa đón khách tiếp!', 4000);
+        isGamePaused = false;
+        if (overlay) overlay.style.display = 'none';
+        sound.bell();
+        if (isEndShift) {
+          const nextDay = storeState && storeState.save ? storeState.save.day_in_game : '';
+          showToast(`🌅 Chào mừng Ngày ${nextDay}! HeeHee đã tràn đầy năng lượng, quán bắt đầu mở cửa đón khách!`, 5000);
+        } else {
+          showToast('✨ HeeHee đã khỏe lại rồi! Tiệm trà sữa mở cửa đón khách tiếp!', 4000);
+        }
         scheduleNextOrder(2000);
       }
     }
@@ -495,7 +541,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. Customer Wave & Order Generation
   async function scheduleNextOrder(delay = 4000) {
-    setTimeout(async () => {
+    if (nextOrderTimeout) clearTimeout(nextOrderTimeout);
+    if (isGamePaused) return;
+
+    nextOrderTimeout = setTimeout(async () => {
+      if (isGamePaused) return;
       if (currentOrder || (orderQueue && orderQueue.length > 0)) return;
       
       const res = await API.getOrder();
@@ -505,7 +555,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (res.order.resting) {
-        startRestCountdown(res.order.restUntil);
+        startRestCountdown(res.order.restUntil, res.order.restReason || 'snack_sick');
         return;
       }
 
@@ -1372,17 +1422,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Advance Day
-    document.getElementById('nav-advance-day').addEventListener('click', async () => {
-      if (confirm('Bạn có muốn kết thúc ngày bán hàng này để chuyển sang ngày mới trong game?')) {
-        const res = await API.advanceDay();
-        if (res.success) {
-          sound.bell();
-          showToast(res.message, 4000);
-          storeState = await API.getState();
-          updateUI();
+    const btnAdvanceDay = document.getElementById('nav-advance-day');
+    if (btnAdvanceDay) {
+      btnAdvanceDay.addEventListener('click', () => {
+        if (typeof openEndShiftModal === 'function') {
+          openEndShiftModal();
         }
-      }
-    });
+      });
+    }
 
     // Test Anti-cheat Demo Button
     document.getElementById('nav-test-hack').addEventListener('click', async () => {
@@ -2319,6 +2366,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function openEndShiftModal() {
     if (!shiftContent || !storeState) return;
+
+    // ⏸️ Tạm dừng game khi mở bảng Kết ca
+    isGamePaused = true;
+    if (nextOrderTimeout) clearTimeout(nextOrderTimeout);
+    if (orderTimerInterval) clearInterval(orderTimerInterval);
+
     const save = storeState.save || {};
     const daily = storeState.daily_stats || {};
     const day = save.day_in_game || 1;
@@ -2341,6 +2394,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="receipt-header">
           <div class="receipt-title">📋 HÓA ĐƠN KẾT CA (NGÀY ${day})</div>
           <div class="receipt-subtitle">Tiệm Trà Sữa HeeHee • Kết Thúc Ca Làm Việc</div>
+        </div>
+
+        <div style="background: rgba(80, 250, 123, 0.12); border: 1px dashed #50fa7b; border-radius: 8px; padding: 8px; font-size: 0.88rem; color: #50fa7b; text-align: center; margin-bottom: 10px; line-height: 1.4;">
+          ⏸️ <b>Game đang tạm dừng:</b> Sau khi xác nhận kết ca, nhân vật sẽ nghỉ ngơi thư giãn <b>2 phút</b> sau một ngày làm việc mệt mỏi!
         </div>
 
         <div class="receipt-section">
@@ -2396,16 +2453,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnConfirm) {
       btnConfirm.addEventListener('click', async () => {
         btnConfirm.disabled = true;
-        btnConfirm.innerText = 'Đang quyết toán & sang ngày mới...';
+        btnConfirm.innerText = 'Đang quyết toán & sang ca mới...';
         try {
           const res = await API.endShift();
           if (res && res.success) {
             sound.bell();
             modalEndShift.style.display = 'none';
+
+            // Dọn sạch đơn hàng ca cũ
+            if (orderTimerInterval) clearInterval(orderTimerInterval);
+            if (nextOrderTimeout) clearTimeout(nextOrderTimeout);
+            orderQueue = [];
+            currentOrder = null;
+            renderOrderTicket();
+            canvas.setCustomerQueue([]);
+
             storeState = await API.getState();
             updateUI();
-            showToast(`🌅 Chào mừng Ngày ${res.day_in_game}! Tiền mặt bằng hôm nay đã trừ: -${res.rentCost.toLocaleString('vi-VN')}đ`, 5000);
-            scheduleNextOrder(2500);
+            showToast(`🌅 Kết ca Ngày ${res.previousDay} thành công! Lợi nhuận: ${res.netProfit >= 0 ? '+' : ''}${res.netProfit.toLocaleString('vi-VN')}đ`, 4000);
+
+            // Bật thông báo nghỉ ngơi sau một ngày làm việc mệt mỏi (2 phút)
+            if (res.resting && res.restUntil) {
+              startRestCountdown(res.restUntil, res.restReason || 'end_shift');
+            } else {
+              isGamePaused = false;
+              scheduleNextOrder(2500);
+            }
           } else {
             sound.fail();
             showToast('❌ ' + (res.message || 'Không thể kết ca'));
@@ -2431,6 +2504,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (closeEndShift) {
     closeEndShift.addEventListener('click', () => {
       modalEndShift.style.display = 'none';
+      isGamePaused = false;
+      if (!currentOrder && (!orderQueue || orderQueue.length === 0)) {
+        scheduleNextOrder(2000);
+      }
     });
   }
 
