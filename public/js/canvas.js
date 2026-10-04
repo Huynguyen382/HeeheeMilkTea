@@ -2515,32 +2515,44 @@ class GameCanvas {
       const by = y - 24 + bubbleBob;
 
       if (this.bubbleType === 'dialogue' && activeQuote) {
-        // Retro Pixel Comic Dialogue Bubble
-        const textWidth = Math.min(130, ctx.measureText(activeQuote).width + 16);
-        const bw = Math.max(90, textWidth);
-        const bh = 22;
-        const boxX = Math.min(this.width - bw - 5, bx - bw / 2 + 5);
-        const boxY = by - 12;
+        // Retro Pixel Comic Dialogue Bubble with Dark Contrast Frame & Crisp White Text
+        const textWidth = Math.min(145, ctx.measureText(activeQuote).width + 18);
+        const bw = Math.max(96, textWidth);
+        const bh = 24;
+        const boxX = Math.min(this.width - bw - 5, Math.max(5, bx - bw / 2 + 5));
+        const boxY = by - 14;
 
-        ctx.fillStyle = '#fff8dc';
+        // Drop shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(boxX + 2, boxY + 2, bw, bh);
+
+        // Dark sleek dialogue box for maximum text readability
+        ctx.fillStyle = 'rgba(22, 12, 24, 0.95)';
         ctx.fillRect(boxX, boxY, bw, bh);
-        ctx.strokeStyle = '#8b4513';
+        ctx.strokeStyle = '#f4c430'; // Gold border
         ctx.lineWidth = 1.5;
         ctx.strokeRect(boxX, boxY, bw, bh);
 
         // Tail pointing down to customer
-        ctx.fillStyle = '#fff8dc';
+        ctx.fillStyle = 'rgba(22, 12, 24, 0.95)';
         ctx.beginPath();
         ctx.moveTo(bx - 3, boxY + bh);
         ctx.lineTo(bx + 1, boxY + bh + 6);
         ctx.lineTo(bx + 5, boxY + bh);
         ctx.fill();
+        ctx.strokeStyle = '#f4c430';
+        ctx.beginPath();
+        ctx.moveTo(bx - 3, boxY + bh);
+        ctx.lineTo(bx + 1, boxY + bh + 6);
+        ctx.lineTo(bx + 5, boxY + bh);
+        ctx.stroke();
 
-        ctx.fillStyle = '#1a1016';
-        ctx.font = 'bold 9px monospace';
-        ctx.fillText(activeQuote.slice(0, 22), boxX + 4, boxY + 10);
+        // Crisp White Text for Highest Readability
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 9.5px "Courier New", monospace, sans-serif';
+        ctx.fillText(activeQuote.slice(0, 22), boxX + 6, boxY + 10.5);
         if (activeQuote.length > 22) {
-          ctx.fillText(activeQuote.slice(22, 44), boxX + 4, boxY + 18);
+          ctx.fillText(activeQuote.slice(22, 44), boxX + 6, boxY + 19.5);
         }
       } else {
         // Classic Round Bubble
@@ -3002,13 +3014,16 @@ class GameCanvas {
 
       // Periodic Cute Bark Bubble
       if (Math.floor(this.tick / 60) % 4 === 0) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = 'rgba(24, 13, 24, 0.92)';
         ctx.beginPath();
-        ctx.roundRect(px + 18, py - 12 + bob, 18, 9, 3);
+        ctx.roundRect(px + 18, py - 12 + bob, 20, 10, 3);
         ctx.fill();
-        ctx.fillStyle = '#e67e22';
-        ctx.font = 'bold 6.5px monospace';
-        ctx.fillText('Gâu!🐾', px + 19.5, py - 5.5 + bob);
+        ctx.strokeStyle = '#f39c12';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 7px monospace';
+        ctx.fillText('Gâu!🐾', px + 19.5, py - 5 + bob);
       }
     }
 
@@ -3125,13 +3140,16 @@ class GameCanvas {
 
       // Periodic "Meow~ ✨" Bubble
       if (Math.floor(this.tick / 60) % 5 === 0) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = 'rgba(24, 13, 24, 0.92)';
         ctx.beginPath();
-        ctx.roundRect(px + 18, py - 12 + bob, 22, 9, 3);
+        ctx.roundRect(px + 18, py - 12 + bob, 24, 10, 3);
         ctx.fill();
-        ctx.fillStyle = '#e84393';
-        ctx.font = 'bold 6.5px monospace';
-        ctx.fillText('Meow~✨', px + 19, py - 5.5 + bob);
+        ctx.strokeStyle = '#fd79a8';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 7px monospace';
+        ctx.fillText('Meow~✨', px + 19, py - 5 + bob);
       }
     }
 
@@ -3198,13 +3216,16 @@ class GameCanvas {
 
       // Periodic "Chill... 🍊" Bubble
       if (Math.floor(this.tick / 60) % 5 === 0) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = 'rgba(24, 13, 24, 0.92)';
         ctx.beginPath();
-        ctx.roundRect(px + 18, py - 14 + bob, 22, 9, 3);
+        ctx.roundRect(px + 18, py - 14 + bob, 24, 10, 3);
         ctx.fill();
-        ctx.fillStyle = '#d35400';
-        ctx.font = 'bold 6.5px monospace';
-        ctx.fillText('Chill...🍊', px + 19, py - 7.5 + bob);
+        ctx.strokeStyle = '#ff9f1a';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 7px monospace';
+        ctx.fillText('Chill...🍊', px + 19, py - 6.5 + bob);
       }
     }
   }
@@ -3302,17 +3323,18 @@ class GameCanvas {
 
     // 9. Speech / Thought Bubble
     if (t.bubble) {
-      const bubbleW = t.bubble.length * 6 + 8;
+      const bubbleW = t.bubble.length * 6 + 10;
       const bx = tx - 4;
       const by = ty - 20 + bob;
 
-      this.drawPixel(ctx, bx + 1, by + 1, bubbleW, 11, 'rgba(0, 0, 0, 0.3)');
-      this.drawPixel(ctx, bx, by, bubbleW, 11, isEscaping ? '#ff4757' : '#ffffff');
-      this.drawPixel(ctx, bx + 8, by + 11, 4, 3, isEscaping ? '#ff4757' : '#ffffff');
+      this.drawPixel(ctx, bx + 1, by + 1, bubbleW, 11, 'rgba(0, 0, 0, 0.5)');
+      this.drawPixel(ctx, bx, by, bubbleW, 11, isEscaping ? '#c0392b' : 'rgba(22, 12, 24, 0.95)');
+      this.drawPixel(ctx, bx, by, bubbleW, 1, isEscaping ? '#ff7675' : '#f4c430');
+      this.drawPixel(ctx, bx + 8, by + 11, 4, 3, isEscaping ? '#c0392b' : 'rgba(22, 12, 24, 0.95)');
 
-      ctx.fillStyle = isEscaping ? '#ffffff' : '#2f3542';
+      ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 7px monospace';
-      ctx.fillText(t.bubble, bx + 4, by + 8);
+      ctx.fillText(t.bubble, bx + 5, by + 8);
     }
   }
 }

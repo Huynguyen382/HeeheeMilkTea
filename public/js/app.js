@@ -739,7 +739,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <span>👤 <b>${currentOrder.customerName}</b></span>
           <span style="color: #2e8b57; font-weight: bold;">+${currentOrder.price.toLocaleString('vi-VN')}đ</span>
         </div>
-        <div style="font-style: italic; color: #ffb86c; font-size: 0.92rem; margin: 3px 0 6px 0; background: rgba(0,0,0,0.3); padding: 4px 6px; border-radius: 4px;">
+        <div style="font-style: italic; color: #ffffff; font-weight: 500; font-size: 0.95rem; margin: 3px 0 6px 0; background: #1c0e1a; border: 1px solid #57334d; border-left: 3px solid var(--gold); padding: 5px 8px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
           💬 "${currentOrder.quote || 'Pha chế ngon giùm mình nhé!'}"
         </div>
         <div style="font-weight: bold; font-size: 1.15rem; color: #8b4513;">
