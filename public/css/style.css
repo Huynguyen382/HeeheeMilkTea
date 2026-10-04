@@ -372,6 +372,16 @@ canvas#scene {
   background: #462222;
 }
 
+.btn-step-gauge.max-reached {
+  border-color: #ff7675;
+  opacity: 0.9;
+}
+
+.btn-step-gauge.max-reached .step-badge {
+  background: #c0392b;
+  color: #ffffff;
+}
+
 .step-icon {
   font-size: 1.15rem;
   line-height: 1;

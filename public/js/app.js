@@ -788,14 +788,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       b.classList.toggle('active', b.getAttribute('data-sugar') === selectedSugar);
     });
     const sugarBadge = document.getElementById('sugar-badge');
-    if (sugarBadge) sugarBadge.innerText = `${selectedSugar} Đường`;
+    if (sugarBadge) {
+      sugarBadge.innerText = selectedSugar === '100%' ? '100% (Đầy)' : `${selectedSugar} Đường`;
+    }
+    const btnAddSugar = document.getElementById('btn-add-sugar');
+    if (btnAddSugar) {
+      const isMaxSugar = selectedSugar === '100%';
+      btnAddSugar.classList.toggle('max-reached', isMaxSugar);
+      btnAddSugar.title = isMaxSugar ? 'Đã đạt tối đa 100% đường' : 'Thêm muỗng đường vào bình lắc';
+    }
 
     // Sync active ice buttons & pills
     document.querySelectorAll('[data-ice]').forEach(b => {
       b.classList.toggle('active', b.getAttribute('data-ice') === selectedIce);
     });
     const iceBadge = document.getElementById('ice-badge');
-    if (iceBadge) iceBadge.innerText = selectedIce;
+    if (iceBadge) {
+      iceBadge.innerText = selectedIce === 'Đầy đá' ? 'Đầy đá (Đầy)' : selectedIce;
+    }
+    const btnAddIce = document.getElementById('btn-add-ice');
+    if (btnAddIce) {
+      const isMaxIce = selectedIce === 'Đầy đá';
+      btnAddIce.classList.toggle('max-reached', isMaxIce);
+      btnAddIce.title = isMaxIce ? 'Đã đầy đá tối đa' : 'Dùng kẹp gắp thêm đá vào bình lắc';
+    }
 
     // Sync active topping buttons
     document.querySelectorAll('[data-topping]').forEach(b => {
@@ -820,33 +836,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Step-by-step Sugar (+1 level per drop)
+  // Step-by-step Sugar (+1 level per drop, max 100%)
   const btnAddSugar = document.getElementById('btn-add-sugar');
   if (btnAddSugar) {
     btnAddSugar.addEventListener('click', () => {
+      const steps = ['0%', '30%', '50%', '70%', '100%'];
+      const idx = steps.indexOf(selectedSugar);
+      if (idx >= steps.length - 1 || selectedSugar === '100%') {
+        if (typeof showToast === 'function') {
+          showToast('⚠️ Độ ngọt đã đạt mức tối đa (100%)!', 'warning');
+        }
+        return;
+      }
       sound.pour();
       if (workstation) {
         selectedSugar = workstation.nextSugarStep();
       } else {
-        const steps = ['0%', '30%', '50%', '70%', '100%'];
-        const idx = steps.indexOf(selectedSugar);
-        selectedSugar = steps[(idx + 1) % steps.length];
+        selectedSugar = steps[idx + 1];
       }
       updateMixingButtonsState();
     });
   }
 
-  // Step-by-step Ice (+1 level per scoop/cube)
+  // Step-by-step Ice (+1 level per scoop/cube, max Đầy đá)
   const btnAddIce = document.getElementById('btn-add-ice');
   if (btnAddIce) {
     btnAddIce.addEventListener('click', () => {
+      const steps = ['Nóng', 'Ít đá', 'Vừa đá', 'Đầy đá'];
+      const idx = steps.indexOf(selectedIce);
+      if (idx >= steps.length - 1 || selectedIce === 'Đầy đá') {
+        if (typeof showToast === 'function') {
+          showToast('⚠️ Lượng đá đã đạt mức tối đa (Đầy đá)!', 'warning');
+        }
+        return;
+      }
       sound.ice();
       if (workstation) {
         selectedIce = workstation.nextIceStep();
       } else {
-        const steps = ['Nóng', 'Ít đá', 'Vừa đá', 'Đầy đá'];
-        const idx = steps.indexOf(selectedIce);
-        selectedIce = steps[(idx + 1) % steps.length];
+        selectedIce = steps[idx + 1];
       }
       updateMixingButtonsState();
     });

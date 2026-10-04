@@ -126,7 +126,11 @@ class BaristaWorkstation {
 
   nextSugarStep() {
     const idx = BaristaWorkstation.SUGAR_STEPS.indexOf(this.sugar);
-    const nextIdx = (idx + 1) % BaristaWorkstation.SUGAR_STEPS.length;
+    if (idx >= BaristaWorkstation.SUGAR_STEPS.length - 1 || this.sugar === '100%') {
+      this.addFloatingText('⚠️ Đã 100% Đường (Tối đa)!', '#ff6b81');
+      return this.sugar;
+    }
+    const nextIdx = idx + 1;
     this.sugar = BaristaWorkstation.SUGAR_STEPS[nextIdx];
     this.triggerHandAction('add_sugar', this.sugar);
     this.addFloatingText(`🍯 ${this.sugar} Đường`, '#f4c430');
@@ -143,7 +147,11 @@ class BaristaWorkstation {
 
   nextIceStep() {
     const idx = BaristaWorkstation.ICE_STEPS.indexOf(this.ice);
-    const nextIdx = (idx + 1) % BaristaWorkstation.ICE_STEPS.length;
+    if (idx >= BaristaWorkstation.ICE_STEPS.length - 1 || this.ice === 'Đầy đá') {
+      this.addFloatingText('⚠️ Đã Đầy Đá (Tối đa)!', '#ff6b81');
+      return this.ice;
+    }
+    const nextIdx = idx + 1;
     this.ice = BaristaWorkstation.ICE_STEPS[nextIdx];
     this.triggerHandAction('add_ice', this.ice);
     this.initCupContents();
