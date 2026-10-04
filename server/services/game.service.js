@@ -779,6 +779,7 @@ async function handleSnackDecision(storeId, accept) {
       activeBuffs.patience_boost = 6;
       await db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
         .run(JSON.stringify(activeBuffs), storeId);
+      invalidateStoreCache(storeId);
       return {
         success: true,
         accepted: true,
@@ -790,6 +791,7 @@ async function handleSnackDecision(storeId, accept) {
       activeBuffs.tip_bonus = 6;
       await db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
         .run(JSON.stringify(activeBuffs), storeId);
+      invalidateStoreCache(storeId);
       return {
         success: true,
         accepted: true,
@@ -798,21 +800,48 @@ async function handleSnackDecision(storeId, accept) {
         message: '✨ Ăn vặt tràn đầy năng lượng, pha chế siêu tốc! Khách uống tấm tắc khen ngợi, tip thêm +10% doanh thu mỗi ly!'
       };
     }
-    // 25% bad effect: Đau bụng -> buộc nghỉ 15 phút thực
+  } else {
+    // 25% bad effect: Đau bụng -> trừ 150.000đ tiền thuốc và buộc nghỉ 15 phút thực
+    const medicineCost = 150000;
+    const currentMoney = Number(save.money || 0);
+    const newMoney = Math.max(0, currentMoney - medicineCost);
+    const actualDeducted = currentMoney - newMoney;
+
     const restUntil = now + (15 * 60 * 1000);
     activeBuffs.rest_reason = 'snack_sick';
     activeBuffs.rest_until = restUntil;
-    await db.prepare('UPDATE game_saves SET rest_until_ts = ?, active_buffs = ? WHERE store_id = ?')
-      .run(restUntil, JSON.stringify(activeBuffs), storeId);
-    await db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
+
+    const updatedSave = {
+      store_id: storeId,
+      chapter: save.chapter,
+      day_in_game: save.day_in_game,
+      money: newMoney,
+      debt_remaining: save.debt_remaining,
+      reputation: save.reputation
+    };
+    const hash = anticheat.generateSaveHash(updatedSave);
+
+    await db.prepare(`
+      UPDATE game_saves 
+      SET money = ?, rest_until_ts = ?, active_buffs = ?, save_hash = ?, updated_at = ? 
+      WHERE store_id = ?
+    `).run(newMoney, restUntil, JSON.stringify(activeBuffs), hash, new Date().toISOString(), storeId);
+
+    invalidateStoreCache(storeId);
+
+    try {
+      await db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
+    } catch (e) {}
 
     return {
       success: true,
       accepted: true,
       outcome: 'bad',
+      medicineCost: actualDeducted,
+      newMoney,
       restUntil,
       restMinutes: 15,
-      message: '🤢 Ôi không! Bánh tráng cay xé lưỡi hoặc sốt me có vấn đề khiến bụng HeeHee sôi ùng ục đau quằn quại! Bác sĩ yêu cầu tạm đóng quầy nghỉ ngơi đúng 15 phút thực!'
+      message: `🤢 Ôi không! Bánh tráng cay xé lưỡi hoặc sốt me có vấn đề khiến bụng HeeHee đau quằn quại! Bạn phải mua thuốc uống (-${actualDeducted.toLocaleString('vi-VN')}đ) và tạm đóng quầy nghỉ ngơi 15 phút thực!`
     };
   }
 }

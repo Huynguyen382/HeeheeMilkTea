@@ -459,6 +459,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (res.outcome === 'bad') {
         sound.fail();
         showToast(res.message, 6000);
+        storeState = await API.getState();
+        updateUI();
         startRestCountdown(res.restUntil);
       }
     };

@@ -541,18 +541,45 @@ async function handleSnackDecision(storeId, accept) {
       };
     }
   } else {
-    // 25% bad effect: Đau bụng -> buộc nghỉ 15 phút thực
+    // 25% bad effect: Đau bụng -> trừ 150.000đ tiền thuốc và buộc nghỉ 15 phút thực
+    const medicineCost = 150000;
+    const currentMoney = Number(save.money || 0);
+    const newMoney = Math.max(0, currentMoney - medicineCost);
+    const actualDeducted = currentMoney - newMoney;
+
     const restUntil = now + (15 * 60 * 1000);
-    await db.prepare('UPDATE game_saves SET rest_until_ts = ? WHERE store_id = ?').run(restUntil, storeId);
-    await db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
+    activeBuffs.rest_reason = 'snack_sick';
+    activeBuffs.rest_until = restUntil;
+
+    const updatedSave = {
+      store_id: storeId,
+      chapter: save.chapter,
+      day_in_game: save.day_in_game,
+      money: newMoney,
+      debt_remaining: save.debt_remaining,
+      reputation: save.reputation
+    };
+    const hash = anticheat.generateSaveHash(updatedSave);
+
+    await db.prepare(`
+      UPDATE game_saves 
+      SET money = ?, rest_until_ts = ?, active_buffs = ?, save_hash = ?, updated_at = ? 
+      WHERE store_id = ?
+    `).run(newMoney, restUntil, JSON.stringify(activeBuffs), hash, new Date().toISOString(), storeId);
+
+    try {
+      await db.prepare('DELETE FROM active_orders WHERE store_id = ?').run(storeId);
+    } catch (e) {}
 
     return {
       success: true,
       accepted: true,
       outcome: 'bad',
+      medicineCost: actualDeducted,
+      newMoney,
       restUntil,
       restMinutes: 15,
-      message: '🤢 Ôi không! Bánh tráng cay xé lưỡi hoặc sốt me có vấn đề khiến bụng HeeHee sôi ùng ục đau quằn quại! Bác sĩ yêu cầu tạm đóng quầy nghỉ ngơi đúng 15 phút thực!'
+      message: `🤢 Ôi không! Bánh tráng cay xé lưỡi hoặc sốt me có vấn đề khiến bụng HeeHee đau quằn quại! Bạn phải mua thuốc uống (-${actualDeducted.toLocaleString('vi-VN')}đ) và tạm đóng quầy nghỉ ngơi 15 phút thực!`
     };
   }
 }
