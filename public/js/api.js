@@ -124,6 +124,14 @@ const API = {
 
   async inviteTiktoker() {
     return await this.request('/game/invite-tiktoker', 'POST');
+  },
+
+  async buyIngredients(items) {
+    return await this.request('/game/buy-ingredients', 'POST', { items });
+  },
+
+  async endShift() {
+    return await this.request('/game/end-shift', 'POST');
   }
 };
 

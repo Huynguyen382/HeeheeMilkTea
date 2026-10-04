@@ -1954,7 +1954,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     };
     updateTimeBadge();
-    setInterval(updateTimeBadge, 30000); // Check time every 30s
+    setInterval(updateTimeBadge, 3000); // Check every 3 seconds to tick smoothly with 2-hour cycle
 
     elTimeBadge.addEventListener('click', () => {
       if (canvas && canvas.cycleTimeOfDay) {
@@ -1963,6 +1963,354 @@ document.addEventListener('DOMContentLoaded', async () => {
         sound.bell();
         showToast(`🎨 Khung cảnh: ${res.label}`, 2500);
       }
+    });
+  }
+
+  // --- PIXEL ART INGREDIENT RENDERER ---
+  function drawIngredientPixelArt(canvas, ingId) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.imageSmoothingEnabled = false;
+
+    const s = Math.floor(w / 16);
+    ctx.fillStyle = '#221524';
+    ctx.fillRect(0, 0, w, h);
+
+    function px(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * s, y * s, s, s);
+    }
+    function rect(x, y, rw, rh, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * s, y * s, rw * s, rh * s);
+    }
+
+    switch (ingId) {
+      case 'tra_den':
+        rect(4, 5, 8, 8, '#593219');
+        rect(5, 6, 6, 6, '#7c4322');
+        rect(4, 4, 8, 2, '#422411');
+        rect(6, 3, 4, 2, '#8b4513');
+        rect(6, 5, 4, 1, '#f4c430');
+        px(5, 6, '#f4c430'); px(10, 6, '#f4c430');
+        px(7, 8, '#2fa364'); px(8, 8, '#2fa364'); px(8, 9, '#1e6840');
+        break;
+      case 'tra_thai_xanh':
+        rect(4, 4, 8, 9, '#1e6840');
+        rect(5, 5, 6, 7, '#2fa364');
+        rect(6, 6, 4, 5, '#50fa7b');
+        rect(6, 8, 4, 2, '#ffffff');
+        rect(7, 10, 2, 1, '#ffffff');
+        rect(4, 3, 8, 2, '#144c2d');
+        rect(6, 2, 4, 1, '#f4c430');
+        break;
+      case 'sua_tuoi':
+        rect(5, 3, 6, 11, '#dfe6e9');
+        rect(6, 4, 4, 9, '#ffffff');
+        rect(5, 2, 6, 2, '#74b9ff');
+        rect(6, 1, 4, 1, '#0984e3');
+        rect(6, 6, 2, 2, '#2d3436');
+        rect(8, 9, 2, 2, '#2d3436');
+        px(7, 7, '#74b9ff');
+        break;
+      case 'tra_lai':
+        rect(4, 5, 8, 8, '#d4882b');
+        rect(5, 6, 6, 6, '#f39c12');
+        rect(5, 3, 6, 3, '#b7751c');
+        px(8, 8, '#f1fa8c');
+        px(8, 7, '#ffffff'); px(8, 9, '#ffffff');
+        px(7, 8, '#ffffff'); px(9, 8, '#ffffff');
+        px(6, 9, '#2fa364');
+        break;
+      case 'tra_olong':
+        rect(4, 6, 8, 7, '#59341d');
+        rect(5, 7, 6, 5, '#7a4828');
+        rect(5, 5, 6, 2, '#3d2313');
+        rect(6, 4, 4, 1, '#f4c430');
+        px(6, 2, '#ced6e0'); px(7, 1, '#ced6e0'); px(9, 2, '#ced6e0');
+        break;
+      case 'tranchau_den':
+        rect(3, 8, 10, 5, '#3c2436');
+        rect(4, 9, 8, 4, '#57334d');
+        px(5, 6, '#1f1620'); px(6, 6, '#483446');
+        px(7, 5, '#1f1620'); px(8, 5, '#483446');
+        px(9, 6, '#1f1620'); px(10, 6, '#483446');
+        px(6, 7, '#1f1620'); px(8, 7, '#1f1620'); px(10, 7, '#1f1620');
+        break;
+      case 'thach_la_dua':
+        rect(4, 7, 4, 4, '#2ed573');
+        rect(5, 8, 2, 2, '#7bed9f');
+        rect(8, 6, 4, 4, '#1e824c');
+        rect(9, 7, 2, 2, '#2ed573');
+        rect(6, 10, 4, 3, '#10ac84');
+        px(9, 3, '#2ed573'); px(10, 4, '#2ed573'); px(11, 5, '#1e824c');
+        break;
+      case 'tranchau_duongden':
+        rect(5, 5, 6, 8, '#5c3a21');
+        rect(6, 6, 4, 6, '#874d28');
+        rect(6, 3, 4, 3, '#3b2212');
+        rect(6, 2, 4, 1, '#f4c430');
+        px(8, 10, '#f4c430'); px(8, 12, '#f4c430'); px(7, 13, '#f4c430');
+        break;
+      case 'dao_mieng':
+        rect(4, 5, 5, 8, '#ffa502');
+        rect(5, 6, 3, 6, '#ff7f50');
+        rect(8, 7, 4, 5, '#ffa502');
+        rect(9, 8, 2, 3, '#ff6348');
+        px(11, 6, '#2ed573');
+        break;
+      case 'suong_sao':
+        rect(4, 7, 4, 4, '#2f3542');
+        rect(5, 8, 2, 2, '#57606f');
+        rect(8, 6, 4, 4, '#1e272e');
+        rect(9, 7, 2, 2, '#3d4b56');
+        rect(6, 10, 4, 3, '#1e272e');
+        px(6, 5, '#2ed573'); px(7, 6, '#2ed573');
+        break;
+      case 'ly_nap':
+      default:
+        rect(5, 4, 6, 9, '#74b9ff');
+        rect(6, 5, 4, 7, '#ffffff');
+        rect(4, 3, 8, 2, '#ff79c6');
+        rect(5, 2, 6, 1, '#bd93f9');
+        px(8, 0, '#f4c430'); px(7, 1, '#f4c430'); px(7, 2, '#f4c430');
+        px(6, 10, '#2d3436'); px(7, 10, '#2d3436'); px(8, 10, '#2d3436');
+        break;
+    }
+  }
+
+  // --- WHOLESALE MARKET (CHỢ ĐẦU MỐI) SYSTEM ---
+  const modalMarket = document.getElementById('modal-market');
+  const btnNavMarket = document.getElementById('nav-market');
+  const closeMarket = document.getElementById('close-market');
+  const marketTabs = document.getElementById('market-tabs');
+  const marketGrid = document.getElementById('market-items-grid');
+  let currentMarketFilter = 'all';
+
+  function renderMarketItems() {
+    if (!marketGrid || !storeState) return;
+    const inv = storeState.save ? (storeState.save.inventory || {}) : {};
+    const money = storeState.save ? storeState.save.money : 0;
+    const items = storeState.ingredients || [];
+
+    const filtered = items.filter(it => {
+      if (currentMarketFilter === 'all') return true;
+      return it.category === currentMarketFilter;
+    });
+
+    marketGrid.innerHTML = filtered.map(item => {
+      const stock = inv[item.id] || 0;
+      const isLow = stock < 5;
+      return `
+        <div class="market-card">
+          <div class="market-card-top">
+            <canvas class="market-pixel-canvas" id="canvas-ing-${item.id}" width="44" height="44"></canvas>
+            <div class="market-item-info">
+              <div class="market-item-title">${item.icon} ${item.name}</div>
+              <div class="market-item-desc">${item.desc}</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <span class="market-price-tag">${item.price.toLocaleString('vi-VN')}đ / ${item.unit}</span>
+                <span class="market-stock-badge ${isLow ? 'low-stock' : ''}">Kho: <b>${stock}</b> ${item.unit}</span>
+              </div>
+            </div>
+          </div>
+          <div class="market-buy-actions">
+            <button class="btn-market-buy" data-buy-id="${item.id}" data-buy-qty="5" ${money < item.price * 5 ? 'disabled' : ''}>
+              +5 (${(item.price * 5).toLocaleString('vi-VN')}đ)
+            </button>
+            <button class="btn-market-buy" data-buy-id="${item.id}" data-buy-qty="10" ${money < item.price * 10 ? 'disabled' : ''}>
+              +10 (${(item.price * 10).toLocaleString('vi-VN')}đ)
+            </button>
+            <button class="btn-market-buy" data-buy-id="${item.id}" data-buy-qty="20" ${money < item.price * 20 ? 'disabled' : ''}>
+              +20 (${(item.price * 20).toLocaleString('vi-VN')}đ)
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Draw pixel art on every canvas
+    filtered.forEach(item => {
+      const cvs = document.getElementById(`canvas-ing-${item.id}`);
+      if (cvs) drawIngredientPixelArt(cvs, item.id);
+    });
+
+    // Attach buy listeners
+    marketGrid.querySelectorAll('.btn-market-buy').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-buy-id');
+        const qty = parseInt(btn.getAttribute('data-buy-qty'), 10);
+        btn.disabled = true;
+
+        try {
+          const res = await API.buyIngredients([{ id, quantity: qty }]);
+          if (res && res.success) {
+            sound.coin();
+            showToast(res.message, 3000);
+            storeState = await API.getState();
+            updateUI();
+            renderMarketItems();
+          } else {
+            sound.fail();
+            showToast('❌ ' + (res.message || 'Không đủ tiền nhập hàng!'), 3000);
+            btn.disabled = false;
+          }
+        } catch (err) {
+          console.error('Buy error:', err);
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  if (btnNavMarket) {
+    btnNavMarket.addEventListener('click', () => {
+      sound.bell();
+      renderMarketItems();
+      modalMarket.style.display = 'flex';
+    });
+  }
+
+  if (closeMarket) {
+    closeMarket.addEventListener('click', () => {
+      modalMarket.style.display = 'none';
+    });
+  }
+
+  if (marketTabs) {
+    marketTabs.querySelectorAll('.story-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        marketTabs.querySelectorAll('.story-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMarketFilter = btn.getAttribute('data-market-filter') || 'all';
+        renderMarketItems();
+      });
+    });
+  }
+
+  // --- END OF SHIFT (KẾT CA) SYSTEM ---
+  const modalEndShift = document.getElementById('modal-end-shift');
+  const btnNavEndShift = document.getElementById('nav-end-shift');
+  const closeEndShift = document.getElementById('close-end-shift');
+  const shiftContent = document.getElementById('shift-summary-content');
+
+  function openEndShiftModal() {
+    if (!shiftContent || !storeState) return;
+    const save = storeState.save || {};
+    const daily = storeState.daily_stats || {};
+    const day = save.day_in_game || 1;
+    const orders = daily.shift_orders || daily.orders_served || 0;
+    const gross = daily.shift_earned || daily.earned_today || 0;
+    const ingCost = daily.shift_ingredient_cost || 0;
+    const rent = save.chapter === 1 ? 20000 : 80000;
+    const totalCosts = rent + ingCost;
+    const netProfit = gross - totalCosts;
+
+    let evalComment = '🌟 Ca bán hàng bận rộn! Chăm chỉ tích lũy để sớm trả sạch nợ!';
+    if (netProfit > 200000) {
+      evalComment = '🔥 Đỉnh nóc kịch trần! Quán đông nườm nượp, lợi nhuận rực rỡ!';
+    } else if (netProfit <= 0) {
+      evalComment = '⚠️ Doanh thu chưa bù đủ chi phí mặt bằng! Hãy chuẩn bị kỹ cho ca tới nhé!';
+    }
+
+    shiftContent.innerHTML = `
+      <div class="shift-receipt">
+        <div class="receipt-header">
+          <div class="receipt-title">📋 HÓA ĐƠN KẾT CA (NGÀY ${day})</div>
+          <div class="receipt-subtitle">Tiệm Trà Sữa HeeHee • Kết Thúc Ca Làm Việc</div>
+        </div>
+
+        <div class="receipt-section">
+          <div style="font-weight: bold; color: var(--gold); margin-bottom: 2px;">💰 DOANH THU CA:</div>
+          <div class="receipt-row">
+            <span>🧋 Số ly đã phục vụ:</span>
+            <span><b>${orders}</b> ly</span>
+          </div>
+          <div class="receipt-row bold">
+            <span>💵 Doanh thu bán hàng:</span>
+            <span style="color: #50fa7b;">+${gross.toLocaleString('vi-VN')}đ</span>
+          </div>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <div class="receipt-section">
+          <div style="font-weight: bold; color: #ff79c6; margin-bottom: 2px;">🧾 CHI PHÍ VẬN HÀNH:</div>
+          <div class="receipt-row">
+            <span>🏠 Tiền mặt bằng (${save.chapter === 1 ? 'Xe đẩy vỉa hè' : 'Mặt bằng sinh viên'}):</span>
+            <span style="color: #ff5555;">-${rent.toLocaleString('vi-VN')}đ</span>
+          </div>
+          <div class="receipt-row">
+            <span>📦 Chi phí nguyên liệu tiêu hao:</span>
+            <span style="color: #ffb86c;">-${ingCost.toLocaleString('vi-VN')}đ</span>
+          </div>
+          <div class="receipt-row bold">
+            <span>Tổng chi phí ca:</span>
+            <span style="color: #ff5555;">-${totalCosts.toLocaleString('vi-VN')}đ</span>
+          </div>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <div class="receipt-net-profit ${netProfit < 0 ? 'loss' : ''}">
+          <span>LỢI NHUẬN RÒNG:</span>
+          <span>${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString('vi-VN')}đ</span>
+        </div>
+
+        <div class="receipt-evaluation">
+          ${evalComment}
+        </div>
+
+        <div style="margin-top: 6px;">
+          <button class="btn-action-wide" id="btn-confirm-end-shift" style="width: 100%; font-size: 1.15rem; background: linear-gradient(180deg, #50fa7b, #2e8b57);">
+            🌅 XÁC NHẬN KẾT CA ➔ SANG NGÀY ${day + 1}
+          </button>
+        </div>
+      </div>
+    `;
+
+    const btnConfirm = document.getElementById('btn-confirm-end-shift');
+    if (btnConfirm) {
+      btnConfirm.addEventListener('click', async () => {
+        btnConfirm.disabled = true;
+        btnConfirm.innerText = 'Đang quyết toán & sang ngày mới...';
+        try {
+          const res = await API.endShift();
+          if (res && res.success) {
+            sound.bell();
+            modalEndShift.style.display = 'none';
+            storeState = await API.getState();
+            updateUI();
+            showToast(`🌅 Chào mừng Ngày ${res.day_in_game}! Tiền mặt bằng hôm nay đã trừ: -${res.rentCost.toLocaleString('vi-VN')}đ`, 5000);
+            scheduleNextOrder(2500);
+          } else {
+            sound.fail();
+            showToast('❌ ' + (res.message || 'Không thể kết ca'));
+            btnConfirm.disabled = false;
+          }
+        } catch (err) {
+          console.error('End shift error:', err);
+          btnConfirm.disabled = false;
+        }
+      });
+    }
+
+    modalEndShift.style.display = 'flex';
+  }
+
+  if (btnNavEndShift) {
+    btnNavEndShift.addEventListener('click', () => {
+      sound.bell();
+      openEndShiftModal();
+    });
+  }
+
+  if (closeEndShift) {
+    closeEndShift.addEventListener('click', () => {
+      modalEndShift.style.display = 'none';
     });
   }
 

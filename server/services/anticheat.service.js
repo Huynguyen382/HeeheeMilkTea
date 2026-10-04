@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const db = require('../models/db');
+const { DEFAULT_INVENTORY } = require('../data/ingredients');
 
 const SECRET_KEY = process.env.HYHY_SECRET || 'hyhy_super_secret_anti_cheat_key_2026';
 
@@ -200,14 +201,51 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   // Update Database Transaction
   await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
 
-  // Update daily stats
-  await db.prepare(`
-    UPDATE daily_stats 
-    SET earned_today = earned_today + ?, 
-        is_overloaded = ?, 
-        last_active_ts = ? 
-    WHERE store_id = ? AND real_date = ?
-  `).run(payout, isOverloadedNow ? 1 : 0, now, storeId, daily.real_date);
+  // Deduct inventory ingredients used in this drink
+  const currentInv = { ...DEFAULT_INVENTORY, ...JSON.parse(save.inventory || '{}') };
+  const recipeTeaMap = {
+    tra_sua_truyen_thong: 'tra_den',
+    hong_tra_tac: 'tra_den',
+    tra_thai_xanh: 'tra_thai_xanh',
+    sua_tuoi_duong_den: 'sua_tuoi',
+    tra_dao_cam_sa: 'tra_lai',
+    tra_olong_nuong: 'tra_olong'
+  };
+  const teaIngId = recipeTeaMap[order.recipe_id] || 'tra_den';
+  currentInv[teaIngId] = Math.max(0, (currentInv[teaIngId] || 0) - 1);
+
+  orderToppings.forEach(topKey => {
+    if (currentInv[topKey] !== undefined) {
+      currentInv[topKey] = Math.max(0, currentInv[topKey] - 1);
+    }
+  });
+  currentInv['ly_nap'] = Math.max(0, (currentInv['ly_nap'] || 0) - 1);
+
+  // Ingredient cost estimation
+  const drinkIngredientCost = 3500 + Math.max(0, orderToppings.length - 1) * 1000;
+
+  // Update daily stats & shift stats
+  try {
+    await db.prepare(`
+      UPDATE daily_stats 
+      SET earned_today = earned_today + ?,
+          orders_served = orders_served + 1,
+          shift_orders = shift_orders + 1,
+          shift_earned = shift_earned + ?,
+          shift_ingredient_cost = shift_ingredient_cost + ?,
+          is_overloaded = ?, 
+          last_active_ts = ? 
+      WHERE store_id = ? AND real_date = ?
+    `).run(payout, payout, drinkIngredientCost, isOverloadedNow ? 1 : 0, now, storeId, daily.real_date);
+  } catch (e) {
+    await db.prepare(`
+      UPDATE daily_stats 
+      SET earned_today = earned_today + ?, 
+          is_overloaded = ?, 
+          last_active_ts = ? 
+      WHERE store_id = ? AND real_date = ?
+    `).run(payout, isOverloadedNow ? 1 : 0, now, storeId, daily.real_date);
+  }
 
   // Update store money & hash
   const newMoney = save.money + payout;
@@ -225,9 +263,9 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
 
   await db.prepare(`
     UPDATE game_saves 
-    SET money = ?, reputation = ?, active_buffs = ?, save_hash = ?, updated_at = ?
+    SET money = ?, reputation = ?, inventory = ?, active_buffs = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
-  `).run(newMoney, newRep, JSON.stringify(activeBuffs), newHash, new Date().toISOString(), storeId);
+  `).run(newMoney, newRep, JSON.stringify(currentInv), JSON.stringify(activeBuffs), newHash, new Date().toISOString(), storeId);
 
   return {
     success: true,

@@ -35,16 +35,7 @@ router.post('/steal-pet', authStore, handle('Steal pet', req => gameService.stea
 router.post('/redeem-pet', authStore, handle('Redeem pet', req => gameService.redeemPet(req.store.id)));
 router.post('/shoo-thief', authStore, handle('Shoo thief', req => gameService.shooThief(req.store.id)));
 router.post('/invite-tiktoker', authStore, handle('Invite tiktoker', req => gameService.inviteTiktoker(req.store.id)));
-router.post('/advance-day', authStore, async (req, res) => {
-  try {
-    const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(req.store.id);
-    const nextDay = save.day_in_game + 1;
-    const rentCost = save.chapter === 1 ? 20000 : 80000;
-    const newMoney = Math.max(0, save.money - rentCost);
-    const updatedSave = { store_id: req.store.id, chapter: save.chapter, day_in_game: nextDay, money: newMoney, debt_remaining: save.debt_remaining, reputation: save.reputation };
-    const hash = anticheat.generateSaveHash(updatedSave);
-    await db.prepare('UPDATE game_saves SET day_in_game = ?, money = ?, save_hash = ?, updated_at = ? WHERE store_id = ?').run(nextDay, newMoney, hash, new Date().toISOString(), req.store.id);
-    res.json({ success: true, day_in_game: nextDay, rentCost, newMoney, message: `Bắt đầu Ngày ${nextDay} trong game! Tiền mặt bằng xe đẩy hôm nay: -${rentCost.toLocaleString('vi-VN')}đ.` });
-  } catch (err) { console.error('Advance day error:', err); res.status(500).json({ error: err.message }); }
-});
+router.post('/buy-ingredients', authStore, handle('Buy ingredients', req => gameService.buyIngredients(req.store.id, req.body.items)));
+router.post('/end-shift', authStore, handle('End shift', req => gameService.endShift(req.store.id)));
+router.post('/advance-day', authStore, handle('Advance day', req => gameService.endShift(req.store.id)));
 module.exports = router;

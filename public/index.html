@@ -200,12 +200,14 @@
 
   <!-- NAVIGATION BOTTOM BAR -->
   <footer class="bottom-nav">
-    <button class="nav-btn" id="nav-story" style="color: var(--gold); border-color: var(--gold); font-weight: bold;">📖 Cốt Truyện</button>
-    <button class="nav-btn" id="nav-collab">🤝 Collab Bạn</button>
-    <button class="nav-btn" id="nav-debt">💰 Trả Nợ</button>
+    <button class="nav-btn" id="nav-story" style="color: var(--gold); border-color: var(--gold); font-weight: bold;">📖 Truyện</button>
+    <button class="nav-btn" id="nav-market" style="color: #ff79c6; border-color: #ff79c6; font-weight: bold;">🏪 Chợ Sỉ</button>
+    <button class="nav-btn" id="nav-end-shift" style="color: #50fa7b; border-color: #50fa7b; font-weight: bold;">🌅 Kết Ca</button>
     <button class="nav-btn" id="nav-upgrades">🛒 Nâng Cấp</button>
-    <button class="nav-btn" id="nav-invite-tiktoker" style="color: #ff79c6;">📣 Mời TikToker</button>
-    <button class="nav-btn" id="nav-sound">🔊 Nhạc: Bật</button>
+    <button class="nav-btn" id="nav-debt">💰 Trả Nợ</button>
+    <button class="nav-btn" id="nav-collab">🤝 Collab</button>
+    <button class="nav-btn" id="nav-invite-tiktoker" style="color: #ff79c6;">📣 TikTok</button>
+    <button class="nav-btn" id="nav-sound">🎵 Nhạc</button>
     <!-- DEV MODE CONTROLS (Ẩn mặc định cho người chơi thường) -->
     <button class="nav-btn dev-only" id="nav-advance-day" style="border-color: #bd93f9; color: #bd93f9;">🌅 Sang Ngày</button>
     <button class="nav-btn btn-danger dev-only" id="nav-test-hack">🛡️ Test Cheat</button>
@@ -653,6 +655,43 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CHỢ ĐẦU MỐI NGUYÊN LIỆU (WHOLESALE MARKET) -->
+  <div class="modal-overlay" id="modal-market">
+    <div class="modal-content" style="max-width: 680px; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div class="modal-title">🏪 Chợ Sỉ Nguyên Liệu Đầu Mối</div>
+        <button class="btn-close" id="close-market">&times;</button>
+      </div>
+      <div style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 8px;">
+        Nhập sỉ cốt trà, topping tươi ngon và ly nắp dập giá gốc để đảm bảo quầy pha chế luôn đủ hàng phục vụ khách!
+      </div>
+      <!-- Market Tabs -->
+      <div class="story-tabs" id="market-tabs" style="margin-bottom: 10px;">
+        <button class="story-tab-btn active" data-market-filter="all">📦 Tất Cả</button>
+        <button class="story-tab-btn" data-market-filter="tea">🍵 Cốt Trà</button>
+        <button class="story-tab-btn" data-market-filter="topping">⚫ Topping</button>
+        <button class="story-tab-btn" data-market-filter="consumable">🧋 Vật Tư</button>
+      </div>
+      <!-- Market Item List Grid -->
+      <div id="market-items-grid" style="overflow-y: auto; flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding-right: 4px;">
+        <!-- Dynamically rendered with canvas pixel art -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: KẾT CA BÁN HÀNG & TỔNG KẾT TÀI CHÍNH (END OF SHIFT) -->
+  <div class="modal-overlay" id="modal-end-shift">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title">🌅 Tổng Kết Ca Bán Hàng</div>
+        <button class="btn-close" id="close-end-shift">&times;</button>
+      </div>
+      <div id="shift-summary-content">
+        <!-- Rendered dynamically with retro receipt receipt styling -->
       </div>
     </div>
   </div>

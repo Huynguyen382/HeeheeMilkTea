@@ -431,35 +431,51 @@ class GameCanvas {
     ctx.restore();
   }
 
+  getInGameTime() {
+    // 2 real-world hours = 1 in-game day (24 in-game hours)
+    // 120 real minutes = 24 in-game hours => 1 in-game hour = 5 real minutes (300,000 ms)
+    // 1 in-game minute = 5 real seconds (5,000 ms)
+    const DAY_CYCLE_MS = 2 * 60 * 60 * 1000; // 7,200,000 ms (2 hours)
+    const elapsed = Date.now() % DAY_CYCLE_MS;
+    const fraction = elapsed / DAY_CYCLE_MS;
+    const totalInGameMinutes = Math.floor(fraction * 24 * 60);
+    const hour = Math.floor(totalInGameMinutes / 60);
+    const minute = totalInGameMinutes % 60;
+    return { hour, minute, totalInGameMinutes, fraction };
+  }
+
   getTimeOfDay() {
     if (this.customTimeOfDay) return this.customTimeOfDay;
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 11) return 'morning';   // 5h00 - 10h59: Buổi Sáng
-    if (hour >= 11 && hour < 15) return 'noon';      // 11h00 - 14h59: Buổi Trưa
-    if (hour >= 15 && hour < 19) return 'afternoon'; // 15h00 - 18h59: Buổi Chiều (Hoàng hôn)
-    return 'night';                                  // 19h00 - 4h59: Buổi Tối / Đêm
+    const { hour } = this.getInGameTime();
+    if (hour >= 5 && hour < 11) return 'morning';   // 05:00 - 10:59: Buổi Sáng (30 phút thực)
+    if (hour >= 11 && hour < 15) return 'noon';      // 11:00 - 14:59: Buổi Trưa (20 phút thực)
+    if (hour >= 15 && hour < 19) return 'afternoon'; // 15:00 - 18:59: Buổi Chiều (Hoàng hôn, 20 phút thực)
+    return 'night';                                  // 19:00 - 04:59: Buổi Tối / Đêm (50 phút thực)
   }
 
   getTimeOfDayLabel() {
     const tod = this.getTimeOfDay();
+    const { hour, minute } = this.getInGameTime();
+    const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     const labels = {
-      morning: '🌅 Sáng',
-      noon: '☀️ Trưa',
-      afternoon: '🌇 Chiều',
-      night: '🌙 Tối'
+      morning: `🌅 Sáng ${timeStr}`,
+      noon: `☀️ Trưa ${timeStr}`,
+      afternoon: `🌇 Chiều ${timeStr}`,
+      night: `🌙 Tối ${timeStr}`
     };
-    return labels[tod] || '🌅 Sáng';
+    return labels[tod] || `🌅 Sáng ${timeStr}`;
   }
 
   cycleTimeOfDay() {
-    const list = ['morning', 'noon', 'afternoon', 'night'];
-    const cur = this.getTimeOfDay();
+    const list = ['morning', 'noon', 'afternoon', 'night', null]; // null = Trở về chế độ tự động theo chu kỳ 2 tiếng
+    const cur = this.customTimeOfDay;
     const curIdx = list.indexOf(cur);
     const nextIdx = (curIdx + 1) % list.length;
     this.customTimeOfDay = list[nextIdx];
     return {
-      tod: this.customTimeOfDay,
-      label: this.getTimeOfDayLabel()
+      tod: this.getTimeOfDay(),
+      isAuto: this.customTimeOfDay === null,
+      label: this.customTimeOfDay === null ? `⏱️ Chu kỳ 2h: ${this.getTimeOfDayLabel()}` : this.getTimeOfDayLabel()
     };
   }
 

@@ -105,8 +105,12 @@ const db = {
          await client.query(`
            ALTER TABLE active_orders ADD COLUMN IF NOT EXISTS original_price INTEGER;
            ALTER TABLE active_orders ADD COLUMN IF NOT EXISTS negotiation TEXT;
-            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS properties TEXT DEFAULT '{}';
-            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS decorations TEXT DEFAULT '[]';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS properties TEXT DEFAULT '{}';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS decorations TEXT DEFAULT '[]';
+           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_orders BIGINT DEFAULT 0;
+           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_earned BIGINT DEFAULT 0;
+           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_ingredient_cost BIGINT DEFAULT 0;
+           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_tips BIGINT DEFAULT 0;
          `);
          console.log('Neon PostgreSQL schema initialized successfully.');
       } finally {
@@ -146,6 +150,10 @@ const db = {
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN decorations TEXT DEFAULT '[]';"); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN negotiation TEXT;'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_orders INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_earned INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_ingredient_cost INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_tips INTEGER DEFAULT 0;'); } catch (e) {}
 
       sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS game_saves (

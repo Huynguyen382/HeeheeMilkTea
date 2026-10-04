@@ -1329,3 +1329,192 @@ button,
   #game-container { max-width: 720px; border-radius: 0; }
   #scene-wrapper { height: auto; aspect-ratio: 9 / 4; min-height: 0; }
 }
+
+/* WHOLESALE MARKET PIXEL CARDS */
+.market-card {
+  background: #1e121c;
+  border: 2px solid #57334d;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.market-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+}
+
+.market-card-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.market-pixel-canvas {
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #140b13;
+  border: 1px solid #734567;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.market-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.market-item-title {
+  font-weight: bold;
+  font-size: 1.05rem;
+  color: var(--gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.market-item-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.market-stock-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: bold;
+  background: #2b1727;
+  border: 1px solid #57334d;
+  color: #8be9fd;
+}
+
+.market-stock-badge.low-stock {
+  color: #ff5555;
+  border-color: #ff5555;
+  background: #3d141b;
+  animation: pulseLow 1.5s infinite;
+}
+
+@keyframes pulseLow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.market-price-tag {
+  color: #50fa7b;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.market-buy-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.btn-market-buy {
+  flex: 1;
+  background: #2e1728;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-weight: bold;
+}
+
+.btn-market-buy:hover:not(:disabled) {
+  background: var(--gold);
+  color: #1a1016;
+}
+
+.btn-market-buy:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #57334d;
+}
+
+/* SHIFT SUMMARY RECEIPT */
+.shift-receipt {
+  background: #140c13;
+  border: 2px dashed var(--gold);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receipt-header {
+  text-align: center;
+  border-bottom: 1px dashed #57334d;
+  padding-bottom: 8px;
+}
+
+.receipt-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--gold);
+}
+
+.receipt-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.receipt-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.receipt-row.bold {
+  font-weight: bold;
+}
+
+.receipt-divider {
+  border-bottom: 1px dashed #57334d;
+  margin: 4px 0;
+}
+
+.receipt-net-profit {
+  background: #1f121d;
+  border: 2px solid #50fa7b;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.15rem;
+  font-weight: bold;
+}
+
+.receipt-net-profit.loss {
+  border-color: #ff5555;
+  color: #ff5555;
+}
+
+.receipt-evaluation {
+  text-align: center;
+  font-style: italic;
+  color: #f1fa8c;
+  font-size: 0.95rem;
+}
+
