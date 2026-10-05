@@ -147,6 +147,7 @@ class GameCanvas {
       this.bubbleType = 'dialogue';
       this.customerType = (type !== null) ? type : this.getArchetypeByName(customerName);
       this.customerQuote = quote || 'Cho một ly trà sữa thơm ngon béo ngậy nha!';
+      this.customerName = customerName;
     }
   }
 
@@ -414,16 +415,16 @@ class GameCanvas {
 
     // 8. CUSTOMER SPRITES & QUEUE
     this.leavingCustomers.forEach(lc => {
-      this.drawCustomer(ctx, lc.currentX, 108, lc.customerType, false, '');
+      this.drawCustomer(ctx, lc.currentX, 108, lc.customerType, false, '', lc.name);
     });
 
     if (this.queue && this.queue.length > 0) {
       for (let i = this.queue.length - 1; i >= 0; i--) {
         const qCust = this.queue[i];
-        this.drawCustomer(ctx, qCust.currentX, 108, qCust.customerType, i === 0, qCust.quote);
+        this.drawCustomer(ctx, qCust.currentX, 108, qCust.customerType, i === 0, qCust.quote, qCust.name);
       }
     } else if (this.customerActive) {
-      this.drawCustomer(ctx, this.customerX, 108, this.customerType, true, this.customerQuote);
+      this.drawCustomer(ctx, this.customerX, 108, this.customerType, true, this.customerQuote, this.customerName);
     }
 
     // 9. THIEF SPRITE (Black hoodie & mask sneaking across)
@@ -1599,36 +1600,43 @@ class GameCanvas {
     }
   }
 
-  // 10 CUSTOMER ARCHETYPES WITH AUTHENTIC RETRO PIXEL ART GRAPHICS
-  drawCustomer(ctx, x, y, type, isFront = true, quote = '') {
+  // 50 RETRO PIXEL ART CHARACTERS SYSTEM
+  drawCustomer(ctx, x, y, type, isFront = true, quote = '', customerName = '') {
+    const char = (typeof getCharacter === 'function') ? (getCharacter(customerName) || getCharacter(type)) : null;
     const isMoving = isFront ? (x < this.targetCustomerX) : false;
+    const idleBob = Math.round(Math.sin(this.tick * 0.16) * 1.2);
     const walkBob = (this.customerState === 'waiting' && isMoving)
       ? Math.round(Math.sin(this.tick * 0.45) * 2)
-      : (this.tick % 60 < 30 ? 1 : 0);
+      : idleBob;
 
-    // Pixel art ground drop shadow
-    const shadowX = Math.round(x);
+    const baseX = Math.round(x) - 1;
+    const baseY = Math.round(y + 7 + walkBob);
+    const sway = isMoving
+      ? (Math.sin(this.tick * 0.45) > 0 ? 1 : 0)
+      : (Math.sin(this.tick * 0.18) > 0 ? 1 : 0);
+
+    // 1. Soft Multi-layer Pixel Shadow (Faithfully matching ModelNPC.html)
+    const shadowX = Math.round(baseX + 12);
     const shadowY = Math.round(y + 41);
-    this.drawPixel(ctx, shadowX - 2, shadowY, 24, 3, 'rgba(10, 5, 12, 0.35)');
-    this.drawPixel(ctx, shadowX, shadowY - 1, 20, 5, 'rgba(10, 5, 12, 0.2)');
+    ctx.fillStyle = 'rgba(25, 15, 10, 0.10)';
+    ctx.beginPath();
+    ctx.ellipse(shadowX, shadowY, 14, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(20, 10, 5, 0.22)';
+    ctx.beginPath();
+    ctx.ellipse(shadowX, shadowY, 9, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
 
     const isBlinking = (this.tick % 90) < 4;
     const isHappy = isFront && this.isDrinking;
-    const petBob = (this.customerState === 'waiting' && isMoving) ? Math.round(Math.sin(this.tick * 0.45) * 2) : 0;
-    const petTail = Math.round(Math.sin(this.tick * 0.25) * 2);
 
-    const char = (typeof getCharacter === 'function') ? getCharacter(type) : null;
-    const baseX = Math.round(x) - 1;
-    const baseY = Math.round(y + 7 + walkBob);
-    const sway = (this.tick % 40 < 20 ? 1 : 0);
-
+    // 2. Master NPC Character Pipeline from characters.js
     if (char && typeof drawNPCCharacter === 'function') {
       drawNPCCharacter(ctx, char, baseX, baseY, sway, isFront, isHappy, isBlinking);
     }
 
-    // --- CUSTOMER DRINKING HAPPINESS EFFECTS (Floating Hearts) ---
+    // 3. Floating Pixel Pink Hearts when happily drinking boba
     if (isHappy) {
-      // Floating Pixel Pink Hearts drifting above head
       for (let h = 0; h < 3; h++) {
         const hOffset = Math.round(Math.sin(this.tick * 0.15 + h * 2) * 3);
         const hY = Math.round(y - 14 - h * 7 - ((this.tick * 0.6) % 12));
@@ -1641,8 +1649,11 @@ class GameCanvas {
       }
     }
 
-    // --- CUTE PET COMPANION (Mèo Tam Thể hoặc Cún Poodle đi theo khách hàng dẫn đầu) ---
-    if (isFront && (!this.queue || this.queue.length <= 1 || x <= 195)) {
+    // 4. Shop / Companion Pet (if character does not have their own pet)
+    const hasOwnPet = char && char.style === 'lottery_girl';
+    if (!hasOwnPet && isFront && (!this.queue || this.queue.length <= 1 || x <= 195)) {
+      const petBob = (this.customerState === 'waiting' && isMoving) ? Math.round(Math.sin(this.tick * 0.45) * 2) : 0;
+      const petTail = Math.round(Math.sin(this.tick * 0.25) * 2);
       const petX = x - 18;
       const petY = y + 28;
       // Pet shadow
@@ -1651,61 +1662,38 @@ class GameCanvas {
       ctx.ellipse(petX + 6, petY + 12, 8, 3, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      if (type % 2 === 0) { // CÚN POODLE VÀNG LÔNG XOĂN (theo chân Bé Lan / Cô Ba)
-        ctx.fillStyle = '#e5a65e'; // Golden apricot fur
-        ctx.fillRect(petX + 2, petY + 2 + petBob, 10, 8); // body
-        ctx.fillRect(petX + 8, petY - 4 + petBob, 7, 7); // head
-        ctx.fillRect(petX + 13, petY - 2 + petBob, 3, 5); // floppy ears
-        // Red collar with gold bell
+      if ((char ? char.id : type) % 2 === 0) { // CÚN POODLE VÀNG LÔNG XOĂN
+        ctx.fillStyle = '#e5a65e';
+        ctx.fillRect(petX + 2, petY + 2 + petBob, 10, 8);
+        ctx.fillRect(petX + 8, petY - 4 + petBob, 7, 7);
+        ctx.fillRect(petX + 13, petY - 2 + petBob, 3, 5);
         ctx.fillStyle = '#e74c3c';
         ctx.fillRect(petX + 7, petY + 2 + petBob, 3, 2);
-        ctx.fillStyle = '#f4c430'; // bell
+        ctx.fillStyle = '#f4c430';
         ctx.fillRect(petX + 8, petY + 4 + petBob, 2, 2);
-        // Paws
         ctx.fillStyle = '#c8853b';
         ctx.fillRect(petX + 3, petY + 9, 3, 4);
         ctx.fillRect(petX + 8, petY + 9, 3, 4);
-        // Wagging tail
         ctx.fillRect(petX - 1, petY + 2 + petTail, 3, 3);
-      } else { // MÈO TAM THỂ MƯỚP (theo chân Dân văn phòng / TikToker / Shipper)
-        ctx.fillStyle = '#fff'; // White fur
-        ctx.fillRect(petX + 2, petY + 3 + petBob, 9, 7); // body
-        ctx.fillStyle = '#e67e22'; // orange calico patch
+      } else { // MÈO TAM THỂ MƯỚP
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(petX + 2, petY + 3 + petBob, 9, 7);
+        ctx.fillStyle = '#e67e22';
         ctx.fillRect(petX + 4, petY + 4 + petBob, 4, 3);
         ctx.fillStyle = '#fff';
-        ctx.fillRect(petX + 7, petY - 3 + petBob, 6, 6); // head
-        // Pointed Cat ears
+        ctx.fillRect(petX + 7, petY - 3 + petBob, 6, 6);
         ctx.fillStyle = '#e67e22';
         ctx.fillRect(petX + 7, petY - 5 + petBob, 2, 2);
         ctx.fillStyle = '#2c3e50';
         ctx.fillRect(petX + 11, petY - 5 + petBob, 2, 2);
-        // Green eyes
         ctx.fillStyle = '#2ecc71';
         ctx.fillRect(petX + 11, petY - 1 + petBob, 1, 2);
-        // Paws
         ctx.fillStyle = '#eee';
         ctx.fillRect(petX + 3, petY + 9, 2, 3);
         ctx.fillRect(petX + 8, petY + 9, 2, 3);
-        // Curled swinging tail
         ctx.fillStyle = '#e67e22';
         ctx.fillRect(petX - 2, petY + petTail, 2, 5);
       }
-    }
-
-    // --- DRINKING SIP ANIMATION WHEN SERVED ---
-    if (this.isDrinking && isFront) {
-      // Customer holds cup to mouth
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.fillRect(x + 7, y + 4, 8, 11);
-      ctx.fillStyle = '#a0522d';
-      ctx.fillRect(x + 8, y + 6 + (1 - this.drinkLevel) * 7, 6, 7 * this.drinkLevel);
-      // Straw into mouth
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(x + 10, y - 1, 2, 6);
-      // Heart eyes!
-      ctx.fillStyle = '#ff7675';
-      ctx.font = '10px monospace';
-      ctx.fillText('😍', x + 5, y - 2);
     }
 
     // Emotion & Typewriter Speech Bubble (Only for Front Waiting Customer)

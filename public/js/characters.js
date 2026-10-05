@@ -1,6 +1,6 @@
 /**
  * UNIVERSAL RETRO PIXEL ART CHARACTER SYSTEM
- * Generated from ModelNPC.html - 50 Distinct Characters & Pixel Art Engine
+ * Faithfully matches ModelNPC.html - 50 Distinct Characters & Pixel Art Engine
  */
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -916,7 +916,7 @@
           pRect(ctx, baseX + 14, baseY + 10, 2, 1, '#1E293B');
         } else {
           pRect(ctx, baseX + 8, baseY + 9, 2, 2, '#1E293B');
-          pDot(ctx, baseX + 8, baseY + 9, '#FFFFFF'); // eye shine
+          pDot(ctx, baseX + 8, baseY + 9, '#FFFFFF');
           pRect(ctx, baseX + 14, baseY + 9, 2, 2, '#1E293B');
           pDot(ctx, baseX + 14, baseY + 9, '#FFFFFF');
         }
@@ -977,120 +977,320 @@
     }
 
     
+    // 5. Left Arm & Right Arm with distinctive PROPS
     if (isFront && isDrinking) {
-      // Both hands holding boba cup to mouth joyfully
+      // Hands holding boba cup to mouth joyfully
       pRect(ctx, baseX + 3, baseY + 17, 3, 5, clothes);
       pRect(ctx, baseX + 18, baseY + 17, 3, 5, clothes);
       pRect(ctx, baseX + 5, baseY + 19, 3, 3, skin);
       pRect(ctx, baseX + 16, baseY + 19, 3, 3, skin);
       drawBobaCup(ctx, baseX + 9, baseY + 15, '#FFFFFF', '#92400E', '#EC4899', true);
-      // Straw to mouth
       pRect(ctx, baseX + 11, baseY + 12, 2, 4, '#F43F5E');
-      // Heart eyes emoji above head
       ctx.fillStyle = '#FF4757';
       ctx.font = '10px monospace';
       ctx.fillText('😍', baseX + 7, baseY + 2);
     } else {
-// 5. Left Arm & Right Arm with distinctive PROPS
-    // Left Arm
-    pRect(ctx, baseX + 2, baseY + 16 + sway, 3, 6, clothes);
-    pRect(ctx, baseX + 2, baseY + 21 + sway, 3, 3, skin);
+      // Left Arm
+      pRect(ctx, baseX + 2, baseY + 16 + sway, 3, 6, clothes);
+      pRect(ctx, baseX + 2, baseY + 21 + sway, 3, 3, skin);
 
-    // Right Arm with Prop
-    pRect(ctx, baseX + 18, baseY + 15 - sway, 3, 5, clothes);
-    pRect(ctx, baseX + 18, baseY + 20 - sway, 3, 3, skin);
+      // Right Arm with Prop
+      pRect(ctx, baseX + 18, baseY + 15 - sway, 3, 5, clothes);
+      pRect(ctx, baseX + 18, baseY + 20 - sway, 3, 3, skin);
 
-    // Dynamic Props Display
+
     const propX = baseX + 19;
     const propY = baseY + 16 - sway;
 
     switch (char.prop) {
       case 'shaker':
-        // Bình lắc inox đa sắc
         pRect(ctx, propX, propY - 2, 5, 8, '#B0BEC5');
-        pRect(ctx, propX + 1, propY - 2, 2, 8, '#ECEFF1'); // ánh kim loại
+        pRect(ctx, propX + 1, propY - 2, 2, 8, '#ECEFF1');
         pRect(ctx, propX + 1, propY - 4, 3, 2, '#90A4AE');
+        pDot(ctx, propX + 2, propY, '#F472B6');
         break;
+
       case 'gimbal':
-        // Gậy gimbal + điện thoại đang live
         pRect(ctx, propX + 1, propY - 3, 2, 9, '#334155');
         pRect(ctx, propX - 1, propY - 6, 6, 5, '#0284C7');
-        pDot(ctx, propX + 3, propY - 5, '#EF4444'); // đèn REC
+        pDot(ctx, propX + 3, propY - 5, '#EF4444');
         break;
+
       case 'laptop':
         pRect(ctx, baseX + 1, baseY + 19, 6, 6, '#94A3B8');
         pDot(ctx, baseX + 2, baseY + 20, '#22C55E');
         pDot(ctx, baseX + 4, baseY + 21, '#38BDF8');
         drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#78350F', '#0284C7');
         break;
+
       case 'fan':
-        // Quạt nan tre
         pRect(ctx, propX - 1, propY - 2, 6, 6, '#FDE68A');
         pRect(ctx, propX + 1, propY - 1, 4, 4, '#D97706');
         pRect(ctx, propX + 2, propY + 4, 1, 3, '#78350F');
         break;
+
       case 'brush':
-        // Bút lông thư pháp
         pRect(ctx, propX + 1, propY - 3, 1, 9, '#B45309');
         pRect(ctx, propX + 1, propY - 5, 1, 2, '#000000');
-        // Câu đối đỏ bên tay trái
         pRect(ctx, baseX + 1, baseY + 16, 4, 10, '#DC2626');
         pDot(ctx, baseX + 2, baseY + 18, '#FDE047');
         pDot(ctx, baseX + 3, baseY + 21, '#FDE047');
         break;
+
       case 'dumbbell':
-        // Tạ tay gym
         pRect(ctx, propX, propY - 1, 2, 6, '#475569');
         pRect(ctx, propX + 4, propY - 1, 2, 6, '#475569');
         pRect(ctx, propX + 1, propY + 1, 4, 2, '#94A3B8');
         break;
+
       case 'lottery':
-        // Xấp vé số may mắn
         pRect(ctx, baseX + 0, baseY + 17, 5, 7, '#EC4899');
         pRect(ctx, baseX + 0, baseY + 17, 5, 2, '#DC2626');
         drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#451A03', '#10B981');
         break;
+
       case 'camera':
         pRect(ctx, propX - 1, propY, 6, 4, '#1E293B');
         pRect(ctx, propX + 1, propY + 1, 2, 2, '#0284C7');
+        pDot(ctx, propX + 3, propY, '#F43F5E');
         break;
-      case 'phone':
-        pRect(ctx, propX, propY - 1, 4, 7, '#0F172A');
-        pRect(ctx, propX + 1, propY, 2, 5, '#38BDF8');
+
+      case 'notebook':
+        pRect(ctx, baseX + 1, baseY + 18, 5, 7, '#DC2626');
+        pDot(ctx, baseX + 3, baseY + 20, '#FACC15');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#78350F', '#0284C7');
         break;
+
+      case 'palette':
+        pRect(ctx, baseX + 0, baseY + 18, 6, 6, '#D97706');
+        pDot(ctx, baseX + 1, baseY + 19, '#EF4444');
+        pDot(ctx, baseX + 3, baseY + 19, '#3B82F6');
+        pDot(ctx, baseX + 2, baseY + 21, '#10B981');
+        pDot(ctx, baseX + 4, baseY + 21, '#FBBF24');
+        pRect(ctx, propX + 1, propY - 2, 1, 8, '#78350F');
+        pDot(ctx, propX + 1, propY - 3, '#EC4899');
+        break;
+
+      case 'chess':
+        pRect(ctx, baseX + 0, baseY + 18, 5, 8, '#78350F');
+        pRect(ctx, baseX + 1, baseY + 19, 3, 6, '#FEF3C7');
+        pDot(ctx, baseX + 2, baseY + 21, '#78350F');
+        pRect(ctx, propX + 1, propY, 3, 4, '#F8FAFC');
+        pDot(ctx, propX + 2, propY - 1, '#F8FAFC');
+        break;
+
+      case 'ball':
+        pRect(ctx, baseX - 3, baseY + 27, 7, 7, '#FFFFFF');
+        pDot(ctx, baseX - 1, baseY + 29, '#1E293B');
+        pDot(ctx, baseX - 2, baseY + 28, '#1E293B');
+        pDot(ctx, baseX + 1, baseY + 30, '#1E293B');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#15803D', '#E11D48');
+        break;
+
+      case 'book':
+        pRect(ctx, propX - 1, propY - 1, 6, 8, '#1E3A8A');
+        pRect(ctx, propX, propY, 4, 6, '#F8FAFC');
+        pDot(ctx, propX + 2, propY + 7, '#DC2626');
+        break;
+
+      case 'mic':
+        pRect(ctx, propX + 1, propY - 3, 3, 4, '#94A3B8');
+        pDot(ctx, propX + 2, propY - 4, '#CBD5E1');
+        pRect(ctx, propX + 2, propY + 1, 1, 6, '#1E293B');
+        drawBobaCup(ctx, baseX + 1, baseY + 18, '#FFFFFF', '#3E2723', '#F59E0B');
+        break;
+
+      case 'tube':
+        pRect(ctx, baseX - 3, baseY + 10, 3, 16, '#0F172A');
+        pRect(ctx, baseX - 4, baseY + 8, 5, 3, '#DC2626');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#0284C7', '#38BDF8');
+        break;
+
+      case 'skateboard':
+        pRect(ctx, baseX - 3, baseY + 14, 4, 15, '#F97316');
+        pDot(ctx, baseX - 4, baseY + 15, '#06B6D4');
+        pDot(ctx, baseX - 4, baseY + 26, '#06B6D4');
+        pDot(ctx, baseX - 2, baseY + 20, '#FACC15');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#F59E0B', '#10B981');
+        break;
+
       case 'lightstick':
         pRect(ctx, propX + 1, propY + 1, 2, 5, '#FFFFFF');
         pRect(ctx, propX, propY - 3, 4, 4, '#F43F5E');
         pDot(ctx, propX + 1, propY - 2, '#FFF1F2');
         break;
-      case 'balloon':
-        pRect(ctx, propX + 1, propY - 2, 1, 8, '#CBD5E1');
-        pRect(ctx, propX - 2, propY - 8, 7, 7, '#EF4444');
-        pDot(ctx, propX - 1, propY - 7, '#FCA5A5');
+
+      case 'headset':
+        pRect(ctx, baseX + 4, baseY + 2, 16, 2, '#09090B');
+        pRect(ctx, baseX + 3, baseY + 7, 3, 5, '#06B6D4');
+        pRect(ctx, baseX + 18, baseY + 7, 3, 5, '#EC4899');
+        pRect(ctx, baseX + 6, baseY + 12, 3, 1, '#64748B');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#0652DD', '#A3CB38');
         break;
-      case 'wand':
-        pRect(ctx, propX + 1, propY - 2, 1, 8, '#F59E0B');
-        pDot(ctx, propX + 1, propY - 3, '#FDE047');
-        pDot(ctx, propX, propY - 3, '#FDE047');
-        pDot(ctx, propX + 2, propY - 3, '#FDE047');
+
+      case 'phone':
+        pRect(ctx, propX, propY - 1, 4, 7, '#0F172A');
+        pRect(ctx, propX + 1, propY, 2, 5, '#38BDF8');
         break;
-      case 'bread':
-        pRect(ctx, propX - 1, propY, 7, 4, '#D97706');
-        pRect(ctx, propX, propY + 1, 5, 2, '#FDE68A');
+
+      case 'kettle':
+        pRect(ctx, propX, propY - 1, 6, 6, '#CBD5E1');
+        pRect(ctx, propX + 5, propY - 3, 2, 4, '#94A3B8');
+        pDot(ctx, propX + 6, propY - 4, '#CBD5E1');
+        pRect(ctx, propX - 2, propY, 2, 4, '#334155');
         break;
+
+      case 'backpack':
+        pRect(ctx, baseX - 5, baseY + 12, 6, 15, '#B45309');
+        pRect(ctx, baseX - 5, baseY + 8, 6, 4, '#059669');
+        pDot(ctx, baseX - 3, baseY + 16, '#FBBF24');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#16A34A', '#FACC15');
+        break;
+
+      case 'folder':
+        pRect(ctx, baseX + 0, baseY + 18, 5, 7, '#047857');
+        pRect(ctx, baseX + 1, baseY + 19, 3, 5, '#FFFFFF');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#BE185D', '#FB7185');
+        break;
+
       case 'shipper_box':
         pRect(ctx, baseX + 19, baseY + 14, 6, 9, '#15803D');
         pRect(ctx, baseX + 20, baseY + 16, 4, 5, '#16A34A');
         pRect(ctx, baseX + 21, baseY + 18, 2, 1, '#FFFFFF');
         drawBobaCup(ctx, propX, propY + 2, '#FFFFFF', '#15803D', '#FDE047');
         break;
+
+      case 'stethoscope':
+        pRect(ctx, baseX + 7, baseY + 14, 2, 5, '#94A3B8');
+        pRect(ctx, baseX + 15, baseY + 14, 2, 5, '#94A3B8');
+        pRect(ctx, baseX + 9, baseY + 18, 6, 2, '#64748B');
+        pDot(ctx, baseX + 12, baseY + 20, '#CBD5E1');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#059669', '#34D399');
+        break;
+
+      case 'chalk':
+        pRect(ctx, baseX + 0, baseY + 18, 5, 7, '#BE185D');
+        pRect(ctx, propX + 1, propY + 1, 1, 4, '#FFFFFF');
+        break;
+
+      case 'wrench':
+        pRect(ctx, propX + 1, propY - 2, 1, 8, '#94A3B8');
+        pRect(ctx, propX, propY - 4, 3, 3, '#CBD5E1');
+        pDot(ctx, propX + 1, propY - 3, '#475569');
+        break;
+
+      case 'baton':
+        pRect(ctx, propX + 1, propY - 4, 2, 10, '#EF4444');
+        pRect(ctx, propX + 1, propY - 2, 2, 3, '#FFFFFF');
+        pRect(ctx, propX + 1, propY + 4, 2, 3, '#1E293B');
+        break;
+
+      case 'knife':
+        pRect(ctx, propX + 1, propY - 3, 2, 7, '#E2E8F0');
+        pDot(ctx, propX + 1, propY - 3, '#FFFFFF');
+        pRect(ctx, propX + 1, propY + 3, 2, 3, '#78350F');
+        break;
+
+      case 'briefcase':
+        pRect(ctx, propX - 1, propY, 7, 7, '#3E2723');
+        pRect(ctx, propX, propY + 1, 5, 5, '#5D4037');
+        pDot(ctx, propX + 2, propY + 2, '#FACC15');
+        break;
+
+      case 'aviator':
+        pRect(ctx, baseX + 9, baseY + 16, 6, 2, '#FACC15');
+        pDot(ctx, baseX + 11, baseY + 17, '#FFFFFF');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#0369A1', '#38BDF8');
+        break;
+
+      case 'hammer':
+        pRect(ctx, propX + 1, propY - 1, 2, 8, '#78350F');
+        pRect(ctx, propX - 1, propY - 4, 5, 4, '#475569');
+        pRect(ctx, propX, propY - 3, 3, 2, '#94A3B8');
+        break;
+
+      case 'pill':
+        pRect(ctx, propX, propY, 4, 6, '#0284C7');
+        pRect(ctx, propX, propY, 4, 3, '#EF4444');
+        pDot(ctx, propX + 1, propY + 1, '#FFFFFF');
+        break;
+
+      case 'ruler':
+        pRect(ctx, propX + 1, propY - 3, 2, 9, '#F59E0B');
+        pDot(ctx, propX + 1, propY - 1, '#78350F');
+        pDot(ctx, propX + 1, propY + 2, '#78350F');
+        break;
+
+      case 'bread':
+        pRect(ctx, propX - 1, propY, 7, 4, '#D97706');
+        pRect(ctx, propX, propY + 1, 5, 2, '#FDE68A');
+        break;
+
+      case 'fist':
+        pRect(ctx, baseX + 6, baseY + 23, 12, 2, '#2563EB');
+        pRect(ctx, baseX + 14, baseY + 25, 2, 4, '#2563EB');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#EA580C', '#FBBF24');
+        break;
+
+      case 'helmet':
+        pRect(ctx, baseX - 3, baseY + 17, 6, 6, '#15803D');
+        pRect(ctx, baseX - 2, baseY + 18, 4, 2, '#FDE047');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#0D9488', '#F59E0B');
+        break;
+
+      case 'yarn':
+        pRect(ctx, propX, propY + 1, 5, 5, '#DC2626');
+        pDot(ctx, propX + 1, propY + 2, '#F87171');
+        pRect(ctx, propX - 1, propY - 1, 1, 6, '#CBD5E1');
+        pRect(ctx, propX + 4, propY - 2, 1, 6, '#CBD5E1');
+        break;
+
+      case 'newspaper':
+        pRect(ctx, baseX - 1, baseY + 18, 4, 7, '#E2E8F0');
+        pDot(ctx, baseX, baseY + 20, '#1E293B');
+        pDot(ctx, baseX + 1, baseY + 22, '#1E293B');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#451A03', '#FBBF24');
+        break;
+
+      case 'scissors':
+        pRect(ctx, propX + 1, propY - 1, 2, 6, '#475569');
+        pRect(ctx, propX, propY - 3, 4, 3, '#CBD5E1');
+        pDot(ctx, propX + 1, propY - 4, '#CBD5E1');
+        break;
+
+      case 'wand':
+        pRect(ctx, propX + 1, propY - 2, 1, 8, '#F59E0B');
+        pDot(ctx, propX + 1, propY - 3, '#FDE047');
+        pDot(ctx, propX, propY - 3, '#FDE047');
+        pDot(ctx, propX + 2, propY - 3, '#FDE047');
+        break;
+
+      case 'extinguisher':
+        pRect(ctx, baseX - 3, baseY + 16, 5, 10, '#DC2626');
+        pRect(ctx, baseX - 2, baseY + 14, 3, 3, '#1E293B');
+        pDot(ctx, baseX - 1, baseY + 13, '#FACC15');
+        pDot(ctx, baseX - 1, baseY + 19, '#FFFFFF');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#DC2626', '#38BDF8');
+        break;
+
+      case 'helmet_space':
+        pRect(ctx, baseX - 4, baseY + 12, 5, 14, '#F8FAFC');
+        pRect(ctx, baseX - 3, baseY + 15, 3, 4, '#0284C7');
+        pDot(ctx, baseX - 2, baseY + 21, '#FACC15');
+        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#4338CA', '#A855F7');
+        break;
+
+      case 'balloon':
+        pRect(ctx, propX + 1, propY - 2, 1, 8, '#CBD5E1');
+        pRect(ctx, propX - 2, propY - 8, 7, 7, '#EF4444');
+        pDot(ctx, propX - 1, propY - 7, '#FCA5A5');
+        break;
+
       default:
-        // Cốc trà sữa hạt boba tiêu chuẩn
         drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#92400E', '#EC4899');
         break;
     }
 
-    
     }
 
     // Bé Hạnh & Cún Vàng companion puppy

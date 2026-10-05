@@ -975,10 +975,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnLabel: 'Trà'
     };
 
+    const charObj = (typeof getCharacter === 'function')
+      ? getCharacter(currentOrder.customerName || currentOrder.customerType)
+      : null;
+    const roleBadge = charObj && charObj.role
+      ? `<span style="font-size: 0.72rem; background: #3b2d54; color: #f4c430; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: bold; border: 1px solid #f4c43055; letter-spacing: 0.5px;">${charObj.role}</span>`
+      : '';
+
     elOrderSection.innerHTML = `
       <div class="order-box">
-        <div class="order-header">
-          <span>👤 <b>${currentOrder.customerName}</b></span>
+        <div class="order-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+          <span>👤 <b>${currentOrder.customerName}</b>${roleBadge}</span>
           <span style="color: #2e8b57; font-weight: bold;">+${currentOrder.price.toLocaleString('vi-VN')}đ</span>
         </div>
         <div style="font-style: italic; color: #ffffff; font-weight: 500; font-size: 0.95rem; margin: 3px 0 6px 0; background: #1c0e1a; border: 1px solid #57334d; border-left: 3px solid var(--gold); padding: 5px 8px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
