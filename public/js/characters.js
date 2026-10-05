@@ -1,6 +1,6 @@
 /**
  * UNIVERSAL RETRO PIXEL ART CHARACTER SYSTEM
- * Faithfully matches ModelNPC.html - 50 Distinct Characters & Pixel Art Engine
+ * Faithfully matches ModelNPC.html with full proportional height & signature details for all 50 characters
  */
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -12,6 +12,7 @@
     root.CHARACTERS = exports.CHARACTERS;
     root.CUSTOMERS_LIST = exports.CUSTOMERS_LIST;
     root.getCharacter = exports.getCharacter;
+    root.getCharacterHeight = exports.getCharacterHeight;
     root.pRect = exports.pRect;
     root.pDot = exports.pDot;
     root.drawBobaCup = exports.drawBobaCup;
@@ -547,6 +548,19 @@
   // 49 Customer NPCs (excluding Owner at index 0)
   var CUSTOMERS_LIST = CHARACTERS.slice(1);
 
+  // Character height in logical pixels (Sidewalk Y is 148)
+  function getCharacterHeight(charOrQuery) {
+    var char = getCharacter(charOrQuery);
+    if (!char) return 54;
+    var s = char.style;
+    if (s === 'lucky_cat') return 30;
+    if (s === 'kid' || s === 'artist_kid') return 42; // Cute preschool / primary kids
+    if (s === 'student_girl' || s === 'ballet_girl') return 50; // Middle school students
+    if (s === 'gymer' || s === 'foreigner' || s === 'police' || s === 'pilot' || s === 'firefighter') return 58; // Tall athletic adults
+    if (s === 'chef' || s === 'magician') return 58; // Tall hats
+    return 54; // Standard adult height
+  }
+
   // Quick lookup helper by name, type, or id
   function getCharacter(query) {
     if (!query && query !== 0) return CUSTOMERS_LIST[0];
@@ -651,707 +665,702 @@
     var clothes = char.palette.clothes;
     var sub = char.palette.sub;
     var pants = char.palette.pants;
+    var style = char.style;
 
-    // SPECIAL: Bé Mèo Thần Tài (Cat Model)
-    if (char.style === 'lucky_cat') {
-      const catX = baseX + 2;
-      const catY = baseY + 6;
+    // --- SPECIAL 1: BÉ MÈO THẦN TÀI (Lucky Cat on mat) ---
+    if (style === 'lucky_cat') {
+      var catX = baseX + 2;
+      var catY = baseY + 2;
+      // Red velvet mat
+      pRect(ctx, catX, catY + 23, 20, 3, '#DC2626');
+      pRect(ctx, catX + 1, catY + 25, 18, 1, '#FACC15'); // Gold trim
+
       // Body & Tummy
-      pRect(ctx, catX + 3, catY + 10, 14, 15, '#FFFFFF');
-      pRect(ctx, catX + 5, catY + 12, 10, 11, '#FFFBEB');
+      pRect(ctx, catX + 3, catY + 10, 14, 14, '#FFFFFF');
+      pRect(ctx, catX + 5, catY + 12, 10, 10, '#FFFBEB');
       // Calico orange & black patches
-      pRect(ctx, catX + 12, catY + 11, 5, 6, '#EA580C');
-      pRect(ctx, catX + 3, catY + 18, 4, 5, '#18181B');
+      pRect(ctx, catX + 12, catY + 11, 5, 5, '#EA580C');
+      pRect(ctx, catX + 3, catY + 17, 4, 5, '#18181B');
       // Head & Ears with pink inner
       pRect(ctx, catX + 4, catY + 2, 12, 9, '#FFFFFF');
       pRect(ctx, catX + 10, catY + 2, 6, 5, '#EA580C');
-      // Ears
       pRect(ctx, catX + 3, catY - 1, 3, 4, '#FFFFFF');
       pDot(ctx, catX + 4, catY + 0, '#F472B6');
       pRect(ctx, catX + 14, catY - 1, 3, 4, '#EA580C');
       pDot(ctx, catX + 15, catY + 0, '#F472B6');
       // Eyes, Whiskers & Nose
       pDot(ctx, catX + 6, catY + 5, '#1E293B');
-      pDot(ctx, catX + 7, catY + 5, '#10B981'); // emerald cat eye
+      pDot(ctx, catX + 7, catY + 5, '#10B981'); // Emerald eye
       pDot(ctx, catX + 13, catY + 5, '#1E293B');
       pDot(ctx, catX + 14, catY + 5, '#10B981');
-      pDot(ctx, catX + 10, catY + 6, '#F43F5E'); // pink nose
-      // Whiskers
+      pDot(ctx, catX + 10, catY + 6, '#F43F5E'); // Pink nose
       pRect(ctx, catX + 1, catY + 6, 2, 1, '#94A3B8');
       pRect(ctx, catX + 17, catY + 6, 2, 1, '#94A3B8');
       // Red Collar & Golden Bell
       pRect(ctx, catX + 5, catY + 10, 10, 2, '#DC2626');
       pRect(ctx, catX + 9, catY + 12, 3, 3, '#FACC15');
       pDot(ctx, catX + 10, catY + 13, '#B45309');
-      // Waving Paw (Right hand moving up and down)
-      const pawY = catY + 6 - (sway * 3);
+      // Waving Paw
+      var pawY = catY + 6 - (sway * 3);
       pRect(ctx, catX + 16, pawY, 4, 5, '#FFFFFF');
-      pDot(ctx, catX + 17, pawY + 1, '#F472B6'); // paw pad
-      // Left Hand holding Golden Coin / Boba cup
+      pDot(ctx, catX + 17, pawY + 1, '#F472B6');
+      // Left Hand holding Golden Coin
       pRect(ctx, catX + 1, catY + 14, 4, 4, '#FFFFFF');
-      pRect(ctx, catX + 1, catY + 18, 5, 5, '#FEF08A');
-      pDot(ctx, catX + 3, catY + 20, '#D97706');
+      pRect(ctx, catX + 1, catY + 17, 5, 5, '#FEF08A');
+      pDot(ctx, catX + 3, catY + 19, '#D97706');
       // Tail swaying
-      const tailX = sway ? catX + 0 : catX - 1;
-      pRect(ctx, tailX, catY + 15, 3, 7, '#EA580C');
+      var tailX = sway ? catX + 0 : catX - 1;
+      pRect(ctx, tailX, catY + 14, 3, 7, '#EA580C');
       return;
     }
 
-    // SPECIAL: Cặp Đôi Gà Bông (Two Characters Hugging)
-    if (char.style === 'couple') {
+    // --- SPECIAL 2: CẶP ĐÔI GÀ BÔNG (Two Characters Snuggling) ---
+    if (style === 'couple') {
       // Girl (Left)
-      pRect(ctx, baseX + 1, baseY + 4, 9, 6, '#3E2723');
-      pDot(ctx, baseX + 3, baseY + 3, '#5D4037');
-      pRect(ctx, baseX + 2, baseY + 8, 8, 6, '#FFE0BD');
-      pRect(ctx, baseX + 4, baseY + 10, 3, 1, '#3E2723');
-      pDot(ctx, baseX + 3, baseY + 11, '#FB7185'); // blush
-      pRect(ctx, baseX + 1, baseY + 14, 8, 8, '#EC4899'); // pink tee
+      pRect(ctx, baseX + 1, baseY + 6, 9, 6, '#3E2723');
+      pDot(ctx, baseX + 3, baseY + 5, '#5D4037');
+      pRect(ctx, baseX + 2, baseY + 10, 8, 7, '#FFE0BD');
+      pRect(ctx, baseX + 4, baseY + 12, 3, 1, '#3E2723');
+      pDot(ctx, baseX + 3, baseY + 13, '#FB7185'); // blush
+      pRect(ctx, baseX + 1, baseY + 17, 8, 14, '#EC4899'); // pink hoodie
+      pRect(ctx, baseX + 2, baseY + 31, 3, 18, '#2563EB'); // girl jeans
+      pRect(ctx, baseX + 6, baseY + 31, 3, 18, '#2563EB');
+      pRect(ctx, baseX + 1, baseY + 49, 4, 3, '#FFFFFF'); // white sneakers
+      pRect(ctx, baseX + 6, baseY + 49, 4, 3, '#FFFFFF');
 
       // Boy (Right)
-      pRect(ctx, baseX + 13, baseY + 3, 9, 6, '#7C2D12');
-      pDot(ctx, baseX + 15, baseY + 2, '#9A3412');
-      pRect(ctx, baseX + 13, baseY + 7, 8, 7, '#FCD7B0');
-      pRect(ctx, baseX + 15, baseY + 9, 2, 2, '#1E293B');
-      pDot(ctx, baseX + 18, baseY + 10, '#F87171');
-      pRect(ctx, baseX + 13, baseY + 14, 9, 9, '#EC4899');
+      pRect(ctx, baseX + 13, baseY + 5, 9, 6, '#7C2D12');
+      pDot(ctx, baseX + 15, baseY + 4, '#9A3412');
+      pRect(ctx, baseX + 13, baseY + 9, 8, 7, '#FCD7B0');
+      pRect(ctx, baseX + 15, baseY + 11, 2, 2, '#1E293B');
+      pDot(ctx, baseX + 18, baseY + 12, '#F87171');
+      pRect(ctx, baseX + 13, baseY + 16, 9, 15, '#EC4899'); // matching hoodie
+      pRect(ctx, baseX + 14, baseY + 31, 3, 18, '#1E293B'); // boy jeans
+      pRect(ctx, baseX + 18, baseY + 31, 3, 18, '#1E293B');
+      pRect(ctx, baseX + 14, baseY + 49, 4, 3, '#FFFFFF');
+      pRect(ctx, baseX + 18, baseY + 49, 4, 3, '#FFFFFF');
 
-      // Shared Heart Icon on Chests
-      pRect(ctx, baseX + 9, baseY + 15, 4, 3, '#FFFFFF');
-      pDot(ctx, baseX + 10, baseY + 14, '#FFFFFF');
-      pDot(ctx, baseX + 11, baseY + 14, '#FFFFFF');
-      pRect(ctx, baseX + 10, baseY + 16, 2, 1, '#F43F5E');
+      // Shared Heart Graphic across chests
+      pRect(ctx, baseX + 9, baseY + 18, 4, 3, '#FFFFFF');
+      pDot(ctx, baseX + 10, baseY + 17, '#FFFFFF');
+      pDot(ctx, baseX + 11, baseY + 17, '#FFFFFF');
+      pRect(ctx, baseX + 10, baseY + 19, 2, 1, '#F43F5E');
 
       // Shared Giant Boba with 2 Straws
-      drawBobaCup(ctx, baseX + 9, baseY + 18, '#FFEDD5', '#FB923C', '#F43F5E');
-      // Second straw pointing to boy
-      pRect(ctx, baseX + 13, baseY + 15, 2, 4, '#0ea5e9');
-      pDot(ctx, baseX + 14, baseY + 14, '#0ea5e9');
-
-      // Legs
-      pRect(ctx, baseX + 2, baseY + 22, 3, 9, '#2563EB');
-      pRect(ctx, baseX + 6, baseY + 22, 3, 9, '#2563EB');
-      pRect(ctx, baseX + 14, baseY + 23, 3, 8, '#1E293B');
-      pRect(ctx, baseX + 18, baseY + 23, 3, 8, '#1E293B');
-      pRect(ctx, baseX + 1, baseY + 31, 4, 2, '#FFFFFF');
-      pRect(ctx, baseX + 6, baseY + 31, 4, 2, '#FFFFFF');
-      pRect(ctx, baseX + 14, baseY + 31, 4, 2, '#FFFFFF');
-      pRect(ctx, baseX + 18, baseY + 31, 4, 2, '#FFFFFF');
+      drawBobaCup(ctx, baseX + 9, baseY + 22, '#FFEDD5', '#FB923C', '#F43F5E');
+      // Second blue straw pointing to boy
+      pRect(ctx, baseX + 13, baseY + 19, 2, 4, '#0EA5E9');
+      pDot(ctx, baseX + 14, baseY + 18, '#0EA5E9');
       return;
     }
 
-    // --- CHARACTER #1: CHỊ THẢO BOBA (CÔ CHỦ TIỆM TRẺ XINH ĐẸP) ---
-    if (char.style === 'owner') {
-      // 1. Tóc dài hạt dẻ bồng bềnh + búi tóc 2 bên / nơ hoa xinh xắn
-      // Tóc phía sau lưng
-      pRect(ctx, baseX + 4, baseY + 6, 16, 15, '#4E2A16');
-      pRect(ctx, baseX + 3, baseY + 10, 3, 11, '#3D2010');
-      pRect(ctx, baseX + 18, baseY + 10, 3, 11, '#3D2010');
+    // --- PROPORTIONAL RETRO CHARACTER PIPELINE (Adults, Kids, Professionals) ---
+    var isKid = (style === 'kid' || style === 'artist_kid');
+    var isTall = (style === 'gymer' || style === 'foreigner' || style === 'police' || style === 'pilot' || style === 'firefighter');
+    var isTeen = (style === 'student_girl' || style === 'ballet_girl');
 
-      // Búi tóc hai bên xinh xắn
-      pRect(ctx, baseX + 2, baseY + 1, 4, 4, '#4E2A16');
-      pRect(ctx, baseX + 18, baseY + 1, 4, 4, '#4E2A16');
-      // Nơ hồng xinh xắn trên búi tóc
-      pRect(ctx, baseX + 3, baseY + 2, 2, 2, '#F43F5E');
-      pDot(ctx, baseX + 4, baseY + 2, '#FFF1F2');
-      pRect(ctx, baseX + 19, baseY + 2, 2, 2, '#F43F5E');
-      pDot(ctx, baseX + 19, baseY + 2, '#FFF1F2');
+    // Mathematically perfect vertical layout ensuring shoe bottom lands at baseY + (height - 1):
+    var headTop = baseY + 2;
+    var faceTop = headTop + 4;
+    var torsoTop = faceTop + (isKid ? 9 : 10);
+    var torsoH = isKid ? 11 : (isTeen ? 14 : (isTall ? 18 : 16));
+    var pantsTop = torsoTop + torsoH;
+    var legLength = isKid ? 12 : (isTeen ? 16 : (isTall ? 20 : 18));
+    var shoeTop = pantsTop + legLength;
 
-      // Tóc mái bồng bềnh phía trước
-      pRect(ctx, baseX + 6, baseY + 2, 12, 4, '#4E2A16');
-      pRect(ctx, baseX + 8, baseY + 1, 8, 2, '#67391F');
-      pDot(ctx, baseX + 10, baseY + 1, '#8C4D2A'); // bóng tóc óng ả
-      pRect(ctx, baseX + 5, baseY + 5, 3, 4, '#4E2A16'); // lọn tóc mai ôm má
-      pRect(ctx, baseX + 16, baseY + 5, 3, 4, '#4E2A16');
-
-      // 2. Gương mặt thiếu nữ anime xinh xắn
-      pRect(ctx, baseX + 6, baseY + 6, 12, 8, skin);
-      pRect(ctx, baseX + 7, baseY + 13, 10, 2, '#F6C8A6'); // bóng cằm thanh tú
-
-      // Đôi mắt to tròn lung linh
-      pRect(ctx, baseX + 8, baseY + 8, 2, 3, '#1E293B');
-      pDot(ctx, baseX + 8, baseY + 8, '#FFFFFF'); // ánh long lanh mắt
-      pDot(ctx, baseX + 9, baseY + 10, '#38BDF8'); // tròng mắt xanh ngọc trong trẻo
-
-      pRect(ctx, baseX + 14, baseY + 8, 2, 3, '#1E293B');
-      pDot(ctx, baseX + 14, baseY + 8, '#FFFFFF');
-      pDot(ctx, baseX + 15, baseY + 10, '#38BDF8');
-
-      // Má hồng phớt kẹo ngọt
-      pRect(ctx, baseX + 6, baseY + 10, 2, 2, '#FB7185');
-      pDot(ctx, baseX + 7, baseY + 10, '#FDA4AF');
-      pRect(ctx, baseX + 16, baseY + 10, 2, 2, '#FB7185');
-      pDot(ctx, baseX + 16, baseY + 10, '#FDA4AF');
-
-      // Nụ cười chúm chím rạng rỡ
-      pRect(ctx, baseX + 10, baseY + 12, 4, 1, '#F43F5E');
-      pDot(ctx, baseX + 11, baseY + 12, '#FFFFFF');
-
-      // 3. Trang phục: Áo thun trắng/pastel + Tạp dề hồng phấn dễ thương
-      // Cổ áo
-      pRect(ctx, baseX + 9, baseY + 14, 6, 2, '#FFE0BD');
-      // Áo bên trong
-      pRect(ctx, baseX + 5, baseY + 15, 14, 10, '#FFF5F5');
-
-      // Chiếc tạp dề hồng đào xinh xắn của tiệm boba
-      pRect(ctx, baseX + 7, baseY + 15, 10, 10, '#FB7185');
-      pRect(ctx, baseX + 6, baseY + 18, 12, 7, '#F43F5E'); // tà tạp dề
-      pRect(ctx, baseX + 8, baseY + 15, 2, 3, '#E11D48'); // quai tạp dề
-      pRect(ctx, baseX + 14, baseY + 15, 2, 3, '#E11D48');
-
-      // Hình thêu ly trà sữa mini trên ngực tạp dề
-      pRect(ctx, baseX + 11, baseY + 18, 2, 3, '#FFFFFF');
-      pDot(ctx, baseX + 11, baseY + 19, '#78350F'); // trà
-      pDot(ctx, baseX + 12, baseY + 17, '#FDE047'); // ống hút mini
-
-      // 4. Đôi tay lắc bình shaker điêu luyện
-      // Tay trái nhún nhẩy
-      pRect(ctx, baseX + 3, baseY + 16 + sway, 3, 5, '#FFF5F5');
-      pRect(ctx, baseX + 3, baseY + 20 + sway, 3, 3, skin);
-
-      // Tay phải cầm bình shaker inox sáng loáng
-      pRect(ctx, baseX + 18, baseY + 15 - sway, 3, 5, '#FFF5F5');
-      pRect(ctx, baseX + 18, baseY + 19 - sway, 3, 3, skin);
-
-      const propX = baseX + 19;
-      const propY = baseY + 15 - sway;
-      // Shaker shaker inox sáng bóng ánh cầu vồng
-      pRect(ctx, propX, propY - 3, 5, 8, '#CBD5E1');
-      pRect(ctx, propX + 1, propY - 3, 2, 8, '#FFFFFF'); // viền ánh kim
-      pRect(ctx, propX + 1, propY - 5, 3, 2, '#94A3B8');
-      pDot(ctx, propX + 2, propY - 2, '#F472B6'); // sticker trái tim trên bình
-
-      // 5. Chân & Váy / Quần shorts trẻ trung
-      pRect(ctx, baseX + 6, baseY + 25, 12, 2, '#831843'); // gấu váy/tạp dề
-      // Chân thon gọn với tất trắng
-      pRect(ctx, baseX + 7, baseY + 26, 4, 5, skin);
-      pRect(ctx, baseX + 13, baseY + 26, 4, 5, skin);
-      // Tất cổ ngắn trắng
-      pRect(ctx, baseX + 7, baseY + 29, 4, 3, '#FFFFFF');
-      pRect(ctx, baseX + 13, baseY + 29, 4, 3, '#FFFFFF');
-      pDot(ctx, baseX + 8, baseY + 29, '#F43F5E');
-      pDot(ctx, baseX + 14, baseY + 29, '#F43F5E');
-
-      // Giày sneaker hồng xinh xắn
-      pRect(ctx, baseX + 6, baseY + 32, 5, 2, '#FB7185');
-      pRect(ctx, baseX + 13, baseY + 32, 5, 2, '#FB7185');
-      pRect(ctx, baseX + 5, baseY + 33, 6, 1, '#FFFFFF'); // đế giày
-      pRect(ctx, baseX + 13, baseY + 33, 6, 1, '#FFFFFF');
-      return;
-    }
-
-    // --- STANDARD HUMAN CHARACTERS (48 TYPES) ---
-
-    // 2. Hair / Headwear Top Layer
-    if (char.style === 'calligrapher') {
+    // 1. HEADWEAR & HAIRSTYLE
+    if (style === 'clown') {
+      // Rainbow curly clown afro
+      pRect(ctx, baseX + 3, headTop - 2, 16, 6, '#EF4444');
+      pRect(ctx, baseX + 2, headTop + 1, 4, 7, '#F59E0B');
+      pRect(ctx, baseX + 16, headTop + 1, 4, 7, '#06B6D4');
+      pDot(ctx, baseX + 5, headTop - 3, '#10B981');
+      pDot(ctx, baseX + 14, headTop - 3, '#8B5CF6');
+    } else if (style === 'kid') {
+      // Bé Bi yellow bucket hat (#MũTaiBèo)
+      pRect(ctx, baseX + 3, headTop - 1, 16, 5, '#FDE047');
+      pRect(ctx, baseX + 1, headTop + 3, 20, 2, '#FACC15'); // brim
+      pRect(ctx, baseX + 5, headTop + 0, 12, 1, '#EAB308'); // hat band
+    } else if (style === 'ballet_girl') {
+      // Ballerina high bun with golden tiara
+      pRect(ctx, baseX + 8, headTop - 3, 6, 5, hair);
+      pRect(ctx, baseX + 9, headTop - 4, 4, 2, '#FACC15'); // Tiara
+      pDot(ctx, baseX + 10, headTop - 5, '#FFFFFF'); // Gem
+      pRect(ctx, baseX + 5, headTop + 2, 12, 4, hair);
+    } else if (style === 'police') {
+      // CSGT yellow peaked kepi cap with red band
+      pRect(ctx, baseX + 5, headTop - 2, 12, 5, '#EAB308');
+      pRect(ctx, baseX + 5, headTop + 2, 12, 2, '#DC2626'); // Red band
+      pDot(ctx, baseX + 10, headTop + 2, '#FDE047'); // Gold crest
+      pRect(ctx, baseX + 4, headTop + 3, 14, 1, '#1E293B'); // Visor
+    } else if (style === 'pilot') {
+      // Airline Captain Cap
+      pRect(ctx, baseX + 5, headTop - 2, 12, 5, '#0F172A');
+      pRect(ctx, baseX + 5, headTop + 2, 12, 2, '#FACC15'); // Gold braid
+      pDot(ctx, baseX + 10, headTop + 1, '#FDE047'); // Eagle emblem
+      pRect(ctx, baseX + 4, headTop + 3, 14, 1, '#020617'); // Visor
+    } else if (style === 'doctor') {
+      // Doctor forehead reflector mirror
+      pRect(ctx, baseX + 5, headTop + 1, 12, 4, hair);
+      pRect(ctx, baseX + 9, headTop - 1, 4, 4, '#CBD5E1'); // Silver reflector
+      pDot(ctx, baseX + 10, headTop + 0, '#FFFFFF'); // Gleam
+    } else if (style === 'chef') {
+      // Tall Toque Blanche Chef Hat
+      pRect(ctx, baseX + 6, headTop - 7, 10, 8, '#FFFFFF');
+      pRect(ctx, baseX + 5, headTop - 5, 12, 6, '#F8FAFC');
+      pRect(ctx, baseX + 6, headTop + 1, 10, 2, '#E2E8F0');
+    } else if (style === 'magician') {
+      // Top Hat with red satin ribbon
+      pRect(ctx, baseX + 6, headTop - 6, 10, 8, '#09090B');
+      pRect(ctx, baseX + 6, headTop + 0, 10, 2, '#DC2626'); // Ribbon
+      pRect(ctx, baseX + 3, headTop + 2, 16, 2, '#09090B'); // Brim
+    } else if (style === 'calligrapher') {
       // Khăn xếp truyền thống
-      pRect(ctx, baseX + 6, baseY + 2, 12, 4, '#1E1B4B');
-      pRect(ctx, baseX + 7, baseY + 1, 10, 2, '#312E81');
-      pDot(ctx, baseX + 9, baseY + 3, '#4338CA');
-      pDot(ctx, baseX + 12, baseY + 3, '#4338CA');
-    } else if (char.style === 'lottery_girl' || char.style === 'gardener') {
+      pRect(ctx, baseX + 5, headTop + 0, 12, 4, '#1E1B4B');
+      pRect(ctx, baseX + 6, headTop - 1, 10, 2, '#312E81');
+      pDot(ctx, baseX + 8, headTop + 1, '#4338CA');
+      pDot(ctx, baseX + 12, headTop + 1, '#4338CA');
+    } else if (style === 'lottery_girl' || style === 'gardener') {
       // Nón lá Việt Nam
-      pRect(ctx, baseX + 11, baseY - 1, 2, 2, '#D7CCC8');
-      pRect(ctx, baseX + 8, baseY + 1, 8, 2, '#D7CCC8');
-      pRect(ctx, baseX + 5, baseY + 3, 14, 2, '#D7CCC8');
-      pRect(ctx, baseX + 2, baseY + 5, 20, 2, '#BCAAA4');
-      pDot(ctx, baseX + 10, baseY + 2, '#FFFFFF');
-      pRect(ctx, baseX + 6, baseY + 7, 1, 7, '#F43F5E'); // quai nón
-      pRect(ctx, baseX + 17, baseY + 7, 1, 7, '#F43F5E');
-    } else if (char.style === 'shipper' || char.style === 'electrician' || char.style === 'firefighter') {
-      // Mũ bảo hiểm / Mũ bảo hộ
-      const helmCol = char.style === 'shipper' ? '#15803D' : (char.style === 'electrician' ? '#EA580C' : '#CA8A04');
-      pRect(ctx, baseX + 5, baseY + 1, 14, 6, helmCol);
-      pRect(ctx, baseX + 6, baseY + 0, 12, 2, '#FDE047');
-      pRect(ctx, baseX + 7, baseY + 4, 10, 3, '#0F172A'); // kính che
-      pDot(ctx, baseX + 8, baseY + 4, '#38BDF8');
-    } else if (char.style === 'chef') {
-      // Mũ Toque bếp trưởng cao
-      pRect(ctx, baseX + 7, baseY - 4, 10, 6, '#FFFFFF');
-      pRect(ctx, baseX + 6, baseY - 2, 12, 4, '#F8FAFC');
-      pRect(ctx, baseX + 6, baseY + 2, 12, 2, '#CBD5E1');
-    } else if (char.style === 'magician') {
-      // Mũ chóp cao ảo thuật
-      pRect(ctx, baseX + 7, baseY - 3, 10, 7, '#09090B');
-      pRect(ctx, baseX + 7, baseY + 2, 10, 2, '#DC2626'); // ribbon đỏ
-      pRect(ctx, baseX + 4, baseY + 4, 16, 2, '#09090B'); // vành
-    } else if (char.style === 'astronaut') {
-      // Mũ phi hành gia với kính gương
-      pRect(ctx, baseX + 4, baseY + 1, 16, 12, '#F8FAFC');
-      pRect(ctx, baseX + 7, baseY + 4, 10, 7, '#0F172A');
-      pRect(ctx, baseX + 8, baseY + 5, 8, 5, '#0284C7');
-      pDot(ctx, baseX + 9, baseY + 6, '#38BDF8');
-    } else if (char.style === 'student_girl' || char.style === 'anime_girl') {
-      // Tóc búi 2 bên hoặc tai mèo
-      pRect(ctx, baseX + 2, baseY + 2, 5, 5, hair);
-      pRect(ctx, baseX + 17, baseY + 2, 5, 5, hair);
-      pRect(ctx, baseX + 6, baseY + 4, 12, 5, hair);
-      pRect(ctx, baseX + 8, baseY + 4, 8, 1, '#F472B6'); // kẹp/nơ
+      pRect(ctx, baseX + 10, headTop - 3, 2, 2, '#D7CCC8');
+      pRect(ctx, baseX + 7, headTop - 1, 8, 2, '#D7CCC8');
+      pRect(ctx, baseX + 4, headTop + 1, 14, 2, '#D7CCC8');
+      pRect(ctx, baseX + 1, headTop + 3, 20, 2, '#BCAAA4');
+      pDot(ctx, baseX + 9, headTop + 0, '#FFFFFF');
+      pRect(ctx, baseX + 5, headTop + 5, 1, 7, '#F43F5E'); // quai nón
+      pRect(ctx, baseX + 16, headTop + 5, 1, 7, '#F43F5E');
+    } else if (style === 'shipper' || style === 'electrician' || style === 'firefighter' || style === 'driver') {
+      var helmCol = style === 'shipper' ? '#15803D' : (style === 'electrician' ? '#EA580C' : (style === 'driver' ? '#047857' : '#CA8A04'));
+      pRect(ctx, baseX + 4, headTop - 1, 14, 6, helmCol);
+      pRect(ctx, baseX + 5, headTop - 2, 12, 2, '#FDE047');
+      pRect(ctx, baseX + 6, headTop + 2, 10, 3, '#0F172A'); // visor
+      pDot(ctx, baseX + 7, headTop + 2, '#38BDF8');
+    } else if (style === 'astronaut') {
+      pRect(ctx, baseX + 3, headTop - 1, 16, 12, '#F8FAFC');
+      pRect(ctx, baseX + 6, headTop + 2, 10, 7, '#0F172A');
+      pRect(ctx, baseX + 7, headTop + 3, 8, 5, '#0284C7');
+      pDot(ctx, baseX + 8, headTop + 4, '#38BDF8');
+    } else if (style === 'student_girl' || style === 'anime_girl') {
+      pRect(ctx, baseX + 1, headTop + 0, 5, 6, hair);
+      pRect(ctx, baseX + 16, headTop + 0, 5, 6, hair);
+      pRect(ctx, baseX + 5, headTop + 1, 12, 5, hair);
+      pRect(ctx, baseX + 7, headTop + 1, 8, 1, '#F472B6'); // ribbon
+    } else if (style === 'rapper') {
+      // Backwards snapback cap
+      pRect(ctx, baseX + 4, headTop - 1, 14, 5, '#1E293B');
+      pRect(ctx, baseX + 14, headTop + 2, 5, 2, '#0F172A'); // Snapback brim back
+      pDot(ctx, baseX + 10, headTop + 0, '#FACC15'); // Gold badge
+    } else if (style === 'skater') {
+      // Street knitted beanie
+      pRect(ctx, baseX + 4, headTop - 2, 14, 6, '#475569');
+      pRect(ctx, baseX + 4, headTop + 2, 14, 2, '#334155'); // Cuff
+    } else if (style === 'kpop_fan') {
+      // Idol bunny headband
+      pRect(ctx, baseX + 5, headTop - 1, 12, 4, hair);
+      pRect(ctx, baseX + 6, headTop - 4, 2, 4, '#F472B6'); // Left ear
+      pRect(ctx, baseX + 14, headTop - 4, 2, 4, '#F472B6'); // Right ear
+    } else if (style === 'neighbor' || style === 'grandma') {
+      // Hair bun with crab claw clip
+      pRect(ctx, baseX + 4, headTop + 1, 14, 4, hair);
+      pRect(ctx, baseX + 8, headTop - 3, 6, 4, hair);
+      pRect(ctx, baseX + 9, headTop - 2, 4, 2, style === 'grandma' ? '#CBD5E1' : '#E11D48'); // Clip
+    } else if (style === 'bread_lady') {
+      // Traditional headscarf
+      pRect(ctx, baseX + 4, headTop - 1, 14, 5, '#F59E0B');
+      pDot(ctx, baseX + 10, headTop + 3, '#D97706');
+    } else if (style === 'foreigner') {
+      // Golden surfer waves
+      pRect(ctx, baseX + 4, headTop + 0, 14, 5, '#FACC15');
+      pRect(ctx, baseX + 3, headTop + 3, 3, 6, '#EAB308');
+      pRect(ctx, baseX + 16, headTop + 3, 3, 6, '#EAB308');
     } else {
-      // Tóc thường với highlight & nếp
-      pRect(ctx, baseX + 5, baseY + 3, 14, 4, hair);
-      pRect(ctx, baseX + 7, baseY + 2, 8, 2, hair);
-      pDot(ctx, baseX + 9, baseY + 2, '#FFFFFF55'); // bóng tóc
-      pRect(ctx, baseX + 4, baseY + 5, 2, 4, hair);
-      pRect(ctx, baseX + 18, baseY + 5, 2, 4, hair);
+      // Standard groomed hair with glossy highlight
+      pRect(ctx, baseX + 4, headTop + 1, 14, 4, hair);
+      pRect(ctx, baseX + 6, headTop + 0, 8, 2, hair);
+      pDot(ctx, baseX + 8, headTop + 0, '#FFFFFF55');
+      pRect(ctx, baseX + 3, headTop + 3, 2, 4, hair);
+      pRect(ctx, baseX + 17, headTop + 3, 2, 4, hair);
     }
 
-    // 3. Face & Facial Nuances
-    if (char.style !== 'astronaut') {
-      pRect(ctx, baseX + 6, baseY + 7, 12, 8, skin);
-      pRect(ctx, baseX + 6, baseY + 13, 12, 2, '#E5B88A'); // bóng cằm
-      pRect(ctx, baseX + 4, baseY + 9, 2, 3, skin); // tai trái
-      pRect(ctx, baseX + 18, baseY + 9, 2, 3, skin); // tai phải
+    // 2. FACE & EXPRESSIONS
+    if (style !== 'astronaut') {
+      pRect(ctx, baseX + 5, faceTop, 12, 8, skin);
+      pRect(ctx, baseX + 6, faceTop + 7, 10, 2, '#E5B88A'); // chin shadow
+      pRect(ctx, baseX + 3, faceTop + 2, 2, 3, skin); // ears
+      pRect(ctx, baseX + 17, faceTop + 2, 2, 3, skin);
+
+      // Clown red nose
+      if (style === 'clown') {
+        pRect(ctx, baseX + 9, faceTop + 3, 4, 3, '#EF4444');
+        pDot(ctx, baseX + 10, faceTop + 3, '#FCA5A5');
+      }
 
       // Glasses check
-      if (char.style === 'office' || char.style === 'teacher_elder' || char.style === 'grandma') {
-        pRect(ctx, baseX + 7, baseY + 9, 4, 3, '#0F172A');
-        pRect(ctx, baseX + 13, baseY + 9, 4, 3, '#0F172A');
-        pDot(ctx, baseX + 8, baseY + 9, '#E0F2FE');
-        pDot(ctx, baseX + 14, baseY + 9, '#E0F2FE');
-        pRect(ctx, baseX + 11, baseY + 10, 2, 1, '#0F172A');
+      if (style === 'office' || style === 'teacher_elder' || style === 'grandma' || char.name.includes('Cận')) {
+        pRect(ctx, baseX + 6, faceTop + 2, 4, 3, '#0F172A');
+        pRect(ctx, baseX + 12, faceTop + 2, 4, 3, '#0F172A');
+        pDot(ctx, baseX + 7, faceTop + 2, '#E0F2FE');
+        pDot(ctx, baseX + 13, faceTop + 2, '#E0F2FE');
+        pRect(ctx, baseX + 10, faceTop + 3, 2, 1, '#0F172A');
+      } else if (style === 'foreigner' || style === 'pilot') {
+        // Aviator Sunglasses
+        pRect(ctx, baseX + 6, faceTop + 2, 4, 3, '#0F172A');
+        pRect(ctx, baseX + 12, faceTop + 2, 4, 3, '#0F172A');
+        pRect(ctx, baseX + 10, faceTop + 2, 2, 1, '#FACC15'); // Gold bridge
+        pDot(ctx, baseX + 7, faceTop + 2, '#38BDF8');
+        pDot(ctx, baseX + 13, faceTop + 2, '#38BDF8');
       } else {
         // Expressive Eyes
         if (isBlinking) {
-          pRect(ctx, baseX + 8, baseY + 10, 2, 1, '#1E293B');
-          pRect(ctx, baseX + 14, baseY + 10, 2, 1, '#1E293B');
+          pRect(ctx, baseX + 7, faceTop + 3, 3, 1, '#1E293B');
+          pRect(ctx, baseX + 12, faceTop + 3, 3, 1, '#1E293B');
         } else {
-          pRect(ctx, baseX + 8, baseY + 9, 2, 2, '#1E293B');
-          pDot(ctx, baseX + 8, baseY + 9, '#FFFFFF');
-          pRect(ctx, baseX + 14, baseY + 9, 2, 2, '#1E293B');
-          pDot(ctx, baseX + 14, baseY + 9, '#FFFFFF');
+          pRect(ctx, baseX + 7, faceTop + 2, 2, 2, '#1E293B');
+          pDot(ctx, baseX + 7, faceTop + 2, '#FFFFFF'); // Specular
+          pRect(ctx, baseX + 13, faceTop + 2, 2, 2, '#1E293B');
+          pDot(ctx, baseX + 13, faceTop + 2, '#FFFFFF');
         }
       }
 
-      // Blush for girls and kids
-      if (char.cat === 'student' || char.name.includes('Bé') || char.style.includes('girl')) {
-        pDot(ctx, baseX + 6, baseY + 11, '#FB7185');
-        pDot(ctx, baseX + 17, baseY + 11, '#FB7185');
+      // Rosy anime cheeks
+      if (isKid || style.includes('girl') || char.name.includes('Bé')) {
+        pDot(ctx, baseX + 5, faceTop + 4, '#FB7185');
+        pDot(ctx, baseX + 16, faceTop + 4, '#FB7185');
       }
 
-      // Beard / Mustache for elders & masters
-      if (char.style === 'calligrapher') {
-        pRect(ctx, baseX + 7, baseY + 12, 10, 7, '#F8FAFC');
-        pRect(ctx, baseX + 8, baseY + 18, 8, 4, '#E2E8F0');
-        pRect(ctx, baseX + 9, baseY + 21, 6, 3, '#CBD5E1');
-      } else if (char.style === 'foreigner') {
-        pRect(ctx, baseX + 9, baseY + 12, 6, 2, hair);
-        pRect(ctx, baseX + 10, baseY + 13, 4, 1, '#D32F2F');
-        pDot(ctx, baseX + 11, baseY + 13, '#FFFFFF');
+      // Facial Hair
+      if (style === 'calligrapher') {
+        pRect(ctx, baseX + 6, faceTop + 6, 10, 6, '#F8FAFC'); // Grand white beard
+        pRect(ctx, baseX + 7, faceTop + 11, 8, 4, '#E2E8F0');
+        pRect(ctx, baseX + 8, faceTop + 14, 6, 3, '#CBD5E1');
+      } else if (style === 'foreigner') {
+        pRect(ctx, baseX + 8, faceTop + 6, 6, 2, '#EAB308'); // Blonde stubble
       } else {
         // Cheerful smile
-        pRect(ctx, baseX + 10, baseY + 12, 4, 1, '#DC2626');
-        pDot(ctx, baseX + 11, baseY + 12, '#FFFFFF');
+        pRect(ctx, baseX + 9, faceTop + 6, 4, 1, '#DC2626');
+        pDot(ctx, baseX + 10, faceTop + 6, '#FFFFFF');
       }
     }
 
-    // 4. Upper Garment / Torso & Uniform Accents
-    pRect(ctx, baseX + 5, baseY + 15, 14, 10, clothes);
-    pRect(ctx, baseX + 5, baseY + 15, 2, 10, sub); // side shadow fold
+    // 3. TORSO & APPAREL
+    pRect(ctx, baseX + 4, torsoTop, 14, torsoH, clothes);
+    pRect(ctx, baseX + 4, torsoTop, 2, torsoH, sub); // fold shadow
 
-    // Khăn quàng đỏ học sinh
-    if (char.style === 'student_girl' || char.style === 'student_boy') {
-      pRect(ctx, baseX + 8, baseY + 15, 8, 2, '#DC2626');
-      pRect(ctx, baseX + 10, baseY + 17, 3, 4, '#B91C1C');
+    // Specific apparel accents:
+    if (style === 'kid') {
+      // Bear overall bib (#YếmGấu)
+      pRect(ctx, baseX + 5, torsoTop + 2, 12, 10, '#0284C7');
+      pRect(ctx, baseX + 9, torsoTop + 4, 4, 4, '#FEF08A'); // Bear pocket
+      pDot(ctx, baseX + 10, torsoTop + 5, '#78350F');
+    } else if (style === 'ballet_girl') {
+      // Ballerina bodice & flared pink tutu skirt
+      pRect(ctx, baseX + 5, torsoTop, 12, 8, '#FCE7F3');
+      pRect(ctx, baseX + 1, torsoTop + 8, 20, 6, '#F472B6'); // Tutu flair
+      pRect(ctx, baseX + 2, torsoTop + 12, 18, 2, '#EC4899');
+    } else if (style === 'student_girl' || style === 'student_boy') {
+      // Khăn quàng đỏ học sinh
+      pRect(ctx, baseX + 7, torsoTop, 8, 2, '#DC2626');
+      pRect(ctx, baseX + 9, torsoTop + 2, 3, 5, '#B91C1C');
+    } else if (style === 'police') {
+      // CSGT badge & chest pockets
+      pDot(ctx, baseX + 6, torsoTop + 4, '#FACC15'); // Badge
+      pRect(ctx, baseX + 5, torsoTop + 13, 12, 2, '#1E293B'); // Black belt
+      pDot(ctx, baseX + 10, torsoTop + 13, '#FACC15'); // Belt buckle
+    } else if (style === 'pilot') {
+      // 4 gold bars on black shoulder epaulets
+      pRect(ctx, baseX + 3, torsoTop, 4, 3, '#0F172A');
+      pRect(ctx, baseX + 15, torsoTop, 4, 3, '#0F172A');
+      pDot(ctx, baseX + 4, torsoTop + 1, '#FACC15');
+      pDot(ctx, baseX + 16, torsoTop + 1, '#FACC15');
+      pRect(ctx, baseX + 10, torsoTop + 2, 2, 7, '#0F172A'); // Tie
+    } else if (style === 'doctor') {
+      // White blouse coat with stethoscope
+      pRect(ctx, baseX + 4, torsoTop, 14, torsoH, '#F8FAFC');
+      pRect(ctx, baseX + 6, torsoTop, 2, 6, '#94A3B8'); // Stethoscope tube
+      pRect(ctx, baseX + 14, torsoTop, 2, 6, '#94A3B8');
+      pDot(ctx, baseX + 10, torsoTop + 7, '#CBD5E1'); // Chest piece
+    } else if (style === 'martial_master') {
+      // Vovinam blue võ phục with white belt
+      pRect(ctx, baseX + 4, torsoTop, 14, torsoH, '#1D4ED8');
+      pRect(ctx, baseX + 4, torsoTop + 11, 14, 3, '#FFFFFF'); // Belt
+      pRect(ctx, baseX + 12, torsoTop + 13, 2, 5, '#FFFFFF'); // Knot drape
+    } else if (style === 'neighbor') {
+      // Floral pajamas (đồ bộ hoa nhí)
+      pDot(ctx, baseX + 6, torsoTop + 3, '#F43F5E');
+      pDot(ctx, baseX + 11, torsoTop + 5, '#FACC15');
+      pDot(ctx, baseX + 7, torsoTop + 8, '#10B981');
+      pDot(ctx, baseX + 13, torsoTop + 9, '#F43F5E');
+    } else if (style === 'gymer') {
+      // Muscular biceps & cutaway stringer
+      pRect(ctx, baseX + 2, torsoTop - 1, 4, 9, skin);
+      pRect(ctx, baseX + 16, torsoTop - 1, 4, 9, skin);
+      pDot(ctx, baseX + 10, torsoTop + 5, '#FACC15');
+    } else if (style === 'traveler') {
+      // Khăn rằn Tây Bắc quấn cổ
+      pRect(ctx, baseX + 6, torsoTop, 10, 3, '#F8FAFC');
+      pDot(ctx, baseX + 7, torsoTop + 1, '#1E293B');
+      pDot(ctx, baseX + 9, torsoTop + 1, '#1E293B');
+      pDot(ctx, baseX + 11, torsoTop + 1, '#1E293B');
+    } else if (style === 'rapper') {
+      // Gold chain necklace
+      pRect(ctx, baseX + 8, torsoTop + 2, 6, 3, '#FACC15');
+      pDot(ctx, baseX + 10, torsoTop + 5, '#FDE047');
     }
 
-    // Áo dài / Cổ áo truyền thống
-    if (char.style === 'teacher' || char.style === 'calligrapher') {
-      pRect(ctx, baseX + 11, baseY + 15, 1, 10, sub);
-      pDot(ctx, baseX + 14, baseY + 17, sub);
-      pDot(ctx, baseX + 8, baseY + 19, sub);
-    }
+    // 4. ARMS & PROPS
+    var armY = torsoTop + 1;
+    var propX = baseX + 18;
+    var propY = torsoTop + 2 - sway;
 
-    // Lanyard thẻ nhân viên văn phòng
-    if (char.style === 'office' || char.style === 'office_woman') {
-      pDot(ctx, baseX + 8, baseY + 15, '#10B981');
-      pDot(ctx, baseX + 14, baseY + 15, '#10B981');
-      pRect(ctx, baseX + 10, baseY + 20, 4, 3, '#FFFFFF');
-      pRect(ctx, baseX + 11, baseY + 20, 2, 2, '#0284C7');
-    }
-
-    // Gymer stringer tanktop cutouts
-    if (char.style === 'gymer') {
-      pRect(ctx, baseX + 3, baseY + 13, 5, 8, skin); // bắp tay to
-      pRect(ctx, baseX + 16, baseY + 13, 5, 8, skin);
-      pDot(ctx, baseX + 11, baseY + 18, '#FACC15'); // tạ vàng
-    }
-
-    
-    // 5. Left Arm & Right Arm with distinctive PROPS
     if (isFront && isDrinking) {
-      // Hands holding boba cup to mouth joyfully
-      pRect(ctx, baseX + 3, baseY + 17, 3, 5, clothes);
-      pRect(ctx, baseX + 18, baseY + 17, 3, 5, clothes);
-      pRect(ctx, baseX + 5, baseY + 19, 3, 3, skin);
-      pRect(ctx, baseX + 16, baseY + 19, 3, 3, skin);
-      drawBobaCup(ctx, baseX + 9, baseY + 15, '#FFFFFF', '#92400E', '#EC4899', true);
-      pRect(ctx, baseX + 11, baseY + 12, 2, 4, '#F43F5E');
+      // Both hands holding boba cup to mouth joyfully
+      pRect(ctx, baseX + 2, armY, 3, 7, clothes);
+      pRect(ctx, baseX + 17, armY, 3, 7, clothes);
+      pRect(ctx, baseX + 4, armY + 5, 4, 3, skin);
+      pRect(ctx, baseX + 14, armY + 5, 4, 3, skin);
+      drawBobaCup(ctx, baseX + 8, armY + 1, '#FFFFFF', '#92400E', '#EC4899', true);
+      pRect(ctx, baseX + 10, faceTop + 5, 2, 4, '#F43F5E'); // Straw
       ctx.fillStyle = '#FF4757';
       ctx.font = '10px monospace';
-      ctx.fillText('😍', baseX + 7, baseY + 2);
+      ctx.fillText('😍', baseX + 6, headTop - 2);
     } else {
-      // Left Arm
-      pRect(ctx, baseX + 2, baseY + 16 + sway, 3, 6, clothes);
-      pRect(ctx, baseX + 2, baseY + 21 + sway, 3, 3, skin);
+      // Left arm with walking/breathing sway
+      pRect(ctx, baseX + 1, armY + sway, 3, 7, clothes);
+      pRect(ctx, baseX + 1, armY + 6 + sway, 3, 3, skin);
 
-      // Right Arm with Prop
-      pRect(ctx, baseX + 18, baseY + 15 - sway, 3, 5, clothes);
-      pRect(ctx, baseX + 18, baseY + 20 - sway, 3, 3, skin);
+      // Right arm with prop
+      pRect(ctx, baseX + 18, armY - sway, 3, 7, clothes);
+      pRect(ctx, baseX + 18, armY + 5 - sway, 3, 3, skin);
 
-
-    const propX = baseX + 19;
-    const propY = baseY + 16 - sway;
-
-    switch (char.prop) {
-      case 'shaker':
-        pRect(ctx, propX, propY - 2, 5, 8, '#B0BEC5');
-        pRect(ctx, propX + 1, propY - 2, 2, 8, '#ECEFF1');
-        pRect(ctx, propX + 1, propY - 4, 3, 2, '#90A4AE');
-        pDot(ctx, propX + 2, propY, '#F472B6');
-        break;
-
-      case 'gimbal':
-        pRect(ctx, propX + 1, propY - 3, 2, 9, '#334155');
-        pRect(ctx, propX - 1, propY - 6, 6, 5, '#0284C7');
-        pDot(ctx, propX + 3, propY - 5, '#EF4444');
-        break;
-
-      case 'laptop':
-        pRect(ctx, baseX + 1, baseY + 19, 6, 6, '#94A3B8');
-        pDot(ctx, baseX + 2, baseY + 20, '#22C55E');
-        pDot(ctx, baseX + 4, baseY + 21, '#38BDF8');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#78350F', '#0284C7');
-        break;
-
-      case 'fan':
-        pRect(ctx, propX - 1, propY - 2, 6, 6, '#FDE68A');
-        pRect(ctx, propX + 1, propY - 1, 4, 4, '#D97706');
-        pRect(ctx, propX + 2, propY + 4, 1, 3, '#78350F');
-        break;
-
-      case 'brush':
-        pRect(ctx, propX + 1, propY - 3, 1, 9, '#B45309');
-        pRect(ctx, propX + 1, propY - 5, 1, 2, '#000000');
-        pRect(ctx, baseX + 1, baseY + 16, 4, 10, '#DC2626');
-        pDot(ctx, baseX + 2, baseY + 18, '#FDE047');
-        pDot(ctx, baseX + 3, baseY + 21, '#FDE047');
-        break;
-
-      case 'dumbbell':
-        pRect(ctx, propX, propY - 1, 2, 6, '#475569');
-        pRect(ctx, propX + 4, propY - 1, 2, 6, '#475569');
-        pRect(ctx, propX + 1, propY + 1, 4, 2, '#94A3B8');
-        break;
-
-      case 'lottery':
-        pRect(ctx, baseX + 0, baseY + 17, 5, 7, '#EC4899');
-        pRect(ctx, baseX + 0, baseY + 17, 5, 2, '#DC2626');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#451A03', '#10B981');
-        break;
-
-      case 'camera':
-        pRect(ctx, propX - 1, propY, 6, 4, '#1E293B');
-        pRect(ctx, propX + 1, propY + 1, 2, 2, '#0284C7');
-        pDot(ctx, propX + 3, propY, '#F43F5E');
-        break;
-
-      case 'notebook':
-        pRect(ctx, baseX + 1, baseY + 18, 5, 7, '#DC2626');
-        pDot(ctx, baseX + 3, baseY + 20, '#FACC15');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#78350F', '#0284C7');
-        break;
-
-      case 'palette':
-        pRect(ctx, baseX + 0, baseY + 18, 6, 6, '#D97706');
-        pDot(ctx, baseX + 1, baseY + 19, '#EF4444');
-        pDot(ctx, baseX + 3, baseY + 19, '#3B82F6');
-        pDot(ctx, baseX + 2, baseY + 21, '#10B981');
-        pDot(ctx, baseX + 4, baseY + 21, '#FBBF24');
-        pRect(ctx, propX + 1, propY - 2, 1, 8, '#78350F');
-        pDot(ctx, propX + 1, propY - 3, '#EC4899');
-        break;
-
-      case 'chess':
-        pRect(ctx, baseX + 0, baseY + 18, 5, 8, '#78350F');
-        pRect(ctx, baseX + 1, baseY + 19, 3, 6, '#FEF3C7');
-        pDot(ctx, baseX + 2, baseY + 21, '#78350F');
-        pRect(ctx, propX + 1, propY, 3, 4, '#F8FAFC');
-        pDot(ctx, propX + 2, propY - 1, '#F8FAFC');
-        break;
-
-      case 'ball':
-        pRect(ctx, baseX - 3, baseY + 27, 7, 7, '#FFFFFF');
-        pDot(ctx, baseX - 1, baseY + 29, '#1E293B');
-        pDot(ctx, baseX - 2, baseY + 28, '#1E293B');
-        pDot(ctx, baseX + 1, baseY + 30, '#1E293B');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#15803D', '#E11D48');
-        break;
-
-      case 'book':
-        pRect(ctx, propX - 1, propY - 1, 6, 8, '#1E3A8A');
-        pRect(ctx, propX, propY, 4, 6, '#F8FAFC');
-        pDot(ctx, propX + 2, propY + 7, '#DC2626');
-        break;
-
-      case 'mic':
-        pRect(ctx, propX + 1, propY - 3, 3, 4, '#94A3B8');
-        pDot(ctx, propX + 2, propY - 4, '#CBD5E1');
-        pRect(ctx, propX + 2, propY + 1, 1, 6, '#1E293B');
-        drawBobaCup(ctx, baseX + 1, baseY + 18, '#FFFFFF', '#3E2723', '#F59E0B');
-        break;
-
-      case 'tube':
-        pRect(ctx, baseX - 3, baseY + 10, 3, 16, '#0F172A');
-        pRect(ctx, baseX - 4, baseY + 8, 5, 3, '#DC2626');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#0284C7', '#38BDF8');
-        break;
-
-      case 'skateboard':
-        pRect(ctx, baseX - 3, baseY + 14, 4, 15, '#F97316');
-        pDot(ctx, baseX - 4, baseY + 15, '#06B6D4');
-        pDot(ctx, baseX - 4, baseY + 26, '#06B6D4');
-        pDot(ctx, baseX - 2, baseY + 20, '#FACC15');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#F59E0B', '#10B981');
-        break;
-
-      case 'lightstick':
-        pRect(ctx, propX + 1, propY + 1, 2, 5, '#FFFFFF');
-        pRect(ctx, propX, propY - 3, 4, 4, '#F43F5E');
-        pDot(ctx, propX + 1, propY - 2, '#FFF1F2');
-        break;
-
-      case 'headset':
-        pRect(ctx, baseX + 4, baseY + 2, 16, 2, '#09090B');
-        pRect(ctx, baseX + 3, baseY + 7, 3, 5, '#06B6D4');
-        pRect(ctx, baseX + 18, baseY + 7, 3, 5, '#EC4899');
-        pRect(ctx, baseX + 6, baseY + 12, 3, 1, '#64748B');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#0652DD', '#A3CB38');
-        break;
-
-      case 'phone':
-        pRect(ctx, propX, propY - 1, 4, 7, '#0F172A');
-        pRect(ctx, propX + 1, propY, 2, 5, '#38BDF8');
-        break;
-
-      case 'kettle':
-        pRect(ctx, propX, propY - 1, 6, 6, '#CBD5E1');
-        pRect(ctx, propX + 5, propY - 3, 2, 4, '#94A3B8');
-        pDot(ctx, propX + 6, propY - 4, '#CBD5E1');
-        pRect(ctx, propX - 2, propY, 2, 4, '#334155');
-        break;
-
-      case 'backpack':
-        pRect(ctx, baseX - 5, baseY + 12, 6, 15, '#B45309');
-        pRect(ctx, baseX - 5, baseY + 8, 6, 4, '#059669');
-        pDot(ctx, baseX - 3, baseY + 16, '#FBBF24');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#16A34A', '#FACC15');
-        break;
-
-      case 'folder':
-        pRect(ctx, baseX + 0, baseY + 18, 5, 7, '#047857');
-        pRect(ctx, baseX + 1, baseY + 19, 3, 5, '#FFFFFF');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#BE185D', '#FB7185');
-        break;
-
-      case 'shipper_box':
-        pRect(ctx, baseX + 19, baseY + 14, 6, 9, '#15803D');
-        pRect(ctx, baseX + 20, baseY + 16, 4, 5, '#16A34A');
-        pRect(ctx, baseX + 21, baseY + 18, 2, 1, '#FFFFFF');
-        drawBobaCup(ctx, propX, propY + 2, '#FFFFFF', '#15803D', '#FDE047');
-        break;
-
-      case 'stethoscope':
-        pRect(ctx, baseX + 7, baseY + 14, 2, 5, '#94A3B8');
-        pRect(ctx, baseX + 15, baseY + 14, 2, 5, '#94A3B8');
-        pRect(ctx, baseX + 9, baseY + 18, 6, 2, '#64748B');
-        pDot(ctx, baseX + 12, baseY + 20, '#CBD5E1');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#059669', '#34D399');
-        break;
-
-      case 'chalk':
-        pRect(ctx, baseX + 0, baseY + 18, 5, 7, '#BE185D');
-        pRect(ctx, propX + 1, propY + 1, 1, 4, '#FFFFFF');
-        break;
-
-      case 'wrench':
-        pRect(ctx, propX + 1, propY - 2, 1, 8, '#94A3B8');
-        pRect(ctx, propX, propY - 4, 3, 3, '#CBD5E1');
-        pDot(ctx, propX + 1, propY - 3, '#475569');
-        break;
-
-      case 'baton':
-        pRect(ctx, propX + 1, propY - 4, 2, 10, '#EF4444');
-        pRect(ctx, propX + 1, propY - 2, 2, 3, '#FFFFFF');
-        pRect(ctx, propX + 1, propY + 4, 2, 3, '#1E293B');
-        break;
-
-      case 'knife':
-        pRect(ctx, propX + 1, propY - 3, 2, 7, '#E2E8F0');
-        pDot(ctx, propX + 1, propY - 3, '#FFFFFF');
-        pRect(ctx, propX + 1, propY + 3, 2, 3, '#78350F');
-        break;
-
-      case 'briefcase':
-        pRect(ctx, propX - 1, propY, 7, 7, '#3E2723');
-        pRect(ctx, propX, propY + 1, 5, 5, '#5D4037');
-        pDot(ctx, propX + 2, propY + 2, '#FACC15');
-        break;
-
-      case 'aviator':
-        pRect(ctx, baseX + 9, baseY + 16, 6, 2, '#FACC15');
-        pDot(ctx, baseX + 11, baseY + 17, '#FFFFFF');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#0369A1', '#38BDF8');
-        break;
-
-      case 'hammer':
-        pRect(ctx, propX + 1, propY - 1, 2, 8, '#78350F');
-        pRect(ctx, propX - 1, propY - 4, 5, 4, '#475569');
-        pRect(ctx, propX, propY - 3, 3, 2, '#94A3B8');
-        break;
-
-      case 'pill':
-        pRect(ctx, propX, propY, 4, 6, '#0284C7');
-        pRect(ctx, propX, propY, 4, 3, '#EF4444');
-        pDot(ctx, propX + 1, propY + 1, '#FFFFFF');
-        break;
-
-      case 'ruler':
-        pRect(ctx, propX + 1, propY - 3, 2, 9, '#F59E0B');
-        pDot(ctx, propX + 1, propY - 1, '#78350F');
-        pDot(ctx, propX + 1, propY + 2, '#78350F');
-        break;
-
-      case 'bread':
-        pRect(ctx, propX - 1, propY, 7, 4, '#D97706');
-        pRect(ctx, propX, propY + 1, 5, 2, '#FDE68A');
-        break;
-
-      case 'fist':
-        pRect(ctx, baseX + 6, baseY + 23, 12, 2, '#2563EB');
-        pRect(ctx, baseX + 14, baseY + 25, 2, 4, '#2563EB');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#EA580C', '#FBBF24');
-        break;
-
-      case 'helmet':
-        pRect(ctx, baseX - 3, baseY + 17, 6, 6, '#15803D');
-        pRect(ctx, baseX - 2, baseY + 18, 4, 2, '#FDE047');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#0D9488', '#F59E0B');
-        break;
-
-      case 'yarn':
-        pRect(ctx, propX, propY + 1, 5, 5, '#DC2626');
-        pDot(ctx, propX + 1, propY + 2, '#F87171');
-        pRect(ctx, propX - 1, propY - 1, 1, 6, '#CBD5E1');
-        pRect(ctx, propX + 4, propY - 2, 1, 6, '#CBD5E1');
-        break;
-
-      case 'newspaper':
-        pRect(ctx, baseX - 1, baseY + 18, 4, 7, '#E2E8F0');
-        pDot(ctx, baseX, baseY + 20, '#1E293B');
-        pDot(ctx, baseX + 1, baseY + 22, '#1E293B');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#451A03', '#FBBF24');
-        break;
-
-      case 'scissors':
-        pRect(ctx, propX + 1, propY - 1, 2, 6, '#475569');
-        pRect(ctx, propX, propY - 3, 4, 3, '#CBD5E1');
-        pDot(ctx, propX + 1, propY - 4, '#CBD5E1');
-        break;
-
-      case 'wand':
-        pRect(ctx, propX + 1, propY - 2, 1, 8, '#F59E0B');
-        pDot(ctx, propX + 1, propY - 3, '#FDE047');
-        pDot(ctx, propX, propY - 3, '#FDE047');
-        pDot(ctx, propX + 2, propY - 3, '#FDE047');
-        break;
-
-      case 'extinguisher':
-        pRect(ctx, baseX - 3, baseY + 16, 5, 10, '#DC2626');
-        pRect(ctx, baseX - 2, baseY + 14, 3, 3, '#1E293B');
-        pDot(ctx, baseX - 1, baseY + 13, '#FACC15');
-        pDot(ctx, baseX - 1, baseY + 19, '#FFFFFF');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#DC2626', '#38BDF8');
-        break;
-
-      case 'helmet_space':
-        pRect(ctx, baseX - 4, baseY + 12, 5, 14, '#F8FAFC');
-        pRect(ctx, baseX - 3, baseY + 15, 3, 4, '#0284C7');
-        pDot(ctx, baseX - 2, baseY + 21, '#FACC15');
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#4338CA', '#A855F7');
-        break;
-
-      case 'balloon':
-        pRect(ctx, propX + 1, propY - 2, 1, 8, '#CBD5E1');
-        pRect(ctx, propX - 2, propY - 8, 7, 7, '#EF4444');
-        pDot(ctx, propX - 1, propY - 7, '#FCA5A5');
-        break;
-
-      default:
-        drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#92400E', '#EC4899');
-        break;
+      // Dynamic Props based on character description
+      switch (char.prop) {
+        case 'gimbal':
+          pRect(ctx, propX + 1, propY - 3, 2, 10, '#334155');
+          pRect(ctx, propX - 1, propY - 7, 6, 6, '#0284C7');
+          pDot(ctx, propX + 3, propY - 6, '#EF4444'); // REC
+          break;
+        case 'laptop':
+          pRect(ctx, baseX + 0, armY + 4, 6, 7, '#94A3B8');
+          pDot(ctx, baseX + 1, armY + 5, '#22C55E');
+          pDot(ctx, baseX + 3, armY + 6, '#38BDF8');
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#78350F', '#0284C7');
+          break;
+        case 'fan':
+          pRect(ctx, propX - 1, propY - 2, 7, 7, '#FDE68A');
+          pRect(ctx, propX + 1, propY - 1, 5, 5, '#D97706');
+          pRect(ctx, propX + 2, propY + 4, 1, 4, '#78350F');
+          break;
+        case 'brush':
+          pRect(ctx, propX + 1, propY - 3, 2, 10, '#B45309');
+          pRect(ctx, propX + 1, propY - 5, 2, 3, '#000000');
+          // Red banner scroll in left hand
+          pRect(ctx, baseX - 1, armY + 2, 4, 12, '#DC2626');
+          pDot(ctx, baseX + 0, armY + 4, '#FDE047');
+          pDot(ctx, baseX + 1, armY + 7, '#FDE047');
+          pDot(ctx, baseX + 0, armY + 10, '#FDE047');
+          break;
+        case 'dumbbell':
+          pRect(ctx, propX, propY - 1, 2, 7, '#475569');
+          pRect(ctx, propX + 4, propY - 1, 2, 7, '#475569');
+          pRect(ctx, propX + 1, propY + 1, 4, 3, '#94A3B8');
+          break;
+        case 'lottery':
+          pRect(ctx, baseX - 1, armY + 2, 5, 8, '#EC4899');
+          pRect(ctx, baseX - 1, armY + 2, 5, 2, '#DC2626');
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#451A03', '#10B981');
+          break;
+        case 'camera':
+          pRect(ctx, propX - 1, propY, 6, 5, '#1E293B');
+          pRect(ctx, propX + 1, propY + 1, 2, 3, '#0284C7');
+          pDot(ctx, propX + 3, propY, '#F43F5E');
+          break;
+        case 'notebook':
+          pRect(ctx, baseX + 0, armY + 2, 5, 8, '#DC2626');
+          pDot(ctx, baseX + 2, armY + 4, '#FACC15'); // Star
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#78350F', '#0284C7');
+          break;
+        case 'palette':
+          pRect(ctx, baseX - 1, armY + 2, 6, 7, '#D97706');
+          pDot(ctx, baseX + 0, armY + 3, '#EF4444');
+          pDot(ctx, baseX + 2, armY + 3, '#3B82F6');
+          pDot(ctx, baseX + 1, armY + 5, '#10B981');
+          pDot(ctx, baseX + 3, armY + 5, '#FBBF24');
+          pRect(ctx, propX + 1, propY - 2, 1, 9, '#78350F');
+          pDot(ctx, propX + 1, propY - 3, '#EC4899');
+          break;
+        case 'chess':
+          pRect(ctx, baseX - 1, armY + 2, 5, 9, '#78350F');
+          pRect(ctx, baseX + 0, armY + 3, 3, 7, '#FEF3C7');
+          pDot(ctx, baseX + 1, armY + 5, '#78350F');
+          pRect(ctx, propX + 1, propY, 3, 5, '#F8FAFC');
+          pDot(ctx, propX + 2, propY - 1, '#F8FAFC');
+          break;
+        case 'ball':
+          pRect(ctx, baseX - 4, shoeTop - 4, 8, 8, '#FFFFFF');
+          pDot(ctx, baseX - 2, shoeTop - 2, '#1E293B');
+          pDot(ctx, baseX - 3, shoeTop - 3, '#1E293B');
+          pDot(ctx, baseX + 0, shoeTop - 1, '#1E293B');
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#15803D', '#E11D48');
+          break;
+        case 'book':
+          pRect(ctx, propX - 1, propY - 1, 6, 9, '#1E3A8A');
+          pRect(ctx, propX, propY, 4, 7, '#F8FAFC');
+          pDot(ctx, propX + 2, propY + 8, '#DC2626');
+          break;
+        case 'mic':
+          pRect(ctx, propX + 1, propY - 3, 3, 4, '#94A3B8');
+          pDot(ctx, propX + 2, propY - 4, '#CBD5E1');
+          pRect(ctx, propX + 2, propY + 1, 1, 7, '#1E293B');
+          drawBobaCup(ctx, baseX + 0, armY + 3, '#FFFFFF', '#3E2723', '#F59E0B');
+          break;
+        case 'tube':
+          pRect(ctx, baseX - 4, torsoTop - 2, 3, 18, '#0F172A');
+          pRect(ctx, baseX - 5, torsoTop - 4, 5, 3, '#DC2626');
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#0284C7', '#38BDF8');
+          break;
+        case 'skateboard':
+          pRect(ctx, baseX - 4, torsoTop + 2, 4, 18, '#F97316');
+          pDot(ctx, baseX - 5, torsoTop + 3, '#06B6D4');
+          pDot(ctx, baseX - 5, torsoTop + 17, '#06B6D4');
+          pDot(ctx, baseX - 3, torsoTop + 9, '#FACC15');
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#F59E0B', '#10B981');
+          break;
+        case 'lightstick':
+          pRect(ctx, propX + 1, propY + 1, 2, 6, '#FFFFFF');
+          pRect(ctx, propX, propY - 4, 4, 5, '#F43F5E');
+          pDot(ctx, propX + 1, propY - 3, '#FFF1F2');
+          break;
+        case 'headset':
+          pRect(ctx, propX, propY - 2, 6, 8, '#0F172A');
+          pDot(ctx, propX + 2, propY + 1, '#06B6D4'); // cyan LED
+          pRect(ctx, propX + 1, propY + 3, 4, 3, '#1E293B');
+          drawBobaCup(ctx, baseX - 1, armY + 2, '#FFFFFF', '#06B6D4', '#F43F5E');
+          break;
+        case 'phone':
+          pRect(ctx, propX, propY - 2, 4, 8, '#0F172A');
+          pRect(ctx, propX + 1, propY - 1, 2, 6, '#38BDF8');
+          break;
+        case 'kettle':
+          pRect(ctx, propX - 1, propY - 1, 7, 7, '#CBD5E1');
+          pRect(ctx, propX + 5, propY - 3, 2, 5, '#94A3B8');
+          pDot(ctx, propX + 6, propY - 4, '#CBD5E1');
+          pRect(ctx, propX - 3, propY, 2, 5, '#334155');
+          break;
+        case 'backpack':
+          pRect(ctx, baseX - 5, torsoTop + 1, 6, 17, '#B45309');
+          pRect(ctx, baseX - 5, torsoTop - 3, 6, 4, '#059669');
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#16A34A', '#FACC15');
+          break;
+        case 'folder':
+          pRect(ctx, propX - 1, propY - 1, 7, 9, '#DC2626'); // Red ledger folder
+          pRect(ctx, propX, propY, 5, 7, '#FFFFFF'); // Papers
+          pDot(ctx, propX + 2, propY + 2, '#0F172A');
+          pRect(ctx, baseX - 2, armY + 2, 5, 8, '#334155'); // Mini calculator
+          pRect(ctx, baseX - 1, armY + 3, 3, 2, '#86EFAC'); // LCD screen
+          break;
+        case 'shipper_box':
+          pRect(ctx, baseX + 18, torsoTop + 1, 7, 12, '#15803D');
+          pRect(ctx, baseX + 19, torsoTop + 3, 5, 8, '#16A34A');
+          pRect(ctx, baseX + 20, torsoTop + 6, 3, 2, '#FFFFFF');
+          drawBobaCup(ctx, propX, propY + 2, '#FFFFFF', '#15803D', '#FDE047');
+          break;
+        case 'stethoscope':
+          pRect(ctx, propX - 1, propY - 1, 7, 10, '#78350F'); // Brown wooden chart
+          pRect(ctx, propX, propY, 5, 8, '#F8FAFC'); // White chart
+          pRect(ctx, propX + 2, propY - 2, 3, 2, '#94A3B8'); // Silver clip
+          pRect(ctx, propX + 1, propY + 3, 3, 1, '#EF4444'); // Red cross
+          pRect(ctx, propX + 2, propY + 2, 1, 3, '#EF4444');
+          drawBobaCup(ctx, baseX - 1, armY + 3, '#FFFFFF', '#0284C7', '#38BDF8');
+          break;
+        case 'chalk':
+          pRect(ctx, propX + 1, propY - 5, 2, 14, '#FBBF24'); // Yellow wooden ruler
+          pDot(ctx, propX + 1, propY - 2, '#78350F');
+          pDot(ctx, propX + 1, propY + 2, '#78350F');
+          pDot(ctx, propX + 1, propY + 6, '#78350F');
+          pRect(ctx, baseX - 2, armY + 2, 5, 6, '#10B981'); // Chalk box
+          pDot(ctx, baseX - 1, armY + 1, '#FFFFFF'); // Chalk stick
+          break;
+        case 'wrench':
+          pRect(ctx, propX + 1, propY - 2, 2, 9, '#94A3B8');
+          pRect(ctx, propX, propY - 5, 4, 4, '#CBD5E1');
+          pDot(ctx, propX + 1, propY - 4, '#475569');
+          break;
+        case 'baton':
+          pRect(ctx, propX + 1, propY - 5, 2, 11, '#EF4444');
+          pRect(ctx, propX + 1, propY - 2, 2, 3, '#FFFFFF');
+          pRect(ctx, propX + 1, propY + 4, 2, 3, '#1E293B');
+          break;
+        case 'knife':
+          pRect(ctx, propX + 1, propY - 4, 2, 8, '#E2E8F0');
+          pDot(ctx, propX + 1, propY - 4, '#FFFFFF');
+          pRect(ctx, propX + 1, propY + 4, 2, 3, '#78350F');
+          break;
+        case 'briefcase':
+          pRect(ctx, propX - 1, propY, 8, 8, '#3E2723');
+          pRect(ctx, propX, propY + 1, 6, 6, '#5D4037');
+          pDot(ctx, propX + 2, propY + 2, '#FACC15');
+          break;
+        case 'aviator':
+          pRect(ctx, propX - 1, propY - 1, 7, 9, '#0F172A'); // Pilot logbook
+          pRect(ctx, propX + 1, propY + 2, 3, 2, '#FACC15'); // Gold wings
+          pDot(ctx, propX + 2, propY + 1, '#FDE047');
+          drawBobaCup(ctx, baseX - 1, armY + 2, '#FFFFFF', '#0284C7', '#FDE047');
+          break;
+        case 'hammer':
+          pRect(ctx, propX + 1, propY - 1, 2, 9, '#78350F');
+          pRect(ctx, propX - 1, propY - 4, 6, 4, '#475569');
+          pRect(ctx, propX, propY - 3, 4, 2, '#94A3B8');
+          break;
+        case 'pill':
+          pRect(ctx, propX, propY, 6, 8, '#D97706'); // Amber bottle
+          pRect(ctx, propX + 1, propY - 2, 4, 2, '#FFFFFF'); // White cap
+          pRect(ctx, propX + 1, propY + 2, 4, 4, '#FFFFFF'); // Label
+          pRect(ctx, propX + 2, propY + 3, 2, 2, '#EF4444'); // Red cross
+          drawBobaCup(ctx, baseX - 1, armY + 2, '#FFFFFF', '#DC2626', '#10B981');
+          break;
+        case 'ruler':
+          pRect(ctx, propX, propY - 3, 2, 12, '#EAB308');
+          pRect(ctx, propX + 2, propY + 1, 2, 8, '#FACC15');
+          pDot(ctx, propX + 1, propY - 4, '#EF4444');
+          pRect(ctx, baseX - 2, armY + 3, 5, 6, '#78350F');
+          break;
+        case 'bread':
+          pRect(ctx, propX - 1, propY, 8, 5, '#D97706');
+          pRect(ctx, propX, propY + 1, 6, 3, '#FDE68A');
+          break;
+        case 'fist':
+          pRect(ctx, propX, propY, 5, 5, '#FFFFFF');
+          pRect(ctx, propX + 1, propY + 1, 3, 3, skin);
+          pDot(ctx, propX + 2, propY + 2, '#DC2626');
+          drawBobaCup(ctx, baseX - 2, armY + 1, '#FFFFFF', '#B45309', '#F59E0B');
+          break;
+        case 'helmet':
+          pRect(ctx, propX - 2, propY, 9, 8, '#047857'); // Motorbike helmet
+          pRect(ctx, propX - 1, propY + 2, 7, 2, '#FACC15'); // Yellow stripe
+          pRect(ctx, propX, propY + 5, 5, 2, '#1E293B'); // Strap
+          drawBobaCup(ctx, baseX - 1, armY + 2, '#FFFFFF', '#059669', '#34D399');
+          break;
+        case 'yarn':
+          pRect(ctx, propX, propY + 1, 6, 6, '#DC2626');
+          pDot(ctx, propX + 2, propY + 2, '#F87171');
+          pRect(ctx, propX - 1, propY - 2, 1, 7, '#CBD5E1');
+          pRect(ctx, propX + 5, propY - 3, 1, 7, '#CBD5E1');
+          break;
+        case 'newspaper':
+          pRect(ctx, baseX - 1, armY + 3, 4, 8, '#E2E8F0');
+          pDot(ctx, baseX, armY + 5, '#1E293B');
+          pDot(ctx, baseX + 1, armY + 7, '#1E293B');
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#451A03', '#FBBF24');
+          break;
+        case 'scissors':
+          pRect(ctx, propX + 1, propY - 1, 2, 7, '#475569');
+          pRect(ctx, propX, propY - 4, 4, 4, '#CBD5E1');
+          break;
+        case 'wand':
+          pRect(ctx, propX + 1, propY - 2, 2, 9, '#F59E0B');
+          pDot(ctx, propX + 1, propY - 4, '#FDE047');
+          pDot(ctx, propX + 0, propY - 4, '#FDE047');
+          pDot(ctx, propX + 2, propY - 4, '#FDE047');
+          break;
+        case 'extinguisher':
+          pRect(ctx, baseX - 4, torsoTop + 2, 5, 12, '#DC2626');
+          pRect(ctx, baseX - 3, torsoTop + 0, 3, 3, '#1E293B');
+          pDot(ctx, baseX - 2, torsoTop - 1, '#FACC15');
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#DC2626', '#38BDF8');
+          break;
+        case 'helmet_space':
+          pRect(ctx, propX - 1, propY, 7, 9, '#CBD5E1'); // Space boba pouch
+          pRect(ctx, propX, propY + 1, 5, 7, '#E2E8F0');
+          pDot(ctx, propX + 2, propY + 3, '#0284C7');
+          pDot(ctx, propX + 3, propY + 5, '#0284C7');
+          pRect(ctx, propX + 1, propY - 3, 2, 4, '#38BDF8'); // Zero-g straw
+          break;
+        case 'balloon':
+          pRect(ctx, propX + 1, propY - 3, 1, 10, '#CBD5E1');
+          pRect(ctx, propX - 3, propY - 11, 9, 9, '#EF4444');
+          pDot(ctx, propX - 1, propY - 10, '#FCA5A5');
+          break;
+        case 'shaker':
+          pRect(ctx, propX, propY - 2, 6, 11, '#CBD5E1');
+          pRect(ctx, propX + 1, propY - 2, 2, 11, '#FFFFFF');
+          pRect(ctx, propX + 4, propY - 2, 2, 11, '#94A3B8');
+          pRect(ctx, propX + 1, propY - 4, 4, 3, '#94A3B8');
+          break;
+        case 'shared_cup':
+          drawBobaCup(ctx, propX, propY + 1, '#FFEDD5', '#FB923C', '#F43F5E');
+          break;
+        case 'bell':
+          pRect(ctx, propX, propY, 5, 5, '#FACC15');
+          pDot(ctx, propX + 2, propY + 2, '#B45309');
+          break;
+        default:
+          drawBobaCup(ctx, propX, propY + 1, '#FFFFFF', '#92400E', '#EC4899');
+          break;
+      }
     }
 
-    }
+    // 5. LOWER GARMENT / PANTS / SKIRTS
+    pRect(ctx, baseX + 5, pantsTop, 5, legLength, pants);
+    pRect(ctx, baseX + 12, pantsTop, 5, legLength, pants);
+    pDot(ctx, baseX + 6, pantsTop + 3, '#FFFFFF22');
+    pDot(ctx, baseX + 13, pantsTop + 3, '#FFFFFF22');
 
-    // Bé Hạnh & Cún Vàng companion puppy
-    if (char.style === 'lottery_girl') {
-      const pupX = baseX - 8;
-      const pupY = baseY + 26;
-      const pupTail = (sway ? -1 : 1);
-      pRect(ctx, pupX, pupY + 2, 7, 5, '#F59E0B');
-      pRect(ctx, pupX - 2, pupY, 5, 5, '#F59E0B');
-      pRect(ctx, pupX - 3, pupY + 1, 2, 3, '#D97706');
-      pDot(ctx, pupX, pupY + 1, '#111111');
-      pDot(ctx, pupX - 2, pupY + 3, '#111111');
-      pRect(ctx, pupX - 1, pupY + 4, 3, 1, '#EF4444');
-      pDot(ctx, pupX, pupY + 5, '#FBBF24');
-      pRect(ctx, pupX + 6, pupY + 1 + pupTail, 2, 2, '#F59E0B');
-      pRect(ctx, pupX, pupY + 7, 2, 2, '#D97706');
-      pRect(ctx, pupX + 4, pupY + 7, 2, 2, '#D97706');
-    }
-// 6. Pants / Lower Garment with Creases
-    pRect(ctx, baseX + 6, baseY + 25, 5, 6, pants);
-    pRect(ctx, baseX + 13, baseY + 25, 5, 6, pants);
-    pDot(ctx, baseX + 7, baseY + 27, '#FFFFFF22');
-    pDot(ctx, baseX + 14, baseY + 27, '#FFFFFF22');
+    // 6. SHOES WITH WHITE RUBBER SOLES (Resting on sidewalk Y = 148)
+    pRect(ctx, baseX + 4, shoeTop, 6, 3, '#1E293B');
+    pRect(ctx, baseX + 12, shoeTop, 6, 3, '#1E293B');
+    pRect(ctx, baseX + 3, shoeTop + 2, 7, 1, '#FFFFFF'); // Rubber sole
+    pRect(ctx, baseX + 12, shoeTop + 2, 7, 1, '#FFFFFF');
 
-    // 7. Shoes with Soles
-    pRect(ctx, baseX + 5, baseY + 31, 5, 3, '#1E293B');
-    pRect(ctx, baseX + 13, baseY + 31, 5, 3, '#1E293B');
-    pRect(ctx, baseX + 4, baseY + 33, 6, 1, '#FFFFFF'); // đế giày trắng
-    pRect(ctx, baseX + 13, baseY + 33, 6, 1, '#FFFFFF');
-  
+    // 7. BE HANH COMPANION PUPPY
+    if (style === 'lottery_girl') {
+      var pupX = baseX - 9;
+      var pupY = shoeTop - 7;
+      var pupTail = (sway ? -1 : 1);
+      pRect(ctx, pupX, pupY + 2, 8, 6, '#F59E0B'); // Body
+      pRect(ctx, pupX - 2, pupY, 6, 6, '#F59E0B'); // Head
+      pRect(ctx, pupX - 3, pupY + 1, 2, 4, '#D97706'); // Floppy ear
+      pDot(ctx, pupX, pupY + 1, '#111111'); // Eye
+      pDot(ctx, pupX - 2, pupY + 3, '#111111'); // Nose
+      pRect(ctx, pupX - 1, pupY + 5, 4, 1, '#EF4444'); // Collar
+      pDot(ctx, pupX + 0, pupY + 6, '#FBBF24'); // Bell
+      pRect(ctx, pupX + 7, pupY + 1 + pupTail, 2, 3, '#F59E0B'); // Tail
+      pRect(ctx, pupX, pupY + 7, 2, 3, '#D97706'); // Legs
+      pRect(ctx, pupX + 5, pupY + 7, 2, 3, '#D97706');
+    }
   }
 
   // ==========================================
   // 4. BARISTA OWNER SPRITE (CHỊ THẢO BOBA)
-  // Standing behind stall counter
+  // Stands tall inside the stall behind counter
   // ==========================================
   function drawOwnerBarista(ctx, hx, hy, bob, isBlinking) {
     if (bob === undefined) bob = 0;
     if (isBlinking === undefined) isBlinking = false;
 
     var skin = '#FFE0BD';
+    var headTop = 76 + bob;
+    var faceTop = headTop + 4;
+    var headX = hx + 8;
 
-    // 1. SNEAKER SHOES (Giày sneaker hồng xinh xắn)
-    pRect(ctx, hx + 3, 144, 6, 2, '#FB7185');
-    pRect(ctx, hx + 10, 144, 6, 2, '#FB7185');
-    pRect(ctx, hx + 2, 145, 8, 1, '#FFFFFF'); // đế giày trắng
-    pRect(ctx, hx + 9, 145, 8, 1, '#FFFFFF');
+    // 1. SNEAKER SHOES ON STALL FLOOR (Y = 144)
+    pRect(ctx, hx + 3, 142, 6, 2, '#FB7185');
+    pRect(ctx, hx + 11, 142, 6, 2, '#FB7185');
+    pRect(ctx, hx + 2, 143, 8, 1, '#FFFFFF'); // white soles
+    pRect(ctx, hx + 10, 143, 8, 1, '#FFFFFF');
 
     // 2. SLENDER LEGS IN WHITE ANKLE SOCKS
-    pRect(ctx, hx + 4, 141, 5, 3, '#FFFFFF');
-    pRect(ctx, hx + 11, 141, 5, 3, '#FFFFFF');
-    pDot(ctx, hx + 6, 141, '#F43F5E'); // nơ hồng vớ
-    pDot(ctx, hx + 13, 141, '#F43F5E');
+    pRect(ctx, hx + 4, 138, 5, 4, '#FFFFFF');
+    pRect(ctx, hx + 12, 138, 5, 4, '#FFFFFF');
+    pDot(ctx, hx + 6, 139, '#F43F5E'); // pink ribbon
+    pDot(ctx, hx + 14, 139, '#F43F5E');
 
-    pRect(ctx, hx + 4, 120 + bob, 4, 21, skin);
-    pRect(ctx, hx + 11, 120 + bob, 4, 21, skin);
-    pRect(ctx, hx + 7, 120 + bob, 1, 21, '#F6C8A6'); // bóng chân
-    pRect(ctx, hx + 11, 120 + bob, 1, 21, '#F6C8A6');
+    pRect(ctx, hx + 4, 114 + bob, 4, 25, skin);
+    pRect(ctx, hx + 12, 114 + bob, 4, 25, skin);
+    pRect(ctx, hx + 7, 114 + bob, 1, 25, '#F6C8A6');
+    pRect(ctx, hx + 12, 114 + bob, 1, 25, '#F6C8A6');
 
-    // 3. PLEATED BERRY SKIRT (Váy xếp ly hồng berry viền satin)
-    var skirtTop = 106 + bob;
+    // 3. PLEATED BERRY SKIRT (Below counter)
+    var skirtTop = 104 + bob;
     pRect(ctx, hx - 2, skirtTop, 22, 14, '#831843');
     for (var px = hx - 1; px <= hx + 18; px += 3) {
       pRect(ctx, px, skirtTop, 1, 13, '#500724');
@@ -1359,90 +1368,84 @@
     }
     pRect(ctx, hx - 2, skirtTop + 13, 22, 1, '#F43F5E');
 
-    // 4. WHITE BLOUSE (Áo thun trắng)
-    var torsoTop = hy + 16 + bob;
-    pRect(ctx, hx - 1, torsoTop, 20, 15, '#FFF5F5');
-    pRect(ctx, hx + 6, torsoTop, 6, 3, skin); // cổ áo
+    // 4. WHITE PASTEL BLOUSE (Above counter at 114)
+    var torsoTop = 92 + bob;
+    pRect(ctx, hx - 1, torsoTop, 20, 16, '#FFF5F5');
+    pRect(ctx, hx + 6, torsoTop, 6, 3, skin); // neckline
 
-    // 5. BOBA APRON (Tạp dề hồng đào boba)
+    // 5. SWEET PINK BOBA APRON
     pRect(ctx, hx + 2, torsoTop + 2, 14, 14, '#FB7185');
-    pRect(ctx, hx + 1, torsoTop + 9, 16, 7, '#F43F5E');
-    pRect(ctx, hx + 3, torsoTop + 1, 2, 7, '#E11D48'); // quai tạp dề
-    pRect(ctx, hx + 13, torsoTop + 1, 2, 7, '#E11D48');
+    pRect(ctx, hx + 1, torsoTop + 10, 16, 6, '#F43F5E');
+    pRect(ctx, hx + 3, torsoTop + 1, 2, 8, '#E11D48'); // straps
+    pRect(ctx, hx + 13, torsoTop + 1, 2, 8, '#E11D48');
 
-    // Hình thêu ly boba mini trên ngực tạp dề
+    // Embroidered mini boba cup on chest
     pRect(ctx, hx + 8, torsoTop + 4, 3, 4, '#FFFFFF');
-    pDot(ctx, hx + 9, torsoTop + 5, '#78350F'); // trà
-    pDot(ctx, hx + 9, torsoTop + 3, '#FDE047'); // ống hút
+    pDot(ctx, hx + 9, torsoTop + 5, '#78350F'); // tea
+    pDot(ctx, hx + 9, torsoTop + 3, '#FDE047'); // straw
 
-    // Túi trước tạp dề
+    // Apron front utility pocket
     pRect(ctx, hx + 4, torsoTop + 9, 10, 6, '#F43F5E');
     pRect(ctx, hx + 5, torsoTop + 10, 8, 4, '#FB7185');
 
-    // 6. NECK
-    pRect(ctx, hx + 6, hy + 12 + bob, 6, 4, skin);
-    pRect(ctx, hx + 6, hy + 14 + bob, 6, 2, '#F6C8A6');
+    // 6. CHESTNUT HAIR (Back Dome)
+    pRect(ctx, headX - 8, headTop - 3, 18, 16, '#4E2A16');
+    pRect(ctx, headX - 9, headTop + 3, 3, 12, '#3D2010');
+    pRect(ctx, headX + 8, headTop + 3, 3, 12, '#3D2010');
 
-    // 7. CHESTNUT HAIR (Back Dome)
-    var headX = hx + 9;
-    var headY = hy + 6 + bob;
-    pRect(ctx, headX - 8, headY - 4, 18, 16, '#4E2A16');
-    pRect(ctx, headX - 9, headY + 1, 3, 12, '#3D2010');
-    pRect(ctx, headX + 8, headY + 1, 3, 12, '#3D2010');
+    // 7. TWIN HAIR BUNS WITH PINK RIBBONS
+    pRect(ctx, headX - 10, headTop - 7, 5, 5, '#4E2A16');
+    pRect(ctx, headX - 9, headTop - 6, 3, 3, '#F43F5E');
+    pDot(ctx, headX - 8, headTop - 6, '#FFF1F2');
 
-    // 8. TWIN HAIR BUNS WITH PINK RIBBONS (Búi tóc 2 bên và nơ hồng)
-    pRect(ctx, headX - 10, headY - 8, 5, 5, '#4E2A16');
-    pRect(ctx, headX - 9, headY - 7, 3, 3, '#F43F5E');
-    pDot(ctx, headX - 8, headY - 7, '#FFF1F2');
+    pRect(ctx, headX + 7, headTop - 7, 5, 5, '#4E2A16');
+    pRect(ctx, headX + 8, headTop - 6, 3, 3, '#F43F5E');
+    pDot(ctx, headX + 8, headTop - 6, '#FFF1F2');
 
-    pRect(ctx, headX + 7, headY - 8, 5, 5, '#4E2A16');
-    pRect(ctx, headX + 8, headY - 7, 3, 3, '#F43F5E');
-    pDot(ctx, headX + 8, headY - 7, '#FFF1F2');
-
-    // 9. ANIME HEAD & EXPRESSIVE FACE
-    pRect(ctx, headX - 6, headY - 3, 14, 10, skin);
-    pRect(ctx, headX - 5, headY + 6, 12, 2, '#F6C8A6'); // cằm
-    pRect(ctx, headX - 7, headY + 1, 2, 4, skin); // tai
-    pRect(ctx, headX + 7, headY + 1, 2, 4, skin);
+    // 8. ANIME HEAD & EXPRESSIVE FACE
+    pRect(ctx, headX - 6, faceTop, 14, 10, skin);
+    pRect(ctx, headX - 5, faceTop + 8, 12, 2, '#F6C8A6'); // chin
+    pRect(ctx, headX - 7, faceTop + 2, 2, 4, skin); // ears
+    pRect(ctx, headX + 7, faceTop + 2, 2, 4, skin);
 
     // Eyes
     if (isBlinking) {
-      pRect(ctx, headX - 4, headY + 2, 3, 1, '#1E293B');
-      pRect(ctx, headX + 3, headY + 2, 3, 1, '#1E293B');
+      pRect(ctx, headX - 4, faceTop + 3, 3, 1, '#1E293B');
+      pRect(ctx, headX + 3, faceTop + 3, 3, 1, '#1E293B');
     } else {
-      pRect(ctx, headX - 4, headY + 1, 3, 3, '#1E293B');
-      pDot(ctx, headX - 4, headY + 1, '#FFFFFF'); // long lanh
-      pDot(ctx, headX - 3, headY + 3, '#38BDF8'); // mắt xanh ngọc
+      pRect(ctx, headX - 4, faceTop + 2, 3, 3, '#1E293B');
+      pDot(ctx, headX - 4, faceTop + 2, '#FFFFFF'); // Specular
+      pDot(ctx, headX - 3, faceTop + 4, '#38BDF8'); // Cyan iris
 
-      pRect(ctx, headX + 3, headY + 1, 3, 3, '#1E293B');
-      pDot(ctx, headX + 3, headY + 1, '#FFFFFF');
-      pDot(ctx, headX + 4, headY + 3, '#38BDF8');
+      pRect(ctx, headX + 3, faceTop + 2, 3, 3, '#1E293B');
+      pDot(ctx, headX + 3, faceTop + 2, '#FFFFFF');
+      pDot(ctx, headX + 4, faceTop + 4, '#38BDF8');
     }
 
     // Má hồng kẹo ngọt
-    pRect(ctx, headX - 6, headY + 4, 3, 2, '#FB7185');
-    pDot(ctx, headX - 5, headY + 4, '#FDA4AF');
-    pRect(ctx, headX + 5, headY + 4, 3, 2, '#FB7185');
-    pDot(ctx, headX + 5, headY + 4, '#FDA4AF');
+    pRect(ctx, headX - 6, faceTop + 5, 3, 2, '#FB7185');
+    pDot(ctx, headX - 5, faceTop + 5, '#FDA4AF');
+    pRect(ctx, headX + 5, faceTop + 5, 3, 2, '#FB7185');
+    pDot(ctx, headX + 5, faceTop + 5, '#FDA4AF');
 
     // Nụ cười chúm chím
-    pRect(ctx, headX - 1, headY + 5, 4, 1, '#F43F5E');
-    pDot(ctx, headX, headY + 5, '#FFFFFF');
+    pRect(ctx, headX - 1, faceTop + 6, 4, 1, '#F43F5E');
+    pDot(ctx, headX, faceTop + 6, '#FFFFFF');
 
-    // 10. FRONT HAIR BANGS & SIDE LOCKS
-    pRect(ctx, headX - 7, headY - 6, 16, 4, '#4E2A16');
-    pRect(ctx, headX - 5, headY - 7, 12, 2, '#67391F');
-    pDot(ctx, headX - 2, headY - 7, '#8C4D2A'); // tóc bóng óng ả
-    pRect(ctx, headX - 7, headY - 2, 2, 7, '#4E2A16');
-    pRect(ctx, headX + 7, headY - 2, 2, 7, '#4E2A16');
+    // 9. FRONT HAIR BANGS & SIDE LOCKS
+    pRect(ctx, headX - 7, headTop - 4, 16, 5, '#4E2A16');
+    pRect(ctx, headX - 5, headTop - 5, 12, 2, '#67391F');
+    pDot(ctx, headX - 2, headTop - 5, '#8C4D2A'); // specular halo
+    pRect(ctx, headX - 7, headTop + 1, 2, 7, '#4E2A16');
+    pRect(ctx, headX + 7, headTop + 1, 2, 7, '#4E2A16');
 
-    // Kẹp tóc boba vàng
-    pRect(ctx, headX + 4, headY - 5, 2, 2, '#FDE047');
-    pDot(ctx, headX + 5, headY - 6, '#FFFFFF');
+    // Gold boba hairpin
+    pRect(ctx, headX + 4, headTop - 3, 2, 2, '#FDE047');
+    pDot(ctx, headX + 5, headTop - 4, '#FFFFFF');
 
-    // 11. UPPER ARMS (Behind counter)
-    pRect(ctx, hx - 2, hy + 18 + bob, 3, 7, skin);
-    pRect(ctx, hx + 16, hy + 18 + bob, 3, 7, skin);
+    // 10. UPPER ARMS (Behind counter)
+    pRect(ctx, hx - 2, torsoTop + 2, 3, 8, skin);
+    pRect(ctx, hx + 16, torsoTop + 2, 3, 8, skin);
   }
 
   // ==========================================
@@ -1457,18 +1460,18 @@
       var shakeArm = Math.round(Math.sin(tick * 0.8) * 4);
 
       // Forearms holding stainless shaker
-      pRect(ctx, hx + 15, hy + 22 + bob, 3, 5, skin);
-      pRect(ctx, hx + 13, hy + 16 + bob + shakeArm, 4, 7, skin);
-      pRect(ctx, hx - 1, hy + 22 + bob, 3, 5, skin);
-      pRect(ctx, hx + 10, hy + 17 + bob + shakeArm, 4, 6, skin);
+      pRect(ctx, hx + 14, 104 + bob, 4, 7, skin);
+      pRect(ctx, hx + 12, 98 + bob + shakeArm, 4, 8, skin);
+      pRect(ctx, hx - 1, 104 + bob, 4, 7, skin);
+      pRect(ctx, hx + 9, 99 + bob + shakeArm, 4, 7, skin);
 
       // Stainless steel shaker in pixel art with heart sticker
-      var shakerX = hx + 13;
-      var shakerY = hy + 8 + bob + shakeArm;
+      var shakerX = hx + 12;
+      var shakerY = 90 + bob + shakeArm;
 
-      pRect(ctx, shakerX, shakerY, 8, 14, '#CBD5E1');
-      pRect(ctx, shakerX + 1, shakerY, 2, 14, '#FFFFFF'); // chrome shine
-      pRect(ctx, shakerX + 6, shakerY, 2, 14, '#94A3B8'); // shadow
+      pRect(ctx, shakerX, shakerY, 8, 15, '#CBD5E1');
+      pRect(ctx, shakerX + 1, shakerY, 2, 15, '#FFFFFF'); // chrome shine
+      pRect(ctx, shakerX + 6, shakerY, 2, 15, '#94A3B8'); // shadow
       pRect(ctx, shakerX + 2, shakerY - 3, 4, 3, '#94A3B8'); // cap
       pRect(ctx, shakerX + 3, shakerY - 4, 2, 2, '#CBD5E1');
 
@@ -1484,19 +1487,19 @@
       pDot(ctx, shakerX + 10, shakerY + 8, '#FFFFFF');
     } else {
       // Left forearm holding silver jigger with rose gold bracelet
-      pRect(ctx, hx - 1, hy + 23 + bob, 3, 6, skin);
-      pRect(ctx, hx + 1, hy + 28 + bob, 3, 2, '#E17055'); // bracelet
-      pRect(ctx, hx + 2, hy + 30 + bob, 3, 3, skin); // hand
+      pRect(ctx, hx - 1, 104 + bob, 3, 7, skin);
+      pRect(ctx, hx + 1, 109 + bob, 3, 2, '#E17055'); // bracelet
+      pRect(ctx, hx + 2, 111 + bob, 3, 3, skin); // hand
 
       // Silver dual-ended jigger
-      pRect(ctx, hx + 4, hy + 28 + bob, 4, 2, '#CBD5E1');
-      pRect(ctx, hx + 5, hy + 30 + bob, 2, 2, '#94A3B8');
-      pRect(ctx, hx + 4, hy + 32 + bob, 4, 3, '#CBD5E1');
-      pRect(ctx, hx + 5, hy + 28 + bob, 1, 7, '#FFFFFF'); // shine
+      pRect(ctx, hx + 4, 108 + bob, 4, 2, '#CBD5E1');
+      pRect(ctx, hx + 5, 110 + bob, 2, 2, '#94A3B8');
+      pRect(ctx, hx + 4, 112 + bob, 4, 3, '#CBD5E1');
+      pRect(ctx, hx + 5, 108 + bob, 1, 7, '#FFFFFF'); // shine
 
       // Resting right arm on counter
-      pRect(ctx, hx + 15, hy + 22 + bob, 3, 7, skin);
-      pRect(ctx, hx + 17, hy + 29 + bob, 3, 3, skin);
+      pRect(ctx, hx + 14, 104 + bob, 3, 8, skin);
+      pRect(ctx, hx + 16, 111 + bob, 3, 3, skin);
     }
   }
 
@@ -1504,6 +1507,7 @@
     CHARACTERS: CHARACTERS,
     CUSTOMERS_LIST: CUSTOMERS_LIST,
     getCharacter: getCharacter,
+    getCharacterHeight: getCharacterHeight,
     pRect: pRect,
     pDot: pDot,
     drawBobaCup: drawBobaCup,

@@ -1609,15 +1609,16 @@ class GameCanvas {
       ? Math.round(Math.sin(this.tick * 0.45) * 2)
       : idleBob;
 
+    const height = (typeof getCharacterHeight === 'function') ? getCharacterHeight(char) : 54;
     const baseX = Math.round(x) - 1;
-    const baseY = Math.round(y + 7 + walkBob);
+    const baseY = Math.round(148 - height + walkBob);
     const sway = isMoving
       ? (Math.sin(this.tick * 0.45) > 0 ? 1 : 0)
       : (Math.sin(this.tick * 0.18) > 0 ? 1 : 0);
 
     // 1. Soft Multi-layer Pixel Shadow (Faithfully matching ModelNPC.html)
     const shadowX = Math.round(baseX + 12);
-    const shadowY = Math.round(y + 41);
+    const shadowY = 148;
     ctx.fillStyle = 'rgba(25, 15, 10, 0.10)';
     ctx.beginPath();
     ctx.ellipse(shadowX, shadowY, 14, 4, 0, 0, Math.PI * 2);
@@ -1639,7 +1640,7 @@ class GameCanvas {
     if (isHappy) {
       for (let h = 0; h < 3; h++) {
         const hOffset = Math.round(Math.sin(this.tick * 0.15 + h * 2) * 3);
-        const hY = Math.round(y - 14 - h * 7 - ((this.tick * 0.6) % 12));
+        const hY = Math.round(baseY - 8 - h * 7 - ((this.tick * 0.6) % 12));
         const hX = Math.round(x + 3 + h * 7 + hOffset);
         this.drawPixel(ctx, hX - 2, hY, 2, 2, '#ff7675');
         this.drawPixel(ctx, hX + 1, hY, 2, 2, '#ff7675');
@@ -1655,7 +1656,7 @@ class GameCanvas {
       const petBob = (this.customerState === 'waiting' && isMoving) ? Math.round(Math.sin(this.tick * 0.45) * 2) : 0;
       const petTail = Math.round(Math.sin(this.tick * 0.25) * 2);
       const petX = x - 18;
-      const petY = y + 28;
+      const petY = 136;
       // Pet shadow
       ctx.fillStyle = 'rgba(10, 5, 12, 0.3)';
       ctx.beginPath();
@@ -1701,7 +1702,7 @@ class GameCanvas {
     if (isFront && this.customerState === 'waiting' && x >= 175 && !this.isDrinking) {
       const bubbleBob = Math.sin(this.tick * 0.15) * 2;
       const bx = x + 10;
-      const by = y - 24 + bubbleBob;
+      const by = baseY - 12 + bubbleBob;
 
       if (this.bubbleType === 'dialogue' && activeQuote) {
         // Retro Pixel Comic Dialogue Bubble with Dark Contrast Frame & Crisp White Text
