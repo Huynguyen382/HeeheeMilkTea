@@ -160,7 +160,43 @@ function generateCustomerToppings(cust, recipe) {
 }
 
 // 10 Customer archetypes with 40 authentic dialogues
-const CUSTOMERS = [
+// 50 Character System (ModelNPC) - 49 Customer archetypes
+function mapCustomerFav(drinkName) {
+  const d = (drinkName || '').toLowerCase();
+  if (d.includes('olong') || d.includes('ô long') || d.includes('nướng')) return ['tra_olong_nuong', 'tra_sua_truyen_thong'];
+  if (d.includes('thái') || d.includes('xanh') || d.includes('matcha')) return ['tra_thai_xanh', 'tra_sua_truyen_thong'];
+  if (d.includes('đào') || d.includes('cam') || d.includes('sả')) return ['tra_dao_cam_sa', 'hong_tra_tac'];
+  if (d.includes('tắc') || d.includes('chanh') || d.includes('hồng trà')) return ['hong_tra_tac', 'tra_dao_cam_sa'];
+  if (d.includes('đường đen') || d.includes('sữa tươi')) return ['sua_tuoi_duong_den', 'tra_sua_truyen_thong'];
+  return ['tra_sua_truyen_thong', 'tra_olong_nuong'];
+}
+
+let CHARACTERS_DATA = [];
+try {
+  CHARACTERS_DATA = require('../../public/js/characters').CHARACTERS;
+} catch (e) {
+  try {
+    CHARACTERS_DATA = require('../public/js/characters').CHARACTERS;
+  } catch (err) {}
+}
+
+const CUSTOMERS = (CHARACTERS_DATA && CHARACTERS_DATA.length > 1)
+  ? CHARACTERS_DATA.slice(1).map((c, idx) => {
+      const isTiktoker = (c.id === 12 || c.style === 'tiktoker');
+      const isShipper = (c.id === 24 || c.style === 'shipper');
+      return {
+        type: idx,
+        id: c.id,
+        name: c.name,
+        patience: isTiktoker ? 22000 : (isShipper ? 24000 : 30000),
+        fav: mapCustomerFav(c.favoriteDrink),
+        tipMult: isTiktoker ? 2.0 : (c.cat === 'pro' ? 1.2 : 1.05),
+        isTiktoker: isTiktoker,
+        isShipper: isShipper,
+        dialogues: (c.dialogues && c.dialogues.length > 0) ? c.dialogues : ['Cho một ly trà sữa thơm ngon nha!']
+      };
+    })
+  : [
   {
     type: 0,
     name: 'Bé Lan (Nữ sinh)',
@@ -169,133 +205,11 @@ const CUSTOMERS = [
     tipMult: 1.0,
     dialogues: [
       'Chị HeeHee ơi, cho em ly ít đường ít đá mang vào tiết Toán nha!',
-      'Trà sữa quán mình ngon nhất phố, em rủ cả lớp ra ủng hộ nè!',
-      'Em vừa thi xong môn Sử mệt quá, cần bổ sung gấp một liều ngọt ngào!',
-      'Trân châu dẻo quánh nhai thích mê luôn, cho em xin thêm trân châu nha chị!'
-    ]
-  },
-  {
-    type: 1,
-    name: 'Anh Nam (Văn phòng)',
-    patience: 20000,
-    fav: ['hong_tra_tac', 'tra_olong_nuong'],
-    tipMult: 1.1,
-    dialogues: [
-      'Em gái ơi, làm anh một ly đậm trà ít ngọt để chạy kịp deadline quý 3!',
-      'Sếp anh vừa khen trà sữa chỗ này thơm béo, bảo anh đặt cho cả phòng!',
-      'Cả sáng họp căng thẳng quá, chỉ có trà sữa mới cứu rỗi được tâm hồn anh.',
-      'Ghi giùm anh hóa đơn đỏ được không em? Đùa thôi, làm nhanh giùm anh nhé!'
-    ]
-  },
-  {
-    type: 2,
-    name: 'Cô Ba (Hàng xóm)',
-    patience: 30000,
-    fav: ['tra_sua_truyen_thong', 'tra_dao_cam_sa'],
-    tipMult: 1.0,
-    dialogues: [
-      'HeeHee hả con? Pha cho cô Ba ly béo ngậy đãi mấy đứa cháu ngoại nghen!',
-      'Bữa nay buôn bán đắt không con gái? Nhìn nồi trân châu thấy ham ghê!',
-      'Cho cô ly nóng nha, trời này gió lạnh uống ấm bụng đỡ ho dữ lắm.',
-      'Mai mốt có chi nhánh to nhớ cho cô Ba chân bảo vệ giữ xe nghen con!'
-    ]
-  },
-  {
-    type: 3,
-    name: 'Tú (TikToker Reviewer)',
-    patience: 16000,
-    fav: ['sua_tuoi_duong_den', 'tra_olong_nuong'],
-    tipMult: 2.0,
-    isTiktoker: true,
-    dialogues: [
-      'Hello cả nhà! Hôm nay Tú sẽ test xem trà sữa HeeHee có thực sự đỉnh nóc kịch trần không!',
-      'Visual ly nước này lên video bao đẹp, HeeHee nhớ rưới đường đen chảy quanh thành ly nha!',
-      'Kênh mình vừa đạt 500k follow, review này mà ngon là quán nổ đơn từ sáng tới khuya!',
-      'Làm chỉn chu giùm em nha, ngon thì em khen nức nở, dở là coi chừng bóc phốt đó!'
-    ]
-  },
-  {
-    type: 4,
-    name: 'Anh Shipper Giao Hàng',
-    patience: 18000,
-    fav: ['tra_sua_truyen_thong', 'sua_tuoi_duong_den'],
-    tipMult: 1.0,
-    isShipper: true,
-    dialogues: [
-      'Đơn này khách hối cháy máy quận 1, làm lẹ giùm anh kẻo bị trừ sao nghe em gái!',
-      'Trưa nắng chang chang chạy ngoài đường, ngửi mùi trà sữa quán em mát cả người!',
-      'Anh vừa tiện đường mua mấy món ăn vặt nóng hổi, em ăn chung với anh cho vui không?',
-      'Dạo này quán nổ cuốc liên tục, anh em shipper khoái nhận đơn quán HeeHee lắm á!'
-    ]
-  },
-  {
-    type: 5,
-    name: 'Bác Ba Trưởng Phố (Cụ Đồ)',
-    patience: 32000,
-    fav: ['tra_sua_truyen_thong', 'hong_tra_tac'],
-    tipMult: 1.15,
-    dialogues: [
-      'Chào cô chủ nhỏ! Bác đi dưỡng sinh về, cho bác một ly trà thanh nhiệt giải độc nhé.',
-      'Thời trẻ bác mê trà sen hồ Tây, giờ thấy trà của cháu cũng thơm tao nhã lắm.',
-      'Làm ăn buôn bán cái tình cái nghĩa là trên hết, cháu giữ được vị trà mộc là quý lắm.',
-      'Cho bác ít đá thôi nghen, tuổi già răng cỏ buốt không chịu được lạnh đâu.'
-    ]
-  },
-  {
-    type: 6,
-    name: 'Chú Quân Gymer',
-    patience: 19000,
-    fav: ['hong_tra_tac', 'tra_thai_xanh'],
-    tipMult: 1.2,
-    dialogues: [
-      'Em gái ơi! Cho anh ly 0% đường, nhiều đá, trà thật đậm để anh siết cơ nhé!',
-      'Vừa cày xong 10 hiệp squat rã rời chân tay, cần nạp chút cafein giải mỏi!',
-      'Có topping nào thanh đạm không em? Cho anh gấp đôi thạch rau câu nhé!',
-      'Uống trà sữa xong là anh vào phòng gym đẩy tạ 100kg ngon ơ liền!'
-    ]
-  },
-  {
-    type: 7,
-    name: 'Cặp Đôi Gà Bông (Duy & Linh)',
-    patience: 26000,
-    fav: ['sua_tuoi_duong_den', 'tra_dao_cam_sa'],
-    tipMult: 1.3,
-    dialogues: [
-      'Chị ơi cho tụi em 1 ly size L cắm 2 ống hút nha, tụi em chia nhau uống chung!',
-      'Hôm nay là kỷ niệm 100 ngày yêu nhau, HeeHee vẽ hình trái tim lên nắp ly giùm nha!',
-      'Cậu uống ngụm đầu đi nè, trà thơm lắm... Cảm ơn quán đã có góc hẹn hò dễ thương!',
-      'Người yêu em kén uống ngọt lắm, quán làm thanh thanh nhẹ nhàng giùm em nghen!'
-    ]
-  },
-  {
-    type: 8,
-    name: 'David (Khách Tây Ba-lô)',
-    patience: 24000,
-    fav: ['tra_sua_truyen_thong', 'tra_olong_nuong'],
-    tipMult: 1.5,
-    dialogues: [
-      'Hello! Vietnamese milk tea is legendary, can I try your signature Boba please?',
-      'Wow, the smell of black tea from your cart is amazing! Street style is the best!',
-      'Not too sweet, please! I love these chewy black pearls so much!',
-      'Can I take a selfie with the tea cart? This retro aesthetic is gorgeous!'
-    ]
-  },
-  {
-    type: 9,
-    name: 'Chị Hạnh Vé Số',
-    patience: 28000,
-    fav: ['hong_tra_tac', 'tra_thai_xanh'],
-    tipMult: 1.0,
-    dialogues: [
-      'Em gái ơi, đổi giùm chị tờ vé số lấy ly hồng trà tắc đá mát lạnh được không nè?',
-      'Nắng đổ lửa đi bộ từ sáng tới giờ rát họng, nhấp ngụm trà tắc của em tỉnh cả người!',
-      'Chúc cô chủ nhỏ buôn may bán đắt, khách đông nườm nượp tràn cả vỉa hè nghen!',
-      'Uống ly trà của em thơm ngọt mát lành, xua tan hết nhọc nhằn một ngày mưu sinh.'
+      'Trà sữa quán mình ngon nhất phố, em rủ cả lớp ra ủng hộ nè!'
     ]
   }
 ];
 
-// Shipper snacks pool
 const SHIPPER_SNACKS = [
   { id: 'banh_trang_tron', name: 'Bánh Tráng Trộn Bò Khô Trứng Cút', icon: '🥡', desc: 'Chua cay mặn ngọt bùng nổ vị giác vỉa hè' },
   { id: 'bap_xao', name: 'Bắp Xào Bơ Tép Mỡ Hành', icon: '🌽', desc: 'Béo ngậy thơm nức mũi mùi bơ vàng' },

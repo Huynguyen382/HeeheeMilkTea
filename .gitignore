@@ -14,3 +14,4 @@ data/*.db-shm
 *.db-shm
 server/data/*.db
 .env
+ModelNPC.html
