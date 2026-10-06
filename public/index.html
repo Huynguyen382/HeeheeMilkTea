@@ -33,14 +33,21 @@
     </div>
 
     <!-- TODAY EARNINGS & TIME OF DAY HUD -->
-    <div class="daily-cap-box" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px;">
+    <div class="daily-cap-box" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; flex-wrap: wrap; gap: 4px;">
       <div style="font-size: 0.95rem; color: var(--milk-cream); display: flex; align-items: center; gap: 4px;">
-        <span>💰 Doanh thu hôm nay:</span>
+        <span>💰 Doanh thu:</span>
         <b id="cap-earned" style="color: #50fa7b;">0đ</b>
-        <span style="color: #f1fa8c; font-size: 0.85rem;"></span>
       </div>
-      <div id="time-of-day-badge" class="time-badge" style="cursor: pointer; background: rgba(244, 196, 48, 0.15); border: 1px solid var(--gold); padding: 2px 7px; border-radius: 4px; font-size: 0.88rem; color: var(--gold); user-select: none;" title="Nhấn để đổi khung cảnh (Sáng / Trưa / Chiều / Tối)">
-        🌅 Sáng
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <!-- Nút linh hoạt chuyển bối cảnh (Bách Khoa ↔ Phố Nhỏ Quê) -->
+        <button id="btn-toggle-scene" style="background: rgba(0, 206, 201, 0.15); border: 1px solid #00cec9; color: #00cec9; border-radius: 4px; padding: 2px 7px; font-size: 0.85rem; cursor: pointer; user-select: none; font-weight: bold;" title="Chuyển đổi bối cảnh: Cổng Bách Khoa ↔ Phố Nhỏ Quê">🏛️ Bách Khoa</button>
+        <!-- Đồng hồ & Trạng thái tuần tra đêm (7h00 - 22h30) -->
+        <div id="game-clock-badge" class="time-badge" style="cursor: pointer; background: rgba(80, 250, 123, 0.15); border: 1px solid #50fa7b; padding: 2px 7px; border-radius: 4px; font-size: 0.85rem; color: #50fa7b; user-select: none;" title="Giờ bán: 7h00 - 22h30. Quá 22h30 công an đi tuần (xác suất 75% + 10%/giờ). Sau 1h sáng bùa vô hiệu!">
+          🕒 <span id="game-clock-text">08:00</span> • <span id="game-clock-status">🟢 Giờ bán</span>
+        </div>
+        <div id="time-of-day-badge" class="time-badge" style="cursor: pointer; background: rgba(244, 196, 48, 0.15); border: 1px solid var(--gold); padding: 2px 7px; border-radius: 4px; font-size: 0.88rem; color: var(--gold); user-select: none;" title="Nhấn để đổi khung cảnh (Sáng / Trưa / Chiều / Tối)">
+          🌅 Sáng
+        </div>
       </div>
     </div>
 
@@ -65,7 +72,7 @@
     <canvas id="scene" width="360" height="200"></canvas>
     <!-- POLICE PATROL WARNING (Góc trái giao diện bán hàng) -->
     <div id="police-patrol-alert" style="display: none; position: absolute; bottom: 8px; left: 8px; z-index: 25; background: rgba(192, 57, 43, 0.95); border: 2px solid #ff7675; border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.82rem; font-weight: bold; box-shadow: 0 0 10px rgba(231, 76, 60, 0.7); pointer-events: none;">
-      🚨 CẢNH BÁO: Cảnh sát đi tuần! (<span id="police-alert-timer">15</span>s)
+      🚨 <span id="police-alert-title">CÔNG AN ĐI TUẦN!</span> (<span id="police-alert-timer">15</span>s) • <span id="police-alert-prob">75%</span>
     </div>
   </div>
 
@@ -329,7 +336,7 @@
       <div style="display: flex; flex-direction: column; gap: 8px;">
         <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #00cec9;">
           <b style="color: #00cec9;">🔮 Bùa Ẩn Thân Quầy Hàng</b>
-          <div style="color: var(--text-muted); font-size: 0.95rem;">Treo bùa cạnh quầy. Nhấp đúp (2 lần liên tiếp) để tàng hình cả quán tối đa 1 phút, né tránh cảnh sát/đô thị kiểm tra vỉa hè Bách Khoa!</div>
+          <div style="color: var(--text-muted); font-size: 0.95rem;">Treo bùa cạnh quầy hàng. Nhấp đúp (2 lần liên tiếp) để tàng hình cả quán tối đa 1 phút, né tránh cảnh sát kiểm tra. Giờ mở cửa: 7h00 - 22h30. Sau 22h30 công an tuần tra (xác suất 75% + 10%/giờ). ⚠️ Bùa VÔ HIỆU sau 1h sáng, hãy đóng cửa (kết ca) trước 22h30!</div>
           <button class="btn-action-wide" data-buy-upgrade="bua_an_than" style="background: #00cec9; color: #111; font-weight: bold;">Mua (200.000đ)</button>
         </div>
         <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #4d3345;">

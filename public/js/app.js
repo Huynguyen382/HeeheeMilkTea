@@ -509,11 +509,53 @@ document.addEventListener('DOMContentLoaded', async () => {
       elRep.style.color = 'var(--gold)';
     }
 
-    // Today Earnings (Unlimited) & Time of Day badge
+    // Today Earnings & Time of Day badge
     if (elCapEarned) elCapEarned.innerText = (daily.earned_today || 0).toLocaleString('vi-VN') + 'đ';
     const elTimeBadge = document.getElementById('time-of-day-badge');
     if (elTimeBadge && canvas && canvas.getTimeOfDayLabel) {
       elTimeBadge.innerText = canvas.getTimeOfDayLabel();
+    }
+
+    // In-game Clock & Night Patrol Status (7h00 - 22h30 operating hours)
+    const elClockText = document.getElementById('game-clock-text');
+    const elClockStatus = document.getElementById('game-clock-status');
+    const elClockBadge = document.getElementById('game-clock-badge');
+    if (canvas && canvas.getNightPatrolStatus) {
+      const nStatus = canvas.getNightPatrolStatus();
+      if (elClockText) elClockText.innerText = nStatus.timeStr;
+      if (elClockStatus) {
+        if (nStatus.isBusinessHours) {
+          elClockStatus.innerText = '🟢 Giờ bán';
+          if (elClockBadge) {
+            elClockBadge.style.background = 'rgba(80, 250, 123, 0.15)';
+            elClockBadge.style.borderColor = '#50fa7b';
+            elClockBadge.style.color = '#50fa7b';
+          }
+        } else if (nStatus.isAmuletInvalid) {
+          elClockStatus.innerText = `💀 Sau 1h: VÔ HIỆU (${nStatus.probability}%)`;
+          if (elClockBadge) {
+            elClockBadge.style.background = 'rgba(255, 71, 87, 0.25)';
+            elClockBadge.style.borderColor = '#ff4757';
+            elClockBadge.style.color = '#ff4757';
+          }
+        } else {
+          elClockStatus.innerText = `🔴 Quá giờ (${nStatus.probability}%)`;
+          if (elClockBadge) {
+            elClockBadge.style.background = 'rgba(255, 165, 2, 0.2)';
+            elClockBadge.style.borderColor = '#ffa502';
+            elClockBadge.style.color = '#ffa502';
+          }
+        }
+      }
+    }
+
+    // Scene Switcher Button label & styling
+    const btnToggleScene = document.getElementById('btn-toggle-scene');
+    if (btnToggleScene && canvas) {
+      const isHUST = (canvas.sceneSetting === 'hust') || (!canvas.sceneSetting && (save.chapter >= 2));
+      btnToggleScene.innerText = isHUST ? '🏛️ Bách Khoa' : '🏡 Phố Nhỏ Quê';
+      btnToggleScene.style.borderColor = isHUST ? '#00cec9' : '#f1c40f';
+      btnToggleScene.style.color = isHUST ? '#00cec9' : '#f1c40f';
     }
 
     // Active buffs
@@ -2071,6 +2113,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const amuletRes = canvas.checkAmuletClick(clickX, clickY);
         if (amuletRes) {
           sound.coin();
+          if (amuletRes.invalidAfter1AM) {
+            showToast('💀 ĐÃ QUÁ 1H SÁNG! Bùa ẩn thân đã mất linh nghiệm, không thể kích hoạt! Hãy đóng cửa (kết ca) ngay!', 5000);
+            return;
+          }
           if (amuletRes.isInvisible !== undefined) {
             const policeAlert = document.getElementById('police-patrol-alert');
             if (amuletRes.isInvisible) {
@@ -2106,15 +2152,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Police Patrol Event Callbacks on Canvas
-    canvas.onPoliceWarning = (secLeft) => {
+    canvas.onPoliceWarning = (secLeft, prob) => {
       const policeAlert = document.getElementById('police-patrol-alert');
       const policeTimer = document.getElementById('police-alert-timer');
+      const policeProb = document.getElementById('police-alert-prob');
+      const policeTitle = document.getElementById('police-alert-title');
       if (canvas.isInvisible) {
         if (policeAlert) policeAlert.style.display = 'none';
         return;
       }
       if (policeAlert) policeAlert.style.display = 'block';
       if (policeTimer) policeTimer.innerText = secLeft;
+      if (policeProb && prob !== undefined) policeProb.innerText = `${prob}%`;
+      const nStatus = (canvas.getNightPatrolStatus) ? canvas.getNightPatrolStatus() : null;
+      if (policeTitle && nStatus) {
+        policeTitle.innerText = nStatus.isAmuletInvalid ? '💀 ĐÃ QUÁ 1H - BÙA VÔ HIỆU!' : '🚨 CÔNG AN ĐI TUẦN!';
+      }
     };
 
     canvas.onPolicePassed = () => {
@@ -2123,14 +2176,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('👮 Cảnh sát trật tự đã đi qua! Quán an toàn tuyệt đối nhờ Bùa Ẩn Thân! 🎉', 4000);
     };
 
-    canvas.onPoliceCaught = async () => {
+    canvas.onPoliceCaught = async (fineAmount, isInvalidAfter1AM) => {
       const policeAlert = document.getElementById('police-patrol-alert');
       if (policeAlert) policeAlert.style.display = 'none';
       sound.fail();
       try {
         const res = await API.policeFine();
         if (res && res.success) {
-          showToast(`🚨 BỊ PHẠT 2.500.000đ do vi phạm lấn chiếm vỉa hè Cổng Bách Khoa! ⚠️ Hãy dùng Bùa Ẩn Thân khi có cảnh báo!`, 6500);
+          const reasonMsg = isInvalidAfter1AM
+            ? 'ĐÃ QUÁ 1H SÁNG (Bùa ẩn thân mất tác dụng) và kinh doanh quá giờ quy định (22h30)!'
+            : 'vi phạm kinh doanh quá giờ quy định (22h30) / lấn chiếm vỉa hè!';
+          showToast(`🚨 BỊ PHẠT ${(fineAmount || 2500000).toLocaleString('vi-VN')}đ do ${reasonMsg} ⚠️ Hãy đóng cửa (kết ca) trước 22h30!`, 7000);
           storeState = await API.getState();
           updateUI();
         }
@@ -2793,6 +2849,73 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.execCommand('copy');
         document.body.removeChild(ta);
         showToast('📋 Đã sao chép Mã Quán: ' + storeState.store_code, 2000);
+      }
+    });
+  }
+
+  // Scene switcher button (Bách Khoa ↔ Phố Nhỏ Quê)
+  const btnToggleScene = document.getElementById('btn-toggle-scene');
+  if (btnToggleScene) {
+    // Restore saved setting if any
+    const savedSetting = localStorage.getItem('hyhy_scene_setting');
+    if (savedSetting && canvas && canvas.setSceneSetting) {
+      canvas.setSceneSetting(savedSetting);
+    }
+
+    btnToggleScene.addEventListener('click', () => {
+      if (!canvas || !canvas.toggleSceneSetting) return;
+      const newSetting = canvas.toggleSceneSetting();
+      localStorage.setItem('hyhy_scene_setting', newSetting);
+      sound.bell();
+      updateUI();
+      const name = (newSetting === 'hust') 
+        ? '🏛️ Cổng Parabol Đại học Bách Khoa Hà Nội' 
+        : '🏡 Phố Nhỏ Quê Hương (Chương 1)';
+      showToast(`📍 Bối cảnh chuyển sang: ${name}`, 3000);
+    });
+  }
+
+  // In-Game Clock & Night Patrol Badge
+  const elClockBadge = document.getElementById('game-clock-badge');
+  if (elClockBadge) {
+    const updateGameClockBadge = () => {
+      if (!canvas || !canvas.getNightPatrolStatus) return;
+      const nStatus = canvas.getNightPatrolStatus();
+      const elClockText = document.getElementById('game-clock-text');
+      const elClockStatus = document.getElementById('game-clock-status');
+      if (elClockText) elClockText.innerText = nStatus.timeStr;
+      if (elClockStatus) {
+        if (nStatus.isBusinessHours) {
+          elClockStatus.innerText = '🟢 Giờ bán';
+          elClockBadge.style.background = 'rgba(80, 250, 123, 0.15)';
+          elClockBadge.style.borderColor = '#50fa7b';
+          elClockBadge.style.color = '#50fa7b';
+        } else if (nStatus.isAmuletInvalid) {
+          elClockStatus.innerText = `💀 Sau 1h: VÔ HIỆU (${nStatus.probability}%)`;
+          elClockBadge.style.background = 'rgba(255, 71, 87, 0.25)';
+          elClockBadge.style.borderColor = '#ff4757';
+          elClockBadge.style.color = '#ff4757';
+        } else {
+          elClockStatus.innerText = `🔴 Quá giờ (${nStatus.probability}%)`;
+          elClockBadge.style.background = 'rgba(255, 165, 2, 0.2)';
+          elClockBadge.style.borderColor = '#ffa502';
+          elClockBadge.style.color = '#ffa502';
+        }
+      }
+    };
+    updateGameClockBadge();
+    setInterval(updateGameClockBadge, 1500);
+
+    elClockBadge.addEventListener('click', () => {
+      if (!canvas || !canvas.getNightPatrolStatus) return;
+      const nStatus = canvas.getNightPatrolStatus();
+      sound.bell();
+      if (nStatus.isBusinessHours) {
+        showToast(`🕒 Giờ kinh doanh: 7h00 - 22h30 (Hiện tại: ${nStatus.timeStr}). Hãy đóng cửa trước 22h30 để tránh tuần tra đêm!`, 4500);
+      } else if (nStatus.isAmuletInvalid) {
+        showToast(`💀 ĐÃ QUÁ 1H SÁNG (${nStatus.timeStr}): Bùa ẩn thân hoàn toàn mất tác dụng! Công an kiểm tra ${nStatus.probability}%, phạt 2.500.000đ! Hãy kết ca đóng cửa ngay!`, 5500);
+      } else {
+        showToast(`🔴 ĐÃ QUÁ 22H30 (${nStatus.timeStr}): Công an đang tuần tra đêm (Tỉ lệ kiểm tra: ${nStatus.probability}%). Dùng Bùa Ẩn Thân để né hoặc bấm "Kết Ca" để đóng cửa an toàn!`, 5500);
       }
     });
   }

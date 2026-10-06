@@ -20,6 +20,7 @@ class GameCanvas {
     
     // Chapter & Setting
     this.chapter = 1;
+    this.sceneSetting = 'hust'; // 'hust' (Cổng Bách Khoa) or 'town' (Phố Nhỏ Ch.1)
     this.hasAmulet = false;
     this.isInvisible = false;
     this.invisibilityRemaining = 0;
@@ -118,6 +119,61 @@ class GameCanvas {
     ];
 
     this.initLoop();
+  }
+
+  setSceneSetting(setting) {
+    this.sceneSetting = setting || 'hust';
+  }
+
+  toggleSceneSetting() {
+    this.sceneSetting = (this.sceneSetting === 'hust') ? 'town' : 'hust';
+    return this.sceneSetting;
+  }
+
+  getNightPatrolStatus() {
+    const { hour, minute, totalInGameMinutes } = this.getInGameTime();
+    // Operating hours: 7:00 (420 min) to 22:30 (1350 min)
+    const isBusinessHours = (totalInGameMinutes >= 420 && totalInGameMinutes <= 1350);
+
+    if (isBusinessHours) {
+      return {
+        isBusinessHours: true,
+        isOvertime: false,
+        probability: 0,
+        isAmuletInvalid: false,
+        timeStr: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+        statusText: '🟢 Giờ kinh doanh (7h00 - 22h30)'
+      };
+    }
+
+    // Overtime (After 22:30):
+    let minutesPastClose = 0;
+    if (totalInGameMinutes > 1350) {
+      minutesPastClose = totalInGameMinutes - 1350;
+    } else {
+      // Past midnight (0:00 to 7:00)
+      minutesPastClose = (1440 - 1350) + totalInGameMinutes;
+    }
+
+    const hoursPast = Math.floor(minutesPastClose / 60);
+    // Probability starts at 75% at 22:30, increases 10% each hour up to 100%
+    const probability = Math.min(100, 75 + hoursPast * 10);
+
+    // Invisibility Amulet is INVALID after 1:00 AM (1:00 = 60 min to 7:00 = 420 min)
+    const isAmuletInvalid = (totalInGameMinutes >= 60 && totalInGameMinutes < 420);
+
+    return {
+      isBusinessHours: false,
+      isOvertime: true,
+      probability,
+      isAmuletInvalid,
+      hoursPast,
+      minutesPastClose,
+      timeStr: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+      statusText: isAmuletInvalid
+        ? `💀 Sau 1h: BÙA VÔ HIỆU! (Công an ${probability}%)`
+        : `🔴 Quá giờ! Tuần tra đêm (${probability}%)`
+    };
   }
 
   initLoop() {
@@ -336,6 +392,14 @@ class GameCanvas {
       if (t.x < -30) t.x = this.width + 20;
     });
 
+    // Chapter 2 HUST traffic on Giải Phóng street
+    if (this.hustTraffic) {
+      this.hustTraffic.forEach(veh => {
+        veh.x -= veh.speed;
+        if (veh.x < -40) veh.x = this.width + 30;
+      });
+    }
+
     // Drifting clouds for daytime
     this.clouds.forEach(c => {
       c.x += c.speed;
@@ -379,6 +443,204 @@ class GameCanvas {
     // Sip drinking animation
     if (this.isDrinking && this.drinkLevel > 0.2) {
       this.drinkLevel -= 0.02;
+    }
+
+    // Update Honeycomb Slipper Projectile flight
+    if (this.slipper) {
+      const sl = this.slipper;
+      sl.progress += 0.085;
+      sl.rot += 0.45;
+      const p = Math.min(1.0, sl.progress);
+      sl.x = sl.startX + (sl.targetX - sl.startX) * p;
+      const arcY = Math.sin(p * Math.PI) * 26;
+      sl.y = sl.startY + (sl.targetY - sl.startY) * p - arcY;
+      if (p >= 1.0) {
+        // Hit impact: burst rubber sparkles
+        for (let i = 0; i < 10; i++) {
+          this.particles.push({
+            x: sl.targetX + (Math.random() * 8 - 4),
+            y: sl.targetY + (Math.random() * 8 - 4),
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4,
+            life: 25,
+            maxLife: 25,
+            color: '#f7f1e3',
+            size: 2
+          });
+        }
+        this.slipper = null;
+      }
+    }
+
+    // Invisibility Amulet Timer & 1AM auto-invalidation
+    if (this.isInvisible) {
+      const nightStatus = this.getNightPatrolStatus();
+      if (nightStatus.isAmuletInvalid) {
+        this.isInvisible = false;
+        this.invisibilityRemaining = 0;
+        this.floatingTexts.push({
+          text: '💀 ĐÃ QUÁ 1H SÁNG! BÙA ẨN THÂN MẤT LINH NGHIỆM!',
+          x: 40,
+          y: 75,
+          alpha: 1.0,
+          color: '#ff5555'
+        });
+      } else {
+        this.invisibilityRemaining--;
+        if (this.invisibilityRemaining <= 0) {
+          this.isInvisible = false;
+          this.floatingTexts.push({
+            text: '👁️ HẾT THỜI GIAN TÀNG HÌNH!',
+            x: 55,
+            y: 80,
+            alpha: 1.0,
+            color: '#ffeaa7'
+          });
+        }
+      }
+    }
+
+    // Update Motorbike Delivery Shipper AI
+    if (this.motorbikeShipper) {
+      const ms = this.motorbikeShipper;
+      if (!ms.active) {
+        this.shipperSpawnTimer--;
+        if (this.shipperSpawnTimer <= 0) {
+          this.shipperSpawnTimer = 2200 + Math.random() * 2200; // Spawns every 35-75s
+          ms.active = true;
+          ms.state = 'approaching';
+          ms.x = 385;
+          ms.targetX = 230;
+          ms.bubble = '🛵 Có đơn ship hỏa tốc!';
+          ms.timer = 0;
+        }
+      } else {
+        if (ms.state === 'approaching') {
+          ms.x -= ms.speed;
+          if (ms.x <= ms.targetX) {
+            ms.state = 'parked';
+            ms.walkX = ms.x;
+            ms.timer = 360; // ~6s to park, walk over & grab drink
+            ms.bubble = '📦 Lấy đơn mang về nhé!';
+          }
+        } else if (ms.state === 'parked') {
+          ms.timer--;
+          if (ms.timer > 180) {
+            if (ms.walkX > 185) ms.walkX -= 1.1;
+            if (ms.timer === 260) ms.bubble = '🥤 Đã nhận đồ, đi giao ngay!';
+          } else {
+            if (ms.walkX < ms.x) ms.walkX += 1.1;
+          }
+          if (ms.timer <= 0) {
+            ms.state = 'departing';
+            ms.bubble = '💨 Chúc quán đắt hàng!';
+          }
+        } else if (ms.state === 'departing') {
+          ms.x -= ms.speed * 1.5;
+          if (ms.x < -60) {
+            ms.active = false;
+            ms.state = 'idle';
+          }
+        }
+      }
+    }
+
+    // Update Police Patrol System
+    if (this.policePatrol) {
+      const p = this.policePatrol;
+      const nightStatus = this.getNightPatrolStatus();
+
+      if (p.state === 'idle') {
+        p.timer--;
+        if (p.timer <= 0) {
+          let shouldSpawn = false;
+          if (nightStatus.isOvertime) {
+            // Overtime probability: 75% at 22:30, +10%/h up to 100%
+            const roll = Math.random() * 100;
+            if (roll < nightStatus.probability) {
+              shouldSpawn = true;
+            } else {
+              p.timer = 1200; // Roll again in ~20s
+            }
+          } else {
+            // Daytime sidewalk inspection
+            shouldSpawn = (Math.random() * 100 < 30);
+            if (!shouldSpawn) p.timer = 2400;
+          }
+
+          if (shouldSpawn) {
+            p.state = 'warning';
+            p.warningTimer = 900; // 15 seconds warning before officer arrives
+            if (this.onPoliceWarning) {
+              this.onPoliceWarning(15, nightStatus.isOvertime ? nightStatus.probability : 30);
+            }
+            this.floatingTexts.push({
+              text: '🚨 CÔNG AN ĐI TUẦN! DÙNG BÙA ẨN THÂN! 🚨',
+              x: 25,
+              y: 65,
+              alpha: 1.0,
+              color: '#ff5555'
+            });
+          }
+        }
+      } else if (p.state === 'warning') {
+        p.warningTimer--;
+        if (p.warningTimer % 60 === 0 && this.onPoliceWarning) {
+          this.onPoliceWarning(Math.ceil(p.warningTimer / 60), nightStatus.isOvertime ? nightStatus.probability : 30);
+        }
+        if (p.warningTimer <= 0) {
+          p.state = 'approaching';
+          p.x = 380;
+          p.bubble = '👮 Trật tự đô thị đây!';
+        }
+      } else if (p.state === 'approaching') {
+        p.x -= p.speed;
+        if (p.x <= 180) {
+          p.state = 'inspecting';
+          p.timer = 180; // 3 seconds inspecting
+        }
+      } else if (p.state === 'inspecting') {
+        p.timer--;
+        const isCaught = (!this.isInvisible || nightStatus.isAmuletInvalid);
+        p.bubble = isCaught 
+          ? (nightStatus.isAmuletInvalid ? '👮 SAU 1H BÙA VÔ HIỆU! PHẠT 2.5TR!' : '👮 LẬP BIÊN BẢN VI PHẠM! PHẠT 2.500.000Đ!')
+          : '❓ Ủa? Quán đâu mất rồi? Gió thổi hiu hiu...';
+
+        if (p.timer <= 0) {
+          if (isCaught) {
+            if (this.onPoliceCaught) {
+              this.onPoliceCaught(2500000, nightStatus.isAmuletInvalid);
+            }
+            this.floatingTexts.push({
+              text: '-2.500.000đ PHẠT TRẬT TỰ! 💸',
+              x: 70,
+              y: 70,
+              alpha: 1.0,
+              color: '#ff4757'
+            });
+          } else {
+            if (this.onPolicePassed) {
+              this.onPolicePassed();
+            }
+            this.floatingTexts.push({
+              text: '✨ ĐÃ QUA MẶT CÔNG AN AN TOÀN! ✨',
+              x: 60,
+              y: 70,
+              alpha: 1.0,
+              color: '#2ed573'
+            });
+          }
+          p.state = 'leaving';
+          p.bubble = isCaught ? '👮 Về phường xử lý!' : '🚶 Đi kiểm tra phố khác...';
+        }
+      } else if (p.state === 'leaving') {
+        p.x -= p.speed * 1.35;
+        if (p.x < -60) {
+          p.state = 'idle';
+          p.timer = nightStatus.isOvertime ? 1800 : 3600;
+          p.bubble = '';
+        }
+      }
     }
 
     // Update Thief Movement & Theft AI
@@ -466,32 +728,50 @@ class GameCanvas {
     ctx.scale(2, 2);
     ctx.imageSmoothingEnabled = false;
 
-    // 1. SKY & DISTANT STREET BACKGROUND WITH NEON SIGNS
+    // 1. SKY & DISTANT STREET BACKGROUND WITH NEON SIGNS (HUST PARABOL or CHAPTER 1 PHỐ NHỎ)
     this.drawBackground(ctx);
 
     // 2. STREET LAMP WITH RADIANT CONE OF LIGHT
     this.drawStreetLamp(ctx);
 
-    // 3. CART BACK WALL & ARTISAN SHELVES (Behind Hyhy)
+    // 3. CART STALL & BARISTA HYHY (With Invisibility Cloaking effect if activated)
+    if (this.isInvisible) {
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+    }
+
+    // 3a. CART BACK WALL & ARTISAN SHELVES (Behind Hyhy)
     this.drawCartBack(ctx);
 
-    // 4. HYHY BARISTA SPRITE (Full body: legs, skirt, apron, head, beret standing inside stall)
+    // 3b. HYHY BARISTA SPRITE (Full body: legs, skirt, apron, head, beret standing inside stall)
     this.drawHyhy(ctx);
 
-    // 5. MILK TEA CART FRONT COUNTER & EQUIPMENT (In front of Hyhy's body)
+    // 3c. MILK TEA CART FRONT COUNTER & EQUIPMENT (In front of Hyhy's body)
     this.drawCartFront(ctx);
     
-    // 6. HYHY FOREARMS & SHAKER (Resting/active on top of the counter)
+    // 3d. HYHY FOREARMS & SHAKER (Resting/active on top of the counter)
     this.drawHyhyForearms(ctx);
 
-    // 7. STORE PET (Corgi, Mèo Thần Tài, Capybara)
+    // 3e. STORE PET (Corgi, Mèo Thần Tài, Capybara)
     this.drawStorePet(ctx);
 
-    // 8. CUSTOMER SPRITES & QUEUE
+    if (this.isInvisible) {
+      ctx.restore();
+      // Shimmering mystic aura surrounding cloaked stall
+      this.drawInvisibilityAura(ctx);
+    }
+
+    // 4. INVISIBILITY AMULET (Bùa Ẩn Thân treo ở cột quầy hàng)
+    this.drawInvisibilityAmulet(ctx);
+
+    // 5. MOTORBIKE SHIPPER (Shipper xe máy nhận đồ & đi giao)
+    this.drawMotorbikeShipper(ctx);
+
+    // 6. CUSTOMER SPRITES & QUEUE (Dual depth support up to 14 customers)
     if (this.queue && this.queue.length > 0) {
       for (let i = this.queue.length - 1; i >= 0; i--) {
         const qCust = this.queue[i];
-        this.drawCustomer(ctx, qCust.currentX, 108, qCust.customerType, i === 0, qCust.quote, qCust.name);
+        this.drawCustomer(ctx, qCust.currentX, qCust.targetY || 108, qCust.customerType, i === 0, qCust.quote, qCust.name);
       }
     } else if (this.customerActive) {
       this.drawCustomer(ctx, this.customerX, 108, this.customerType, true, this.customerQuote, this.customerName);
@@ -501,11 +781,14 @@ class GameCanvas {
       this.drawCustomer(ctx, lc.currentX, 108, lc.customerType, false, '', lc.name);
     });
 
-    // 9. THIEF SPRITE (Black hoodie & mask sneaking across)
+    // 7. POLICE PATROL OFFICER (Cảnh sát trật tự tuần tra)
+    this.drawPolicePatrol(ctx);
+
+    // 8. THIEF SPRITE & HONEYCOMB SLIPPER PROJECTILE
     this.drawThief(ctx);
     this.drawSlipper(ctx);
 
-    // 10. PARTICLES & FLOATING NUMBERS
+    // 9. PARTICLES & FLOATING NUMBERS
     this.drawParticles(ctx);
     const tod = this.getTimeOfDay();
     if (tod === 'night' || tod === 'afternoon') {
@@ -617,6 +900,11 @@ class GameCanvas {
 
   drawBackground(ctx) {
     const tod = this.getTimeOfDay();
+    const isHUST = (this.sceneSetting === 'hust') || (!this.sceneSetting && this.chapter >= 2);
+    if (isHUST) {
+      this.drawHUSTParabolBackground(ctx, tod);
+      return;
+    }
 
     // 1. SKY GRADIENT DYNAMIC THEO GIỜ TRONG NGÀY
     const skyGrad = ctx.createLinearGradient(0, 0, 0, 145);
@@ -2115,26 +2403,38 @@ class GameCanvas {
 
   checkAmuletClick(clickX, clickY) {
     if (!this.hasAmulet) return false;
-    // Hitbox for amulet hanging beside stall (x: 105 - 135, y: 120 - 160)
-    if (clickX >= 105 && clickX <= 135 && clickY >= 120 && clickY <= 160) {
+    // Hitbox covering amulet hanging at right stall corner (x: 150 - 188, y: 60 - 118)
+    if (clickX >= 150 && clickX <= 188 && clickY >= 60 && clickY <= 118) {
+      const nightStatus = this.getNightPatrolStatus();
+      if (nightStatus.isAmuletInvalid) {
+        this.floatingTexts.push({
+          text: '💀 BÙA ĐÃ VÔ HIỆU SAU 1H SÁNG!',
+          x: 70,
+          y: 75,
+          alpha: 1.0,
+          color: '#ff5555'
+        });
+        return { isAmulet: true, invalidAfter1AM: true };
+      }
+
       const now = Date.now();
       if (now - this.lastAmuletClickTime < 500) {
-        // Double-click detected!
+        // Double-click detected: Toggle invisibility
         this.isInvisible = !this.isInvisible;
         this.lastAmuletClickTime = 0;
         if (this.isInvisible) {
           this.invisibilityRemaining = 60 * 60; // 60s max
           this.floatingTexts.push({
             text: '🔮 BÙA ẨN THÂN KÍCH HOẠT (60s)! ⭐',
-            x: 40,
-            y: 90,
+            x: 50,
+            y: 80,
             alpha: 1.0,
             color: '#00cec9'
           });
           for (let i = 0; i < 25; i++) {
             this.particles.push({
-              x: 65 + (Math.random() * 50 - 25),
-              y: 130 + (Math.random() * 30 - 15),
+              x: 100 + (Math.random() * 70 - 35),
+              y: 110 + (Math.random() * 40 - 20),
               vx: (Math.random() - 0.5) * 3,
               vy: -Math.random() * 2.5 - 0.5,
               life: 40,
@@ -2148,7 +2448,7 @@ class GameCanvas {
           this.floatingTexts.push({
             text: '👁️ ĐÃ THOÁT TÀNG HÌNH!',
             x: 60,
-            y: 90,
+            y: 80,
             alpha: 1.0,
             color: '#ffeaa7'
           });
@@ -2158,8 +2458,8 @@ class GameCanvas {
         this.lastAmuletClickTime = now;
         this.floatingTexts.push({
           text: '✨ Nhấp đúp (2 lần) để dùng Bùa! ✨',
-          x: 50,
-          y: 110,
+          x: 55,
+          y: 80,
           alpha: 0.9,
           color: '#fdcb6e'
         });
@@ -3102,49 +3402,83 @@ class GameCanvas {
   // INVISIBILITY AMULET (BÙA ẨN THÂN) & CLOAKING EFFECTS
   // =========================================================================
   drawInvisibilityAmulet(ctx) {
-    const ax = 120;
-    const floatY = Math.sin(this.tick * 0.08) * 2;
-    const ay = 132 + floatY;
+    if (!this.hasAmulet) return;
 
-    // Hanging crimson silk cord
-    ctx.strokeStyle = '#c0392b';
+    // Hanging beside stall counter at right awning post (x=168, y=84)
+    const ax = 168;
+    const floatY = Math.sin(this.tick * 0.08) * 2;
+    const ay = 84 + floatY;
+    const nightStatus = this.getNightPatrolStatus();
+    const isInvalid = nightStatus.isAmuletInvalid;
+
+    // Hanging crimson silk cord from awning beam (y=68)
+    ctx.strokeStyle = isInvalid ? '#535c68' : '#c0392b';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.moveTo(ax + 5, 120);
+    ctx.moveTo(ax + 5, 68);
     ctx.lineTo(ax + 5, ay);
     ctx.stroke();
 
-    // Sacred Yellow Talisman Paper (Bùa vàng đạo gia)
-    ctx.fillStyle = '#f1c40f';
-    ctx.fillRect(ax, ay, 10, 19);
-    // Darker paper border
-    ctx.strokeStyle = '#d35400';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(ax, ay, 10, 19);
+    if (isInvalid) {
+      // Burnt & Exhausted Talisman Paper (Bùa mất linh nghiệm sau 1h sáng)
+      ctx.fillStyle = '#2f3542';
+      ctx.fillRect(ax, ay, 11, 20);
+      ctx.strokeStyle = '#1e272e';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(ax, ay, 11, 20);
 
-    // Red sacred cinnabar runes (Chữ bùa chu sa đỏ)
-    ctx.fillStyle = '#c0392b';
-    ctx.fillRect(ax + 4, ay + 2, 2, 2);
-    ctx.fillRect(ax + 2, ay + 5, 6, 1.5);
-    ctx.fillRect(ax + 4, ay + 7, 2, 5);
-    ctx.fillRect(ax + 2, ay + 10, 6, 1.5);
-    ctx.fillRect(ax + 3, ay + 13, 4, 2);
-    ctx.fillRect(ax + 4, ay + 16, 2, 2);
+      // Ashy faded runes
+      ctx.fillStyle = '#57606f';
+      ctx.fillRect(ax + 4, ay + 3, 3, 2);
+      ctx.fillRect(ax + 2, ay + 6, 7, 1.5);
+      ctx.fillRect(ax + 4, ay + 9, 3, 5);
+      ctx.fillRect(ax + 2, ay + 15, 7, 1.5);
 
-    // Glowing mystic aura
-    const auraPulse = (Math.sin(this.tick * 0.1) + 1) * 0.5;
-    ctx.strokeStyle = this.isInvisible ? 'rgba(0, 206, 201, 0.8)' : 'rgba(241, 196, 15, 0.6)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(ax + 5, ay + 9, 13 + auraPulse * 3, 0, Math.PI * 2);
-    ctx.stroke();
+      // Burnt embers / cracks
+      ctx.fillStyle = '#eb2f06';
+      ctx.fillRect(ax + 2, ay + 17, 2, 2);
+      ctx.fillRect(ax + 7, ay + 18, 2, 1.5);
 
-    // If currently cloaked, draw remaining time badge
-    if (this.isInvisible && this.invisibilityRemaining > 0) {
-      const secLeft = Math.ceil(this.invisibilityRemaining / 60);
-      ctx.fillStyle = '#00cec9';
-      ctx.font = 'bold 7px monospace';
-      ctx.fillText(secLeft + 's', ax - 1, ay - 3);
+      // Invalid Badge "💀 1H"
+      ctx.fillStyle = '#ff4757';
+      ctx.font = 'bold 6.5px monospace';
+      ctx.fillText('💀 1H', ax - 2, ay - 3);
+    } else {
+      // Sacred Yellow Talisman Paper (Bùa vàng đạo gia linh nghiệm)
+      ctx.fillStyle = '#f1c40f';
+      ctx.fillRect(ax, ay, 11, 20);
+      ctx.strokeStyle = '#d35400';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(ax, ay, 11, 20);
+
+      // Red sacred cinnabar runes (Chữ bùa chu sa đỏ linh nghiệm)
+      ctx.fillStyle = '#c0392b';
+      ctx.fillRect(ax + 4, ay + 2, 3, 2);
+      ctx.fillRect(ax + 2, ay + 5, 7, 1.5);
+      ctx.fillRect(ax + 4, ay + 7, 3, 5);
+      ctx.fillRect(ax + 2, ay + 11, 7, 1.5);
+      ctx.fillRect(ax + 3, ay + 14, 5, 2);
+      ctx.fillRect(ax + 4, ay + 17, 3, 2);
+
+      // Glowing mystic aura ring
+      const auraPulse = (Math.sin(this.tick * 0.1) + 1) * 0.5;
+      ctx.strokeStyle = this.isInvisible ? 'rgba(0, 206, 201, 0.85)' : 'rgba(241, 196, 15, 0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(ax + 5.5, ay + 10, 13 + auraPulse * 3, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Top Tag Badge
+      if (this.isInvisible && this.invisibilityRemaining > 0) {
+        const secLeft = Math.ceil(this.invisibilityRemaining / 60);
+        ctx.fillStyle = '#00cec9';
+        ctx.font = 'bold 7px monospace';
+        ctx.fillText(secLeft + 's 🔮', ax - 3, ay - 3);
+      } else {
+        ctx.fillStyle = '#f6b93b';
+        ctx.font = 'bold 6px monospace';
+        ctx.fillText('✨ BÙA', ax - 1, ay - 3);
+      }
     }
   }
 
