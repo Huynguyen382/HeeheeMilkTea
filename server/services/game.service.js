@@ -1694,6 +1694,56 @@ async function endShift(storeId) {
   };
 }
 
+// Spend 200,000 VND to immediately escape resting state
+async function skipRest(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
+
+  const now = Date.now();
+  if (!save.rest_until_ts || now >= save.rest_until_ts) {
+    return { success: false, message: 'Quán hiện không trong trạng thái nghỉ ngơi!' };
+  }
+
+  const skipCost = 200000; // 200.000đ để thoát trạng thái nghỉ ngơi
+  if (save.money < skipCost) {
+    return {
+      success: false,
+      message: `Bạn không đủ tiền! Cần ${skipCost.toLocaleString('vi-VN')}đ để thức dậy ngay (Hiện có: ${save.money.toLocaleString('vi-VN')}đ).`
+    };
+  }
+
+  const newMoney = Math.max(0, save.money - skipCost);
+  const activeBuffs = JSON.parse(save.active_buffs || '{}');
+  delete activeBuffs.rest_reason;
+  delete activeBuffs.rest_until;
+
+  const updatedSave = {
+    store_id: storeId,
+    chapter: save.chapter,
+    day_in_game: save.day_in_game,
+    money: newMoney,
+    debt_remaining: save.debt_remaining,
+    reputation: save.reputation
+  };
+  const hash = anticheat.generateSaveHash(updatedSave);
+
+  await db.prepare(`
+    UPDATE game_saves 
+    SET money = ?, rest_until_ts = 0, active_buffs = ?, save_hash = ?, updated_at = ?
+    WHERE store_id = ?
+  `).run(newMoney, JSON.stringify(activeBuffs), hash, new Date().toISOString(), storeId);
+
+  invalidateStoreCache(storeId);
+
+  return {
+    success: true,
+    message: 'Đã bỏ ra 200.000đ để thức dậy ngay! Quán sẵn sàng mở cửa lúc 7h sáng!',
+    money: newMoney,
+    costPaid: skipCost,
+    rest_until_ts: 0
+  };
+}
+
 // Add cache stats endpoint
 async function getCacheStats() {
   return {
@@ -1730,6 +1780,7 @@ module.exports = {
   inviteTiktoker,
   buyIngredients,
   endShift,
+  skipRest,
   getCacheStats,
   invalidateStoreCache
 };

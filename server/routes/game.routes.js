@@ -44,4 +44,5 @@ router.post('/invite-tiktoker', authStore, handle('Invite tiktoker', req => game
 router.post('/buy-ingredients', authStore, handle('Buy ingredients', req => gameService.buyIngredients(req.store.id, req.body.items)));
 router.post('/end-shift', authStore, handle('End shift', req => gameService.endShift(req.store.id)));
 router.post('/advance-day', authStore, handle('Advance day', req => gameService.endShift(req.store.id)));
+router.post('/skip-rest', authStore, handle('Skip rest', req => gameService.skipRest(req.store.id)));
 module.exports = router;

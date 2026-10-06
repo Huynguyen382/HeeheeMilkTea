@@ -363,6 +363,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     canvas.setCustomerQueue([]);
     renderOrderTicket();
 
+    // Wire up Skip Rest (200.000đ) button
+    const btnSkipRest = document.getElementById('btn-skip-rest');
+    if (btnSkipRest) {
+      btnSkipRest.onclick = async () => {
+        const myMoney = (storeState && storeState.save) ? storeState.save.money : 0;
+        if (myMoney < 200000) {
+          sound.fail();
+          showToast(`❌ Bạn không đủ tiền! Cần 200.000đ để thức dậy ngay (Hiện có: ${myMoney.toLocaleString('vi-VN')}đ).`, 4500);
+          return;
+        }
+
+        btnSkipRest.disabled = true;
+        btnSkipRest.style.opacity = '0.6';
+        try {
+          const res = await API.skipRest();
+          if (res && res.success) {
+            clearInterval(restTimerInterval);
+            isGamePaused = false;
+            if (overlay) overlay.style.display = 'none';
+
+            // Chuyển thời gian trong game tới 7h sáng để bắt đầu kinh doanh!
+            if (canvas && canvas.setInGameTimeTo7AM) {
+              canvas.setInGameTimeTo7AM();
+            }
+
+            sound.coin();
+            setTimeout(() => sound.bell(), 300);
+
+            showToast(`⚡ ĐÃ CHI 200.000đ ĐỂ THỨC DẬY NGAY! Đã chuyển thời gian tới 7h00 sáng, quán bắt đầu mở cửa kinh doanh! 🎉`, 6000);
+
+            storeState = await API.getState();
+            updateUI();
+            scheduleNextOrder(2000);
+          } else {
+            sound.fail();
+            showToast('❌ ' + (res.message || 'Không thể thức dậy lúc này'), 4000);
+          }
+        } catch (err) {
+          console.error('Skip rest error:', err);
+          showToast('❌ Có lỗi xảy ra khi thức dậy', 3000);
+        } finally {
+          btnSkipRest.disabled = false;
+          btnSkipRest.style.opacity = '1';
+        }
+      };
+    }
+
     function updateTimer() {
       const remainingSec = Math.max(0, Math.ceil((restUntil - Date.now()) / 1000));
       const m = Math.floor(remainingSec / 60).toString().padStart(2, '0');
@@ -373,13 +420,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         clearInterval(restTimerInterval);
         isGamePaused = false;
         if (overlay) overlay.style.display = 'none';
+
+        // Tự động chuyển thời gian trong game tới 7h sáng để bắt đầu kinh doanh!
+        if (canvas && canvas.setInGameTimeTo7AM) {
+          canvas.setInGameTimeTo7AM();
+        }
+
         sound.bell();
         if (isEndShift) {
           const nextDay = storeState && storeState.save ? storeState.save.day_in_game : '';
-          showToast(`🌅 Chào mừng Ngày ${nextDay}! HeeHee đã tràn đầy năng lượng, quán bắt đầu mở cửa đón khách!`, 5000);
+          showToast(`🌅 Đã hoàn thành thời gian nghỉ ngơi! Thời gian đã chuyển tới 7h00 sáng Ngày ${nextDay}, quán bắt đầu mở cửa kinh doanh! ✨`, 5500);
         } else {
-          showToast('✨ HeeHee đã khỏe lại rồi! Tiệm trà sữa mở cửa đón khách tiếp!', 4000);
+          showToast('🌅 Đã hoàn thành thời gian nghỉ ngơi! Thời gian chuyển tới 7h00 sáng, quán bắt đầu mở cửa đón khách! ✨', 5000);
         }
+        updateUI();
         scheduleNextOrder(2000);
       }
     }

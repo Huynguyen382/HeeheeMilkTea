@@ -27,6 +27,14 @@ class GameCanvas {
     this.lastAmuletClickTime = 0;
     this.slipper = null;
 
+    // In-game time offset (allows fast-forwarding to 7:00 AM on rest end / wake up)
+    try {
+      const savedOffset = localStorage.getItem('hyhy_time_offset');
+      this.inGameTimeOffsetMs = savedOffset ? parseInt(savedOffset, 10) : 0;
+    } catch (e) {
+      this.inGameTimeOffsetMs = 0;
+    }
+
     // Animation states
     this.tick = 0;
     this.customerX = -40;
@@ -810,12 +818,28 @@ class GameCanvas {
     ctx.restore();
   }
 
+  setInGameTimeTo7AM() {
+    const DAY_CYCLE_MS = 2 * 60 * 60 * 1000; // 7,200,000 ms (2 hours)
+    const currentNow = Date.now() + (this.inGameTimeOffsetMs || 0);
+    const currentElapsed = currentNow % DAY_CYCLE_MS;
+    // 7:00 AM = 7 hours = 420 in-game minutes = (7 / 24) of day cycle = 2,100,000 ms
+    const targetElapsed = (7 / 24) * DAY_CYCLE_MS;
+    const delta = (targetElapsed - currentElapsed + DAY_CYCLE_MS) % DAY_CYCLE_MS;
+    this.inGameTimeOffsetMs = (this.inGameTimeOffsetMs || 0) + delta;
+    try {
+      localStorage.setItem('hyhy_time_offset', this.inGameTimeOffsetMs.toString());
+    } catch (e) {}
+    this.customTimeOfDay = null; // Resume automatic time of day (morning)
+    return this.getInGameTime();
+  }
+
   getInGameTime() {
     // 2 real-world hours = 1 in-game day (24 in-game hours)
     // 120 real minutes = 24 in-game hours => 1 in-game hour = 5 real minutes (300,000 ms)
     // 1 in-game minute = 5 real seconds (5,000 ms)
     const DAY_CYCLE_MS = 2 * 60 * 60 * 1000; // 7,200,000 ms (2 hours)
-    const elapsed = Date.now() % DAY_CYCLE_MS;
+    const now = Date.now() + (this.inGameTimeOffsetMs || 0);
+    const elapsed = now % DAY_CYCLE_MS;
     const fraction = elapsed / DAY_CYCLE_MS;
     const totalInGameMinutes = Math.floor(fraction * 24 * 60);
     const hour = Math.floor(totalInGameMinutes / 60);

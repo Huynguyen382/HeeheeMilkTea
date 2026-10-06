@@ -161,6 +161,10 @@ const API = {
 
   async policeFine() {
     return await this.request('/game/police-fine', 'POST');
+  },
+
+  async skipRest() {
+    return await this.request('/game/skip-rest', 'POST');
   }
 };
 
