@@ -3,6 +3,11 @@ class GameCanvas {
   setChapter(chapter) {
     this.chapter = chapter || 1;
   }
+
+  setHasAmulet(hasAmulet) {
+    this.hasAmulet = !!hasAmulet;
+  }
+
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
@@ -13,6 +18,14 @@ class GameCanvas {
     this.width = 360;
     this.height = 200;
     
+    // Chapter & Setting
+    this.chapter = 1;
+    this.hasAmulet = false;
+    this.isInvisible = false;
+    this.invisibilityRemaining = 0;
+    this.lastAmuletClickTime = 0;
+    this.slipper = null;
+
     // Animation states
     this.tick = 0;
     this.customerX = -40;
@@ -22,7 +35,7 @@ class GameCanvas {
     this.customerType = 0; // 0 to 9 archetypes
     this.customerQuote = '';
     this.bubbleType = 'boba'; // 'boba', 'heart', 'angry', 'sweat', 'dialogue'
-    this.queue = []; // multi-customer queue: array of customer objects
+    this.queue = []; // multi-customer queue: array of customer objects (up to 14)
     this.leavingCustomers = []; // customers walking away after being served
     
     this.currentDrink = null;
@@ -32,14 +45,14 @@ class GameCanvas {
     
     // Drifting blossom petals / leaves in the wind
     this.petals = [];
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 18; i++) {
       this.petals.push({
         x: Math.random() * this.width,
         y: Math.random() * 150,
         vx: -(Math.random() * 0.8 + 0.5),
         vy: Math.random() * 0.4 + 0.2,
         size: Math.random() > 0.5 ? 2 : 3,
-        color: Math.random() > 0.4 ? '#ffb8b8' : '#ffeaa7'
+        color: Math.random() > 0.4 ? '#ff7675' : '#fdcb6e'
       });
     }
 
@@ -48,6 +61,42 @@ class GameCanvas {
       { x: 30, speed: 0.8, color: '#f1fa8c' },
       { x: 220, speed: 1.1, color: '#50fa7b' }
     ];
+
+    // Chapter 2 HUST traffic on Giải Phóng street (Honda Dream, Wave, student bicycles)
+    this.hustTraffic = [
+      { x: 45, speed: 1.4, type: 'dream', color: '#800000', riderColor: '#2d3436' },
+      { x: 175, speed: 0.85, type: 'bicycle', color: '#0984e3', riderColor: '#ffffff' },
+      { x: 295, speed: 1.6, type: 'wave', color: '#27ae60', riderColor: '#e17055' }
+    ];
+
+    // Motorbike Delivery Shipper System
+    this.motorbikeShipper = {
+      active: false,
+      state: 'idle', // 'idle', 'approaching', 'parked', 'departing'
+      x: 390,
+      targetX: 235,
+      walkX: 235,
+      speed: 2.3,
+      timer: 0,
+      orderId: null,
+      bubble: '🛵 Ship hỏa tốc!'
+    };
+    this.shipperSpawnTimer = 1800; // ~30 seconds
+
+    // Police Patrol System
+    this.policePatrol = {
+      state: 'idle', // 'idle', 'warning', 'approaching', 'inspecting', 'leaving'
+      patrolInterval: 4200, // ~70s between patrols
+      timer: 2400,
+      warningTimer: 0,
+      x: 390,
+      speed: 1.15,
+      bubble: '',
+      caughtTimer: 0
+    };
+    this.onPoliceWarning = null;
+    this.onPolicePassed = null;
+    this.onPoliceCaught = null;
 
     // Particle system (floating sparkles, steam, coins)
     this.particles = [];
@@ -88,22 +137,35 @@ class GameCanvas {
     }
 
     this.customerActive = true;
+    const maxCustomers = Math.min(14, orders.length);
+    const currentOrders = orders.slice(0, maxCustomers);
+
     let accumulatedX = 185;
-    this.queue = orders.map((order, idx) => {
+    this.queue = currentOrders.map((order, idx) => {
       const startX = idx === 0 
         ? (this.customerX > 0 && this.customerX < 200 ? this.customerX : -35) 
-        : (accumulatedX + 40); // Xuất hiện từ bên phải
+        : (accumulatedX + 35);
 
       const type = (typeof order.customerType === 'number') 
         ? order.customerType 
         : this.getArchetypeByName(order.customerName);
         
-      // Xác định khoảng cách (Nếu là cặp đôi ID 44 thì cần khoảng cách rộng hơn)
-      let spacing = 38;
-      if (type === 44 || order.customerName.includes('Gà Bông')) spacing = 55;
+      // Dynamic spacing: up to 14 customers queueing in 2 depth rows
+      let spacing = 36;
+      if (currentOrders.length > 8) {
+        spacing = 15;
+      } else if (currentOrders.length > 4) {
+        spacing = 22;
+      }
+      if (type === 44 || (order.customerName && order.customerName.includes('Gà Bông'))) {
+        spacing += 18;
+      }
 
-      const currentTarget = accumulatedX;
+      const currentTargetX = accumulatedX;
       accumulatedX += spacing;
+
+      // Even in front row (Y=108), odd in back row (Y=104) for crowded queue
+      const targetY = (currentOrders.length > 5 && idx > 0) ? (idx % 2 === 0 ? 108 : 104) : 108;
 
       return {
         orderId: order.orderId,
@@ -111,7 +173,8 @@ class GameCanvas {
         name: order.customerName,
         quote: order.quote || 'Cho mình 1 ly trà sữa nha!',
         currentX: startX,
-        targetX: currentTarget,
+        targetX: currentTargetX,
+        targetY: targetY,
         state: 'waiting',
         isDrinking: false,
         drinkLevel: 1.0
@@ -440,6 +503,7 @@ class GameCanvas {
 
     // 9. THIEF SPRITE (Black hoodie & mask sneaking across)
     this.drawThief(ctx);
+    this.drawSlipper(ctx);
 
     // 10. PARTICLES & FLOATING NUMBERS
     this.drawParticles(ctx);
@@ -2006,11 +2070,24 @@ class GameCanvas {
 
   shooThief() {
     if (!this.thief || this.thief.state === 'escaping') return false;
-    this.thief.state = 'escaping';
-    this.thief.runSpeed = 4.8;
-    this.thief.bubble = '😱 Á BỊ BẮT RỒI!';
 
-    // Add floating vigilance reward text
+    // Launch Honeycomb Slipper Projectile from Barista!
+    this.slipper = {
+      startX: 55,
+      startY: 110,
+      targetX: this.thief.x + 8,
+      targetY: 138,
+      x: 55,
+      y: 110,
+      progress: 0,
+      rot: 0
+    };
+
+    this.thief.state = 'escaping';
+    this.thief.runSpeed = 5.0;
+    this.thief.bubble = '😱 DÉP TỔ ONG BAY TỚI!';
+
+    // Vigilance reward text
     this.floatingTexts.push({
       text: '+10.000đ BẮT TRỘM! ⭐',
       x: Math.min(240, Math.max(20, this.thief.x - 20)),
@@ -2018,20 +2095,6 @@ class GameCanvas {
       alpha: 1.0,
       color: '#ffd700'
     });
-
-    // Alert & startled dust/sparkle particles
-    for (let i = 0; i < 20; i++) {
-      this.particles.push({
-        x: this.thief.x + 8 + (Math.random() * 16 - 8),
-        y: 140 + (Math.random() * 16 - 8),
-        vx: (Math.random() - 0.5) * 4.5,
-        vy: -Math.random() * 3.5 - 0.5,
-        life: 35,
-        maxLife: 35,
-        color: ['#f1c40f', '#e74c3c', '#ffffff', '#3498db'][Math.floor(Math.random() * 4)],
-        size: Math.random() > 0.5 ? 3 : 2
-      });
-    }
 
     if (this.onThiefCaught) {
       this.onThiefCaught();
@@ -2046,6 +2109,62 @@ class GameCanvas {
     // Hitbox covering the crouching thief sprite
     if (clickX >= tx - 15 && clickX <= tx + 35 && clickY >= ty - 15 && clickY <= ty + 45) {
       return this.shooThief();
+    }
+    return false;
+  }
+
+  checkAmuletClick(clickX, clickY) {
+    if (!this.hasAmulet) return false;
+    // Hitbox for amulet hanging beside stall (x: 105 - 135, y: 120 - 160)
+    if (clickX >= 105 && clickX <= 135 && clickY >= 120 && clickY <= 160) {
+      const now = Date.now();
+      if (now - this.lastAmuletClickTime < 500) {
+        // Double-click detected!
+        this.isInvisible = !this.isInvisible;
+        this.lastAmuletClickTime = 0;
+        if (this.isInvisible) {
+          this.invisibilityRemaining = 60 * 60; // 60s max
+          this.floatingTexts.push({
+            text: '🔮 BÙA ẨN THÂN KÍCH HOẠT (60s)! ⭐',
+            x: 40,
+            y: 90,
+            alpha: 1.0,
+            color: '#00cec9'
+          });
+          for (let i = 0; i < 25; i++) {
+            this.particles.push({
+              x: 65 + (Math.random() * 50 - 25),
+              y: 130 + (Math.random() * 30 - 15),
+              vx: (Math.random() - 0.5) * 3,
+              vy: -Math.random() * 2.5 - 0.5,
+              life: 40,
+              maxLife: 40,
+              color: ['#00cec9', '#81ecec', '#fdcb6e', '#ffffff'][Math.floor(Math.random() * 4)],
+              size: 2
+            });
+          }
+        } else {
+          this.invisibilityRemaining = 0;
+          this.floatingTexts.push({
+            text: '👁️ ĐÃ THOÁT TÀNG HÌNH!',
+            x: 60,
+            y: 90,
+            alpha: 1.0,
+            color: '#ffeaa7'
+          });
+        }
+        return { isAmulet: true, isInvisible: this.isInvisible };
+      } else {
+        this.lastAmuletClickTime = now;
+        this.floatingTexts.push({
+          text: '✨ Nhấp đúp (2 lần) để dùng Bùa! ✨',
+          x: 50,
+          y: 110,
+          alpha: 0.9,
+          color: '#fdcb6e'
+        });
+        return { isAmulet: true, doubleClickPrompt: true };
+      }
     }
     return false;
   }
@@ -2554,6 +2673,699 @@ class GameCanvas {
       ctx.fillText(t.bubble, bx + 5, by + 8);
     }
   }
-}
 
-window.GameCanvas = GameCanvas;
+  // =========================================================================
+  // CHAPTER 2: HUST PARABOL GATE BACKGROUND (ĐẠI HỌC BÁCH KHOA HÀ NỘI)
+  // High-detail modern pixel art faithfully representing media_1791296417126.png
+  // =========================================================================
+  drawHUSTParabolBackground(ctx, tod) {
+    // 1. SKY GRADIENT
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, 145);
+    if (tod === 'morning') {
+      skyGrad.addColorStop(0, '#2980b9');
+      skyGrad.addColorStop(0.4, '#6dd5fa');
+      skyGrad.addColorStop(0.75, '#fbc531');
+      skyGrad.addColorStop(1, '#ffeaa7');
+    } else if (tod === 'noon') {
+      skyGrad.addColorStop(0, '#0984e3');
+      skyGrad.addColorStop(0.5, '#74b9ff');
+      skyGrad.addColorStop(0.85, '#81ecec');
+      skyGrad.addColorStop(1, '#dfe6e9');
+    } else if (tod === 'afternoon') {
+      skyGrad.addColorStop(0, '#2c3e50');
+      skyGrad.addColorStop(0.35, '#8e44ad');
+      skyGrad.addColorStop(0.7, '#d35400');
+      skyGrad.addColorStop(0.9, '#e67e22');
+      skyGrad.addColorStop(1, '#f1c40f');
+    } else {
+      skyGrad.addColorStop(0, '#0b0c10');
+      skyGrad.addColorStop(0.45, '#1f2833');
+      skyGrad.addColorStop(0.85, '#2c3e50');
+      skyGrad.addColorStop(1, '#1b1b2f');
+    }
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, this.width, 145);
+
+    // 2. CELESTIAL BODIES (SUN / MOON & STARS)
+    if (tod === 'night') {
+      // Warm crescent moon
+      ctx.fillStyle = 'rgba(255, 234, 167, 0.2)';
+      ctx.beginPath();
+      ctx.arc(42, 26, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff4cc';
+      ctx.beginPath();
+      ctx.arc(42, 26, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1f2833';
+      ctx.beginPath();
+      ctx.arc(38, 24, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Twinkling stars
+      const stars = [
+        { x: 18, y: 15 }, { x: 75, y: 22 }, { x: 120, y: 12 },
+        { x: 185, y: 20 }, { x: 245, y: 14 }, { x: 315, y: 24 },
+        { x: 345, y: 38 }, { x: 155, y: 32 }
+      ];
+      ctx.fillStyle = '#ffffff';
+      stars.forEach((s, idx) => {
+        const flicker = (Math.sin(this.tick * 0.1 + idx) + 1) * 0.4 + 0.3;
+        ctx.globalAlpha = flicker;
+        ctx.fillRect(s.x, s.y, 2, 2);
+      });
+      ctx.globalAlpha = 1.0;
+    } else {
+      // Sun according to time of day
+      const sx = tod === 'morning' ? 50 : (tod === 'noon' ? 180 : 60);
+      const sy = tod === 'morning' ? 32 : (tod === 'noon' ? 20 : 48);
+      const sunHalo = ctx.createRadialGradient(sx, sy, 4, sx, sy, 32);
+      sunHalo.addColorStop(0, tod === 'afternoon' ? 'rgba(235, 94, 40, 0.7)' : 'rgba(255, 255, 255, 0.8)');
+      sunHalo.addColorStop(0.5, tod === 'afternoon' ? 'rgba(243, 156, 18, 0.3)' : 'rgba(255, 234, 167, 0.3)');
+      sunHalo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sunHalo;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 32, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = tod === 'afternoon' ? '#e74c3c' : '#ffffff';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Clouds
+    this.drawClouds(ctx, tod);
+
+    // Birds flying over HUST in morning/noon
+    if (tod === 'morning' || tod === 'noon') {
+      const bx = (this.tick * 0.5) % (this.width + 80) - 40;
+      ctx.strokeStyle = '#2d3436';
+      ctx.lineWidth = 1;
+      [0, 18, 36].forEach((offset, idx) => {
+        const wingY = Math.sin(this.tick * 0.15 + idx) * 2;
+        ctx.beginPath();
+        ctx.moveTo(bx + offset - 4, 30 + wingY);
+        ctx.quadraticCurveTo(bx + offset - 2, 27 + wingY, bx + offset, 29 + wingY);
+        ctx.quadraticCurveTo(bx + offset + 2, 27 + wingY, bx + offset + 4, 30 + wingY);
+        ctx.stroke();
+      });
+    }
+
+    // 3. CAMPUS TREES BEHIND PARABOL GATE (CÂY XÀ CỪ & PHƯỢNG VĨ BÁCH KHOA)
+    const treeShade = (tod === 'night') ? '#11221b' : (tod === 'afternoon' ? '#203a27' : '#1b4332');
+    const treeMid   = (tod === 'night') ? '#1b382b' : (tod === 'afternoon' ? '#2d6a4f' : '#2d6a4f');
+    const treeLight = (tod === 'night') ? '#264a39' : (tod === 'afternoon' ? '#40916c' : '#52b788');
+
+    // Massive lush tree canopies flanking and rising behind the arch
+    const treeClusters = [
+      { x: 25,  y: 55, r: 42 },
+      { x: 55,  y: 42, r: 38 },
+      { x: 95,  y: 48, r: 32 },
+      { x: 265, y: 52, r: 35 },
+      { x: 305, y: 44, r: 40 },
+      { x: 335, y: 56, r: 44 }
+    ];
+
+    treeClusters.forEach(tc => {
+      // Dark canopy base
+      ctx.fillStyle = treeShade;
+      ctx.beginPath();
+      ctx.arc(tc.x, tc.y + 4, tc.r, 0, Math.PI * 2);
+      ctx.fill();
+      // Mid canopy
+      ctx.fillStyle = treeMid;
+      ctx.beginPath();
+      ctx.arc(tc.x, tc.y, tc.r - 4, 0, Math.PI * 2);
+      ctx.fill();
+      // Highlight foliage clusters
+      ctx.fillStyle = treeLight;
+      ctx.beginPath();
+      ctx.arc(tc.x - 6, tc.y - 8, tc.r * 0.55, 0, Math.PI * 2);
+      ctx.arc(tc.x + 8, tc.y - 6, tc.r * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Red flamboyant flowers (Hoa phượng vĩ đỏ mùa thi)
+      if (tod !== 'night') {
+        ctx.fillStyle = '#e74c3c';
+        for (let fi = 0; fi < 5; fi++) {
+          const fx = tc.x + Math.sin(fi * 2.3) * (tc.r * 0.6);
+          const fy = tc.y + Math.cos(fi * 1.8) * (tc.r * 0.5) - 6;
+          ctx.fillRect(fx, fy, 2, 2);
+        }
+      }
+    });
+
+    // Tree trunks
+    ctx.fillStyle = (tod === 'night') ? '#0d130f' : '#3d271d';
+    ctx.fillRect(38, 80, 8, 55);
+    ctx.fillRect(318, 78, 9, 57);
+
+    // 4. DISTANT CAMPUS BUILDINGS (NHÀ C1, THƯ VIỆN TẠ QUANG BỬU)
+    const bldBg = (tod === 'night') ? '#131b24' : (tod === 'afternoon' ? '#3d3448' : '#7f8c8d');
+    ctx.fillStyle = bldBg;
+    ctx.fillRect(115, 68, 50, 60);
+    ctx.fillRect(195, 62, 55, 66);
+    // Campus windows
+    ctx.fillStyle = (tod === 'night') ? '#f39c12' : '#dfe6e9';
+    for (let wy = 72; wy < 120; wy += 10) {
+      ctx.fillRect(120, wy, 8, 4);
+      ctx.fillRect(134, wy, 8, 4);
+      ctx.fillRect(148, wy, 8, 4);
+      ctx.fillRect(202, wy, 8, 4);
+      ctx.fillRect(216, wy, 8, 4);
+      ctx.fillRect(230, wy, 8, 4);
+    }
+
+    // 5. THE ICONIC HUST PARABOL ARCH (CỔNG PARABOL HUYỀN THOẠI)
+    // Parabola equation: y = 16 + 0.0108 * (x - 180)^2 from x=74 to x=286 (vertex at x=180, y=16)
+    const archWhite = (tod === 'night') ? '#dcdde1' : '#ffffff';
+    const archShadow = (tod === 'night') ? '#718093' : '#b2bec3';
+    const steelRib = (tod === 'night') ? '#2f3640' : '#485460';
+
+    // Horizontal concrete roof beam/slab spanning across
+    ctx.fillStyle = archShadow;
+    ctx.fillRect(10, 88, 340, 8);
+    ctx.fillStyle = archWhite;
+    ctx.fillRect(10, 86, 340, 3);
+
+    // Parabol Internal Lattice Tension Steel Ribs
+    ctx.strokeStyle = steelRib;
+    ctx.lineWidth = 1;
+    for (let rx = 96; rx <= 264; rx += 14) {
+      const py = 16 + 0.0108 * Math.pow(rx - 180, 2);
+      ctx.beginPath();
+      ctx.moveTo(rx, py);
+      ctx.lineTo(rx, 88);
+      ctx.stroke();
+
+      // Diagonal criss-cross tension web
+      ctx.beginPath();
+      ctx.moveTo(rx, py);
+      ctx.lineTo(rx + 14, 88);
+      ctx.stroke();
+    }
+
+    // Main Parabolic Concrete Arch Rib
+    // Draw outer arch
+    ctx.strokeStyle = archShadow;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    for (let px = 72; px <= 288; px += 2) {
+      const py = 16 + 0.0108 * Math.pow(px - 180, 2);
+      if (px === 72) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // Inner bright white arch
+    ctx.strokeStyle = archWhite;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (let px = 74; px <= 286; px += 2) {
+      const py = 16 + 0.0108 * Math.pow(px - 180, 2);
+      if (px === 74) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // Concrete base pillars supporting arch bases (x: 70-82 and x: 278-290)
+    ctx.fillStyle = archShadow;
+    ctx.fillRect(70, 94, 12, 38);
+    ctx.fillRect(278, 94, 12, 38);
+    ctx.fillStyle = archWhite;
+    ctx.fillRect(70, 94, 4, 38);
+    ctx.fillRect(278, 94, 4, 38);
+
+    // HUST EMBLEM / SEAL (Compa & Bánh Răng Đỏ Vàng tại đỉnh Parabol)
+    ctx.fillStyle = '#c0392b';
+    ctx.beginPath();
+    ctx.arc(180, 34, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(180, 34, 9, 0, Math.PI * 2);
+    ctx.stroke();
+    // Gear teeth & compass
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(179, 25, 2, 4);
+    ctx.fillRect(179, 39, 2, 4);
+    ctx.fillRect(171, 33, 4, 2);
+    ctx.fillRect(185, 33, 4, 2);
+    // Compass needle
+    ctx.strokeStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(177, 39);
+    ctx.lineTo(180, 29);
+    ctx.lineTo(183, 39);
+    ctx.stroke();
+
+    // BANNER / SIGNBOARD: "ĐẠI HỌC BÁCH KHOA HÀ NỘI"
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(105, 87, 150, 11);
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(105, 87, 150, 11);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 7.5px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('ĐẠI HỌC BÁCH KHOA HÀ NỘI', 180, 95.5);
+    ctx.textAlign = 'left';
+
+    // 6. ACCORDION STAINLESS STEEL RETRACTABLE GATE (CỔNG XẾP INOX TỰ ĐỘNG)
+    // Driveway road into campus
+    ctx.fillStyle = (tod === 'night') ? '#1e272e' : '#34495e';
+    ctx.fillRect(84, 126, 192, 12);
+
+    // Retractable gate bars with metallic inox shine
+    const inoxBright = '#ffffff';
+    const inoxMid    = (tod === 'night') ? '#718093' : '#dcdde1';
+    const inoxDark   = (tod === 'night') ? '#2f3640' : '#7f8c8d';
+
+    for (let gx = 88; gx <= 270; gx += 7) {
+      // Vertical stainless steel posts
+      ctx.fillStyle = inoxDark;
+      ctx.fillRect(gx, 118, 3, 16);
+      ctx.fillStyle = inoxBright;
+      ctx.fillRect(gx, 118, 1, 16);
+
+      // Diamond scissor crossbars
+      ctx.strokeStyle = inoxMid;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(gx, 121);
+      ctx.lineTo(gx + 7, 131);
+      ctx.moveTo(gx, 131);
+      ctx.lineTo(gx + 7, 121);
+      ctx.stroke();
+
+      // Red circular safety reflector badge in center of each scissor
+      if (gx % 14 === 0) {
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(gx + 3, 125, 2, 2);
+      }
+    }
+
+    // 7. SECURITY BOOTH & AUTOMATED BARRIER (BỐT BẢO VỆ CỔNG BÁCH KHOA)
+    ctx.fillStyle = (tod === 'night') ? '#1e272e' : '#ecf0f1';
+    ctx.fillRect(292, 104, 28, 28);
+    ctx.fillStyle = (tod === 'night') ? '#2c3e50' : '#bdc3c7';
+    ctx.fillRect(290, 102, 32, 4); // Roof canopy
+    // Tinted glass window
+    ctx.fillStyle = (tod === 'night') ? '#f39c12' : '#3498db';
+    ctx.fillRect(296, 108, 20, 12);
+    // Security officer inside silhouette
+    ctx.fillStyle = '#2c3e50';
+    ctx.fillRect(302, 112, 6, 8);
+
+    // Boom barrier arm (thanh barie kẻ vằn vàng đỏ)
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(272, 122, 22, 3);
+    ctx.fillStyle = '#f1c40f';
+    for (let bx = 274; bx < 294; bx += 6) {
+      ctx.fillRect(bx, 122, 3, 3);
+    }
+
+    // 8. ĐƯỜNG GIẢI PHÓNG / ĐẠI CỒ VIỆT (ASPHALT ROADWAY)
+    const roadColor = (tod === 'morning') ? '#3a3d40' : (tod === 'noon' ? '#474b4e' : (tod === 'afternoon' ? '#35333a' : '#1e2022'));
+    ctx.fillStyle = roadColor;
+    ctx.fillRect(0, 134, this.width, 9);
+
+    // White dashed road lane dividers
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    for (let rx = 0; rx < this.width; rx += 28) {
+      ctx.fillRect(rx, 138, 14, 1.5);
+    }
+
+    // 9. CHAPTER 2 STUDENT TRAFFIC (HONDA DREAM, WAVE, STUDENT BICYCLES)
+    if (this.hustTraffic) {
+      this.hustTraffic.forEach(veh => {
+        const vx = veh.x;
+        const vy = 135;
+
+        if (veh.type === 'dream') {
+          // Classic Honda Dream II (Maroon #800000, chrome exhaust, boxy headlight)
+          ctx.fillStyle = '#111';
+          ctx.fillRect(vx - 2, vy + 4, 4, 3); // Rear wheel
+          ctx.fillRect(vx + 12, vy + 4, 4, 3); // Front wheel
+          ctx.fillStyle = veh.color; // Maroon body
+          ctx.fillRect(vx, vy + 2, 12, 3);
+          ctx.fillStyle = '#dcdde1'; // Chrome exhaust & engine
+          ctx.fillRect(vx - 1, vy + 5, 8, 1.5);
+          ctx.fillStyle = '#f1c40f'; // Headlight
+          ctx.fillRect(vx + 15, vy + 2, 2, 2);
+          // Student rider
+          ctx.fillStyle = veh.riderColor;
+          ctx.fillRect(vx + 3, vy - 4, 5, 6); // Torso
+          ctx.fillStyle = '#2c3e50';
+          ctx.fillRect(vx + 4, vy - 8, 4, 4); // Helmet
+        } else if (veh.type === 'wave') {
+          // Honda Wave Alpha (Green/Orange, sporty headlight)
+          ctx.fillStyle = '#111';
+          ctx.fillRect(vx - 2, vy + 4, 4, 3);
+          ctx.fillRect(vx + 11, vy + 4, 4, 3);
+          ctx.fillStyle = veh.color;
+          ctx.fillRect(vx, vy + 2, 11, 3);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(vx + 13, vy + 1, 2, 2);
+          // Rider with backpack
+          ctx.fillStyle = veh.riderColor;
+          ctx.fillRect(vx + 3, vy - 4, 5, 6);
+          ctx.fillStyle = '#0984e3'; // Backpack
+          ctx.fillRect(vx + 1, vy - 3, 3, 5);
+          ctx.fillStyle = '#d63031';
+          ctx.fillRect(vx + 4, vy - 8, 4, 4);
+        } else {
+          // Student fixed-gear / Asama bicycle
+          ctx.strokeStyle = veh.color;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(vx, vy + 5, 3.5, 0, Math.PI * 2); // Wheels
+          ctx.arc(vx + 11, vy + 5, 3.5, 0, Math.PI * 2);
+          ctx.stroke();
+          // Frame
+          ctx.beginPath();
+          ctx.moveTo(vx, vy + 5);
+          ctx.lineTo(vx + 5, vy + 5);
+          ctx.lineTo(vx + 8, vy);
+          ctx.lineTo(vx + 11, vy + 5);
+          ctx.stroke();
+          // Student rider in white Bách Khoa uniform
+          ctx.fillStyle = veh.riderColor;
+          ctx.fillRect(vx + 3, vy - 4, 4, 6);
+          ctx.fillStyle = '#ffeaa7';
+          ctx.fillRect(vx + 4, vy - 7, 3, 3); // Head
+        }
+      });
+    }
+
+    // 10. VỈA HÈ BÁCH KHOA (PAVEMENT / TERRAZZO TILES)
+    let groundColor = (tod === 'morning') ? '#596275' : (tod === 'noon' ? '#636e72' : (tod === 'afternoon' ? '#4b4b5a' : '#2d3436'));
+    let kerb1 = (tod === 'morning') ? '#718093' : '#b2bec3';
+    let kerb2 = (tod === 'morning') ? '#2f3542' : '#57606f';
+
+    ctx.fillStyle = groundColor;
+    ctx.fillRect(0, 142, this.width, 58);
+
+    // Granite stone kerb
+    ctx.fillStyle = kerb1;
+    ctx.fillRect(0, 142, this.width, 3);
+    ctx.fillStyle = kerb2;
+    ctx.fillRect(0, 145, this.width, 2);
+
+    // Terrazzo red & grey paving grid pattern (Gạch vỉa hè Bách Khoa)
+    ctx.strokeStyle = (tod === 'night') ? '#1e272e' : 'rgba(47, 53, 66, 0.35)';
+    ctx.lineWidth = 1;
+    for (let px = 0; px < this.width; px += 20) {
+      ctx.beginPath();
+      ctx.moveTo(px, 147);
+      ctx.lineTo(px + 8, this.height);
+      ctx.stroke();
+    }
+    for (let py = 152; py < this.height; py += 12) {
+      ctx.beginPath();
+      ctx.moveTo(0, py);
+      ctx.lineTo(this.width, py);
+      ctx.stroke();
+    }
+
+    // Fallen red flamboyant petals on the pavement
+    ctx.fillStyle = '#e74c3c';
+    [15, 68, 140, 210, 280, 335].forEach((lx, idx) => {
+      ctx.fillRect(lx, 150 + (idx * 7) % 35, 2, 1.5);
+      ctx.fillRect(lx + 4, 151 + (idx * 5) % 30, 1.5, 1.5);
+    });
+  }
+
+  // =========================================================================
+  // INVISIBILITY AMULET (BÙA ẨN THÂN) & CLOAKING EFFECTS
+  // =========================================================================
+  drawInvisibilityAmulet(ctx) {
+    const ax = 120;
+    const floatY = Math.sin(this.tick * 0.08) * 2;
+    const ay = 132 + floatY;
+
+    // Hanging crimson silk cord
+    ctx.strokeStyle = '#c0392b';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(ax + 5, 120);
+    ctx.lineTo(ax + 5, ay);
+    ctx.stroke();
+
+    // Sacred Yellow Talisman Paper (Bùa vàng đạo gia)
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(ax, ay, 10, 19);
+    // Darker paper border
+    ctx.strokeStyle = '#d35400';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(ax, ay, 10, 19);
+
+    // Red sacred cinnabar runes (Chữ bùa chu sa đỏ)
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(ax + 4, ay + 2, 2, 2);
+    ctx.fillRect(ax + 2, ay + 5, 6, 1.5);
+    ctx.fillRect(ax + 4, ay + 7, 2, 5);
+    ctx.fillRect(ax + 2, ay + 10, 6, 1.5);
+    ctx.fillRect(ax + 3, ay + 13, 4, 2);
+    ctx.fillRect(ax + 4, ay + 16, 2, 2);
+
+    // Glowing mystic aura
+    const auraPulse = (Math.sin(this.tick * 0.1) + 1) * 0.5;
+    ctx.strokeStyle = this.isInvisible ? 'rgba(0, 206, 201, 0.8)' : 'rgba(241, 196, 15, 0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(ax + 5, ay + 9, 13 + auraPulse * 3, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // If currently cloaked, draw remaining time badge
+    if (this.isInvisible && this.invisibilityRemaining > 0) {
+      const secLeft = Math.ceil(this.invisibilityRemaining / 60);
+      ctx.fillStyle = '#00cec9';
+      ctx.font = 'bold 7px monospace';
+      ctx.fillText(secLeft + 's', ax - 1, ay - 3);
+    }
+  }
+
+  drawInvisibilityAura(ctx) {
+    // Shimmering cyan mystic particle fog around cloaked stall
+    ctx.save();
+    const auraGlow = (Math.sin(this.tick * 0.12) + 1) * 0.5;
+    ctx.strokeStyle = 'rgba(0, 206, 201, 0.45)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(10, 100, 105, 75);
+
+    // Mystic floating runes / glints
+    ctx.fillStyle = 'rgba(129, 236, 236, 0.8)';
+    for (let i = 0; i < 4; i++) {
+      const rx = 20 + ((this.tick * 1.5 + i * 28) % 90);
+      const ry = 110 + Math.sin(this.tick * 0.08 + i) * 25;
+      ctx.fillRect(rx, ry, 2, 2);
+    }
+    ctx.restore();
+  }
+
+  // =========================================================================
+  // HONEYCOMB SLIPPER PROJECTILE (DÉP TỔ ONG NÉM TRỘM)
+  // =========================================================================
+  drawSlipper(ctx) {
+    if (!this.slipper) return;
+    const sl = this.slipper;
+
+    ctx.save();
+    ctx.translate(sl.x, sl.y);
+    ctx.rotate(sl.rot);
+
+    // Motion blur speed lines behind slipper
+    ctx.strokeStyle = 'rgba(255, 234, 167, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-12, 0);
+    ctx.lineTo(-4, 0);
+    ctx.stroke();
+
+    // Honeycomb slipper body (Dép tổ ong huyền thoại màu trắng ngà)
+    ctx.fillStyle = '#f7f1e3'; // Ivory rubber
+    ctx.fillRect(-6, -3, 13, 6);
+    // Blue rubber sole trim
+    ctx.fillStyle = '#3867d6';
+    ctx.fillRect(-6, 2, 13, 1.5);
+    // Honeycomb perforations on the strap (Lỗ tổ ong)
+    ctx.fillStyle = '#706fd3';
+    ctx.fillRect(-2, -2, 1.5, 1.5);
+    ctx.fillRect(1, -2, 1.5, 1.5);
+    ctx.fillRect(4, -2, 1.5, 1.5);
+    ctx.fillRect(-1, 0, 1.5, 1.5);
+    ctx.fillRect(2, 0, 1.5, 1.5);
+
+    ctx.restore();
+  }
+
+  // =========================================================================
+  // POLICE PATROL OFFICER (CẢNH SÁT TRẬT TỰ ĐÔ THỊ TUẦN TRA)
+  // =========================================================================
+  drawPolicePatrol(ctx) {
+    const p = this.policePatrol;
+    if (p.state === 'idle' || p.state === 'warning') return;
+
+    const px = p.x;
+    const py = 126;
+    const walkBob = Math.sin(this.tick * 0.25) * 2;
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.beginPath();
+    ctx.ellipse(px + 6, py + 30, 8, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Legs & Polished Boots
+    ctx.fillStyle = '#1e272e'; // Dark trousers
+    ctx.fillRect(px + 2, py + 18, 3, 10);
+    ctx.fillRect(px + 7, py + 18, 3, 10);
+    ctx.fillStyle = '#000000'; // Shiny boots
+    ctx.fillRect(px + 1, py + 26, 4, 3);
+    ctx.fillRect(px + 7, py + 26, 4, 3);
+
+    // Vietnamese Police Uniform Shirt (Green / Navy #1e3799)
+    ctx.fillStyle = '#1e3799';
+    ctx.fillRect(px + 1, py + 8 + walkBob, 10, 11);
+    // Gold epaulets (cầu vai vàng)
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(px, py + 8 + walkBob, 2, 2);
+    ctx.fillRect(px + 10, py + 8 + walkBob, 2, 2);
+    // Tie & badge
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(px + 5, py + 10 + walkBob, 2, 5);
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(px + 2, py + 11 + walkBob, 2, 2);
+
+    // Head & Police Visor Cap (Mũ kepi)
+    ctx.fillStyle = '#ffeaa7'; // Face
+    ctx.fillRect(px + 3, py + 1 + walkBob, 6, 7);
+    ctx.fillStyle = '#1e3799'; // Cap top
+    ctx.fillRect(px + 1, py - 3 + walkBob, 10, 5);
+    ctx.fillStyle = '#000000'; // Black visor
+    ctx.fillRect(px - 1, py + 1 + walkBob, 4, 1.5);
+    ctx.fillStyle = '#f1c40f'; // Gold badge on cap
+    ctx.fillRect(px + 4, py - 1 + walkBob, 2, 2);
+
+    // Clipboard / Ticket pad in hand
+    ctx.fillStyle = '#d35400';
+    ctx.fillRect(px - 2, py + 12 + walkBob, 4, 6);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(px - 1, py + 13 + walkBob, 2, 4);
+
+    // Speech bubble
+    if (p.bubble) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(px - 25, py - 20, 68, 14);
+      ctx.strokeStyle = '#2f3542';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px - 25, py - 20, 68, 14);
+      ctx.fillStyle = '#2f3542';
+      ctx.font = 'bold 7px sans-serif';
+      ctx.fillText(p.bubble, px - 22, py - 10);
+    }
+  }
+
+  // =========================================================================
+  // MOTORBIKE SHIPPER (SHIPPER XE MÁY ĐẾN LẤY ĐỒ & ĐI GIAO)
+  // =========================================================================
+  drawMotorbikeShipper(ctx) {
+    const ms = this.motorbikeShipper;
+    if (!ms.active) return;
+
+    const mx = ms.x;
+    const my = 134;
+
+    // Draw Motorbike (Xe máy công nghệ có thùng hàng phía sau)
+    ctx.save();
+    // Motorbike shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(mx + 8, my + 8, 16, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Wheels
+    ctx.fillStyle = '#111';
+    ctx.fillRect(mx - 6, my + 3, 5, 5); // Rear wheel
+    ctx.fillRect(mx + 15, my + 3, 5, 5); // Front wheel
+    ctx.fillStyle = '#95a5a6';
+    ctx.fillRect(mx - 4, my + 5, 1, 1);
+    ctx.fillRect(mx + 17, my + 5, 1, 1);
+
+    // Motorbike Frame & Fairing (Green / Orange #27ae60)
+    ctx.fillStyle = '#27ae60';
+    ctx.fillRect(mx - 2, my - 2, 16, 5);
+    ctx.fillStyle = '#2c3e50'; // Seat
+    ctx.fillRect(mx - 4, my - 4, 12, 3);
+    // Headlight
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(mx + 18, my - 2, 2, 3);
+
+    // Insulated Delivery Food Box on Rear Rack (Thùng giao trà sữa)
+    ctx.fillStyle = '#e67e22'; // Orange delivery box
+    ctx.fillRect(mx - 10, my - 13, 11, 11);
+    ctx.strokeStyle = '#d35400';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(mx - 10, my - 13, 11, 11);
+    // Box logo "TEA"
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 6px monospace';
+    ctx.fillText('TEA', mx - 9, my - 5);
+
+    // Kickstand when parked
+    if (ms.state === 'parked') {
+      ctx.strokeStyle = '#7f8c8d';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(mx + 3, my + 3);
+      ctx.lineTo(mx + 1, my + 7);
+      ctx.stroke();
+    }
+
+    // Shipper Person
+    if (ms.state === 'approaching' || ms.state === 'departing') {
+      // Riding on the bike
+      ctx.fillStyle = '#27ae60'; // Delivery jacket
+      ctx.fillRect(mx + 2, my - 12, 7, 9);
+      ctx.fillStyle = '#2c3e50'; // Helmet
+      ctx.fillRect(mx + 3, my - 17, 6, 6);
+      ctx.fillStyle = '#f1c40f'; // Visor
+      ctx.fillRect(mx + 7, my - 15, 2, 3);
+    } else if (ms.state === 'parked') {
+      // Shipper walks from motorbike to stall counter (ms.walkX)
+      const wx = ms.walkX;
+      const wy = 112;
+      const walkBob = Math.sin(this.tick * 0.3) * 2;
+
+      // Legs
+      ctx.fillStyle = '#2c3e50';
+      ctx.fillRect(wx + 1, wy + 20, 3, 10);
+      ctx.fillRect(wx + 5, wy + 20, 3, 10);
+      // Jacket
+      ctx.fillStyle = '#27ae60';
+      ctx.fillRect(wx, wy + 9 + walkBob, 9, 11);
+      // Delivery Helmet
+      ctx.fillStyle = '#27ae60';
+      ctx.fillRect(wx + 1, wy + 1 + walkBob, 7, 8);
+      ctx.fillStyle = '#ffeaa7'; // Face
+      ctx.fillRect(wx + 2, wy + 5 + walkBob, 4, 3);
+
+      // Shipper speech bubble
+      if (ms.bubble) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(wx - 25, wy - 15, 75, 13);
+        ctx.strokeStyle = '#27ae60';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(wx - 25, wy - 15, 75, 13);
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 7px sans-serif';
+        ctx.fillText(ms.bubble, wx - 23, wy - 5);
+      }
+    }
+    ctx.restore();
+  }
+
+}

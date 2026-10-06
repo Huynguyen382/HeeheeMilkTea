@@ -153,6 +153,14 @@ const API = {
 
   async endShift() {
     return await this.request('/game/end-shift', 'POST');
+  },
+
+  async unlockChapter2() {
+    return await this.request('/game/unlock-chapter-2', 'POST');
+  },
+
+  async policeFine() {
+    return await this.request('/game/police-fine', 'POST');
   }
 };
 

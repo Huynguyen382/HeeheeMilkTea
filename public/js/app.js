@@ -541,14 +541,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (orderQueue && orderQueue.length > 1) {
       elQueueInd.style.display = 'block';
       const remainingNames = orderQueue.slice(1).map(o => o.customerName).join(' · ');
-      elQueueText.innerText = `${orderQueue.length - 1} khách đang chờ sau: ${remainingNames}`;
+      elQueueText.innerText = `${orderQueue.length - 1}/14 khách đang chờ: ${remainingNames}`;
     } else {
       elQueueInd.style.display = 'none';
     }
 
-    // Sync Pet System State to Canvas & Shop UI
-    if (save.upgrades) {
-      canvas.setActivePet(save.upgrades.active_pet || null, !!save.upgrades.is_pet_stolen);
+    // Sync Chapter & Invisibility Amulet to Canvas
+    if (canvas) {
+      canvas.setChapter(save.chapter || 1);
+      canvas.setHasAmulet(!!(save.upgrades && save.upgrades.bua_an_than));
+      if (save.upgrades) {
+        canvas.setActivePet(save.upgrades.active_pet || null, !!save.upgrades.is_pet_stolen);
+      }
+    }
+
+    // Debt Modal & Chapter 2 Unlock UI
+    const debtSec = document.getElementById('chapter-2-unlock-section');
+    const debtPayControls = document.getElementById('debt-pay-controls');
+    const navDebtBtn = document.getElementById('nav-debt');
+    if (save.debt_remaining === 0) {
+      if (debtSec) debtSec.style.display = (save.chapter === 1) ? 'block' : 'none';
+      if (debtPayControls) debtPayControls.style.display = 'none';
+      if (navDebtBtn) {
+        if (save.chapter === 1) {
+          navDebtBtn.innerHTML = '🚀 Lên Chương 2';
+          navDebtBtn.style.color = '#f1c40f';
+        } else {
+          navDebtBtn.innerHTML = '✅ Đã Hết Nợ';
+          navDebtBtn.style.color = '#50fa7b';
+        }
+      }
+    } else {
+      if (debtSec) debtSec.style.display = 'none';
+      if (debtPayControls) debtPayControls.style.display = 'block';
+      if (navDebtBtn) {
+        navDebtBtn.innerHTML = '💰 Trả Nợ';
+        navDebtBtn.style.color = '';
+      }
     }
 
     const petStolenBanner = document.getElementById('pet-stolen-banner');
@@ -643,12 +672,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         showSnackModal(res.order.snackEvent);
       }
 
-      // Wave with 1 to 4 customers
+      // Wave with up to 14 customers queueing
       if (res.order.orders && res.order.orders.length > 0) {
         totalWavePausedTime = 0;
-        orderQueue = res.order.orders;
+        // Keep unserved pending orders and append new ones up to max 14 customers
+        const pendingQueue = orderQueue.filter(o => o.orderId !== (currentOrder && currentOrder.orderId));
+        orderQueue = [...pendingQueue, ...res.order.orders].slice(0, 14);
         canvas.setCustomerQueue(orderQueue);
-        startNextOrderInQueue();
+        if (!currentOrder) {
+          startNextOrderInQueue();
+        }
       } else {
         scheduleNextOrder(4000);
       }
@@ -1755,6 +1788,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       handleDebtResult(res);
     });
 
+    const btnUnlockChap2 = document.getElementById('btn-unlock-chapter-2');
+    if (btnUnlockChap2) {
+      btnUnlockChap2.addEventListener('click', async () => {
+        try {
+          const res = await API.unlockChapter2();
+          if (res && res.success) {
+            sound.coin();
+            showToast(res.message, 5500);
+            storeState = await API.getState();
+            updateUI();
+            const modalDebt = document.getElementById('modal-debt');
+            if (modalDebt) modalDebt.style.display = 'none';
+            setTimeout(() => {
+              openStoryModal(0, 2);
+            }, 600);
+          } else {
+            showToast('❌ ' + (res.message || 'Chưa đủ điều kiện mở khóa Chương 2!'));
+          }
+        } catch (err) {
+          console.error('Unlock chapter 2 error:', err);
+          showToast('❌ Lỗi khi mở khóa Chương 2!');
+        }
+      });
+    }
+
     async function handleDebtResult(res) {
       if (res.success) {
         sound.coin();
@@ -1879,21 +1937,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Canvas click / touch to catch thief
     const sceneCanvas = document.getElementById('scene');
     if (sceneCanvas) {
-      let lastTapTime = 0;
       const onCanvasTap = async (clientX, clientY) => {
-        const now = Date.now();
-        if (now - lastTapTime < 300) return;
-        lastTapTime = now;
         const rect = sceneCanvas.getBoundingClientRect();
         const clickX = (clientX - rect.left) * (360 / rect.width);
         const clickY = (clientY - rect.top) * (200 / rect.height);
 
+        // 1. Check Invisibility Amulet click (double-click toggles cloaking)
+        const amuletRes = canvas.checkAmuletClick(clickX, clickY);
+        if (amuletRes) {
+          sound.coin();
+          if (amuletRes.isInvisible !== undefined) {
+            const policeAlert = document.getElementById('police-patrol-alert');
+            if (amuletRes.isInvisible) {
+              if (policeAlert) policeAlert.style.display = 'none';
+              showToast('🔮 ĐÃ KÍCH HOẠT BÙA ẨN THÂN! Cả quán tàng hình tối đa 60s để né cảnh sát!', 4500);
+            } else {
+              showToast('👁️ Đã chủ động hủy tàng hình!', 2500);
+            }
+          }
+          return;
+        }
+
+        // 2. Check Thief Click (Thảo ném dép tổ ong vào kẻ trộm)
         if (canvas.checkThiefClick(clickX, clickY)) {
           sound.coin();
           try {
             const res = await API.shooThief();
             if (res && res.success) {
-              showToast(`⚡ BẮT ĐƯỢC TÊN TRỘM! Thưởng cảnh giác: +${res.reward.toLocaleString('vi-VN')}đ! 🎉`, 4500);
+              showToast(`⚡ NÉM DÉP TỔ ONG TRÚNG ĐẦU TÊN TRỘM! Thưởng cảnh giác: +${(res.reward || 10000).toLocaleString('vi-VN')}đ! 🎉`, 4500);
               storeState = await API.getState();
               updateUI();
             }
@@ -1907,10 +1978,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         onCanvasTap(e.clientX, e.clientY);
       });
-      sceneCanvas.addEventListener('click', (e) => {
-        onCanvasTap(e.clientX, e.clientY);
-      });
     }
+
+    // Police Patrol Event Callbacks on Canvas
+    canvas.onPoliceWarning = (secLeft) => {
+      const policeAlert = document.getElementById('police-patrol-alert');
+      const policeTimer = document.getElementById('police-alert-timer');
+      if (canvas.isInvisible) {
+        if (policeAlert) policeAlert.style.display = 'none';
+        return;
+      }
+      if (policeAlert) policeAlert.style.display = 'block';
+      if (policeTimer) policeTimer.innerText = secLeft;
+    };
+
+    canvas.onPolicePassed = () => {
+      const policeAlert = document.getElementById('police-patrol-alert');
+      if (policeAlert) policeAlert.style.display = 'none';
+      showToast('👮 Cảnh sát trật tự đã đi qua! Quán an toàn tuyệt đối nhờ Bùa Ẩn Thân! 🎉', 4000);
+    };
+
+    canvas.onPoliceCaught = async () => {
+      const policeAlert = document.getElementById('police-patrol-alert');
+      if (policeAlert) policeAlert.style.display = 'none';
+      sound.fail();
+      try {
+        const res = await API.policeFine();
+        if (res && res.success) {
+          showToast(`🚨 BỊ PHẠT 2.500.000đ do vi phạm lấn chiếm vỉa hè Cổng Bách Khoa! ⚠️ Hãy dùng Bùa Ẩn Thân khi có cảnh báo!`, 6500);
+          storeState = await API.getState();
+          updateUI();
+        }
+      } catch (err) {
+        console.error('Police fine error:', err);
+      }
+    };
 
     // Canvas Callback when Thief snatches pet
     canvas.onPetStolen = async () => {

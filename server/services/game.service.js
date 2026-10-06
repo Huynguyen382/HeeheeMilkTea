@@ -467,36 +467,54 @@ async function generateOrder(storeId) {
   const combinedRecipes = Array.from(new Set([...CORE_RECIPES, ...unlocked]));
   const validKeys = combinedRecipes.filter(k => !!RECIPES[k]);
 
-  // 2. Wave size calculation: 1 to 4 customers per wave
+  // 2. Wave size calculation: up to 14 customers queueing in Chapter 2
   let waveSize = 1;
   const randWave = Math.random();
 
-  if (activeBuffs.tiktoker_status === 'viral') {
-    const isBigCampaign = (activeBuffs.tiktoker_cost || 0) >= 1000000;
-    if (isBigCampaign) {
-      // Khi mời TikToker với số tiền lớn (2-5 triệu): đợt khách kéo đến nườm nượp (3 - 4 khách)
-      if (randWave < 0.60) waveSize = 4;
-      else if (randWave < 0.90) waveSize = 3;
-      else waveSize = 2;
+  if (save.chapter >= 2) {
+    // Chapter 2: Trước cổng Bách Khoa - giờ tan trường sinh viên xếp hàng đông đúc
+    if (activeBuffs.tiktoker_status === 'viral') {
+      const isBigCampaign = (activeBuffs.tiktoker_cost || 0) >= 1000000;
+      if (isBigCampaign) {
+        waveSize = Math.floor(Math.random() * 6) + 9; // 9 - 14 khách
+      } else {
+        waveSize = Math.floor(Math.random() * 5) + 6; // 6 - 10 khách
+      }
+    } else if (activeBuffs.tiktoker_status === 'flop') {
+      waveSize = randWave < 0.6 ? 2 : 3;
+    } else if (save.reputation < 3.0) {
+      waveSize = randWave < 0.7 ? 1 : 2;
     } else {
-      // Gói ưu đãi 25k: 2 đến 4 khách
-      if (randWave < 0.35) waveSize = 4;
-      else if (randWave < 0.70) waveSize = 3;
-      else waveSize = 2;
+      // Giờ cao điểm tan học sinh viên Bách Khoa: 4 đến 14 khách
+      if (randWave < 0.35) waveSize = Math.floor(Math.random() * 4) + 4; // 4 - 7 khách
+      else if (randWave < 0.75) waveSize = Math.floor(Math.random() * 4) + 7; // 7 - 10 khách
+      else waveSize = Math.floor(Math.random() * 5) + 10; // 10 - 14 khách (đông nghẹt trước cổng trường)
     }
-  } else if (activeBuffs.tiktoker_status === 'flop') {
-    // Bad review debuff: mostly single customer
-    waveSize = randWave < 0.8 ? 1 : 2;
-  } else if (save.reputation < 3.0) {
-    // Low reputation penalty: single customer per wave
-    waveSize = 1;
   } else {
-    // Normal traffic: 1 to 4 customers
-    if (randWave < 0.35) waveSize = 1;
-    else if (randWave < 0.70) waveSize = 2;
-    else if (randWave < 0.90) waveSize = 3;
-    else waveSize = 4;
+    // Chapter 1: Xe đẩy quê 1 - 4 khách
+    if (activeBuffs.tiktoker_status === 'viral') {
+      const isBigCampaign = (activeBuffs.tiktoker_cost || 0) >= 1000000;
+      if (isBigCampaign) {
+        if (randWave < 0.60) waveSize = 4;
+        else if (randWave < 0.90) waveSize = 3;
+        else waveSize = 2;
+      } else {
+        if (randWave < 0.35) waveSize = 4;
+        else if (randWave < 0.70) waveSize = 3;
+        else waveSize = 2;
+      }
+    } else if (activeBuffs.tiktoker_status === 'flop') {
+      waveSize = randWave < 0.8 ? 1 : 2;
+    } else if (save.reputation < 3.0) {
+      waveSize = 1;
+    } else {
+      if (randWave < 0.35) waveSize = 1;
+      else if (randWave < 0.70) waveSize = 2;
+      else if (randWave < 0.90) waveSize = 3;
+      else waveSize = 4;
+    }
   }
+  waveSize = Math.min(14, Math.max(1, waveSize));
 
   const sugars = ['0%', '30%', '50%', '70%', '100%'];
   const ices = ['Nóng', 'Ít đá', 'Vừa đá', 'Đầy đá'];
@@ -1134,15 +1152,10 @@ async function payDebt(storeId, amount) {
 
   const newMoney = save.money - amount;
   const newDebt = Math.max(0, save.debt_remaining - amount);
-  let newChapter = save.chapter;
-
-  if (newDebt === 0 && save.chapter === 1) {
-    newChapter = 2; // Unlock Chapter 2!
-  }
 
   const updatedSave = {
     store_id: storeId,
-    chapter: newChapter,
+    chapter: save.chapter,
     day_in_game: save.day_in_game,
     money: newMoney,
     debt_remaining: newDebt,
@@ -1152,26 +1165,125 @@ async function payDebt(storeId, amount) {
 
   await db.prepare(`
     UPDATE game_saves 
-    SET money = ?, debt_remaining = ?, chapter = ?, save_hash = ?, updated_at = ?
+    SET money = ?, debt_remaining = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
-  `).run(newMoney, newDebt, newChapter, hash, new Date().toISOString(), storeId);
+  `).run(newMoney, newDebt, hash, new Date().toISOString(), storeId);
 
   // Invalidate cache
   invalidateStoreCache(storeId);
+
+  const canUnlockC2 = (newDebt === 0 && save.chapter === 1);
 
   return {
     success: true,
     money: newMoney,
     debt_remaining: newDebt,
-    chapter: newChapter,
+    chapter: save.chapter,
+    canUnlockChapter2: canUnlockC2,
     message: newDebt === 0 
-      ? 'Chúc mừng! Bạn đã trả hết sạch nợ nần cho Anh Bảnh! Mở khóa Chương 2: Góc Hẻm Sinh Viên!' 
+      ? '🎉 TUYỆT VỜI! Bạn đã hoàn thành nghĩa vụ và trả sạch 3.000.000đ nợ nần cho Anh Bảnh! Hãy tích lũy đủ 1.000.000đ để Mở Khóa Chương 2: Từ Quê Lên Phố - Cổng Parabol Bách Khoa Hà Nội!' 
       : `Đã trả ${amount.toLocaleString('vi-VN')}đ. Nợ còn lại: ${newDebt.toLocaleString('vi-VN')}đ.`
+  };
+}
+
+// Unlock Chapter 2 (Move from rural hometown to HUST Hanoi Parabol Gate)
+async function unlockChapter2(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
+
+  if (save.debt_remaining > 0) {
+    return { 
+      success: false, 
+      message: `Bạn chưa trả hết nợ cho Anh Bảnh (còn nợ ${save.debt_remaining.toLocaleString('vi-VN')}đ). Phải trả sạch nợ mới có thể rời quê lên phố!` 
+    };
+  }
+
+  const UNLOCK_COST = 1000000; // 1.000.000đ phí chuyển quầy lên Hà Nội
+  if (save.money < UNLOCK_COST) {
+    return { 
+      success: false, 
+      message: `Số dư hiện tại (${save.money.toLocaleString('vi-VN')}đ) không đủ! Bạn cần ít nhất 1.000.000đ tiền mặt để thuê xe tải chở quầy lên Hà Nội và cọc mặt bằng Bách Khoa!` 
+    };
+  }
+
+  if (save.chapter >= 2) {
+    return { success: false, message: 'Bạn đã mở khóa Chương 2 rồi!' };
+  }
+
+  const newMoney = save.money - UNLOCK_COST;
+  const newChapter = 2;
+
+  const updatedSave = {
+    store_id: storeId,
+    chapter: newChapter,
+    day_in_game: save.day_in_game,
+    money: newMoney,
+    debt_remaining: 0,
+    reputation: save.reputation
+  };
+  const hash = anticheat.generateSaveHash(updatedSave);
+
+  await db.prepare(`
+    UPDATE game_saves 
+    SET chapter = ?, money = ?, save_hash = ?, updated_at = ?
+    WHERE store_id = ?
+  `).run(newChapter, newMoney, hash, new Date().toISOString(), storeId);
+
+  invalidateStoreCache(storeId);
+
+  return {
+    success: true,
+    chapter: newChapter,
+    money: newMoney,
+    costPaid: UNLOCK_COST,
+    message: '🎉 CHÚC MỪNG BẠN ĐÃ MỞ KHÓA CHƯƠNG 2: HƯƠNG TRÀ BÁCH KHOA - GIẤC MƠ THỦ ĐÔ! Xe trà sữa của Chị Thảo chính thức chuyển tới trước Cổng Parabol Đại học Bách Khoa Hà Nội!'
+  };
+}
+
+// Penalize for sidewalk obstruction violation when caught by police
+async function policeFine(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
+
+  const fineAmount = 2500000; // Phạt 2.500.000đ theo yêu cầu
+  const newMoney = Math.max(0, save.money - fineAmount);
+  const actualFinePaid = save.money - newMoney;
+
+  const updatedSave = {
+    store_id: storeId,
+    chapter: save.chapter,
+    day_in_game: save.day_in_game,
+    money: newMoney,
+    debt_remaining: save.debt_remaining,
+    reputation: save.reputation
+  };
+  const hash = anticheat.generateSaveHash(updatedSave);
+
+  await db.prepare(`
+    UPDATE game_saves 
+    SET money = ?, save_hash = ?, updated_at = ?
+    WHERE store_id = ?
+  `).run(newMoney, hash, new Date().toISOString(), storeId);
+
+  invalidateStoreCache(storeId);
+
+  return {
+    success: true,
+    fineAmount,
+    actualFinePaid,
+    money: newMoney,
+    message: '🚨 BỊ LẬP BIÊN BẢN TRẬT TỰ ĐÔ THỊ! Không kịp dùng Bùa Ẩn Thân nên quầy hàng bị đội tuần tra xử phạt 2.500.000đ vi phạm lấn chiếm vỉa hè!'
   };
 }
 
 // Purchase upgrade
 const UPGRADES = {
+  bua_an_than: { 
+    name: '🔮 Bùa Ẩn Thân Quầy Hàng', 
+    cost: 200000, 
+    desc: 'Bùa ngọc treo cạnh quầy. Nhấp đúp (2 lần liên tiếp) để tàng hình cả quán tối đa 1 phút, né tránh công an/đô thị kiểm tra vỉa hè!',
+    type: 'talisman'
+  },
   may_dap_nap: { name: 'Máy Dập Nắp Tự Động', cost: 500000, desc: 'Bé Bắp tự động dập nắp ly siêu tốc' },
   binh_u_lon: { name: 'Bình Ủ Inox 10L', cost: 400000, desc: 'Cốt trà thơm lâu, không sợ thiu chua' },
   xe_wave: { name: 'Xe Wave Giao Hàng Cho Lâm', cost: 1200000, desc: 'Tăng tốc độ ship và rượt bắt kẻ bùng tiền' },
@@ -1397,7 +1509,7 @@ async function redeemPet(storeId) {
   };
 }
 
-// Catch and shoo away thief
+// Catch and shoo away thief with slipper throwing
 async function shooThief(storeId) {
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
@@ -1405,6 +1517,8 @@ async function shooThief(storeId) {
   const reward = 10000;
   const newMoney = save.money + reward;
   const newRep = Math.min(5.0, Number((save.reputation + 0.1).toFixed(1)));
+  const upgrades = JSON.parse(save.upgrades || '{}');
+  upgrades.thieves_caught = (upgrades.thieves_caught || 0) + 1;
 
   const updatedSave = {
     store_id: storeId,
@@ -1418,16 +1532,19 @@ async function shooThief(storeId) {
 
   await db.prepare(`
     UPDATE game_saves 
-    SET money = ?, reputation = ?, save_hash = ?, updated_at = ?
+    SET money = ?, reputation = ?, upgrades = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
-  `).run(newMoney, newRep, hash, new Date().toISOString(), storeId);
+  `).run(newMoney, newRep, JSON.stringify(upgrades), hash, new Date().toISOString(), storeId);
+
+  invalidateStoreCache(storeId);
 
   return {
     success: true,
     reward,
     money: newMoney,
     reputation: newRep,
-    message: '👮 BẮT QUẢ TANG KẺ TRỘM! Tên trộm đồ đen hoảng sợ vứt bao tải bỏ chạy! Thưởng cảnh giác: +10.000đ và tăng uy tín! ⭐'
+    thievesCaught: upgrades.thieves_caught,
+    message: '🩴 NÉM DÉP CHÍNH XÁC! Chiếc dép tổ ong bay chuẩn xác làm tên trộm ôm đầu la oai oái chạy thục mạng! Thưởng cảnh giác: +10.000đ! ⭐'
   };
 }
 
@@ -1604,6 +1721,8 @@ module.exports = {
   declineCollab,
   cancelCollab,
   payDebt,
+  unlockChapter2,
+  policeFine,
   buyUpgrade,
   stealPet,
   redeemPet,

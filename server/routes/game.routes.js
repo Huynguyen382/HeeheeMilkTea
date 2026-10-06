@@ -35,6 +35,8 @@ router.post('/pay-debt', authStore, async (req, res) => {
   catch (err) { console.error('Pay debt error:', err); res.status(500).json({ error: err.message }); }
 });
 router.post('/upgrade', authStore, handle('Upgrade', req => gameService.buyUpgrade(req.store.id, req.body.upgradeId)));
+router.post('/unlock-chapter-2', authStore, handle('Unlock Chapter 2', req => gameService.unlockChapter2(req.store.id)));
+router.post('/police-fine', authStore, handle('Police fine', req => gameService.policeFine(req.store.id)));
 router.post('/steal-pet', authStore, handle('Steal pet', req => gameService.stealPet(req.store.id)));
 router.post('/redeem-pet', authStore, handle('Redeem pet', req => gameService.redeemPet(req.store.id)));
 router.post('/shoo-thief', authStore, handle('Shoo thief', req => gameService.shooThief(req.store.id)));
