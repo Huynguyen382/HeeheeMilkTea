@@ -181,6 +181,39 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     if (activeBuffs.patience_boost <= 0) delete activeBuffs.patience_boost;
   }
 
+  // Deduct inventory ingredients
+  const { DEFAULT_INVENTORY } = require('./data/ingredients');
+  const RECIPE_TEA_MAP = {
+    tra_sua_truyen_thong: 'tra_den',
+    hong_tra_tac: 'tra_den',
+    tra_thai_xanh: 'tra_thai_xanh',
+    sua_tuoi_duong_den: 'sua_tuoi',
+    tra_dao_cam_sa: 'tra_lai',
+    tra_olong_nuong: 'tra_olong'
+  };
+
+  const currentInv = { ...DEFAULT_INVENTORY, ...JSON.parse(save.inventory || '{}') };
+  const teaInvKey = RECIPE_TEA_MAP[order.recipe_id] || 'tra_den';
+  if (currentInv[teaInvKey] !== undefined) {
+    currentInv[teaInvKey] = Math.max(0, (currentInv[teaInvKey] || 0) - 1);
+  }
+  let orderToppings = [];
+  try {
+    orderToppings = typeof order.toppings === 'string' ? JSON.parse(order.toppings) : (order.toppings || []);
+  } catch (e) {
+    orderToppings = [];
+  }
+  if (Array.isArray(orderToppings)) {
+    orderToppings.forEach(top => {
+      if (currentInv[top] !== undefined) {
+        currentInv[top] = Math.max(0, (currentInv[top] || 0) - 1);
+      }
+    });
+  }
+  if (currentInv['ly_nap'] !== undefined) {
+    currentInv['ly_nap'] = Math.max(0, (currentInv['ly_nap'] || 0) - 1);
+  }
+
   // Update Database Transaction
   await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
 
@@ -209,14 +242,15 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
 
   await db.prepare(`
     UPDATE game_saves 
-    SET money = ?, reputation = ?, active_buffs = ?, save_hash = ?, updated_at = ?
+    SET money = ?, reputation = ?, inventory = ?, active_buffs = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
-  `).run(newMoney, newRep, JSON.stringify(activeBuffs), newHash, new Date().toISOString(), storeId);
+  `).run(newMoney, newRep, JSON.stringify(currentInv), JSON.stringify(activeBuffs), newHash, new Date().toISOString(), storeId);
 
   return {
     success: true,
     payout,
     newMoney,
+    inventory: currentInv,
     reputation: newRep,
     repGain,
     isOverloaded: isOverloadedNow,

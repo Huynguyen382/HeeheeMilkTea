@@ -395,6 +395,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const bFlop = document.getElementById('buff-tiktoker-flop');
     const bPatience = document.getElementById('buff-patience');
     const bTip = document.getElementById('buff-tip');
+    const bStealth = document.getElementById('buff-stealth');
 
     if (!bar) return;
     if (!buffs) {
@@ -435,6 +436,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       hasAny = true;
     } else {
       bTip.style.display = 'none';
+    }
+
+    // Check stealth buff from canvas
+    if (canvas && canvas.invisibilityRemaining > 0) {
+      const secLeft = Math.ceil(canvas.invisibilityRemaining / 60);
+      bStealth.style.display = 'inline-block';
+      bStealth.innerText = `🔮 Ẩn Thân Kích Hoạt (${secLeft}s)`;
+      hasAny = true;
+    } else {
+      if (bStealth) bStealth.style.display = 'none';
     }
 
     bar.style.display = hasAny ? 'flex' : 'none';
@@ -628,6 +639,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       tea: selectedTea,
       toppings: selectedToppings
     });
+
+    // Update mixing buttons state according to inventory
+    updateMixingButtonsState();
   }
 
   // 2. Customer Wave & Order Generation
@@ -1066,9 +1080,64 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function updateMixingButtonsState() {
-    // Sync active tea buttons
+    const rawInv = storeState?.save?.inventory;
+    let inv = {};
+    try {
+      inv = typeof rawInv === 'string' ? JSON.parse(rawInv) : (rawInv || {});
+    } catch (e) {
+      inv = {};
+    }
+    
+    // Tea mapping to inventory
+    const teaInvMap = {
+      'den': 'tra_den',
+      'thai_xanh': 'tra_thai_xanh',
+      'sua_tuoi': 'sua_tuoi',
+      'lai': 'tra_lai',
+      'olong_nuong': 'tra_olong'
+    };
+
+    // Auto-switch selectedTea if current tea is out of stock
+    const currentTeaInvKey = teaInvMap[selectedTea] || 'tra_den';
+    const currentTeaStock = inv[currentTeaInvKey] !== undefined ? inv[currentTeaInvKey] : 0;
+    if (currentTeaStock <= 0) {
+      const availableTea = Object.keys(teaInvMap).find(k => (inv[teaInvMap[k]] !== undefined ? inv[teaInvMap[k]] : 0) > 0);
+      if (availableTea && availableTea !== selectedTea) {
+        selectedTea = availableTea;
+        if (workstation) workstation.setTea(availableTea);
+        canvas.setDrinkPreview({ tea: selectedTea, toppings: selectedToppings });
+      }
+    }
+
+    // Auto-remove out-of-stock toppings from selectedToppings
+    if (selectedToppings.length > 0) {
+      const validToppings = selectedToppings.filter(t => (inv[t] !== undefined ? inv[t] : 0) > 0);
+      if (validToppings.length !== selectedToppings.length) {
+        selectedToppings = validToppings;
+        if (workstation) workstation.initCupContents();
+        canvas.setDrinkPreview({ tea: selectedTea, toppings: selectedToppings });
+      }
+    }
+
+    // Sync active tea buttons & check inventory
     document.querySelectorAll('[data-tea]').forEach(b => {
-      b.classList.toggle('active', b.getAttribute('data-tea') === selectedTea);
+      if (!b.dataset.baseText) b.dataset.baseText = b.innerText.trim();
+      const teaKey = b.getAttribute('data-tea');
+      const invKey = teaInvMap[teaKey];
+      const stock = inv[invKey] !== undefined ? inv[invKey] : 0;
+      const isOutOfStock = stock <= 0;
+      
+      b.classList.toggle('active', teaKey === selectedTea && !isOutOfStock);
+      b.disabled = isOutOfStock;
+      b.classList.toggle('out-of-stock', isOutOfStock);
+      
+      if (isOutOfStock) {
+        b.innerText = `${b.dataset.baseText} (Hết)`;
+        b.title = `❌ Hết nguyên liệu ${b.dataset.baseText}! Hãy vào Chợ Đầu Mối để mua thêm`;
+      } else {
+        b.innerText = `${b.dataset.baseText} (${stock})`;
+        b.title = `Còn ${stock} phần trong kho`;
+      }
     });
 
     // Sync active sugar buttons & pills
@@ -1101,10 +1170,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnAddIce.title = isMaxIce ? 'Đã đầy đá tối đa' : 'Dùng kẹp gắp thêm đá vào bình lắc';
     }
 
-    // Sync active topping buttons
+    // Sync active topping buttons & check inventory
     document.querySelectorAll('[data-topping]').forEach(b => {
+      if (!b.dataset.baseText) b.dataset.baseText = b.innerText.trim();
       const topKey = b.getAttribute('data-topping');
-      b.classList.toggle('active', selectedToppings.includes(topKey));
+      const stock = inv[topKey] !== undefined ? inv[topKey] : 0;
+      const isOutOfStock = stock <= 0;
+      
+      b.classList.toggle('active', selectedToppings.includes(topKey) && !isOutOfStock);
+      b.disabled = isOutOfStock;
+      b.classList.toggle('out-of-stock', isOutOfStock);
+      
+      if (isOutOfStock) {
+        b.innerText = `${b.dataset.baseText} (Hết)`;
+        b.title = `❌ Hết nguyên liệu ${b.dataset.baseText}! Hãy vào Chợ Đầu Mối để mua thêm`;
+      } else {
+        b.innerText = `${b.dataset.baseText} (${stock})`;
+        b.title = `Còn ${stock} phần trong kho`;
+      }
     });
 
     updateCupMonitor();
@@ -1193,6 +1276,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Tea Selection Buttons
   document.querySelectorAll('[data-tea]').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (btn.disabled || btn.classList.contains('out-of-stock')) {
+        sound.fail && sound.fail();
+        showToast('❌ Cốt trà này đã hết trong kho! Vui lòng vào Chợ Đầu Mối để nhập thêm!', 3500);
+        return;
+      }
       const teaKey = btn.getAttribute('data-tea');
       sound.pour();
       selectedTea = teaKey;
@@ -1234,6 +1322,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('[data-topping]').forEach(btn => {
     btn.addEventListener('click', () => {
       const top = btn.getAttribute('data-topping');
+      if (btn.disabled || btn.classList.contains('out-of-stock')) {
+        // If it was already selected, allow user to de-select it
+        if (selectedToppings.includes(top)) {
+          selectedToppings = selectedToppings.filter(t => t !== top);
+          if (workstation) workstation.toggleTopping(top);
+          updateMixingButtonsState();
+          canvas.setDrinkPreview({ tea: selectedTea, toppings: selectedToppings });
+          return;
+        }
+        sound.fail && sound.fail();
+        showToast('❌ Topping này đã hết trong kho! Vui lòng vào Chợ Đầu Mối để nhập thêm!', 3500);
+        return;
+      }
       sound.pour();
       if (workstation) {
         workstation.toggleTopping(top);
@@ -1367,6 +1468,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       const curTeaName = TEA_LABELS[selectedTea] || selectedTea;
       showToast(`⚠️ Cốt trà chưa đúng! Món [${currentOrder.recipeName}] yêu cầu [${expectedInfo.icon} ${expectedInfo.teaName}]. Bạn đang chọn [${curTeaName}]. Hãy bấm chọn lại ở kệ 1!`, 4500);
       return;
+    }
+
+    // Kiểm tra kho nguyên liệu còn đủ để pha chế không
+    const rawInv = storeState?.save?.inventory;
+    let inv = {};
+    try {
+      inv = typeof rawInv === 'string' ? JSON.parse(rawInv) : (rawInv || {});
+    } catch (e) {
+      inv = {};
+    }
+    const teaInvKey = { 'den': 'tra_den', 'thai_xanh': 'tra_thai_xanh', 'sua_tuoi': 'sua_tuoi', 'lai': 'tra_lai', 'olong_nuong': 'tra_olong' }[selectedTea] || 'tra_den';
+    if ((inv[teaInvKey] !== undefined ? inv[teaInvKey] : 0) <= 0) {
+      sound.fail();
+      elBtnServe.disabled = false;
+      showToast('❌ Cốt trà này đã hết trong kho! Vui lòng vào Chợ Đầu Mối để mua thêm!', 4000);
+      return;
+    }
+    for (const t of selectedToppings) {
+      if ((inv[t] !== undefined ? inv[t] : 0) <= 0) {
+        sound.fail();
+        elBtnServe.disabled = false;
+        showToast(`❌ Topping [${TOPPING_LABELS[t] || t}] đã hết trong kho! Vui lòng vào Chợ Đầu Mối để mua thêm!`, 4000);
+        return;
+      }
     }
 
     elBtnServe.disabled = true;
