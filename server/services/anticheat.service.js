@@ -267,13 +267,26 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
       WHERE store_id = ? AND real_date = ?
     `).run(payout, payout, drinkIngredientCost, isOverloadedNow ? 1 : 0, now, storeId, daily.real_date);
   } catch (e) {
-    await db.prepare(`
-      UPDATE daily_stats 
-      SET earned_today = earned_today + ?, 
-          is_overloaded = ?, 
-          last_active_ts = ? 
-      WHERE store_id = ? AND real_date = ?
-    `).run(payout, isOverloadedNow ? 1 : 0, now, storeId, daily.real_date);
+    try {
+      await db.prepare(`
+        UPDATE daily_stats 
+        SET earned_today = earned_today + ?,
+            shift_orders = shift_orders + 1,
+            shift_earned = shift_earned + ?,
+            shift_ingredient_cost = shift_ingredient_cost + ?,
+            is_overloaded = ?, 
+            last_active_ts = ? 
+        WHERE store_id = ? AND real_date = ?
+      `).run(payout, payout, drinkIngredientCost, isOverloadedNow ? 1 : 0, now, storeId, daily.real_date);
+    } catch (e2) {
+      await db.prepare(`
+        UPDATE daily_stats 
+        SET earned_today = earned_today + ?, 
+            is_overloaded = ?, 
+            last_active_ts = ? 
+        WHERE store_id = ? AND real_date = ?
+      `).run(payout, isOverloadedNow ? 1 : 0, now, storeId, daily.real_date);
+    }
   }
 
   // Update store money & hash

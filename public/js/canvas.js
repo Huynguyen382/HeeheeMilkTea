@@ -1,5 +1,8 @@
 // High-Fidelity Retro Pixel Art Canvas Scene Renderer for "Quán Trà Sữa Hyhy"
 class GameCanvas {
+  setChapter(chapter) {
+    this.chapter = chapter || 1;
+  }
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
@@ -85,14 +88,22 @@ class GameCanvas {
     }
 
     this.customerActive = true;
+    let accumulatedX = 185;
     this.queue = orders.map((order, idx) => {
       const startX = idx === 0 
         ? (this.customerX > 0 && this.customerX < 200 ? this.customerX : -35) 
-        : (200 + idx * 40);
+        : (accumulatedX + 40); // Xuất hiện từ bên phải
 
       const type = (typeof order.customerType === 'number') 
         ? order.customerType 
         : this.getArchetypeByName(order.customerName);
+        
+      // Xác định khoảng cách (Nếu là cặp đôi ID 44 thì cần khoảng cách rộng hơn)
+      let spacing = 38;
+      if (type === 44 || order.customerName.includes('Gà Bông')) spacing = 55;
+
+      const currentTarget = accumulatedX;
+      accumulatedX += spacing;
 
       return {
         orderId: order.orderId,
@@ -100,7 +111,7 @@ class GameCanvas {
         name: order.customerName,
         quote: order.quote || 'Cho mình 1 ly trà sữa nha!',
         currentX: startX,
-        targetX: 185 + (idx * 38),
+        targetX: currentTarget,
         state: 'waiting',
         isDrinking: false,
         drinkLevel: 1.0
@@ -406,7 +417,7 @@ class GameCanvas {
 
     // 5. MILK TEA CART FRONT COUNTER & EQUIPMENT (In front of Hyhy's body)
     this.drawCartFront(ctx);
-
+    
     // 6. HYHY FOREARMS & SHAKER (Resting/active on top of the counter)
     this.drawHyhyForearms(ctx);
 
@@ -414,10 +425,6 @@ class GameCanvas {
     this.drawStorePet(ctx);
 
     // 8. CUSTOMER SPRITES & QUEUE
-    this.leavingCustomers.forEach(lc => {
-      this.drawCustomer(ctx, lc.currentX, 108, lc.customerType, false, '', lc.name);
-    });
-
     if (this.queue && this.queue.length > 0) {
       for (let i = this.queue.length - 1; i >= 0; i--) {
         const qCust = this.queue[i];
@@ -427,11 +434,31 @@ class GameCanvas {
       this.drawCustomer(ctx, this.customerX, 108, this.customerType, true, this.customerQuote, this.customerName);
     }
 
+    this.leavingCustomers.forEach(lc => {
+      this.drawCustomer(ctx, lc.currentX, 108, lc.customerType, false, '', lc.name);
+    });
+
     // 9. THIEF SPRITE (Black hoodie & mask sneaking across)
     this.drawThief(ctx);
 
     // 10. PARTICLES & FLOATING NUMBERS
     this.drawParticles(ctx);
+    const tod = this.getTimeOfDay();
+    if (tod === 'night' || tod === 'afternoon') {
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillStyle = tod === 'night' ? '#707090' : '#d2b48c'; 
+      ctx.fillRect(0, 0, this.width, this.height);
+      ctx.globalCompositeOperation = 'source-over';
+      
+      ctx.globalCompositeOperation = 'screen';
+      const lx = 295, ly = 55;
+      const radGrad = ctx.createRadialGradient(lx - 9, ly + 60, 10, lx - 9, ly + 90, 120);
+      radGrad.addColorStop(0, tod === 'night' ? 'rgba(255, 230, 120, 0.4)' : 'rgba(255, 200, 100, 0.2)');
+      radGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = radGrad;
+      ctx.fillRect(0, 0, this.width, this.height);
+      ctx.globalCompositeOperation = 'source-over';
+    }
 
     ctx.restore();
   }

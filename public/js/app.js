@@ -2294,89 +2294,168 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!storyQuestList || !storeState || !storeState.save) return;
       const save = storeState.save;
       const daily = storeState.daily_stats || {};
-      const recipes = JSON.parse(save.recipes || '["tra_sua_truyen_thong"]');
-      const upgrades = JSON.parse(save.upgrades || '{}');
+      
+      // Xử lý an toàn dữ liệu mảng và object từ database
+      let recipes = [];
+      try { 
+        recipes = typeof save.recipes === 'string' ? JSON.parse(save.recipes) : (save.recipes || []); 
+      } catch(e) { recipes = ['tra_sua_truyen_thong']; }
+      
+      let upgrades = {};
+      try { 
+        upgrades = typeof save.upgrades === 'string' ? JSON.parse(save.upgrades) : (save.upgrades || {}); 
+      } catch(e) { upgrades = {}; }
 
-      const quests = [
-        {
-          id: 'q1',
-          icon: '🌟',
-          title: 'Khởi Nghiệp Vỉa Hè',
-          desc: 'Đăng ký tiệm & chuẩn bị quầy bán trà sữa.',
-          reward: 'Vốn khởi điểm: 200.000đ',
-          isDone: true
-        },
-        {
-          id: 'q2',
-          icon: '🍹',
-          title: 'Đôi Bàn Tay Vàng',
-          desc: 'Hoàn thành pha chế và giao ít nhất 1 ly trà sữa cho khách.',
-          reward: 'Kinh nghiệm Barista',
-          isDone: (daily.orders_served && daily.orders_served > 0) || save.money > 200000
-        },
-        {
-          id: 'q3',
-          icon: '🍊',
-          title: 'Mở Rộng Thực Đơn',
-          desc: 'Mua thêm ít nhất 1 công thức món mới trong mục [Nâng Cấp] (Hồng Trà Tắc, Thái Xanh...).',
-          reward: 'Bán được món giá cao',
-          isDone: recipes.length >= 2
-        },
-        {
-          id: 'q4',
-          icon: '💸',
-          title: 'Trút Bớt Gánh Nặng',
-          desc: 'Trả ít nhất 500.000đ nợ đầu tiên cho Anh Bảnh (Khoản nợ còn lại ≤ 2.500.000đ).',
-          reward: 'Giảm áp lực đòi nợ',
-          isDone: save.debt_remaining <= 2500000
-        },
-        {
-          id: 'q5',
-          icon: '📣',
-          title: 'Lan Tỏa Tiếng Vang',
-          desc: 'Đưa đánh giá quán lên trên 4.8⭐ hoặc book lịch mời Tú (TikToker 500k Followers).',
-          reward: 'Cơn sốt khách ghé quầy',
-          isDone: save.reputation >= 4.8 || !!upgrades.tiktoker_ever_invited
-        },
-        {
-          id: 'q6',
-          icon: '🐾',
-          title: 'Vệ Sĩ Bốn Chân',
-          desc: 'Nhận nuôi 1 thú cưng giữ quầy (Cún Corgi, Mèo Chiêu Tài hoặc Capybara).',
-          reward: 'Buff tiền tip & kiên nhẫn',
-          isDone: !!upgrades.active_pet
-        },
-        {
-          id: 'q7',
-          icon: '🤝',
-          title: 'Liên Minh Bạn Hữu',
-          desc: 'Ký kết Collab ít nhất 1 lần với mã quán của bạn bè để mở thêm hạn mức.',
-          reward: '+Doanh số ngày',
-          isDone: (daily.collab_count && daily.collab_count > 0)
-        },
-        {
-          id: 'q8',
-          icon: '🏆',
-          title: 'Tự Do Khởi Nghiệp',
-          desc: 'Trả hết sạch 3.000.000đ nợ cho Anh Bảnh và chính thức mở khóa Chương 2!',
-          reward: 'Mở khóa Chương 2: Góc Hẻm Sinh Viên',
-          isDone: save.debt_remaining === 0 || save.chapter >= 2
+      const currentChapter = save.chapter || 1;
+      const money = save.money !== undefined ? save.money : (save.cash || 0);
+      const debt = save.debt_remaining !== undefined ? save.debt_remaining : 3000000;
+      
+      let quests = [];
+
+      if (currentChapter === 1) {
+        quests = [
+          { 
+            id: 'q1', icon: '🌟', title: 'Khởi Nghiệp Vỉa Hè', 
+            desc: 'Đăng ký tiệm & chuẩn bị quầy bán trà sữa.', 
+            reward: 'Vốn khởi điểm: 200.000đ', 
+            isDone: true, progressText: 'Hoàn tất' 
+          },
+          { 
+            id: 'q2', icon: '🍹', title: 'Đôi Bàn Tay Vàng', 
+            desc: 'Hoàn thành pha chế và giao ít nhất 1 ly trà sữa cho khách.', 
+            reward: 'Kinh nghiệm Barista', 
+            isDone: (daily.orders_served && daily.orders_served > 0) || money > 200000,
+            progressText: (daily.orders_served > 0 || money > 200000) ? '1/1 ly' : '0/1 ly'
+          },
+          { 
+            id: 'q3', icon: '🍊', title: 'Mở Rộng Thực Đơn', 
+            desc: 'Mua thêm ít nhất 1 công thức món mới trong mục [Nâng Cấp].', 
+            reward: 'Bán được món giá cao', 
+            isDone: recipes.length >= 2,
+            progressText: `${recipes.length}/2 món`
+          },
+          { 
+            id: 'q4', icon: '💸', title: 'Trút Bớt Gánh Nặng', 
+            desc: 'Trả ít nhất 500.000đ nợ đầu tiên cho Anh Bảnh.', 
+            reward: 'Giảm áp lực đòi nợ', 
+            isDone: debt <= 2500000,
+            progressText: debt <= 2500000 ? 'Đã trả' : 'Chưa trả'
+          },
+          { 
+            id: 'q5', icon: '🏆', title: 'Tự Do Khởi Nghiệp', 
+            desc: 'Trả hết sạch 3.000.000đ nợ cho Anh Bảnh để mở khóa Chương 2!', 
+            reward: 'Mở khóa Chương 2', 
+            isDone: debt === 0 || currentChapter >= 2,
+            progressText: `${(3000000 - debt).toLocaleString('vi-VN')}đ / 3Tr`
+          }
+        ];
+      } 
+      else if (currentChapter >= 2) {
+        const targetMoney = 50000000; // Mục tiêu Endgame Chương 2
+        quests = [
+          {
+            id: 'c2_q1', icon: '📦', title: 'Bài Toán Chi Phí',
+            desc: 'Đạt doanh thu 80.000đ/ngày để bù đắp chi phí mặt bằng khi Kết Ca.',
+            reward: 'Kỹ năng quản lý tài chính',
+            isDone: (daily.earned_today || 0) >= 80000,
+            progressText: `${(daily.earned_today || 0).toLocaleString('vi-VN')}đ / 80k`
+          },
+          {
+            id: 'c2_q2', icon: '🍹', title: 'Hương Vị Gen Z',
+            desc: 'Sở hữu công thức Sữa Tươi Đường Đen hoặc Trà Đào Cam Sả.',
+            reward: 'Thu hút khách sành điệu',
+            isDone: recipes.includes('sua_tuoi_duong_den') || recipes.includes('tra_dao_cam_sa'),
+            progressText: (recipes.includes('sua_tuoi_duong_den') || recipes.includes('tra_dao_cam_sa')) ? 'Đã có' : 'Chưa mở khóa'
+          },
+          {
+            id: 'c2_q3', icon: '📱', title: 'Bão Trending',
+            desc: 'Bỏ vốn đầu tư book Tú TikToker ghé quán ít nhất 1 lần.',
+            reward: 'Doanh thu bùng nổ x3',
+            isDone: !!upgrades.tiktoker_ever_invited,
+            progressText: upgrades.tiktoker_ever_invited ? 'Đã Viral' : '0/1 lần'
+          },
+          {
+            id: 'c2_q4', icon: '🐾', title: 'Người Bạn Đồng Hành',
+            desc: 'Nhận nuôi 1 Thú Cưng để buff chỉ số và báo động trộm cắp.',
+            reward: 'An ninh + Buff Tip',
+            isDone: !!upgrades.active_pet,
+            progressText: upgrades.active_pet ? 'Đã nhận nuôi' : 'Chưa có'
+          },
+          {
+            id: 'c2_q5', icon: '🚨', title: 'Đội Trưởng An Ninh',
+            desc: 'Phản xạ nhanh nhấp chuột tóm gọn 1 tên trộm áo đen.',
+            reward: '+10.000đ & Kỷ niệm chương',
+            isDone: (save.thieves_caught && save.thieves_caught > 0),
+            progressText: `${save.thieves_caught || 0}/1 tên`
+          },
+          {
+            id: 'c2_q6', icon: '🤝', title: 'Liên Minh Bền Vững',
+            desc: 'Kết nối Collab thành công với ít nhất 1 mã quán của đối tác.',
+            reward: '+10% Doanh thu',
+            isDone: (daily.collab_count && daily.collab_count > 0) || (save.active_collabs && save.active_collabs > 0),
+            progressText: `${daily.collab_count || save.active_collabs || 0}/1 đối tác`
+          },
+          {
+            id: 'c2_q7', icon: '🏰', title: 'Bước Ra Phố Lớn (Endgame)',
+            desc: 'Tích lũy đủ 50.000.000đ tiền mặt để thuê mặt bằng ở Phố Thương Mại.',
+            reward: 'Mở rộng thương hiệu',
+            isDone: money >= targetMoney,
+            progressText: `${(money / 1000000).toFixed(1)}Tr / 50Tr`
+          }
+        ];
+      }
+
+      storyQuestList.innerHTML = quests.map(q => {
+        // Tính toán phần trăm thanh tiến trình (Progress Bar)
+        let pct = 0;
+        if (q.isDone) {
+            pct = 100;
+        } else if (q.id === 'q5' && currentChapter === 1) {
+            pct = Math.min(100, Math.max(0, ((3000000 - debt) / 3000000) * 100));
+        } else if (q.id === 'c2_q7') {
+            pct = Math.min(100, Math.max(0, (money / 50000000) * 100));
+        } else if (q.id === 'c2_q1') {
+            pct = Math.min(100, Math.max(0, ((daily.earned_today || 0) / 80000) * 100));
         }
-      ];
 
-      storyQuestList.innerHTML = quests.map(q => `
-        <div class="quest-item ${q.isDone ? 'completed' : ''}">
-          <div style="font-size: 1.6rem;">${q.icon}</div>
-          <div class="quest-info">
-            <div class="quest-title">${q.title}</div>
-            <div class="quest-desc">${q.desc}</div>
-            <div class="quest-reward">🎁 ${q.reward}</div>
+        const progressBarHtml = (q.id === 'q5' || q.id === 'c2_q7' || q.id === 'c2_q1') ? `
+          <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.4); border-radius: 4px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #f4c430, #ff9f43); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 8px rgba(244,196,48,0.5);"></div>
           </div>
-          <div class="quest-badge ${q.isDone ? 'done' : 'pending'}">
-            ${q.isDone ? '✅ Hoàn thành' : 'Đang làm...'}
+        ` : '';
+
+        // Tự động mờ đi nếu chưa hoàn thành, sáng rực lên viền xanh khi xong
+        const bgStyle = q.isDone ? 'rgba(80, 250, 123, 0.08)' : 'rgba(30, 20, 37, 0.6)';
+        const borderStyle = q.isDone ? '1px solid #50fa7b' : '1px solid #4a2635';
+        const iconFilter = q.isDone ? 'none' : 'grayscale(0.7) opacity(0.8)';
+        const titleColor = q.isDone ? '#50fa7b' : '#ffb86c';
+
+        return `
+        <div class="quest-item" style="background: ${bgStyle}; border: ${borderStyle}; border-radius: 10px; padding: 14px; margin-bottom: 12px; display: flex; gap: 14px; align-items: stretch; transition: all 0.3s ease;">
+          <div style="font-size: 2.2rem; min-width: 45px; text-align: center; filter: ${iconFilter}; display: flex; align-items: center; justify-content: center;">
+            ${q.icon}
+          </div>
+          <div class="quest-info" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+            <div class="quest-title" style="font-weight: 700; font-size: 1.1rem; color: ${titleColor}; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${q.title}</div>
+            <div class="quest-desc" style="color: #cbd5e1; font-size: 0.85rem; margin-top: 5px; line-height: 1.45;">${q.desc}</div>
+            <div style="margin-top: 8px;">
+              <span class="quest-reward" style="color: #f4c430; font-size: 0.75rem; font-weight: 700; background: rgba(244, 196, 48, 0.15); border: 1px solid rgba(244, 196, 48, 0.3); padding: 3px 8px; border-radius: 6px;">
+                🎁 ${q.reward}
+              </span>
+            </div>
+            ${progressBarHtml}
+          </div>
+          <div class="quest-status" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; min-width: 85px;">
+            <div class="quest-badge" style="white-space: nowrap; font-size: 0.75rem; padding: 5px 10px; border-radius: 12px; font-weight: bold; background: ${q.isDone ? '#50fa7b' : '#334155'}; color: ${q.isDone ? '#000' : '#cbd5e1'}; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+              ${q.isDone ? '✅ Đã Xong' : '⏳ Đang làm'}
+            </div>
+            <div style="font-size: 0.8rem; color: ${q.isDone ? '#50fa7b' : '#8be9fd'}; margin-top: 8px; font-family: monospace; font-weight: bold;">
+              ${q.progressText}
+            </div>
           </div>
         </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     if (btnStoryHeader) btnStoryHeader.addEventListener('click', () => window.openStoryModal());

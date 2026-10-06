@@ -65,6 +65,11 @@ const db = {
             store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
             real_date TEXT NOT NULL,
             earned_today BIGINT DEFAULT 0,
+            orders_served BIGINT DEFAULT 0,
+            shift_orders BIGINT DEFAULT 0,
+            shift_earned BIGINT DEFAULT 0,
+            shift_ingredient_cost BIGINT DEFAULT 0,
+            shift_tips BIGINT DEFAULT 0,
             collab_count INTEGER DEFAULT 0,
             is_overloaded INTEGER DEFAULT 0,
             last_active_ts BIGINT DEFAULT 0,
@@ -101,6 +106,21 @@ const db = {
             detail TEXT,
             logged_at TEXT NOT NULL
           );
+        `);
+        await client.query(`
+          ALTER TABLE active_orders ADD COLUMN IF NOT EXISTS original_price INTEGER;
+          ALTER TABLE active_orders ADD COLUMN IF NOT EXISTS negotiation TEXT;
+          ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS properties TEXT DEFAULT '{}';
+          ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS decorations TEXT DEFAULT '[]';
+          ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS rest_until_ts BIGINT DEFAULT 0;
+          ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS active_buffs TEXT DEFAULT '{}';
+          ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS orders_served BIGINT DEFAULT 0;
+          ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_orders BIGINT DEFAULT 0;
+          ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_earned BIGINT DEFAULT 0;
+          ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_ingredient_cost BIGINT DEFAULT 0;
+          ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_tips BIGINT DEFAULT 0;
+          ALTER TABLE collabs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'accepted';
+          ALTER TABLE collabs ADD COLUMN IF NOT EXISTS created_at TEXT;
         `);
         console.log('Neon PostgreSQL schema initialized successfully.');
       } finally {
@@ -140,6 +160,11 @@ const db = {
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN decorations TEXT DEFAULT \'[]\';'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN negotiation TEXT;'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN orders_served INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_orders INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_earned INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_ingredient_cost INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_tips INTEGER DEFAULT 0;'); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN status TEXT DEFAULT 'accepted';"); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN created_at TEXT;"); } catch (e) {}
 
@@ -170,6 +195,11 @@ const db = {
           store_id INTEGER NOT NULL,
           real_date TEXT NOT NULL,
           earned_today INTEGER DEFAULT 0,
+          orders_served INTEGER DEFAULT 0,
+          shift_orders INTEGER DEFAULT 0,
+          shift_earned INTEGER DEFAULT 0,
+          shift_ingredient_cost INTEGER DEFAULT 0,
+          shift_tips INTEGER DEFAULT 0,
           collab_count INTEGER DEFAULT 0,
           is_overloaded INTEGER DEFAULT 0,
           last_active_ts INTEGER DEFAULT 0,
