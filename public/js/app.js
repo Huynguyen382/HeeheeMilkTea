@@ -380,7 +380,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           const res = await API.skipRest();
           if (res && res.success) {
             clearInterval(restTimerInterval);
+            restTimerInterval = null;
             isGamePaused = false;
+            const ov = document.getElementById('overlay-resting');
+            if (ov) ov.style.display = 'none';
             if (overlay) overlay.style.display = 'none';
 
             // Chuyển thời gian trong game tới 7h sáng để bắt đầu kinh doanh!
@@ -398,7 +401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             scheduleNextOrder(2000);
           } else {
             sound.fail();
-            showToast('❌ ' + (res.message || 'Không thể thức dậy lúc này'), 4000);
+            showToast('❌ ' + ((res && (res.message || res.error)) || 'Không thể thức dậy lúc này'), 4000);
           }
         } catch (err) {
           console.error('Skip rest error:', err);

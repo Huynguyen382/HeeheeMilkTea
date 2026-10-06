@@ -1699,11 +1699,6 @@ async function skipRest(storeId) {
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
-  const now = Date.now();
-  if (!save.rest_until_ts || now >= save.rest_until_ts) {
-    return { success: false, message: 'Quán hiện không trong trạng thái nghỉ ngơi!' };
-  }
-
   const skipCost = 200000; // 200.000đ để thoát trạng thái nghỉ ngơi
   if (save.money < skipCost) {
     return {
