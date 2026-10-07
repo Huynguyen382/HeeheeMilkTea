@@ -1403,7 +1403,122 @@ button,
   cursor: pointer;
 }
 
-@media (max-width: 768px) {
+/* ==========================================================================
+   RESPONSIVE DESIGN: TABLETS, MOBILE PHONES & LANDSCAPE
+   ========================================================================== */
+
+/* 1. TABLET SCREENS (601px - 1024px, iPad, Galaxy Tab, Surface) */
+@media (min-width: 601px) and (max-width: 1024px) {
+  body {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  #game-container {
+    width: min(96vw, 720px);
+    max-width: 720px;
+    border-radius: 14px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.85), 0 0 20px rgba(244, 196, 48, 0.25);
+  }
+
+  .hud-top {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .store-title {
+    font-size: 1.3rem;
+  }
+
+  .hud-stats-group {
+    gap: 8px;
+  }
+
+  .hud-stat-pill {
+    padding: 3px 9px;
+    font-size: 1rem;
+  }
+
+  .btn-hud-menu {
+    padding: 4px 12px;
+    font-size: 1rem;
+    min-height: 36px;
+  }
+
+  .hud-sub-bar {
+    padding: 4px 10px;
+    font-size: 0.95rem;
+  }
+
+  #scene-wrapper {
+    aspect-ratio: 16 / 5.2;
+    max-height: 200px;
+    min-height: 140px;
+  }
+
+  .workstation-wrapper {
+    aspect-ratio: 440 / 160;
+    max-height: 190px;
+  }
+
+  /* Display 5 teas side by side cleanly on tablet */
+  .tea-shelf {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+
+  .topping-shelf {
+    gap: 6px;
+  }
+
+  .btn-select {
+    min-height: 38px;
+    font-size: 0.95rem;
+    padding: 4px 8px;
+  }
+
+  .btn-step-gauge {
+    min-height: 38px;
+    padding: 4px 8px;
+  }
+
+  .action-box.workflow-grid {
+    gap: 6px;
+  }
+
+  .btn-workflow {
+    min-height: 44px;
+  }
+
+  .btn-serve-cup {
+    min-height: 44px;
+    font-size: 1.05rem;
+  }
+
+  .bottom-nav {
+    gap: 8px;
+    padding: 6px 10px;
+  }
+
+  .nav-btn {
+    min-height: 48px;
+    font-size: 0.92rem;
+  }
+
+  .modal-content {
+    max-width: 620px;
+    max-height: 85vh;
+  }
+
+  .menu-action-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+/* 2. MOBILE PHONES (<= 600px: iPhone 12/13/14/15, Samsung Galaxy, Pixel) */
+@media (max-width: 600px) {
   body {
     display: block;
     padding: 0;
@@ -1424,120 +1539,193 @@ button,
     padding-bottom: 0;
   }
 
+  /* HEADER HUD */
   .hud-top {
-    padding: max(8px, env(safe-area-inset-top)) 10px 8px;
-    gap: 6px;
+    padding: max(6px, env(safe-area-inset-top)) 8px 6px;
+    gap: 4px;
   }
 
-  .hud-row-1 {
-    gap: 6px;
+  .hud-main-bar {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
+    gap: 4px;
+  }
+
+  .hud-brand-group {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 4px;
   }
 
   .store-title {
+    font-size: 1rem;
     min-width: 0;
-    font-size: clamp(1rem, 4.5vw, 1.25rem);
   }
 
   .store-name-text {
-    max-width: 130px;
+    max-width: 110px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .hud-row-1 > div:last-child {
+  .hud-chapter-pill {
+    padding: 1px 4px;
+    font-size: 0.74rem;
+    flex-shrink: 0;
+  }
+
+  .hud-stats-group {
     flex: 0 0 auto;
-    gap: 4px !important;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: nowrap;
   }
 
-  #btn-story-header,
-  #btn-logout {
-    min-height: 32px;
-    padding: 2px 7px !important;
-    font-size: 0.82rem !important;
+  .hud-stat-pill {
+    padding: 2px 5px;
+    font-size: 0.82rem;
+    border-radius: 4px;
   }
 
-  #user-badge { display: none; }
-  .store-code-badge { padding: 4px 6px; font-size: 0.82rem; }
-
-  .hud-row-2 {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px 8px;
-    font-size: 0.95rem;
+  .hud-stat-pill.pill-money {
+    font-size: 0.84rem;
   }
 
-  .stat-item {
+  .hud-stat-pill.pill-rep {
+    font-size: 0.82rem;
+  }
+
+  #btn-daily-quests-header span:last-child {
+    display: none; /* Hide redundant sub-label, keep icon and badge */
+  }
+
+  .btn-hud-menu {
+    padding: 2px 6px;
+    font-size: 0.82rem;
+    min-height: 28px;
+    gap: 3px;
+  }
+
+  .hud-menu-text {
+    display: none; /* Icon-only on phone to conserve header space */
+  }
+
+  /* HUD Sub Bar */
+  .hud-sub-bar {
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    gap: 4px;
+  }
+
+  .hud-sub-left {
+    gap: 3px;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
-  .daily-cap-box {
-    padding: 4px 8px !important;
-    font-size: 0.88rem !important;
+  .hud-sub-label {
+    display: none; /* Conserve width */
   }
 
-  .daily-cap-box > div:first-child {
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .time-badge { flex: 0 0 auto; padding: 4px 8px !important; font-size: 0.85rem !important; }
-  #active-buffs-bar { margin-top: 2px !important; max-height: 48px; overflow: hidden; }
-  #active-buffs-bar span { font-size: 0.76rem; padding: 3px 5px !important; }
-
-  #low-rep-banner {
-    gap: 5px;
+  .hud-debt-wrap {
+    margin-left: 3px !important;
     font-size: 0.8rem !important;
   }
 
-  #low-rep-banner button {
-    min-height: 34px;
-    padding: 3px 6px !important;
+  .time-badge {
+    padding: 2px 5px !important;
     font-size: 0.78rem !important;
   }
 
+  #active-buffs-bar {
+    margin-top: 2px !important;
+    gap: 3px !important;
+  }
+
+  #active-buffs-bar span {
+    font-size: 0.72rem;
+    padding: 2px 4px !important;
+  }
+
+  #low-rep-banner {
+    padding: 3px 6px;
+    font-size: 0.78rem !important;
+  }
+
+  #low-rep-banner button {
+    font-size: 0.74rem !important;
+    padding: 2px 5px !important;
+  }
+
+  /* CANVAS SCENE */
   #scene-wrapper {
     width: 100%;
     height: auto;
     aspect-ratio: 16 / 6.5;
     max-height: 135px;
-    min-height: 110px;
-    border-bottom-width: 1.5px;
+    min-height: 105px;
   }
 
-  .workstation-wrapper {
-    aspect-ratio: 440 / 150;
-    max-height: 140px;
-    min-height: 115px;
+  #scene-nav-controls button {
+    font-size: 0.68rem !important;
+    padding: 2px 5px !important;
   }
 
-  .shelf-hint {
-    font-size: 0.68rem;
+  #police-patrol-alert {
+    font-size: 0.76rem !important;
+    padding: 3px 6px !important;
   }
 
   #queue-indicator {
     margin: 0 6px 2px !important;
+    padding: 3px 6px !important;
     font-size: 0.78rem !important;
   }
 
+  /* ORDER TICKET */
   .order-section {
     padding: 3px 6px;
-    min-height: 40px;
+    min-height: 38px;
   }
 
-  .order-header { font-size: 0.95rem; padding-bottom: 1px; }
-  .order-specs { gap: 2px; font-size: 0.84rem; }
-  .spec-badge { padding: 1px 4px; font-size: 0.8rem; }
+  .order-header {
+    font-size: 0.92rem;
+  }
 
+  .order-specs {
+    font-size: 0.82rem;
+    gap: 2px;
+  }
+
+  .spec-badge {
+    padding: 1px 4px;
+    font-size: 0.78rem;
+  }
+
+  /* WORKSTATION & COUNTER */
   .mixing-counter {
     padding: 3px 6px;
     gap: 3px;
+  }
+
+  .workstation-wrapper {
+    aspect-ratio: 440 / 145;
+    max-height: 135px;
+    min-height: 110px;
+  }
+
+  .shelf-header {
+    margin-bottom: 1px;
+  }
+
+  .section-label {
+    font-size: 0.8rem;
+  }
+
+  .shelf-hint {
+    font-size: 0.66rem;
   }
 
   .meter-actions-row {
@@ -1557,7 +1745,7 @@ button,
   }
 
   .step-title {
-    font-size: 0.75rem;
+    font-size: 0.74rem;
   }
 
   .step-badge {
@@ -1576,52 +1764,40 @@ button,
   }
 
   .pill-label {
-    min-width: 32px;
-    font-size: 0.72rem;
+    min-width: 30px;
+    font-size: 0.7rem;
   }
 
   .btn-pill {
     padding: 1px 4px;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     border-radius: 4px;
   }
 
-  .section-label { font-size: 0.82rem; }
   .options-row {
-    margin-right: -6px;
-    padding-right: 6px;
     gap: 3px;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .btn-select {
     min-height: 30px;
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     padding: 2px 6px;
+    border-radius: 5px;
   }
 
   #cup-status-bar {
     gap: 2px;
+    padding: 2px 5px !important;
+    font-size: 0.75rem !important;
     overflow-x: auto;
     white-space: nowrap;
-    font-size: 0.76rem !important;
-    padding: 2px 5px;
+    -webkit-overflow-scrolling: touch;
   }
 
-  #cup-status-bar span { flex: 0 0 auto; }
-
-  /* Natural flow action box */
-  .action-box {
-    position: relative;
-    bottom: auto;
-    z-index: 5;
-    margin: 2px 0 1px 0;
-    padding: 0;
-    background: transparent;
-    backdrop-filter: none;
-  }
-
+  /* WORKFLOW ACTION BUTTONS */
   .action-box.workflow-grid {
-    display: grid;
     grid-template-columns: 1fr 1fr 1fr 1.35fr;
     gap: 3px;
     margin-top: 2px;
@@ -1629,7 +1805,7 @@ button,
 
   .btn-workflow {
     padding: 3px 2px;
-    min-height: 34px;
+    min-height: 35px;
     border-radius: 5px;
   }
 
@@ -1638,17 +1814,18 @@ button,
   }
 
   .btn-workflow .wf-text {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     letter-spacing: -0.2px;
   }
 
   .btn-serve-cup {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     padding: 3px 4px;
-    min-height: 34px;
+    min-height: 35px;
     border-radius: 5px;
   }
 
+  /* BOTTOM NAVIGATION BAR */
   .bottom-nav {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1660,47 +1837,175 @@ button,
     min-height: 38px;
     padding: 3px 2px;
     font-size: 0.72rem;
-    white-space: nowrap;
     border-radius: 6px;
+    white-space: nowrap;
   }
 
+  .nb-icon {
+    font-size: 1.05rem;
+  }
+
+  .nb-text {
+    font-size: 0.68rem;
+  }
+
+  /* MODALS FOR MOBILE */
   .modal-overlay {
     position: fixed;
     inset: 0;
-    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+    padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom));
   }
 
   .modal-content {
-    max-height: 88vh;
-    max-height: 88dvh;
-    padding: 10px;
+    max-height: 90vh;
+    max-height: 90dvh;
+    padding: 8px;
     gap: 6px;
     border-width: 2px;
     overscroll-behavior: contain;
   }
 
-  .modal-title { font-size: 1.1rem; }
-  .btn-close { min-width: 38px; min-height: 38px; }
-  .story-tab-btn { font-size: 0.8rem; min-height: 38px; }
-  
-  #toast { position: fixed; top: max(10px, env(safe-area-inset-top)); font-size: 0.9rem; }
+  .modal-title {
+    font-size: 1.05rem;
+  }
+
+  .btn-close {
+    min-width: 34px;
+    min-height: 34px;
+    font-size: 1.2rem;
+  }
+
+  .menu-action-grid {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .menu-item-btn {
+    padding: 6px 8px;
+  }
+
+  .m-icon {
+    font-size: 1.25rem;
+  }
+
+  .m-title {
+    font-size: 0.88rem;
+  }
+
+  .m-desc {
+    font-size: 0.72rem;
+  }
+
+  .menu-quick-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+
+  .story-tab-btn {
+    font-size: 0.78rem;
+    min-height: 36px;
+    padding: 4px;
+  }
+
+  #toast {
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    font-size: 0.85rem;
+    max-width: 90vw;
+  }
 }
 
-@media (max-width: 360px) {
-  .store-title { font-size: 0.92rem; }
-  .store-code-badge { font-size: 0.7rem; }
-  .btn-select { font-size: 0.82rem; padding: 4px 8px; }
-  .btn-workflow .wf-text { font-size: 0.66rem; }
-  .btn-serve-cup { font-size: 0.8rem; }
-  .nav-btn { font-size: 0.7rem; min-height: 36px; }
-  .btn-pill { padding: 2px 4px; font-size: 0.72rem; }
-  .pill-label { min-width: 32px; font-size: 0.7rem; }
+/* 3. ULTRA SMALL PHONES (<= 380px: iPhone SE 1st/2nd/3rd gen, Galaxy Fold cover, 320px) */
+@media (max-width: 380px) {
+  .store-title {
+    font-size: 0.88rem;
+  }
+
+  .store-name-text {
+    max-width: 75px;
+  }
+
+  .hud-chapter-pill {
+    display: none; /* Hide chapter tag on ultra compact screen */
+  }
+
+  .hud-stats-group {
+    gap: 2px;
+  }
+
+  .hud-stat-pill {
+    padding: 1px 3px;
+    font-size: 0.74rem;
+  }
+
+  .hud-stat-pill.pill-rep {
+    display: none; /* Rep is accessible in menu and sub bar */
+  }
+
+  .btn-select {
+    font-size: 0.76rem;
+    padding: 2px 4px;
+  }
+
+  .btn-workflow .wf-text {
+    font-size: 0.62rem;
+  }
+
+  .btn-serve-cup {
+    font-size: 0.74rem;
+  }
+
+  .nav-btn {
+    font-size: 0.66rem;
+    min-height: 34px;
+  }
+
+  .btn-pill {
+    padding: 1px 3px;
+    font-size: 0.68rem;
+  }
+
+  .pill-label {
+    min-width: 24px;
+    font-size: 0.65rem;
+  }
 }
 
+/* 4. MOBILE LANDSCAPE ORIENTATION */
 @media (max-height: 560px) and (orientation: landscape) {
-  body { align-items: flex-start; padding: 0; }
-  #game-container { max-width: 720px; border-radius: 0; }
-  #scene-wrapper { height: auto; aspect-ratio: 9 / 4; min-height: 0; }
+  body {
+    align-items: flex-start;
+    padding: 0;
+  }
+
+  #game-container {
+    width: 100%;
+    max-width: 760px;
+    border-radius: 0;
+  }
+
+  #scene-wrapper {
+    height: auto;
+    aspect-ratio: 16 / 4;
+    min-height: 80px;
+    max-height: 110px;
+  }
+
+  .workstation-wrapper {
+    aspect-ratio: 16 / 4;
+    max-height: 110px;
+    min-height: 80px;
+  }
+
+  .mixing-counter {
+    gap: 2px;
+    padding: 2px 6px;
+  }
+
+  .modal-content {
+    max-height: 94vh;
+    max-height: 94dvh;
+  }
 }
 
 /* WHOLESALE MARKET PIXEL CARDS */
