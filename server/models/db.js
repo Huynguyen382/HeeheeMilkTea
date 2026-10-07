@@ -73,7 +73,9 @@ const db = {
             rest_until_ts BIGINT DEFAULT 0,
             active_buffs TEXT DEFAULT '{}',
             properties TEXT DEFAULT '{}',
-            decorations TEXT DEFAULT '[]'
+            decorations TEXT DEFAULT '[]',
+            teacoin BIGINT DEFAULT 0,
+            daily_quests TEXT DEFAULT '{}'
           );
 
           CREATE TABLE IF NOT EXISTS daily_stats (
@@ -100,6 +102,16 @@ const db = {
           status TEXT DEFAULT 'accepted',
           created_at TEXT,
             UNIQUE(host_store_id, friend_store_id, collab_date)
+          );
+
+          CREATE TABLE IF NOT EXISTS friends (
+            id SERIAL PRIMARY KEY,
+            user_store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+            friend_store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+            status TEXT DEFAULT 'pending',
+            gift_claimed_date TEXT,
+            created_at TEXT,
+            UNIQUE(user_store_id, friend_store_id)
           );
 
           CREATE TABLE IF NOT EXISTS active_orders (
@@ -132,6 +144,8 @@ const db = {
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS decorations TEXT DEFAULT '[]';
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS rest_until_ts BIGINT DEFAULT 0;
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS active_buffs TEXT DEFAULT '{}';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS teacoin BIGINT DEFAULT 0;
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS daily_quests TEXT DEFAULT '{}';
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS orders_served BIGINT DEFAULT 0;
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_orders BIGINT DEFAULT 0;
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_earned BIGINT DEFAULT 0;
@@ -176,6 +190,8 @@ const db = {
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN active_buffs TEXT DEFAULT '{}';"); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN properties TEXT DEFAULT '{}';"); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN decorations TEXT DEFAULT '[]';"); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN teacoin INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN daily_quests TEXT DEFAULT '{}';"); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN negotiation TEXT;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN orders_served INTEGER DEFAULT 0;'); } catch (e) {}
@@ -203,6 +219,8 @@ const db = {
           updated_at TEXT,
           rest_until_ts INTEGER DEFAULT 0,
           active_buffs TEXT DEFAULT '{}',
+          teacoin INTEGER DEFAULT 0,
+          daily_quests TEXT DEFAULT '{}',
           FOREIGN KEY(store_id) REFERENCES stores(id) ON DELETE CASCADE
         );
 
@@ -232,6 +250,18 @@ const db = {
           created_at TEXT,
           UNIQUE(host_store_id, friend_store_id, collab_date),
           FOREIGN KEY(host_store_id) REFERENCES stores(id) ON DELETE CASCADE,
+          FOREIGN KEY(friend_store_id) REFERENCES stores(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS friends (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_store_id INTEGER NOT NULL,
+          friend_store_id INTEGER NOT NULL,
+          status TEXT DEFAULT 'pending',
+          gift_claimed_date TEXT,
+          created_at TEXT,
+          UNIQUE(user_store_id, friend_store_id),
+          FOREIGN KEY(user_store_id) REFERENCES stores(id) ON DELETE CASCADE,
           FOREIGN KEY(friend_store_id) REFERENCES stores(id) ON DELETE CASCADE
         );
 

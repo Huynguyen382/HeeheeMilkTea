@@ -29,12 +29,21 @@ router.post('/collab', authStore, async (req, res) => {
 router.post('/collab/accept', authStore, handle('Accept collab', req => gameService.acceptCollab(req.store.id, req.body.collabId)));
 router.post('/collab/decline', authStore, handle('Decline collab', req => gameService.declineCollab(req.store.id, req.body.collabId)));
 router.post('/collab/cancel', authStore, handle('Cancel collab', req => gameService.cancelCollab(req.store.id, req.body.collabId)));
+
+// Friend System Routes
+router.get('/friends', authStore, handle('Get friends', req => gameService.getFriends(req.store.id)));
+router.post('/friends/request', authStore, handle('Send friend request', req => gameService.sendFriendRequest(req.store.id, req.body.friendCode)));
+router.post('/friends/accept', authStore, handle('Accept friend request', req => gameService.acceptFriendRequest(req.store.id, req.body.requestId)));
+router.post('/friends/reject', authStore, handle('Reject friend request', req => gameService.rejectFriendRequest(req.store.id, req.body.requestId)));
+router.post('/friends/remove', authStore, handle('Remove friend', req => gameService.removeFriend(req.store.id, req.body.friendshipId)));
+router.post('/friends/gift', authStore, handle('Send friend gift', req => gameService.sendFriendGift(req.store.id, req.body.friendshipId)));
 router.post('/pay-debt', authStore, async (req, res) => {
   if (!req.body.amount || req.body.amount <= 0) return res.status(400).json({ error: 'Số tiền không hợp lệ' });
   try { res.json(await gameService.payDebt(req.store.id, Number(req.body.amount))); }
   catch (err) { console.error('Pay debt error:', err); res.status(500).json({ error: err.message }); }
 });
 router.post('/upgrade', authStore, handle('Upgrade', req => gameService.buyUpgrade(req.store.id, req.body.upgradeId)));
+router.post('/use-talisman', authStore, handle('Use talisman', req => gameService.useTalisman(req.store.id)));
 router.post('/unlock-chapter-2', authStore, handle('Unlock Chapter 2', req => gameService.unlockChapter2(req.store.id)));
 router.post('/police-fine', authStore, handle('Police fine', req => gameService.policeFine(req.store.id)));
 router.post('/steal-pet', authStore, handle('Steal pet', req => gameService.stealPet(req.store.id)));
@@ -42,7 +51,11 @@ router.post('/redeem-pet', authStore, handle('Redeem pet', req => gameService.re
 router.post('/shoo-thief', authStore, handle('Shoo thief', req => gameService.shooThief(req.store.id)));
 router.post('/invite-tiktoker', authStore, handle('Invite tiktoker', req => gameService.inviteTiktoker(req.store.id)));
 router.post('/buy-ingredients', authStore, handle('Buy ingredients', req => gameService.buyIngredients(req.store.id, req.body.items)));
-router.post('/end-shift', authStore, handle('End shift', req => gameService.endShift(req.store.id)));
 router.post('/advance-day', authStore, handle('Advance day', req => gameService.endShift(req.store.id)));
 router.post('/skip-rest', authStore, handle('Skip rest', req => gameService.skipRest(req.store.id)));
+
+// Daily Quests Routes
+router.get('/quests', authStore, handle('Get daily quests', req => gameService.getDailyQuests(req.store.id)));
+router.post('/quests/claim', authStore, handle('Claim daily quest', req => gameService.claimDailyQuest(req.store.id, req.body.questId)));
+
 module.exports = router;

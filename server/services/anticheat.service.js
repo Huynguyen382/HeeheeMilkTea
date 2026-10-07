@@ -23,14 +23,17 @@ function getRealDate() {
 
 // Generate HMAC for save state to prevent client-side save file tampering
 function generateSaveHash(save) {
-  const payload = `${save.store_id}:${save.chapter}:${save.day_in_game}:${save.money}:${save.debt_remaining}:${save.reputation}`;
+  const teacoin = save.teacoin || 0;
+  const payload = `${save.store_id}:${save.chapter}:${save.day_in_game}:${save.money}:${save.debt_remaining}:${save.reputation}:${teacoin}`;
   return crypto.createHmac('sha256', SECRET_KEY).update(payload).digest('hex');
 }
 
-// Verify save hash
+// Verify save hash (supports both new teacoin hash and legacy hash)
 function verifySaveHash(save, providedHash) {
   const expected = generateSaveHash(save);
-  return expected === providedHash;
+  if (expected === providedHash) return true;
+  const legacyPayload = `${save.store_id}:${save.chapter}:${save.day_in_game}:${save.money}:${save.debt_remaining}:${save.reputation}`;
+  return crypto.createHmac('sha256', SECRET_KEY).update(legacyPayload).digest('hex') === providedHash;
 }
 
 // Get or initialize daily stats for a store
@@ -289,7 +292,40 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     }
   }
 
-  // Update store money & hash
+  // Update daily quest progress for serving orders
+  let dailyQuests = {};
+  try {
+    dailyQuests = JSON.parse(save.daily_quests || '{}');
+  } catch (e) {}
+  const currentDay = save.day_in_game || 1;
+  if (!dailyQuests || dailyQuests.day !== currentDay) {
+    dailyQuests = {
+      day: currentDay,
+      allCompletedBonusClaimed: false,
+      quests: {
+        quest_checkin: { progress: 1, claimed: false },
+        quest_serve_5: { progress: 0, claimed: false },
+        quest_variety_2: { progress: 0, recipes: [], claimed: false },
+        quest_friend_gift: { progress: 0, claimed: false },
+        quest_patrol_vigilant: { progress: 0, claimed: false }
+      }
+    };
+  }
+  if (!dailyQuests.quests) dailyQuests.quests = {};
+  if (!dailyQuests.quests.quest_checkin) dailyQuests.quests.quest_checkin = { progress: 1, claimed: false };
+  dailyQuests.quests.quest_checkin.progress = 1;
+
+  if (!dailyQuests.quests.quest_serve_5) dailyQuests.quests.quest_serve_5 = { progress: 0, claimed: false };
+  dailyQuests.quests.quest_serve_5.progress = Math.min(5, (dailyQuests.quests.quest_serve_5.progress || 0) + 1);
+
+  if (!dailyQuests.quests.quest_variety_2) dailyQuests.quests.quest_variety_2 = { progress: 0, recipes: [], claimed: false };
+  if (!Array.isArray(dailyQuests.quests.quest_variety_2.recipes)) dailyQuests.quests.quest_variety_2.recipes = [];
+  if (order.recipe_id && !dailyQuests.quests.quest_variety_2.recipes.includes(order.recipe_id)) {
+    dailyQuests.quests.quest_variety_2.recipes.push(order.recipe_id);
+  }
+  dailyQuests.quests.quest_variety_2.progress = Math.min(2, dailyQuests.quests.quest_variety_2.recipes.length);
+
+  // Update store money, teacoin & hash
   const newMoney = save.money + payout;
   const newRep = daily.is_overloaded ? save.reputation : Math.min(5.0, Number((save.reputation + repGain).toFixed(2)));
   
@@ -299,15 +335,16 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     day_in_game: save.day_in_game,
     money: newMoney,
     debt_remaining: save.debt_remaining,
-    reputation: newRep
+    reputation: newRep,
+    teacoin: save.teacoin || 0
   };
   const newHash = generateSaveHash(updatedSave);
 
   await db.prepare(`
     UPDATE game_saves 
-    SET money = ?, reputation = ?, inventory = ?, active_buffs = ?, save_hash = ?, updated_at = ?
+    SET money = ?, reputation = ?, inventory = ?, active_buffs = ?, daily_quests = ?, save_hash = ?, updated_at = ?
     WHERE store_id = ?
-  `).run(newMoney, newRep, JSON.stringify(currentInv), JSON.stringify(activeBuffs), newHash, new Date().toISOString(), storeId);
+  `).run(newMoney, newRep, JSON.stringify(currentInv), JSON.stringify(activeBuffs), JSON.stringify(dailyQuests), newHash, new Date().toISOString(), storeId);
 
   return {
     success: true,

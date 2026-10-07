@@ -13,63 +13,85 @@
 <div id="game-container">
   <!-- HUD TOP -->
   <header class="hud-top">
-    <div class="hud-row-1">
-      <div class="store-title" id="store-name">
-        <span class="header-icon">🧋</span>
-        <span class="store-name-text">Tiệm Trà Sữa HeeHee</span>
+    <div class="hud-main-bar">
+      <!-- Left: Store identity & Chapter -->
+      <div class="hud-brand-group">
+        <div class="store-title" id="store-name">
+          <span class="header-icon">🧋</span>
+          <span class="store-name-text">Tiệm Trà Sữa HeeHee</span>
+        </div>
+        <span class="hud-chapter-pill">Ch.<b id="stat-chapter">1</b>·N.<b id="stat-day">1</b></span>
       </div>
-      <div style="display: flex; gap: 6px; align-items: center;">
-        <button id="btn-story-header" style="background: rgba(244, 196, 48, 0.15); border: 1px solid var(--gold); color: var(--gold); border-radius: 4px; padding: 2px 7px; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 3px;" title="Xem cốt truyện & hướng dẫn">📖 Cốt Truyện</button>
-        <span id="user-badge" style="font-size: 0.95rem; color: #f1fa8c;">👤 Khách</span>
-        <button id="btn-logout" style="background: none; border: 1px solid #ff5555; color: #ff5555; border-radius: 4px; padding: 2px 7px; font-size: 0.85rem; cursor: pointer;" title="Đăng xuất">🚪 Thoát</button>
-        <div class="store-code-badge" id="store-code" title="Mã Quán - Nhấn để sao chép mã">HYHY-0000</div>
+
+      <!-- Right: Key Numbers & Menu Button -->
+      <div class="hud-stats-group">
+        <div class="hud-stat-pill pill-money" title="Tiền mặt hiện tại">
+          <span class="stat-val-money" id="stat-money">200.000đ</span>
+        </div>
+        <div class="hud-stat-pill pill-teacoin" id="hud-teacoin-pill" title="TeaCoin - Tiền tệ đặc biệt mua skin & vật phẩm (Nhấn để xem nhiệm vụ)" style="border-color: rgba(0, 206, 201, 0.45); cursor: pointer;">
+          <span style="color: #00cec9; font-weight: bold;">🍵 <span id="stat-teacoin">0</span></span>
+        </div>
+        <button id="btn-daily-quests-header" class="hud-stat-pill pill-quest" style="background: rgba(0, 206, 201, 0.15); border: 1.5px solid #00cec9; color: #00cec9; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; position: relative;" title="Nhiệm Vụ Hằng Ngày & TeaCoin">
+          <span>📋 Nhiệm Vụ</span>
+          <span class="nav-menu-badge" id="hud-quests-badge" style="display: none; top: -3px; right: -3px;"></span>
+        </button>
+        <div class="hud-stat-pill pill-rep" title="Đánh giá danh tiếng quán">
+          <span class="stat-val-rep" id="stat-rep">5.0⭐</span>
+        </div>
+        <!-- Menu toggle button in header -->
+        <button id="btn-menu-header" class="btn-hud-menu" title="Mở Bảng Điều Khiển & Cài Đặt Quán">
+          <span class="hud-menu-icon">☰</span>
+          <span class="hud-menu-text">Menu</span>
+          <span class="hud-menu-badge" id="hud-menu-badge" style="display: none;"></span>
+        </button>
       </div>
-    </div>
-    <div class="hud-row-2">
-      <div class="stat-item">Chương <b id="stat-chapter">1</b> · Ngày <b id="stat-day">1</b></div>
-      <div class="stat-item"><span class="stat-val-rep" id="stat-rep">5.0⭐</span></div>
-      <div class="stat-item">Nợ: <span class="stat-val-debt" id="stat-debt">3.000.000đ</span></div>
-      <div class="stat-item">Tiền: <span class="stat-val-money" id="stat-money">200.000đ</span></div>
     </div>
 
-    <!-- TODAY EARNINGS & TIME OF DAY HUD -->
-    <div class="daily-cap-box" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; flex-wrap: wrap; gap: 4px;">
-      <div style="font-size: 0.95rem; color: var(--milk-cream); display: flex; align-items: center; gap: 4px;">
-        <span>💰 Doanh thu:</span>
+    <!-- Secondary HUD Line: Compact revenue & Time/Patrol status -->
+    <div class="hud-sub-bar">
+      <div class="hud-sub-left">
+        <span class="hud-sub-label">💰 Doanh thu:</span>
         <b id="cap-earned" style="color: #50fa7b;">0đ</b>
+        <span id="hud-debt-wrap" class="hud-debt-wrap" style="color: #ff5555; margin-left: 6px; font-size: 0.88rem;">
+          (Nợ: <span class="stat-val-debt" id="stat-debt">3.000.000đ</span>)
+        </span>
       </div>
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <!-- Nút linh hoạt chuyển bối cảnh (Bách Khoa ↔ Phố Nhỏ Quê) -->
-        <button id="btn-toggle-scene" style="background: rgba(0, 206, 201, 0.15); border: 1px solid #00cec9; color: #00cec9; border-radius: 4px; padding: 2px 7px; font-size: 0.85rem; cursor: pointer; user-select: none; font-weight: bold;" title="Chuyển đổi bối cảnh: Cổng Bách Khoa ↔ Phố Nhỏ Quê">🏛️ Bách Khoa</button>
+      <div class="hud-sub-right">
         <!-- Đồng hồ & Trạng thái tuần tra đêm (7h00 - 22h30) -->
-        <div id="game-clock-badge" class="time-badge" style="cursor: pointer; background: rgba(80, 250, 123, 0.15); border: 1px solid #50fa7b; padding: 2px 7px; border-radius: 4px; font-size: 0.85rem; color: #50fa7b; user-select: none;" title="Giờ bán: 7h00 - 22h30. Quá 22h30 công an đi tuần (xác suất 75% + 10%/giờ). Sau 1h sáng bùa vô hiệu!">
+        <div id="game-clock-badge" class="time-badge" style="cursor: pointer;" title="Giờ bán: 7h00 - 22h30. Quá 22h30 công an đi tuần (xác suất 75% + 10%/giờ). Sau 1h sáng bùa vô hiệu!">
           🕒 <span id="game-clock-text">08:00</span> • <span id="game-clock-status">🟢 Giờ bán</span>
         </div>
-        <div id="time-of-day-badge" class="time-badge" style="cursor: pointer; background: rgba(244, 196, 48, 0.15); border: 1px solid var(--gold); padding: 2px 7px; border-radius: 4px; font-size: 0.88rem; color: var(--gold); user-select: none;" title="Nhấn để đổi khung cảnh (Sáng / Trưa / Chiều / Tối)">
+        <div id="time-of-day-badge" class="time-badge" style="cursor: pointer;" title="Nhấn để đổi khung cảnh (Sáng / Trưa / Chiều / Tối)">
           🌅 Sáng
         </div>
       </div>
     </div>
 
-      <!-- ACTIVE BUFFS & VIRAL STATUS BAR -->
-      <div id="active-buffs-bar" style="display: none; margin-top: 6px; gap: 4px; flex-wrap: wrap; font-size: 0.85rem;">
-        <span id="buff-tiktoker" style="display: none; background: rgba(255, 121, 198, 0.2); border: 1px solid #ff79c6; color: #ff79c6; border-radius: 4px; padding: 2px 6px;">🔥 TikTok Triệu View (x2.5 Khách)</span>
-        <span id="buff-tiktoker-flop" style="display: none; background: rgba(255, 85, 85, 0.2); border: 1px solid #ff5555; color: #ff5555; border-radius: 4px; padding: 2px 6px;">📉 Bị Bóc Phốt (Khách Vắng)</span>
-        <span id="buff-patience" style="display: none; background: rgba(80, 250, 123, 0.2); border: 1px solid #50fa7b; color: #50fa7b; border-radius: 4px; padding: 2px 6px;">⏱️ Khách Kiên Nhẫn +40%</span>
-        <span id="buff-tip" style="display: none; background: rgba(241, 250, 140, 0.2); border: 1px solid #f1fa8c; color: #f1fa8c; border-radius: 4px; padding: 2px 6px;">💰 Tip Thưởng +10%</span>
-        <span id="buff-stealth" style="display: none; background: rgba(139, 233, 253, 0.2); border: 1px solid #8be9fd; color: #8be9fd; border-radius: 4px; padding: 2px 6px;">🔮 Ẩn Thân Kích Hoạt</span>
-      </div>
+    <!-- ACTIVE BUFFS & VIRAL STATUS BAR -->
+    <div id="active-buffs-bar" style="display: none; margin-top: 4px; gap: 4px; flex-wrap: wrap; font-size: 0.82rem;">
+      <span id="buff-tiktoker" style="display: none; background: rgba(255, 121, 198, 0.2); border: 1px solid #ff79c6; color: #ff79c6; border-radius: 4px; padding: 2px 6px;">🔥 TikTok Triệu View (x2.5 Khách)</span>
+      <span id="buff-tiktoker-flop" style="display: none; background: rgba(255, 85, 85, 0.2); border: 1px solid #ff5555; color: #ff5555; border-radius: 4px; padding: 2px 6px;">📉 Bị Bóc Phốt (Khách Vắng)</span>
+      <span id="buff-patience" style="display: none; background: rgba(80, 250, 123, 0.2); border: 1px solid #50fa7b; color: #50fa7b; border-radius: 4px; padding: 2px 6px;">⏱️ Khách Kiên Nhẫn +40%</span>
+      <span id="buff-tip" style="display: none; background: rgba(241, 250, 140, 0.2); border: 1px solid #f1fa8c; color: #f1fa8c; border-radius: 4px; padding: 2px 6px;">💰 Tip Thưởng +10%</span>
+      <span id="buff-stealth" style="display: none; background: rgba(139, 233, 253, 0.2); border: 1px solid #8be9fd; color: #8be9fd; border-radius: 4px; padding: 2px 6px;">🔮 Ẩn Thân Kích Hoạt</span>
+    </div>
 
-      <!-- LOW REPUTATION (< 3.0⭐) ALERT & RESCUE BANNER -->
-      <div id="low-rep-banner" style="display: none; margin-top: 6px; background: rgba(231, 76, 60, 0.25); border: 1px solid #e74c3c; border-radius: 6px; padding: 6px 10px; font-size: 0.88rem; color: #ff7675; align-items: center; justify-content: space-between;">
-        <span>⚠️ <b>Đánh giá tiệm < 3⭐:</b> Khách e ngại, lượng khách giảm 50%!</span>
-        <button id="btn-invite-tiktoker-banner" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); border: none; border-radius: 4px; padding: 3px 8px; color: #fff; font-weight: bold; cursor: pointer; font-size: 0.85rem; margin-left: 6px; white-space: nowrap;">📣 Mời TikToker (25k)</button>
-      </div>
+    <!-- LOW REPUTATION (< 3.0⭐) ALERT & RESCUE BANNER -->
+    <div id="low-rep-banner" style="display: none; margin-top: 4px; background: rgba(231, 76, 60, 0.25); border: 1px solid #e74c3c; border-radius: 6px; padding: 4px 8px; font-size: 0.84rem; color: #ff7675; align-items: center; justify-content: space-between;">
+      <span>⚠️ <b>Đánh giá tiệm < 3⭐:</b> Khách e ngại, lượng khách giảm 50%!</span>
+      <button id="btn-invite-tiktoker-banner" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); border: none; border-radius: 4px; padding: 2px 6px; color: #fff; font-weight: bold; cursor: pointer; font-size: 0.82rem; margin-left: 6px; white-space: nowrap;">📣 Mời TikToker (25k)</button>
+    </div>
   </header>
 
   <!-- CANVAS SCENE -->
+  <!-- CANVAS SCENE (Mở rộng dài chứa tối đa 4 quầy hàng liên minh) -->
   <div id="scene-wrapper">
-    <canvas id="scene" width="360" height="200"></canvas>
+    <canvas id="scene" width="1440" height="400"></canvas>
+    <!-- SCENE QUICK NAV (Chuyển nhanh góc nhìn quầy chính & quầy đối tác) -->
+    <div id="scene-nav-controls" style="position: absolute; top: 6px; right: 8px; z-index: 20; display: flex; gap: 4px; pointer-events: auto;">
+      <button id="btn-scene-main" title="Về quầy chính của tôi" style="background: rgba(30, 15, 26, 0.85); border: 1px solid #f1c40f; color: #f1c40f; font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; cursor: pointer; font-weight: bold; backdrop-filter: blur(2px);">📍 Quầy của tôi</button>
+      <button id="btn-scene-collabs" title="Xem các quầy Collab của bạn bè" style="background: rgba(30, 15, 26, 0.85); border: 1px solid #8be9fd; color: #8be9fd; font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; cursor: pointer; font-weight: bold; backdrop-filter: blur(2px);">🤝 Dãy Collab ▶</button>
+    </div>
     <!-- POLICE PATROL WARNING (Góc trái giao diện bán hàng) -->
     <div id="police-patrol-alert" style="display: none; position: absolute; bottom: 8px; left: 8px; z-index: 25; background: rgba(192, 57, 43, 0.95); border: 2px solid #ff7675; border-radius: 6px; padding: 4px 8px; color: #fff; font-size: 0.82rem; font-weight: bold; box-shadow: 0 0 10px rgba(231, 76, 60, 0.7); pointer-events: none;">
       🚨 <span id="police-alert-title">CÔNG AN ĐI TUẦN!</span> (<span id="police-alert-timer">15</span>s) • <span id="police-alert-prob">75%</span>
@@ -212,88 +234,376 @@
     </div>
   </main>
 
-  <!-- NAVIGATION BOTTOM BAR -->
+  <!-- NAVIGATION BOTTOM BAR (Tối giản 4 mục trọng tâm) -->
   <footer class="bottom-nav">
-    <button class="nav-btn" id="nav-story" style="color: var(--gold); border-color: var(--gold); font-weight: bold;">📖 Truyện</button>
-    <button class="nav-btn" id="nav-market" style="color: #ff79c6; border-color: #ff79c6; font-weight: bold;">🏪 Chợ Sỉ</button>
-    <button class="nav-btn" id="nav-end-shift" style="color: #50fa7b; border-color: #50fa7b; font-weight: bold;">🌅 Kết Ca</button>
-    <button class="nav-btn" id="nav-upgrades">🛒 Nâng Cấp</button>
-    <button class="nav-btn" id="nav-debt">💰 Trả Nợ</button>
-    <button class="nav-btn" id="nav-collab">🤝 Collab</button>
-    <button class="nav-btn" id="nav-invite-tiktoker" style="color: #ff79c6;">📣 TikTok</button>
-    <button class="nav-btn" id="nav-sound">🎵 Nhạc</button>
-    <!-- DEV MODE CONTROLS (Ẩn mặc định cho người chơi thường) -->
-    <button class="nav-btn dev-only" id="nav-advance-day" style="border-color: #bd93f9; color: #bd93f9;">🌅 Sang Ngày</button>
-    <button class="nav-btn btn-danger dev-only" id="nav-test-hack">🛡️ Test Cheat</button>
+    <button class="nav-btn nav-btn-market" id="nav-market" title="Nhập cốt trà, topping và ly cốc">
+      <span class="nb-icon">🏪</span>
+      <span class="nb-text">Chợ Sỉ</span>
+    </button>
+    <button class="nav-btn nav-btn-upgrades" id="nav-upgrades" title="Nâng cấp máy móc, thú cưng & công thức món">
+      <span class="nb-icon">🛒</span>
+      <span class="nb-text">Nâng Cấp</span>
+    </button>
+    <button class="nav-btn nav-btn-shift" id="nav-end-shift" title="Tổng kết doanh thu ngày & kết thúc ca làm">
+      <span class="nb-icon">🌅</span>
+      <span class="nb-text">Kết Ca</span>
+    </button>
+    <button class="nav-btn nav-btn-menu" id="nav-open-menu" title="Mở menu quản lý toàn diện tiệm trà sữa">
+      <span class="nb-icon">☰</span>
+      <span class="nb-text">Menu</span>
+      <span class="nav-menu-badge" id="nav-menu-badge" style="display: none;"></span>
+    </button>
   </footer>
 
-  <!-- MODAL: COLLAB BẠN BÈ -->
-  <div class="modal-overlay" id="modal-collab">
-    <div class="modal-content" style="max-width: 440px; max-height: 90vh; overflow-y: auto;">
+  <!-- MODAL: BẢNG ĐIỀU KHIỂN & MENU QUÁN (GAME MANAGEMENT MENU) -->
+  <div class="modal-overlay" id="modal-game-menu">
+    <div class="modal-content menu-modal-content">
       <div class="modal-header">
-        <div class="modal-title" style="color: #ff79c6;">🤝 Liên Minh Trà Sữa Bạn Hữu</div>
+        <div class="modal-title">📋 BẢNG ĐIỀU KHIỂN QUÁN</div>
+        <button class="btn-close" id="close-game-menu">&times;</button>
+      </div>
+
+      <!-- Card hồ sơ & tài chính quán -->
+      <div class="menu-store-card">
+        <div class="menu-card-top-row">
+          <div class="menu-brand-identity">
+            <span class="menu-brand-avatar">🧋</span>
+            <div>
+              <div class="menu-brand-title" id="menu-store-name-text">Tiệm Trà Sữa HeeHee</div>
+              <div class="menu-brand-user"><span id="user-badge">👤 Khách</span> • <span id="menu-stat-prog">Chương 1 · Ngày 1</span></div>
+            </div>
+          </div>
+          <button id="btn-logout" class="btn-menu-logout" title="Đăng xuất khỏi tài khoản">🚪 Thoát</button>
+        </div>
+
+        <div class="menu-code-row">
+          <span class="code-label">Mã Quán Của Bạn:</span>
+          <div class="store-code-badge" id="store-code" title="Nhấn để sao chép mã quán">HYHY-0000</div>
+          <button id="btn-copy-menu-code" class="btn-mini-copy">📋 Sao Chép</button>
+        </div>
+
+        <div class="menu-quick-stats-grid">
+          <div class="m-stat-box">
+            <span class="m-stat-label">Tiền mặt:</span>
+            <b class="m-stat-val text-green" id="menu-stat-money">200.000đ</b>
+          </div>
+          <div class="m-stat-box">
+            <span class="m-stat-label">TeaCoin:</span>
+            <b class="m-stat-val" id="menu-stat-teacoin" style="color: #00cec9;">🍵 0</b>
+          </div>
+          <div class="m-stat-box">
+            <span class="m-stat-label">Nợ Anh Bảnh:</span>
+            <b class="m-stat-val text-red" id="menu-stat-debt">3.000.000đ</b>
+          </div>
+          <div class="m-stat-box">
+            <span class="m-stat-label">Danh tiếng:</span>
+            <b class="m-stat-val text-gold" id="menu-stat-rep">5.0⭐</b>
+          </div>
+          <div class="m-stat-box">
+            <span class="m-stat-label">Doanh thu ca:</span>
+            <b class="m-stat-val text-cyan" id="menu-stat-earned">0đ</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- NHÓM 1: KINH DOANH & VẬN HÀNH -->
+      <div class="menu-group">
+        <div class="menu-group-title">💼 KINH DOANH & VẬN HÀNH</div>
+        <div class="menu-action-grid">
+          <button class="menu-item-btn" id="menu-btn-market">
+            <span class="m-icon">🏪</span>
+            <div class="m-info">
+              <span class="m-title">Chợ Sỉ Nguyên Liệu</span>
+              <span class="m-desc">Nhập cốt trà, topping & vật tư</span>
+            </div>
+          </button>
+          <button class="menu-item-btn" id="menu-btn-upgrades">
+            <span class="m-icon">🛒</span>
+            <div class="m-info">
+              <span class="m-title">Nâng Cấp & Công Thức</span>
+              <span class="m-desc">Mua máy dập, thú cưng & món mới</span>
+            </div>
+          </button>
+          <button class="menu-item-btn" id="nav-debt">
+            <span class="m-icon">💰</span>
+            <div class="m-info">
+              <span class="m-title" id="menu-debt-title">Sổ Nợ Anh Bảnh</span>
+              <span class="m-desc">Thanh toán nợ xe & mở Chương 2</span>
+            </div>
+          </button>
+          <button class="menu-item-btn highlight-shift" id="menu-btn-end-shift">
+            <span class="m-icon">🌅</span>
+            <div class="m-info">
+              <span class="m-title">Kết Thúc Ca Bán</span>
+              <span class="m-desc">Chốt sổ doanh thu ngày & nghỉ ngơi</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- NHÓM 2: TIẾP THỊ & BẠN BÈ -->
+      <div class="menu-group">
+        <div class="menu-group-title">📣 NHIỆM VỤ, TIẾP THỊ & BẠN BÈ</div>
+        <div class="menu-action-grid">
+          <button class="menu-item-btn" id="nav-daily-quests" style="border-color: #00cec9; position: relative;">
+            <span class="m-icon">📋</span>
+            <div class="m-info">
+              <span class="m-title" style="color: #00cec9;">Nhiệm Vụ Hằng Ngày</span>
+              <span class="m-desc">Tích lũy TeaCoin & nhận thưởng lớn</span>
+            </div>
+            <span class="nav-menu-badge" id="daily-quests-ready-badge" style="display: none; top: 6px; right: 6px;"></span>
+          </button>
+          <button class="menu-item-btn" id="nav-invite-tiktoker">
+            <span class="m-icon">📱</span>
+            <div class="m-info">
+              <span class="m-title">Mời Tú (TikToker)</span>
+              <span class="m-desc">Review viral x3 doanh thu quán</span>
+            </div>
+          </button>
+          <button class="menu-item-btn" id="nav-collab">
+            <span class="m-icon">👥</span>
+            <div class="m-info">
+              <span class="m-title">Bạn Bè & Collab</span>
+              <span class="m-desc">Kết bạn, tặng quà & liên minh (+30%)</span>
+            </div>
+          </button>
+          <button class="menu-item-btn" id="nav-story">
+            <span class="m-icon">📖</span>
+            <div class="m-info">
+              <span class="m-title">Cốt Truyện & Hướng Dẫn</span>
+              <span class="m-desc">Sổ tay hướng dẫn & câu chuyện</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- NHÓM 3: CÀI ĐẶT & BỐI CẢNH -->
+      <div class="menu-group">
+        <div class="menu-group-title">⚙️ CÀI ĐẶT & BỐI CẢNH</div>
+        <div class="menu-action-grid">
+          <button class="menu-item-btn" id="btn-toggle-scene">
+            <span class="m-icon">🏛️</span>
+            <div class="m-info">
+              <span class="m-title" id="menu-scene-title">Đổi Bối Cảnh</span>
+              <span class="m-desc">Cổng Parabol BK ↔ Phố Nhỏ Quê</span>
+            </div>
+          </button>
+          <button class="menu-item-btn" id="nav-sound">
+            <span class="m-icon">🎵</span>
+            <div class="m-info">
+              <span class="m-title">Âm Nhạc BGM</span>
+              <span class="m-desc">Bật/tắt nhạc nền & bài hát</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- NHÓM 4: CÔNG CỤ NHÀ PHÁT TRIỂN (Chỉ hiện khi dev-mode) -->
+      <div class="menu-group dev-only">
+        <div class="menu-group-title" style="color: #bd93f9;">🛠️ NHÀ PHÁT TRIỂN</div>
+        <div class="menu-action-grid">
+          <button class="menu-item-btn" id="nav-advance-day" style="border-color: #bd93f9; color: #bd93f9;">
+            <span class="m-icon">🌅</span>
+            <div class="m-info">
+              <span class="m-title">Sang Ngày Mới</span>
+              <span class="m-desc">Tua nhanh ca bán tiếp theo</span>
+            </div>
+          </button>
+          <button class="menu-item-btn btn-danger" id="nav-test-hack">
+            <span class="m-icon">🛡️</span>
+            <div class="m-info">
+              <span class="m-title">Test Anti-Cheat</span>
+              <span class="m-desc">Thử nghiệm tịch thu xe đẩy</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NHIỆM VỤ HẰNG NGÀY & TEACOIN -->
+  <div class="modal-overlay" id="modal-daily-quests">
+    <div class="modal-content" style="max-width: 460px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #00cec9; display: flex; align-items: center; gap: 6px;">
+          <span>📋 NHIỆM VỤ HẰNG NGÀY</span>
+        </div>
+        <button class="btn-close" id="close-daily-quests">&times;</button>
+      </div>
+
+      <!-- TeaCoin Banner -->
+      <div style="background: linear-gradient(135deg, rgba(0, 206, 201, 0.18), rgba(9, 132, 227, 0.22)); border: 1.5px solid #00cec9; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 2rem;">🍵</span>
+          <div>
+            <div style="font-size: 0.85rem; color: #81ecec; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Số dư TeaCoin của bạn</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #00cec9;" id="modal-teacoin-balance">0 TeaCoin</div>
+          </div>
+        </div>
+        <div style="text-align: right; font-size: 0.78rem; color: var(--milk-cream); max-width: 140px; line-height: 1.3;">
+          ✨ Dùng mua trang phục đặc biệt & skin hiếm!
+        </div>
+      </div>
+
+      <!-- Chest Bonus All-Completed Section -->
+      <div id="quest-all-bonus-box" style="background: #241424; border: 1.5px dashed var(--gold); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.8rem;" id="chest-icon">🎁</span>
+          <div>
+            <div style="font-weight: bold; color: var(--gold); font-size: 0.95rem;">Rương Chuyên Cần Trong Ngày</div>
+            <div style="font-size: 0.82rem; color: var(--text-muted);" id="chest-subtext">Hoàn thành đủ 5 nhiệm vụ để mở khóa</div>
+          </div>
+        </div>
+        <button id="btn-claim-all-bonus" class="btn-action-wide" style="width: auto; padding: 6px 14px; font-size: 0.88rem; background: var(--gold); color: #111; font-weight: bold; margin: 0; white-space: nowrap;" disabled>
+          +25 🍵
+        </button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 0.88rem; color: var(--text-muted); font-weight: bold;">DANH SÁCH NHIỆM VỤ</span>
+        <span id="quests-progress-counter" style="font-size: 0.84rem; color: #00cec9; font-weight: bold;">0/5 Hoàn thành</span>
+      </div>
+
+      <!-- List of Quests -->
+      <div id="daily-quests-list" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BẠN BÈ & COLLAB LIÊN MINH -->
+  <div class="modal-overlay" id="modal-collab">
+    <div class="modal-content" style="max-width: 450px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: var(--gold);">👥 BẠN BÈ & LIÊN MINH QUÁN</div>
         <button class="btn-close" id="close-collab">&times;</button>
       </div>
 
-      <!-- STATUS BANNER -->
-      <div style="background: rgba(255, 121, 198, 0.12); border: 1px solid #ff79c6; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center;">
-        <div style="font-size: 0.95rem; color: #ff79c6; font-weight: bold; margin-bottom: 2px;">
-          🤝 ĐỐI TÁC: <span id="collab-count-disp" style="color: #fff;">0/3 Quán</span>
+      <!-- TABS: BẠN BÈ & LIÊN MINH COLLAB -->
+      <div style="display: flex; gap: 4px; border-bottom: 2px solid var(--panel-border); margin-bottom: 10px;">
+        <button id="tab-btn-friends" class="story-tab-btn active" style="flex: 1; padding: 6px; font-weight: bold;">
+          👥 Bạn Bè (<span id="friends-count-num">0</span>)
+        </button>
+        <button id="tab-btn-collabs" class="story-tab-btn" style="flex: 1; padding: 6px;">
+          📈 Liên Minh Collab (<span id="collab-tab-count">0/3</span>)
+        </button>
+      </div>
+
+      <!-- TAB 1: BẠN BÈ (FRIEND SYSTEM) -->
+      <div id="tab-content-friends">
+        <!-- MY CODE & COPY -->
+        <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Mã Quán của bạn (Chia sẻ để kết bạn):</div>
+            <div style="font-size: 1.15rem; font-weight: bold; color: #7fffd4; letter-spacing: 1px;" id="friends-my-code-disp">HYHY-0000</div>
+          </div>
+          <button class="btn-mini-copy" id="btn-copy-friend-code" style="margin: 0; padding: 5px 12px; font-size: 0.85rem;">📋 Sao Chép</button>
         </div>
-        <div style="font-size: 1.05rem; font-weight: bold; color: #50fa7b;" id="collab-boost-disp">
-          📈 Đang tăng: +0% Doanh Thu
+
+        <!-- ADD FRIEND INPUT -->
+        <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+          <label style="color: var(--gold); font-size: 0.9rem;"><b>Thêm Bạn Bè Mới (Mã Quán hoặc Tên Tiệm):</b></label>
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
+            <input type="text" id="friend-add-input" class="input-box" placeholder="Ví dụ: HYHY-A1B2C3 hoặc Tên Quán" style="text-transform: uppercase;">
+            <button class="btn-action-wide" id="btn-submit-add-friend" style="margin: 0; white-space: nowrap; background: linear-gradient(135deg, #50fa7b, #2ecc71); color: #000; font-weight: bold; font-size: 0.95rem; padding: 6px 12px;">➕ Kết Bạn</button>
+          </div>
         </div>
-        <div style="font-size: 0.8rem; color: #f5ebe6; margin-top: 4px;">
-          💡 Mỗi đối tác Collab thành công tăng <b>+10% doanh thu</b> cho mọi ly trà sữa (Tối đa 3 quán = <b>+30%</b>). Cần được đối phương <b>chấp nhận</b> mới có hiệu lực!
+
+        <!-- INCOMING FRIEND REQUESTS -->
+        <div style="margin-bottom: 12px;" id="friends-incoming-section">
+          <div style="font-weight: bold; color: #50fa7b; font-size: 0.92rem; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span>📬 Lời Mời Kết Bạn Chờ Duyệt:</span>
+            <span id="friends-incoming-badge" style="background: #50fa7b; color: #000; border-radius: 10px; padding: 1px 7px; font-size: 0.78rem; display: none;">0</span>
+          </div>
+          <div id="friends-incoming-list" style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời kết bạn nào.</div>
+          </div>
+        </div>
+
+        <!-- ACTIVE FRIENDS LIST -->
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; color: var(--gold); font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span>👥 Danh Sách Bạn Bè Thân Thiết:</span>
+            <span id="friends-total-badge" style="font-size: 0.82rem; color: var(--text-muted);">0 bạn bè</span>
+          </div>
+          <div id="friends-active-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Chưa có bạn bè nào. Hãy nhập mã quán bạn bè để kết bạn nhé!</div>
+          </div>
+        </div>
+
+        <!-- OUTGOING FRIEND REQUESTS -->
+        <div>
+          <div style="font-weight: bold; color: #ffb86c; font-size: 0.9rem; margin-bottom: 6px;">
+            📤 Lời Mời Kết Bạn Đã Gửi Đi:
+          </div>
+          <div id="friends-outgoing-list" style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời nào đang chờ.</div>
+          </div>
         </div>
       </div>
 
-      <!-- MY CODE -->
-      <div style="margin-bottom: 10px;">
-        <label style="color: var(--gold); font-size: 0.9rem;"><b>Mã Quán Của Bạn (Gửi cho bạn bè):</b></label>
-        <div style="display: flex; gap: 6px; margin-top: 4px;">
-          <input type="text" id="my-collab-code" class="input-box" readonly style="font-weight: bold; letter-spacing: 1px; text-align: center;">
-          <button class="btn-action-wide" id="btn-copy-code" style="margin: 0; white-space: nowrap; padding: 6px 14px;">📋 Sao chép</button>
+      <!-- TAB 2: LIÊN MINH COLLAB (DOANH THU BOOST) -->
+      <div id="tab-content-collabs" style="display: none;">
+        <!-- STATUS BANNER -->
+        <div style="background: rgba(255, 121, 198, 0.12); border: 1px solid #ff79c6; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center;">
+          <div style="font-size: 0.95rem; color: #ff79c6; font-weight: bold; margin-bottom: 2px;">
+            🤝 ĐỐI TÁC: <span id="collab-count-disp" style="color: #fff;">0/3 Quán</span>
+          </div>
+          <div style="font-size: 1.05rem; font-weight: bold; color: #50fa7b;" id="collab-boost-disp">
+            📈 Đang tăng: +0% Doanh Thu
+          </div>
+          <div style="font-size: 0.8rem; color: #f5ebe6; margin-top: 4px;">
+            💡 Mỗi đối tác Collab thành công tăng <b>+10% doanh thu</b> cho mọi ly trà sữa (Tối đa 3 quán = <b>+30%</b>). Cần được đối phương <b>chấp nhận</b> mới có hiệu lực!
+          </div>
         </div>
-      </div>
 
-      <!-- SEND INVITATION -->
-      <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
-        <label style="color: var(--gold); font-size: 0.9rem;"><b>Gửi Lời Mời Collab Tới Bạn Bè:</b></label>
-        <div style="display: flex; gap: 6px; margin-top: 4px;">
-          <input type="text" id="friend-code-input" class="input-box" placeholder="Ví dụ: HYHY-A1B2C3" style="text-transform: uppercase;">
-          <button class="btn-action-wide" id="btn-submit-collab" style="margin: 0; white-space: nowrap; background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff;">📨 Gửi Lời Mời</button>
+        <!-- MY CODE -->
+        <div style="margin-bottom: 10px;">
+          <label style="color: var(--gold); font-size: 0.9rem;"><b>Mã Quán Của Bạn (Gửi cho bạn bè):</b></label>
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
+            <input type="text" id="my-collab-code" class="input-box" readonly style="font-weight: bold; letter-spacing: 1px; text-align: center;">
+            <button class="btn-action-wide" id="btn-copy-code" style="margin: 0; white-space: nowrap; padding: 6px 14px;">📋 Sao chép</button>
+          </div>
         </div>
-      </div>
 
-      <!-- INCOMING REQUESTS SECTION -->
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; color: #50fa7b; font-size: 0.92rem; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-          <span>📬 Lời Mời Nhận Được:</span>
-          <span id="incoming-count-badge" style="background: #50fa7b; color: #000; border-radius: 10px; padding: 1px 7px; font-size: 0.78rem; display: none;">0</span>
+        <!-- SEND INVITATION -->
+        <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+          <label style="color: var(--gold); font-size: 0.9rem;"><b>Gửi Lời Mời Collab Tới Bạn Bè:</b></label>
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
+            <input type="text" id="friend-code-input" class="input-box" placeholder="Ví dụ: HYHY-A1B2C3" style="text-transform: uppercase;">
+            <button class="btn-action-wide" id="btn-submit-collab" style="margin: 0; white-space: nowrap; background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff;">📨 Gửi Lời Mời</button>
+          </div>
         </div>
-        <div id="collab-incoming-list" style="display: flex; flex-direction: column; gap: 6px;">
-          <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời nào đang chờ.</div>
-        </div>
-      </div>
 
-      <!-- ACTIVE PARTNERS SECTION -->
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; color: #8be9fd; font-size: 0.92rem; margin-bottom: 6px;">
-          🏪 Danh Sách Đối Tác Đang Liên Minh (Tối đa 3):
+        <!-- INCOMING REQUESTS SECTION -->
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; color: #50fa7b; font-size: 0.92rem; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span>📬 Lời Mời Nhận Được:</span>
+            <span id="incoming-count-badge" style="background: #50fa7b; color: #000; border-radius: 10px; padding: 1px 7px; font-size: 0.78rem; display: none;">0</span>
+          </div>
+          <div id="collab-incoming-list" style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời nào đang chờ.</div>
+          </div>
         </div>
-        <div id="collab-active-list" style="display: flex; flex-direction: column; gap: 6px;">
-          <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Chưa có đối tác nào. Hãy gửi mã quán cho bạn bè!</div>
-        </div>
-      </div>
 
-      <!-- OUTGOING REQUESTS SECTION -->
-      <div>
-        <div style="font-weight: bold; color: #ffb86c; font-size: 0.92rem; margin-bottom: 6px;">
-          📤 Lời Mời Đã Gửi Đi (Đang Chờ Bạn Bè Chấp Nhận):
+        <!-- ACTIVE PARTNERS SECTION -->
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; color: #8be9fd; font-size: 0.92rem; margin-bottom: 6px;">
+            🏪 Danh Sách Đối Tác Đang Liên Minh (Tối đa 3):
+          </div>
+          <div id="collab-active-list" style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Chưa có đối tác nào. Hãy gửi mã quán cho bạn bè!</div>
+          </div>
         </div>
-        <div id="collab-outgoing-list" style="display: flex; flex-direction: column; gap: 6px;">
-          <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời nào đang chờ phản hồi.</div>
+
+        <!-- OUTGOING REQUESTS SECTION -->
+        <div>
+          <div style="font-weight: bold; color: #ffb86c; font-size: 0.92rem; margin-bottom: 6px;">
+            📤 Lời Mời Đã Gửi Đi (Đang Chờ Bạn Bè Chấp Nhận):
+          </div>
+          <div id="collab-outgoing-list" style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Không có lời mời nào đang chờ phản hồi.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -319,9 +629,8 @@
       <!-- CHAPTER 2 UNLOCK SECTION (Sau khi đã sạch nợ Anh Bảnh) -->
       <div id="chapter-2-unlock-section" style="display: none; margin-top: 10px; padding: 10px; background: rgba(39, 174, 96, 0.15); border: 2px solid #27ae60; border-radius: 6px; text-align: center;">
         <div style="color: #2ecc71; font-weight: bold; font-size: 1.05rem;">🎉 ĐÃ THANH TOÁN SẠCH NỢ ANH BẢNH!</div>
-        <div style="color: #dfe6e9; font-size: 0.9rem; margin: 5px 0;">Đủ điều kiện rời quê lên phố khởi nghiệp trước <b>Cổng Parabol Đại học Bách Khoa</b>!</div>
-        <div style="color: var(--gold); font-size: 0.85rem; margin-bottom: 8px;">💰 Chi phí thuê xe & cọc chỗ: <b>1.000.000đ</b> (Yêu cầu số dư > 1.000.000đ)</div>
-        <button id="btn-unlock-chapter-2" class="btn-action-wide" style="background: linear-gradient(135deg, #f1c40f, #e67e22); color: #111; font-weight: bold; font-size: 0.98rem; padding: 9px;">🚀 MỞ KHÓA CHƯƠNG 2: CỔNG PARABOL BÁCH KHOA (1.000.000đ)</button>
+        <div style="color: #dfe6e9; font-size: 0.9rem; margin: 5px 0;">Đã hoàn thành toàn bộ nghĩa vụ tài chính! Bạn đủ điều kiện rời quê lên phố khởi nghiệp trước <b>Cổng Parabol Đại học Bách Khoa</b>!</div>
+        <button id="btn-unlock-chapter-2" class="btn-action-wide" style="background: linear-gradient(135deg, #f1c40f, #e67e22); color: #111; font-weight: bold; font-size: 0.98rem; padding: 9px; margin-top: 4px;">🚀 MỞ KHÓA CHƯƠNG 2: CỔNG PARABOL BÁCH KHOA</button>
       </div>
     </div>
   </div>
@@ -335,9 +644,12 @@
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
         <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #00cec9;">
-          <b style="color: #00cec9;">🔮 Bùa Ẩn Thân Quầy Hàng</b>
-          <div style="color: var(--text-muted); font-size: 0.95rem;">Treo bùa cạnh quầy hàng. Nhấp đúp (2 lần liên tiếp) để tàng hình cả quán tối đa 1 phút, né tránh cảnh sát kiểm tra. Giờ mở cửa: 7h00 - 22h30. Sau 22h30 công an tuần tra (xác suất 75% + 10%/giờ). ⚠️ Bùa VÔ HIỆU sau 1h sáng, hãy đóng cửa (kết ca) trước 22h30!</div>
-          <button class="btn-action-wide" data-buy-upgrade="bua_an_than" style="background: #00cec9; color: #111; font-weight: bold;">Mua (200.000đ)</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <b style="color: #00cec9;">🔮 Bùa Ẩn Thân Quầy Hàng</b>
+            <span id="talisman-capacity-badge" style="background: rgba(0, 206, 201, 0.15); color: #00cec9; border: 1px solid #00cec9; border-radius: 4px; padding: 2px 7px; font-size: 0.82rem; font-weight: bold;">Túi: 0/3 tấm</span>
+          </div>
+          <div style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 6px;">Vật phẩm tiêu hao (sức chứa tối đa 3 tấm). Treo cạnh quầy, nhấp đúp để tàng hình cả quán tối đa 60s, né tránh cảnh sát kiểm tra trật tự đô thị. <b>Chỉ có thể mua thêm khi số lượng &lt; 3 tấm!</b> ⚠️ Bùa vô hiệu sau 1h sáng.</div>
+          <button class="btn-action-wide" data-buy-upgrade="bua_an_than" id="btn-buy-talisman" style="background: #00cec9; color: #111; font-weight: bold;">Mua Bùa (200.000đ/tấm)</button>
         </div>
         <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #4d3345;">
           <b>⚙️ Máy Dập Nắp Tự Động</b>
@@ -679,7 +991,8 @@
       <!-- TABS CHO MODAL CỐT TRUYỆN -->
       <div style="display: flex; gap: 4px; border-bottom: 2px solid var(--panel-border); margin-bottom: 8px;">
         <button id="story-tab-dialogue" class="story-tab-btn active">🎭 Cốt Truyện</button>
-        <button id="story-tab-quests" class="story-tab-btn">🎯 Cột Mốc Nhiệm Vụ</button>
+        <button id="story-tab-daily-quests" class="story-tab-btn" style="color: #00cec9;">📋 Nhiệm Vụ Ngày</button>
+        <button id="story-tab-quests" class="story-tab-btn">🎯 Cột Mốc Chương</button>
         <button id="story-tab-guide" class="story-tab-btn">📜 Sổ Tay Pha Chế</button>
       </div>
 
@@ -817,9 +1130,9 @@
 
 <script src="js/audio.js"></script>
 <script src="js/characters.js"></script>
-<script src="js/canvas.js"></script>
+<script type="module" src="js/canvas.js"></script>
 <script src="js/workstation.js"></script>
 <script src="js/api.js"></script>
-<script src="js/app.js"></script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

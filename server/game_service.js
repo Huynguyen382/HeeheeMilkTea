@@ -768,8 +768,57 @@ async function buyUpgrade(storeId, upgradeId) {
   if (!item) return { success: false, message: 'Vật phẩm không tồn tại' };
 
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
+
   const upgrades = JSON.parse(save.upgrades || '{}');
   let recipes = JSON.parse(save.recipes || '["tra_sua_truyen_thong"]');
+
+  // XỬ LÝ RIÊNG CHO BÙA ẨN THÂN (Vật phẩm tiêu hao, sức chứa tối đa 3 tấm)
+  if (upgradeId === 'bua_an_than') {
+    let talismanCount = typeof upgrades.bua_an_than === 'number'
+      ? upgrades.bua_an_than
+      : (upgrades.bua_an_than ? 1 : 0);
+
+    if (talismanCount >= 3) {
+      return {
+        success: false,
+        message: 'Đã đạt sức chứa tối đa (3/3 tấm Bùa Ẩn Thân)! Bạn chỉ có thể mua thêm khi số lượng < 3.'
+      };
+    }
+
+    if (save.money < item.cost) {
+      return { success: false, message: `Không đủ tiền! Cần ${item.cost.toLocaleString('vi-VN')}đ để mua Bùa Ẩn Thân.` };
+    }
+
+    talismanCount += 1;
+    upgrades.bua_an_than = talismanCount;
+
+    const newMoney = save.money - item.cost;
+    const updatedSave = {
+      store_id: storeId,
+      chapter: save.chapter,
+      day_in_game: save.day_in_game,
+      money: newMoney,
+      debt_remaining: save.debt_remaining,
+      reputation: save.reputation
+    };
+    const hash = anticheat.generateSaveHash(updatedSave);
+
+    await db.prepare(`
+      UPDATE game_saves 
+      SET money = ?, upgrades = ?, save_hash = ?, updated_at = ?
+      WHERE store_id = ?
+    `).run(newMoney, JSON.stringify(upgrades), hash, new Date().toISOString(), storeId);
+
+    return {
+      success: true,
+      money: newMoney,
+      upgrades,
+      recipes,
+      talismanCount,
+      message: `🔮 Mua thành công 1 tấm Bùa Ẩn Thân! Hiện có: ${talismanCount}/3 tấm trong túi.`
+    };
+  }
 
   if (upgrades[upgradeId] || (item.type === 'recipe' && recipes.includes(item.recipeId))) {
     return { success: false, message: 'Đã sở hữu nâng cấp/công thức này rồi!' };
@@ -814,6 +863,49 @@ async function buyUpgrade(storeId, upgradeId) {
     message: item.type === 'recipe' 
       ? `🎉 Mở khóa thành công [${item.name}]! Khách hàng bắt đầu có thể order món này!` 
       : `Đã trang bị thành công [${item.name}]!`
+  };
+}
+
+async function useTalisman(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
+
+  const upgrades = JSON.parse(save.upgrades || '{}');
+  let talismanCount = typeof upgrades.bua_an_than === 'number'
+    ? upgrades.bua_an_than
+    : (upgrades.bua_an_than ? 1 : 0);
+
+  if (talismanCount <= 0) {
+    return {
+      success: false,
+      message: 'Bạn đã hết Bùa Ẩn Thân! Hãy vào Cửa Hàng Nâng Cấp để mua thêm (tối đa 3 tấm).'
+    };
+  }
+
+  talismanCount -= 1;
+  upgrades.bua_an_than = talismanCount;
+
+  const updatedSave = {
+    store_id: storeId,
+    chapter: save.chapter,
+    day_in_game: save.day_in_game,
+    money: save.money,
+    debt_remaining: save.debt_remaining,
+    reputation: save.reputation
+  };
+  const hash = anticheat.generateSaveHash(updatedSave);
+
+  await db.prepare(`
+    UPDATE game_saves 
+    SET upgrades = ?, save_hash = ?, updated_at = ?
+    WHERE store_id = ?
+  `).run(JSON.stringify(upgrades), hash, new Date().toISOString(), storeId);
+
+  return {
+    success: true,
+    talismanCount,
+    upgrades,
+    message: `🔮 Đã kích hoạt 1 Bùa Ẩn Thân! Tàng hình cả quán tối đa 60s (Còn lại: ${talismanCount}/3 tấm).`
   };
 }
 
@@ -966,6 +1058,7 @@ module.exports = {
   addCollab,
   payDebt,
   buyUpgrade,
+  useTalisman,
   stealPet,
   redeemPet,
   shooThief,

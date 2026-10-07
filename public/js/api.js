@@ -111,12 +111,40 @@ const API = {
     return await this.request('/game/collab/cancel', 'POST', { collabId });
   },
 
+  async getFriends() {
+    return await this.request('/game/friends');
+  },
+
+  async sendFriendRequest(friendCode) {
+    return await this.request('/game/friends/request', 'POST', { friendCode });
+  },
+
+  async acceptFriendRequest(requestId) {
+    return await this.request('/game/friends/accept', 'POST', { requestId });
+  },
+
+  async rejectFriendRequest(requestId) {
+    return await this.request('/game/friends/reject', 'POST', { requestId });
+  },
+
+  async removeFriend(friendshipId) {
+    return await this.request('/game/friends/remove', 'POST', { friendshipId });
+  },
+
+  async sendFriendGift(friendshipId) {
+    return await this.request('/game/friends/gift', 'POST', { friendshipId });
+  },
+
   async payDebt(amount) {
     return await this.request('/game/pay-debt', 'POST', { amount });
   },
 
   async buyUpgrade(upgradeId) {
     return await this.request('/game/upgrade', 'POST', { upgradeId });
+  },
+
+  async useTalisman() {
+    return await this.request('/game/use-talisman', 'POST');
   },
 
   async advanceDay() {
@@ -165,6 +193,14 @@ const API = {
 
   async skipRest() {
     return await this.request('/game/skip-rest', 'POST');
+  },
+
+  async getDailyQuests() {
+    return await this.request('/game/quests');
+  },
+
+  async claimDailyQuest(questId) {
+    return await this.request('/game/quests/claim', 'POST', { questId });
   }
 };
 

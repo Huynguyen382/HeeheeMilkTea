@@ -1,0 +1,290 @@
+const cpuOptimizer = require('../cpu-optimizer');
+
+const fastRandom = cpuOptimizer.fastRandom;
+const probabilityDistributions = cpuOptimizer.probabilityDistributions;
+
+// Drink Recipes Database
+const RECIPES = {
+  tra_sua_truyen_thong: {
+    id: 'tra_sua_truyen_thong',
+    name: 'Trà Sữa Truyền Thống',
+    chapter: 1,
+    basePrice: 15000,
+    cost: 5000,
+    tea: 'den',
+    toppings: ['tranchau_den'],
+    desc: '🍵 Cốt trà: [Trà Đen Đậm] • Cốt trà đen đậm đà hòa quyện sữa đặc béo ngậy, trân châu đen dẻo dai'
+  },
+  hong_tra_tac: {
+    id: 'hong_tra_tac',
+    name: 'Hồng Trà Tắc Xí Muội',
+    chapter: 1,
+    basePrice: 12000,
+    cost: 4000,
+    tea: 'den',
+    toppings: [],
+    desc: '🍵 Cốt trà: [Trà Đen Đậm] • Trà đen giải khát thanh mát, vị tắc chua thanh & xí muội mằn mặn'
+  },
+  tra_thai_xanh: {
+    id: 'tra_thai_xanh',
+    name: 'Trà Sữa Thái Xanh',
+    chapter: 1,
+    basePrice: 18000,
+    cost: 6000,
+    tea: 'thai_xanh',
+    toppings: ['thach_la_dua'],
+    desc: '🌿 Cốt trà: [Thái Xanh] • Màu xanh mát mắt, hương hoa lài thơm mát nồng nàn cùng thạch lá dứa'
+  },
+  sua_tuoi_duong_den: {
+    id: 'sua_tuoi_duong_den',
+    name: 'Sữa Tươi Trân Châu Đường Đen',
+    chapter: 2,
+    basePrice: 25000,
+    cost: 8000,
+    tea: 'sua_tuoi',
+    toppings: ['tranchau_duongden'],
+    desc: '🥛 Cốt trà: [Sữa Tươi] • Sữa tươi thanh trùng cùng trân châu nấu đường đen dẻo quánh hot trend'
+  },
+  tra_dao_cam_sa: {
+    id: 'tra_dao_cam_sa',
+    name: 'Trà Đào Cam Sả',
+    chapter: 2,
+    basePrice: 28000,
+    cost: 9000,
+    tea: 'lai',
+    toppings: ['dao_mieng', 'cam_vang', 'sa_tuoi'],
+    desc: '🌸 Cốt trà: [Lục Trà Lài] • Bắt buộc đủ 3 món: Đào Miếng + Cam Vàng + Sả Tươi thơm nức mũi'
+  },
+  tra_olong_nuong: {
+    id: 'tra_olong_nuong',
+    name: 'Trà Ô Long Nướng Sương Sáo',
+    chapter: 3,
+    basePrice: 35000,
+    cost: 11000,
+    tea: 'olong_nuong',
+    toppings: ['suong_sao'],
+    desc: '🔥 Cốt trà: [Ô Long Nướng] • Vị khói sao cháy mộc mạc thượng hạng hòa quyện thạch sương sáo mềm mướt'
+  }
+};
+
+// Shelf toppings available on the barista workstation
+const SHELF_TOPPINGS = [
+  'tranchau_den',
+  'thach_la_dua',
+  'tranchau_duongden',
+  'dao_mieng',
+  'cam_vang',
+  'sa_tuoi',
+  'suong_sao'
+];
+
+// 5 Canonical Tea Bases (Balanced at ~20% each)
+const TEA_BASES = ['den', 'thai_xanh', 'sua_tuoi', 'lai', 'olong_nuong'];
+
+// Core Drink Recipes covering all tea bases
+const CORE_RECIPES = [
+  'tra_sua_truyen_thong',
+  'hong_tra_tac',
+  'tra_thai_xanh',
+  'sua_tuoi_duong_den',
+  'tra_dao_cam_sa',
+  'tra_olong_nuong'
+];
+
+// Helper to generate realistic multi-topping combinations for customers
+function generateCustomerToppings(cust, recipe) {
+  // Trà đào cam sả bắt buộc phải có đủ bộ 3: Đào miếng, Cam vàng, Sả tươi
+  if (recipe && recipe.id === 'tra_dao_cam_sa') {
+    return ['dao_mieng', 'cam_vang', 'sa_tuoi'];
+  }
+
+  // Track performance
+  cpuOptimizer.performance.mathRandomCalls++;
+  
+  let toppingCount;
+  
+  if (cust && cust.type === 5) {
+    // Bác Ba Cụ Đồ thích thanh đạm
+    toppingCount = probabilityDistributions.getToppingCount(fastRandom, 'elder');
+  } else if (cust && cust.isTiktoker) {
+    // Tú TikToker chuộng visual hoành tráng nhiều tầng
+    toppingCount = probabilityDistributions.getToppingCount(fastRandom, 'tiktoker');
+  } else if (cust && cust.type === 6) {
+    // Chú Quân Gymer siết cơ
+    toppingCount = probabilityDistributions.getToppingCount(fastRandom, 'gymmer');
+  } else {
+    // Phổ thông
+    toppingCount = probabilityDistributions.getToppingCount(fastRandom, 'normal');
+  }
+
+  if (toppingCount === 0) return [];
+
+  const baseTopping = recipe.toppings && recipe.toppings.length > 0 ? recipe.toppings[0] : null;
+  const chosen = [];
+
+  // Giữ lại topping đặc trưng của món nếu có trên kệ
+  if (baseTopping && SHELF_TOPPINGS.includes(baseTopping)) {
+    chosen.push(baseTopping);
+  }
+
+  // Chọn thêm ngẫu nhiên các loại topping khác không trùng lặp
+  const availableToppings = SHELF_TOPPINGS.filter(t => !chosen.includes(t));
+  const neededCount = toppingCount - chosen.length;
+  
+  if (availableToppings.length > 0 && neededCount > 0) {
+    const shuffled = [...availableToppings];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = fastRandom.int(0, i);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
+    for (let i = 0; i < Math.min(neededCount, shuffled.length); i++) {
+      chosen.push(shuffled[i]);
+    }
+  }
+
+  return chosen;
+}
+
+// 50 Character System (ModelNPC) - 49 Customer archetypes
+function mapCustomerFav(drinkName) {
+  const d = (drinkName || '').toLowerCase();
+  if (d.includes('olong') || d.includes('ô long') || d.includes('nướng')) return ['tra_olong_nuong', 'tra_sua_truyen_thong'];
+  if (d.includes('thái') || d.includes('xanh') || d.includes('matcha')) return ['tra_thai_xanh', 'tra_sua_truyen_thong'];
+  if (d.includes('đào') || d.includes('cam') || d.includes('sả')) return ['tra_dao_cam_sa', 'hong_tra_tac'];
+  if (d.includes('tắc') || d.includes('chanh') || d.includes('hồng trà')) return ['hong_tra_tac', 'tra_dao_cam_sa'];
+  if (d.includes('đường đen') || d.includes('sữa tươi')) return ['sua_tuoi_duong_den', 'tra_sua_truyen_thong'];
+  return ['tra_sua_truyen_thong', 'tra_olong_nuong'];
+}
+
+let CHARACTERS_DATA = [];
+try {
+  CHARACTERS_DATA = require('../../../public/js/characters').CHARACTERS;
+} catch (e) {
+  try {
+    CHARACTERS_DATA = require('../../public/js/characters').CHARACTERS;
+  } catch (err) {}
+}
+
+const CUSTOMERS = (CHARACTERS_DATA && CHARACTERS_DATA.length > 1)
+  ? CHARACTERS_DATA.slice(1).map((c, idx) => {
+      const isTiktoker = (c.id === 12 || c.style === 'tiktoker');
+      const isShipper = (c.id === 24 || c.style === 'shipper');
+      return {
+        type: idx,
+        id: c.id,
+        name: c.name,
+        patience: isTiktoker ? 22000 : (isShipper ? 24000 : 30000),
+        fav: mapCustomerFav(c.favoriteDrink),
+        tipMult: isTiktoker ? 2.0 : (c.cat === 'pro' ? 1.2 : 1.05),
+        isTiktoker: isTiktoker,
+        isShipper: isShipper,
+        dialogues: (c.dialogues && c.dialogues.length > 0) ? c.dialogues : ['Cho một ly trà sữa thơm ngon nha!']
+      };
+    })
+  : [
+  {
+    type: 0,
+    name: 'Bé Lan (Nữ sinh)',
+    patience: 25000,
+    fav: ['tra_sua_truyen_thong', 'tra_thai_xanh'],
+    tipMult: 1.0,
+    dialogues: [
+      'Chị HeeHee ơi, cho em ly ít đường ít đá mang vào tiết Toán nha!',
+      'Trà sữa quán mình ngon nhất phố, em rủ cả lớp ra ủng hộ nè!'
+    ]
+  }
+];
+
+const SHIPPER_SNACKS = [
+  { id: 'banh_trang_tron', name: 'Bánh Tráng Trộn Bò Khô Trứng Cút', icon: '🥡', desc: 'Chua cay mặn ngọt bùng nổ vị giác vỉa hè' },
+  { id: 'bap_xao', name: 'Bắp Xào Bơ Tép Mỡ Hành', icon: '🌽', desc: 'Béo ngậy thơm nức mũi mùi bơ vàng' },
+  { id: 'xien_ban', name: 'Xiên Que Chiên Sốt Me Chua Ngọt', icon: '🍢', desc: 'Hương vị tuổi thơ cổng trường học giòn rụm' },
+  { id: 'banh_trang_nuong', name: 'Bánh Tráng Nướng Trứng Xúc Xích', icon: '🍕', desc: 'Pizza Việt Nam nóng hổi giòn tan' },
+  { id: 'goi_cuon', name: 'Gỏi Cuốn Tôm Thịt Tương Đen', icon: '🥢', desc: 'Tươi mát nhiều rau kèm đậu phộng rang' },
+  { id: 'che_buoi', name: 'Chè Bưởi Cốt Dừa An Giang', icon: '🥣', desc: 'Cùi bưởi giòn sần sật béo ngậy nước cốt dừa' }
+];
+
+const UPGRADES = {
+  bua_an_than: { 
+    name: '🔮 Bùa Ẩn Thân Quầy Hàng', 
+    cost: 200000, 
+    desc: 'Vật phẩm tiêu hao (sức chứa tối đa 3 tấm). Treo cạnh quầy, nhấp đúp để kích hoạt tàng hình cả quán tối đa 60s, né tránh công an tuần tra. Chỉ mua thêm khi số lượng < 3 tấm!',
+    type: 'talisman'
+  },
+  may_dap_nap: { name: 'Máy Dập Nắp Tự Động', cost: 500000, desc: 'Bé Bắp tự động dập nắp ly siêu tốc' },
+  binh_u_lon: { name: 'Bình Ủ Inox 10L', cost: 400000, desc: 'Cốt trà thơm lâu, không sợ thiu chua' },
+  xe_wave: { name: 'Xe Wave Giao Hàng Cho Lâm', cost: 1200000, desc: 'Tăng tốc độ ship và rượt bắt kẻ bùng tiền' },
+  
+  // HỆ THỐNG THÚ CƯNG GIỮ QUÁN (PETS)
+  pet_corgi: {
+    name: '🐶 Cún Corgi Chân Ngắn (Mông Trái Tim)',
+    cost: 1800000,
+    type: 'pet',
+    petId: 'corgi',
+    desc: 'Cún cưng giữ quầy siêu dễ thương, giúp tăng +20% tiền tip của khách. (Cảnh giác kẻ trộm khi quán đông!)'
+  },
+  pet_meo_tam_the: {
+    name: '🐱 Mèo Tam Thể Chiêu Tài (Maneki Neko)',
+    cost: 3200000,
+    type: 'pet',
+    petId: 'meo_tam_the',
+    desc: 'Mèo thần tài vẫy chân may mắn, tăng +15% tổng doanh thu mỗi ly trà sữa!'
+  },
+  pet_capybara: {
+    name: '🐹 Chuột Lang Nước Capybara Siêu Chill',
+    cost: 5500000,
+    type: 'pet',
+    petId: 'capybara',
+    desc: 'Thánh ngoại giao bình tĩnh nhất quả đất, tăng +40% thời gian kiên nhẫn chờ đợi của khách hàng!'
+  },
+
+  // HỆ THỐNG CÔNG THỨC MÓN MỚI (MỞ RỘNG MENU)
+  recipe_hong_tra_tac: {
+    name: '📜 Công Thức: Hồng Trà Tắc Xí Muội',
+    cost: 120000,
+    type: 'recipe',
+    recipeId: 'hong_tra_tac',
+    desc: 'Mở khóa món Hồng Trà Tắc Xí Muội vào Menu quán! Giá bán: 12.000đ/ly.'
+  },
+  recipe_tra_thai_xanh: {
+    name: '📜 Công Thức: Trà Sữa Thái Xanh',
+    cost: 250000,
+    type: 'recipe',
+    recipeId: 'tra_thai_xanh',
+    desc: 'Mở khóa món Trà Sữa Thái Xanh vào Menu quán! Giá bán: 18.000đ/ly.'
+  },
+  recipe_sua_tuoi_duong_den: {
+    name: '📜 Công Thức: Sữa Tươi Trân Châu Đường Đen',
+    cost: 500000,
+    type: 'recipe',
+    recipeId: 'sua_tuoi_duong_den',
+    desc: 'Mở khóa món Sữa Tươi Đường Đen hot trend vào Menu quán! Giá bán: 25.000đ/ly.'
+  },
+  recipe_tra_dao_cam_sa: {
+    name: '📜 Công Thức: Trà Đào Cam Sả',
+    cost: 800000,
+    type: 'recipe',
+    recipeId: 'tra_dao_cam_sa',
+    desc: 'Mở khóa món Trà Đào Cam Sả giải nhiệt vào Menu quán! Giá bán: 28.000đ/ly.'
+  },
+  recipe_tra_olong_nuong: {
+    name: '📜 Công Thức: Trà Ô Long Nướng Sương Sáo',
+    cost: 1500000,
+    type: 'recipe',
+    recipeId: 'tra_olong_nuong',
+    desc: 'Mở khóa món Trà Ô Long Nướng Thượng Hạng vào Menu quán! Giá bán: 35.000đ/ly.'
+  }
+};
+
+module.exports = {
+  RECIPES,
+  SHELF_TOPPINGS,
+  TEA_BASES,
+  CORE_RECIPES,
+  generateCustomerToppings,
+  mapCustomerFav,
+  CUSTOMERS,
+  SHIPPER_SNACKS,
+  UPGRADES
+};
