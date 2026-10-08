@@ -1,13 +1,17 @@
 const db = require('../../models/db');
 const anticheat = require('../anticheat.service');
-const { invalidateStoreCache } = require('./cache.helper');
+const { gameCache, invalidateStoreCache } = require('./cache.helper');
 
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 
-// Prune expired collabs older than 3 days in real time
+// Rate-limited prune expired collabs (runs at most once every 60s)
+let lastPruneTime = 0;
 async function pruneExpiredCollabs() {
+  const now = Date.now();
+  if (now - lastPruneTime < 60000) return;
+  lastPruneTime = now;
   try {
-    const expiredCutoff = new Date(Date.now() - THREE_DAYS_MS).toISOString();
+    const expiredCutoff = new Date(now - THREE_DAYS_MS).toISOString();
     await db.prepare(`
       DELETE FROM collabs 
       WHERE (created_at IS NOT NULL AND created_at != '' AND created_at < ?)
@@ -30,8 +34,44 @@ async function getActiveCollabCount(storeId) {
   return Math.min(3, row ? (row.cnt || 0) : 0);
 }
 
-// Get full Collab Dashboard data
+// In-memory heartbeat tracker for store presence (online within 60s)
+const storeHeartbeats = new Map();
+
+function recordStoreHeartbeat(storeId) {
+  if (storeId) {
+    storeHeartbeats.set(Number(storeId), Date.now());
+  }
+}
+
+function isStoreOnline(storeId) {
+  if (!storeId) return false;
+  const last = storeHeartbeats.get(Number(storeId));
+  return !!(last && (Date.now() - last < 60000));
+}
+
+// Get full Collab Dashboard data (cached for 15s to protect free tier DB)
 async function getCollabData(storeId) {
+  recordStoreHeartbeat(storeId);
+  const now = Date.now();
+
+  const cacheKey = `collab:${storeId}`;
+  const cached = gameCache && gameCache.collabs ? gameCache.collabs.get(cacheKey) : null;
+  if (cached) {
+    const refreshedActive = (cached.activeCollabs || []).map(c => {
+      const remainingMs = Math.max(0, (c.expires_at_ms || 0) - now);
+      return {
+        ...c,
+        is_online: isStoreOnline(c.partner_id) || !!c.is_online_db,
+        remaining_ms: remainingMs,
+        remaining_hours: Math.ceil(remainingMs / (1000 * 60 * 60))
+      };
+    });
+    return {
+      ...cached,
+      activeCollabs: refreshedActive
+    };
+  }
+
   await pruneExpiredCollabs();
 
   const activeCollabs = await db.prepare(`
@@ -39,7 +79,8 @@ async function getCollabData(storeId) {
            CASE WHEN c.host_store_id = ? THEN s_friend.id ELSE s_host.id END as partner_id,
            CASE WHEN c.host_store_id = ? THEN s_friend.store_name ELSE s_host.store_name END as partner_name,
            CASE WHEN c.host_store_id = ? THEN s_friend.store_code ELSE s_host.store_code END as partner_code,
-           CASE WHEN c.host_store_id = ? THEN s_friend.username ELSE s_host.username END as partner_username
+           CASE WHEN c.host_store_id = ? THEN s_friend.username ELSE s_host.username END as partner_username,
+           CASE WHEN c.host_store_id = ? THEN s_friend.session_token ELSE s_host.session_token END as partner_session_token
     FROM collabs c
     JOIN stores s_host ON s_host.id = c.host_store_id
     JOIN stores s_friend ON s_friend.id = c.friend_store_id
@@ -47,9 +88,8 @@ async function getCollabData(storeId) {
       AND c.status = 'accepted'
     ORDER BY c.id ASC
     LIMIT 3
-  `).all(storeId, storeId, storeId, storeId, storeId, storeId);
+  `).all(storeId, storeId, storeId, storeId, storeId, storeId, storeId);
 
-  const now = Date.now();
   const enrichedActiveCollabs = [];
 
   for (const c of activeCollabs) {
@@ -62,8 +102,18 @@ async function getCollabData(storeId) {
       partnerSave = await db.prepare('SELECT chapter, reputation, upgrades FROM game_saves WHERE store_id = ?').get(c.partner_id);
     } catch (e) {}
 
+    let partnerDaily = null;
+    try {
+      partnerDaily = await db.prepare('SELECT last_active_ts FROM daily_stats WHERE store_id = ? ORDER BY id DESC LIMIT 1').get(c.partner_id);
+    } catch (e) {}
+
+    const isOnlineDb = !!(partnerDaily && partnerDaily.last_active_ts && (now - Number(partnerDaily.last_active_ts) < 90000));
+    const isOnline = isStoreOnline(c.partner_id) || isOnlineDb;
+
     enrichedActiveCollabs.push({
       ...c,
+      is_online: !!isOnline,
+      is_online_db: isOnlineDb,
       created_at_ms: createdAtMs,
       expires_at_ms: expiresAtMs,
       remaining_ms: remainingMs,
@@ -92,7 +142,7 @@ async function getCollabData(storeId) {
   const activeCount = enrichedActiveCollabs.length;
   const bonusPercent = activeCount * 10;
 
-  return {
+  const result = {
     success: true,
     activeCollabs: enrichedActiveCollabs,
     incomingRequests,
@@ -101,6 +151,12 @@ async function getCollabData(storeId) {
     maxCollabs: 3,
     bonusPercent
   };
+
+  if (gameCache && gameCache.collabs) {
+    gameCache.collabs.set(cacheKey, result, 15000); // 15 seconds TTL
+  }
+
+  return result;
 }
 
 async function addCollab(hostStoreId, friendCode) {
@@ -284,5 +340,7 @@ module.exports = {
   addCollab,
   acceptCollab,
   declineCollab,
-  cancelCollab
+  cancelCollab,
+  recordStoreHeartbeat,
+  isStoreOnline
 };

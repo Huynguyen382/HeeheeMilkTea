@@ -1,6 +1,8 @@
 const db = require('../models/db');
+const { recordStoreHeartbeat } = require('../services/game/collab.service');
+const { gameCache } = require('../services/cache.service');
 
-// Middleware to authenticate store session
+// Middleware to authenticate store session with in-memory caching (zero DB queries on cached hits)
 async function authStore(req, res, next) {
   const token = req.headers['x-session-token'];
   if (!token) {
@@ -8,12 +10,19 @@ async function authStore(req, res, next) {
   }
 
   try {
-    const store = await db.prepare('SELECT * FROM stores WHERE session_token = ?').get(token);
+    let store = gameCache.sessions ? gameCache.sessions.get(token) : null;
     if (!store) {
-      return res.status(401).json({ error: 'Phiên làm việc không hợp lệ hoặc đã hết hạn!' });
+      store = await db.prepare('SELECT * FROM stores WHERE session_token = ?').get(token);
+      if (!store) {
+        return res.status(401).json({ error: 'Phiên làm việc không hợp lệ hoặc đã hết hạn!' });
+      }
+      if (gameCache.sessions) {
+        gameCache.sessions.set(token, store, 300000); // 5 minutes TTL
+      }
     }
 
     req.store = store;
+    recordStoreHeartbeat(store.id);
     next();
   } catch (err) {
     console.error('authStore error:', err);

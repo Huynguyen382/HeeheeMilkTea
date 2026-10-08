@@ -42,6 +42,20 @@ export async function initStore() {
         localStorage.setItem(storySeenKey, 'true');
       }
 
+      // Periodic Collab Online Presence Sync
+      if (!window.__collabSyncInterval) {
+        window.__collabSyncInterval = setInterval(async () => {
+          if (!state.isGamePaused && window.API && window.API.token) {
+            try {
+              const collabsRes = await window.API.getCollabs();
+              if (collabsRes && collabsRes.activeCollabs && state.canvas && state.canvas.setCollabs) {
+                state.canvas.setCollabs(collabsRes.activeCollabs);
+              }
+            } catch (e) {}
+          }
+        }, 12000);
+      }
+
       scheduleNextOrder(1500);
       return;
     } else {

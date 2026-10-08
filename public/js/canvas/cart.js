@@ -475,6 +475,9 @@ export const cartMethods = {
         this.drawCollabPlaceholder(ctx, slot.x, slot.y, i);
       }
     }
+
+    // Draw active animated customers visiting online partner stalls!
+    this.drawCollabCustomers(ctx);
   },
 
   drawPartnerCart(ctx, cx, cy, partner, index) {
@@ -690,6 +693,7 @@ export const cartMethods = {
     ctx.fill();
 
     // 10. Neon Sign Plaque with Partner's Custom Store Name
+    const isOnline = !!(partner.is_online || partner.online);
     const plaqueX = cx + 15, plaqueY = cy + 27, plaqueW = 108, plaqueH = 17;
     ctx.fillStyle = '#1e0c18';
     ctx.beginPath();
@@ -721,6 +725,32 @@ export const cartMethods = {
     ctx.shadowBlur = 4 * neonPulse;
     ctx.fillStyle = theme.neonText;
     ctx.fillText(partnerTitle, plaqueX + plaqueW / 2, plaqueY + plaqueH / 2 + 0.5);
+    ctx.restore();
+
+    // Online / Offline Status Pill Badge on stall roof
+    const badgeX = cx + 4;
+    const badgeY = awningY - 8;
+    ctx.save();
+    ctx.fillStyle = isOnline ? 'rgba(10, 35, 20, 0.92)' : 'rgba(30, 30, 35, 0.85)';
+    ctx.beginPath();
+    ctx.roundRect(badgeX, badgeY, 40, 9, 3);
+    ctx.fill();
+    ctx.strokeStyle = isOnline ? '#2ecc71' : '#7f8c8d';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Dot indicator
+    ctx.fillStyle = isOnline ? (this.tick % 30 < 15 ? '#2ecc71' : '#55efc4') : '#95a5a6';
+    ctx.beginPath();
+    ctx.arc(badgeX + 6, badgeY + 4.5, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = isOnline ? '#a8ff78' : '#bdc3c7';
+    ctx.font = 'bold 5.5px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(isOnline ? 'ONLINE' : 'OFFLINE', badgeX + 11, badgeY + 4.5);
     ctx.restore();
 
     // 11. Equipment on Counter
@@ -763,29 +793,31 @@ export const cartMethods = {
     ctx.fillText('+10%', cx + 5, cy + 34.5);
     ctx.textAlign = 'left';
 
-    // 13. Customer enjoying drink beside partner stall
-    const kx = cx + 148, ky = cy + 18;
-    ctx.fillStyle = '#2d3436';
-    ctx.fillRect(kx + 2, ky + 14, 3, 10);
-    ctx.fillRect(kx + 7, ky + 14, 3, 10);
-    ctx.fillStyle = (index % 2 === 0) ? '#e17055' : '#0984e3';
-    ctx.fillRect(kx, ky + 4, 12, 11);
-    ctx.fillStyle = '#ffeaa7';
-    ctx.fillRect(kx + 2, ky - 6, 8, 9);
-    ctx.fillStyle = '#2d3436';
-    ctx.fillRect(kx + 1, ky - 7, 10, 4);
-    // Boba cup in hand
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fillRect(kx - 3, ky + 6, 4, 6);
-    ctx.fillStyle = '#873600';
-    ctx.fillRect(kx - 2, ky + 7, 2, 4);
+    // 13. Customer enjoying drink beside partner stall (only shown when offline to keep stall lively without AI queue)
+    if (!isOnline) {
+      const kx = cx + 148, ky = cy + 18;
+      ctx.fillStyle = '#2d3436';
+      ctx.fillRect(kx + 2, ky + 14, 3, 10);
+      ctx.fillRect(kx + 7, ky + 14, 3, 10);
+      ctx.fillStyle = (index % 2 === 0) ? '#e17055' : '#0984e3';
+      ctx.fillRect(kx, ky + 4, 12, 11);
+      ctx.fillStyle = '#ffeaa7';
+      ctx.fillRect(kx + 2, ky - 6, 8, 9);
+      ctx.fillStyle = '#2d3436';
+      ctx.fillRect(kx + 1, ky - 7, 10, 4);
+      // Boba cup in hand
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(kx - 3, ky + 6, 4, 6);
+      ctx.fillStyle = '#873600';
+      ctx.fillRect(kx - 2, ky + 7, 2, 4);
 
-    // Periodic floating heart
-    if ((this.tick + index * 40) % 120 < 40) {
-      const heartY = ky - 8 - ((this.tick % 40) * 0.25);
-      ctx.fillStyle = '#ff4757';
-      ctx.font = '8px sans-serif';
-      ctx.fillText('❤️', kx + 1, heartY);
+      // Periodic floating heart
+      if ((this.tick + index * 40) % 120 < 40) {
+        const heartY = ky - 8 - ((this.tick % 40) * 0.25);
+        ctx.fillStyle = '#ff4757';
+        ctx.font = '8px sans-serif';
+        ctx.fillText('❤️', kx + 1, heartY);
+      }
     }
   },
 
@@ -907,6 +939,80 @@ export const cartMethods = {
       ctx.fill();
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(mx + 3, my + 4, 9, 2);
+    }
+  },
+
+  drawCollabCustomers(ctx) {
+    if (!this.collabCustomerStates) return;
+    const slots = [
+      { x: 205, y: 92 },
+      { x: 375, y: 92 },
+      { x: 545, y: 92 }
+    ];
+
+    for (let i = 0; i < 3; i++) {
+      const partner = (this.activeCollabs && this.activeCollabs[i]) ? this.activeCollabs[i] : null;
+      const isOnline = !!(partner && (partner.is_online || partner.online));
+      if (!partner || !isOnline) continue;
+
+      const cState = this.collabCustomerStates[i];
+      if (!cState || cState.state === 'idle') continue;
+
+      const custX = Math.round(cState.x);
+      const custY = 108; // ground level
+
+      // Draw the pixel art customer sprite
+      this.drawCustomer(ctx, custX, custY, cState.type, false, '', '');
+
+      // If customer received their drink, render cup in hand + floating heart
+      if (cState.hasDrink) {
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fillRect(custX + 10, custY - 8, 4, 6);
+        ctx.fillStyle = '#b71540';
+        ctx.fillRect(custX + 11, custY - 7, 2, 4);
+
+        const heartBob = Math.sin((this.tick + i * 30) * 0.2) * 2;
+        ctx.fillStyle = '#ff4757';
+        ctx.font = '8px sans-serif';
+        ctx.fillText('❤️', custX + 3, custY - 26 + heartBob);
+      }
+
+      // If ordering, render customer comic dialogue bubble
+      if (cState.state === 'ordering' && cState.quote) {
+        ctx.save();
+        const bubbleBob = Math.sin((this.tick + i * 20) * 0.15) * 1.5;
+        const bText = cState.quote;
+        ctx.font = 'bold 7px sans-serif';
+        const tw = ctx.measureText(bText).width;
+        const bw = tw + 10;
+        const bh = 14;
+        const bx = Math.min(this.width - bw - 2, Math.max(2, custX + 5 - bw / 2));
+        const by = 86 + bubbleBob;
+
+        // Shadow & Bubble body
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(bx + 1, by + 1, bw, bh);
+        ctx.fillStyle = 'rgba(20, 16, 28, 0.95)';
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeStyle = '#55efc4';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx, by, bw, bh);
+
+        // Downward tail
+        ctx.fillStyle = 'rgba(20, 16, 28, 0.95)';
+        ctx.beginPath();
+        ctx.moveTo(custX + 5, by + bh);
+        ctx.lineTo(custX + 8, by + bh);
+        ctx.lineTo(custX + 6, by + bh + 3);
+        ctx.fill();
+
+        // Text inside bubble
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(bText, bx + bw / 2, by + bh / 2);
+        ctx.restore();
+      }
     }
   }
 };

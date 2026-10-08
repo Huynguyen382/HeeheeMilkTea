@@ -38,6 +38,9 @@
         <div class="hud-stat-pill pill-rep" title="Đánh giá danh tiếng quán">
           <span class="stat-val-rep" id="stat-rep">5.0⭐</span>
         </div>
+        <button id="btn-pricing-header" class="hud-stat-pill pill-pricing" style="background: rgba(241, 196, 15, 0.15); border: 1.5px solid #f1c40f; color: #f1c40f; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;" title="Bảng Giá Trà Sữa & Mặc Cả">
+          <span>🏷️ Bảng Giá</span>
+        </button>
         <!-- Menu toggle button in header -->
         <button id="btn-menu-header" class="btn-hud-menu" title="Mở Bảng Điều Khiển & Cài Đặt Quán">
           <span class="hud-menu-icon">☰</span>
@@ -310,6 +313,13 @@
       <div class="menu-group">
         <div class="menu-group-title">💼 KINH DOANH & VẬN HÀNH</div>
         <div class="menu-action-grid">
+          <button class="menu-item-btn" id="menu-btn-pricing" style="border-color: #f1c40f;">
+            <span class="m-icon">🏷️</span>
+            <div class="m-info">
+              <span class="m-title">Bảng Giá Trà Sữa</span>
+              <span class="m-desc">Tự chỉnh giá bán & cân đối mặc cả</span>
+            </div>
+          </button>
           <button class="menu-item-btn" id="menu-btn-market">
             <span class="m-icon">🏪</span>
             <div class="m-info">
@@ -417,6 +427,43 @@
             </div>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BẢNG GIÁ & MENU TRÀ SỮA -->
+  <div class="modal-overlay" id="modal-pricing" style="z-index: 9999;">
+    <div class="modal-content" style="max-width: 520px; max-height: 90vh; overflow-y: auto; background: #1c0e1a; border-color: #f1c40f;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #f1c40f; display: flex; align-items: center; gap: 6px;">
+          <span>🏷️ BẢNG GIÁ & MENU QUÁN</span>
+        </div>
+        <button class="btn-close" id="close-pricing">&times;</button>
+      </div>
+
+      <!-- Strategy & Risk Guidance Banner -->
+      <div style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(230, 126, 34, 0.15)); border: 1.5px solid #f1c40f; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.45; color: #ffeaa7;">
+        <div style="font-weight: bold; color: #f1c40f; margin-bottom: 3px; display: flex; align-items: center; gap: 4px;">
+          <span>⚖️ Chiến Lược Định Giá & Rủi Ro:</span>
+        </div>
+        <div>• Bạn có thể chỉnh <b>giá bán cao hơn thị trường</b> để tăng lợi nhuận mỗi ly.</div>
+        <div>• Khi đặt giá cao, NPC có nguy cơ <b>mặc cả giá</b> khi đến quầy gọi món.</div>
+        <div style="color: #ff7675;">• <b>Lưu ý:</b> Nếu bạn <b>từ chối</b> bớt giá, có tới <b>70% tỷ lệ NPC sẽ hủy đơn</b> bỏ đi!</div>
+      </div>
+
+      <!-- Recipes List Container -->
+      <div id="pricing-recipes-list" style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- Populated dynamically by pricing.js -->
+      </div>
+
+      <!-- Footer Action -->
+      <div style="display: flex; gap: 8px; margin-top: 14px;">
+        <button id="btn-save-pricing" class="btn-action-wide" style="flex: 2; background: #27ae60; color: #fff; font-weight: bold; font-size: 0.95rem; padding: 9px; cursor: pointer;">
+          💾 Lưu Bảng Giá Mới
+        </button>
+        <button id="btn-reset-default-pricing" class="btn-action-wide" style="flex: 1; background: #7f8c8d; color: #fff; font-weight: bold; font-size: 0.88rem; padding: 9px; cursor: pointer;">
+          🔄 Về Giá Gốc
+        </button>
       </div>
     </div>
   </div>

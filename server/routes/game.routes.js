@@ -10,7 +10,10 @@ const handle = (label, fn) => async (req, res) => {
   catch (err) { console.error(`${label} error:`, err); res.status(500).json({ error: err.message }); }
 };
 
-router.get('/order', authStore, handle('Generate order', req => gameService.generateOrder(req.store.id).then(order => ({ order }))));
+router.get('/order', authStore, handle('Generate order', req => {
+  const isShipper = req.query.isShipper === 'true' || req.query.isShipper === '1';
+  return gameService.generateOrder(req.store.id, { isShipper }).then(order => ({ order }));
+}));
 router.post('/serve', authStore, async (req, res) => {
   try {
     const { orderId, timeTaken, recipeId, sugar, ice, toppings, pausedTimeMs } = req.body;
@@ -19,6 +22,8 @@ router.post('/serve', authStore, async (req, res) => {
   } catch (err) { console.error('Serve order error:', err); res.status(500).json({ error: err.message }); }
 });
 router.post('/snack-decision', authStore, handle('Snack decision', req => gameService.handleSnackDecision(req.store.id, !!req.body.accept)));
+router.post('/negotiate', authStore, handle('Negotiate order', req => gameService.negotiateOrder(req.store.id, req.body.orderId, !!req.body.accept)));
+router.post('/custom-prices', authStore, handle('Set custom prices', req => gameService.setCustomPrices(req.store.id, req.body.customPrices)));
 router.post('/order-fail', authStore, handle('Order fail', req => gameService.recordOrderFailure(req.store.id, req.body.orderId, !!req.body.isTiktoker)));
 router.get('/collabs', authStore, handle('Get collabs', req => gameService.getCollabData(req.store.id)));
 router.post('/collab', authStore, async (req, res) => {
@@ -29,6 +34,9 @@ router.post('/collab', authStore, async (req, res) => {
 router.post('/collab/accept', authStore, handle('Accept collab', req => gameService.acceptCollab(req.store.id, req.body.collabId)));
 router.post('/collab/decline', authStore, handle('Decline collab', req => gameService.declineCollab(req.store.id, req.body.collabId)));
 router.post('/collab/cancel', authStore, handle('Cancel collab', req => gameService.cancelCollab(req.store.id, req.body.collabId)));
+router.post('/heartbeat', authStore, (req, res) => {
+  res.json({ success: true, timestamp: Date.now() });
+});
 
 // Friend System Routes
 router.get('/friends', authStore, handle('Get friends', req => gameService.getFriends(req.store.id)));

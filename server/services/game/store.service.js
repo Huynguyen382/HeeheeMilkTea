@@ -173,6 +173,7 @@ async function getStoreState(storeId) {
       inventory: { ...DEFAULT_INVENTORY, ...JSON.parse(save.inventory || '{}') },
       upgrades: JSON.parse(save.upgrades || '{}'),
       recipes: Array.from(new Set([...CORE_RECIPES, ...JSON.parse(save.recipes || '[]')])),
+      custom_prices: JSON.parse(save.custom_prices || '{}'),
       properties: JSON.parse(save.properties || '{}'),
       decorations: JSON.parse(save.decorations || '[]')
     },

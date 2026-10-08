@@ -14,7 +14,7 @@ const {
 } = require('./constants');
 
 // Generate new random customer order wave (1 - 4 customers, or up to 14 in Chapter 2)
-async function generateOrder(storeId) {
+async function generateOrder(storeId, options = {}) {
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save || save.is_jailed === 1) return null;
 
@@ -123,18 +123,37 @@ async function generateOrder(storeId) {
       else waveSize = 4;
     }
   }
+  if (options.isShipper) {
+    waveSize = 1;
+  }
   waveSize = Math.min(14, Math.max(1, waveSize));
 
   const sugars = ['0%', '30%', '50%', '70%', '100%'];
   const ices = ['Nóng', 'Ít đá', 'Vừa đá', 'Đầy đá'];
 
   const orders = [];
+  const pendingDbOrders = [];
   let snackEvent = null;
 
   for (let i = 0; i < waveSize; i++) {
     // Select customer: if invited TikToker, ensure first customer is Tú (TikToker)
     let cust = CUSTOMERS[Math.floor(Math.random() * CUSTOMERS.length)];
-    if (isInvitedTiktoker && i === 0) {
+    if (options.isShipper) {
+      cust = CUSTOMERS.find(c => c.isShipper) || {
+        type: 23,
+        id: 24,
+        name: 'Huy Shipper Bất Bại',
+        patience: 28000,
+        fav: ['hong_tra_tac', 'tra_dao_cam_sa'],
+        tipMult: 1.25,
+        isShipper: true,
+        dialogues: [
+          'Chị ơi đơn app #9928 hỏa tốc nè, khách đang ngóng lắm, làm nhanh em đi giao nha! 🛵',
+          'Trời nắng chang chang, làm ly giao liền giúp em nha quán ơi! 💨',
+          'Đơn app này khách dặn kĩ lắm, em chờ quán pha xong em đi ship ngay! 📦'
+        ]
+      };
+    } else if (isInvitedTiktoker && i === 0) {
       cust = CUSTOMERS.find(c => c.isTiktoker) || CUSTOMERS[3];
     }
 
@@ -159,7 +178,15 @@ async function generateOrder(storeId) {
     const orderToppings = generateCustomerToppings(cust, recipe);
     
     let quote = cust.dialogues[Math.floor(Math.random() * cust.dialogues.length)];
-    if (isInvitedTiktoker && i === 0) {
+    if (options.isShipper) {
+      const shipperQuotes = [
+        'Chị ơi đơn app #9928 hỏa tốc nè, khách đang ngóng lắm, làm nhanh em đi giao nha! 🛵',
+        'Trời nắng chang chang, làm ly giao liền giúp em nha quán ơi! 💨',
+        'Đơn app này khách dặn kĩ lắm, em chờ quán pha xong em đi ship ngay! 📦',
+        'Chào quán! Cho em nhận đơn giao hàng hỏa tốc này nha, khách hối quá trời! 🧋'
+      ];
+      quote = shipperQuotes[Math.floor(Math.random() * shipperQuotes.length)];
+    } else if (isInvitedTiktoker && i === 0) {
       quote = 'Hello HeeHee! Nhận lời mời của quán, hôm nay Tú vác máy quay qua làm clip review thực tế xem có đỉnh nóc kịch trần không nha! Ngon là Tú kéo bão sao cho quán liền!';
     }
 
@@ -185,8 +212,15 @@ async function generateOrder(storeId) {
     // so the server deadline must include all waiting time of earlier customers in the wave.
     const expiresAt = now + patienceMs + 60000 + (i * (patienceMs + 15000));
 
+    // Custom price & Market price check
+    const customPrices = JSON.parse(save.custom_prices || '{}');
+    const marketBasePrice = recipe.basePrice;
+    const customRecipePrice = (customPrices[recipe.id] && Number(customPrices[recipe.id]) > 0)
+      ? Number(customPrices[recipe.id])
+      : marketBasePrice;
+
     // Price with multi-toppings, tip buff & Pet buffs
-    let price = recipe.basePrice;
+    let price = customRecipePrice;
     const baseToppingCount = (recipe.toppings && recipe.toppings.length > 0) ? recipe.toppings.length : 0;
     const toppingDiff = orderToppings.length - baseToppingCount;
     if (toppingDiff > 0) {
@@ -213,24 +247,69 @@ async function generateOrder(storeId) {
       price = Math.floor(price * locationConfig.priceMultiplier);
     }
 
-    // Đàm phán: khách chủ động đề nghị giá thấp hơn
+    // Đàm phán & Mặc cả: Khi đặt giá quá cao các NPC có thể mặc cả
     let negotiation = null;
-    const customerBonus = locationConfig?.customerBonus || 0;
-    const hagglerChance = Math.min(0.6, NEGOTIATION.haggleChance + customerBonus * 0.2);
-    if (Math.random() < hagglerChance) {
-      const discountRatio = 0.1 + Math.random() * NEGOTIATION.maxDiscount;
-      const discountAmount = Math.floor(price * discountRatio);
-      const requestedPrice = Math.max(1000, price - discountAmount);
-      const line = NEGOTIATION.haggleLines[Math.floor(Math.random() * NEGOTIATION.haggleLines.length)]
-        .replace('{discount}', discountAmount.toLocaleString('vi-VN'));
-      negotiation = {
-        requestedPrice,
-        originalPrice: price,
-        discountAmount,
-        line,
-        offerToppings: orderToppings,
-        status: 'pending'
-      };
+    const priceRatio = customRecipePrice / marketBasePrice;
+    let haggleChance = 0;
+
+    if (priceRatio > 1.0) {
+      // Đặt giá cao hơn thị trường: NPC có nguy cơ mặc cả tỷ lệ thuận với mức giá chênh lệch
+      if (priceRatio <= 1.2) {
+        haggleChance = 0.35; // Cao hơn 1-20%: 35% cơ hội khách mặc cả
+      } else if (priceRatio <= 1.5) {
+        haggleChance = 0.65; // Cao hơn 21-50%: 65% cơ hội khách mặc cả
+      } else {
+        haggleChance = 0.90; // Cao hơn >50%: 90% khách sẽ mặc cả!
+      }
+    } else {
+      // Giá bằng hoặc thấp hơn giá thị trường: chỉ có một ít khách có tính kì kèo mặc cả nhẹ
+      const customerBonus = locationConfig?.customerBonus || 0;
+      haggleChance = Math.min(0.20, NEGOTIATION.haggleChance * 0.3 + customerBonus * 0.1);
+    }
+
+    if (Math.random() < haggleChance) {
+      let requestedPrice;
+      let line;
+      if (priceRatio > 1.0) {
+        // NPC bức xúc/kì kèo vì giá quá cao
+        const targetRef = Math.floor(marketBasePrice * (1.0 + Math.random() * 0.15)) + (toppingDiff > 0 ? toppingDiff * 3000 : 0);
+        requestedPrice = Math.min(price - 1000, Math.max(marketBasePrice, targetRef));
+        const discountAmount = price - requestedPrice;
+
+        const highPriceHaggleLines = [
+          `Quán ơi, giá ${price.toLocaleString('vi-VN')}đ này hơi chát quá! Bớt cho mình còn ${requestedPrice.toLocaleString('vi-VN')}đ được không?`,
+          `Ủa giá ${price.toLocaleString('vi-VN')}đ cao hơn thị trường nè! Bớt ${discountAmount.toLocaleString('vi-VN')}đ lấy ${requestedPrice.toLocaleString('vi-VN')}đ nha?`,
+          `Hôm nay xẹp ví quá mà thèm trà sữa, lấy mình ${requestedPrice.toLocaleString('vi-VN')}đ được hông quán ơi?`,
+          `Trà sữa ở đây bán đắt thế! Giảm còn ${requestedPrice.toLocaleString('vi-VN')}đ thì mình mới lấy nha!`,
+          `Cho mình xin bớt ${discountAmount.toLocaleString('vi-VN')}đ còn ${requestedPrice.toLocaleString('vi-VN')}đ nhé chủ quán ơi!`
+        ];
+        line = highPriceHaggleLines[Math.floor(Math.random() * highPriceHaggleLines.length)];
+
+        negotiation = {
+          isHighPriceHaggle: true,
+          originalPrice: price,
+          requestedPrice,
+          discountAmount,
+          line,
+          status: 'pending'
+        };
+      } else {
+        // Mặc cả thông thường
+        const discountRatio = 0.1 + Math.random() * 0.2;
+        const discountAmount = Math.floor(price * discountRatio);
+        requestedPrice = Math.max(1000, price - discountAmount);
+        line = NEGOTIATION.haggleLines[Math.floor(Math.random() * NEGOTIATION.haggleLines.length)]
+          .replace('{discount}', discountAmount.toLocaleString('vi-VN'));
+
+        negotiation = {
+          isHighPriceHaggle: false,
+          originalPrice: price,
+          requestedPrice,
+          discountAmount,
+          line,
+          status: 'pending'
+        };
+      }
     }
 
     // Shipper snack offer (40% chance if Shipper is in the wave)
@@ -246,10 +325,20 @@ async function generateOrder(storeId) {
       };
     }
 
-    await db.prepare(`
-      INSERT INTO active_orders (id, store_id, recipe_id, customer_name, sugar, ice, toppings, price, original_price, negotiation, created_at, expires_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(orderId, storeId, recipe.id, cust.name, sugar, ice, JSON.stringify(orderToppings), price, price, JSON.stringify(negotiation || null), now, expiresAt);
+    pendingDbOrders.push([
+      orderId,
+      storeId,
+      recipe.id,
+      cust.name,
+      sugar,
+      ice,
+      JSON.stringify(orderToppings),
+      price,
+      price,
+      JSON.stringify(negotiation || null),
+      now,
+      expiresAt
+    ]);
 
     orders.push({
       orderId,
@@ -272,6 +361,16 @@ async function generateOrder(storeId) {
       expiresAt,
       isOverloaded: daily.is_overloaded
     });
+  }
+
+  // Batch insert all orders in this wave in a single query (conserves Neon compute & prevents pool exhaustion)
+  if (pendingDbOrders.length > 0) {
+    const placeholders = pendingDbOrders.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+    const params = pendingDbOrders.flat();
+    await db.prepare(`
+      INSERT INTO active_orders (id, store_id, recipe_id, customer_name, sugar, ice, toppings, price, original_price, negotiation, created_at, expires_at)
+      VALUES ${placeholders}
+    `).run(...params);
   }
 
   // Decrement TikToker flop waves count (viral status ends only when target revenue 3x capital is earned)
@@ -521,9 +620,132 @@ async function inviteTiktoker(storeId) {
   };
 }
 
+// Handle customer negotiation decision
+async function negotiateOrder(storeId, orderId, accept = false) {
+  const order = await db.prepare('SELECT * FROM active_orders WHERE id = ? AND store_id = ?').get(orderId, storeId);
+  if (!order) {
+    return { success: false, message: 'Đơn hàng không tồn tại hoặc đã được xử lý!' };
+  }
+
+  let negotiation = null;
+  try {
+    negotiation = typeof order.negotiation === 'string' ? JSON.parse(order.negotiation) : order.negotiation;
+  } catch (e) {
+    negotiation = null;
+  }
+
+  if (!negotiation) {
+    return { success: false, message: 'Đơn hàng này không có đề nghị mặc cả!' };
+  }
+
+  if (accept) {
+    // Player accepts the discount
+    const newPrice = Number(negotiation.requestedPrice) || order.price;
+    negotiation.status = 'accepted';
+    await db.prepare('UPDATE active_orders SET price = ?, negotiation = ? WHERE id = ? AND store_id = ?')
+      .run(newPrice, JSON.stringify(negotiation), orderId, storeId);
+
+    const acceptQuotes = [
+      'Cảm ơn chủ quán dễ thương nha! Chúc quán buôn may bán đắt! ❤️',
+      'Được bớt giá vui quá! Pha thật ngon giùm mình nhé! 🥰',
+      'Chủ quán hào sảng ghê, mai mình lại ghé ủng hộ tiếp! ✨'
+    ];
+    const quote = acceptQuotes[Math.floor(Math.random() * acceptQuotes.length)];
+
+    return {
+      success: true,
+      cancelled: false,
+      accepted: true,
+      newPrice,
+      quote
+    };
+  } else {
+    // Player refuses to discount
+    // Nếu bạn từ chối, có 70% tỷ lệ NPC hủy đơn!
+    const willCancel = Math.random() < 0.70;
+
+    if (willCancel) {
+      await db.prepare('DELETE FROM active_orders WHERE id = ? AND store_id = ?').run(orderId, storeId);
+
+      const cancelQuotes = [
+        'Đắt thế này ai mà mua, mình qua quán khác đây! 😤',
+        'Bán giá trên trời mà không bớt một cắc! Hủy đơn nhé! 💢',
+        'Thôi đắt quá mình không mua nữa đâu, đi chỗ khác uống! 🙅‍♂️',
+        'Giá chát thật sự, thôi mình hủy đơn về uống nước lọc! 🚶'
+      ];
+      const quote = cancelQuotes[Math.floor(Math.random() * cancelQuotes.length)];
+
+      return {
+        success: true,
+        cancelled: true,
+        accepted: false,
+        quote
+      };
+    } else {
+      // 30% tỷ lệ NPC tiếc nuối nhưng vẫn cắn răng mua ở mức giá cao
+      negotiation.status = 'refused_stayed';
+      await db.prepare('UPDATE active_orders SET negotiation = ? WHERE id = ? AND store_id = ?')
+        .run(JSON.stringify(negotiation), orderId, storeId);
+
+      const stayQuotes = [
+        'Hic, không bớt tí nào luôn... Nhưng vì thèm quá nên mình vẫn mua vậy! 🥺',
+        'Đắt xót cả ruột! Nhớ pha thật đậm đà full topping bù đắp cho mình nhé! 🧋',
+        'Thôi được rồi, chịu chi hôm nay vậy! Pha ngon nhé quán! 😅'
+      ];
+      const quote = stayQuotes[Math.floor(Math.random() * stayQuotes.length)];
+
+      return {
+        success: true,
+        cancelled: false,
+        accepted: false,
+        currentPrice: order.price,
+        quote
+      };
+    }
+  }
+}
+
+// Set custom prices for milk tea recipes
+async function setCustomPrices(storeId, customPrices) {
+  if (!customPrices || typeof customPrices !== 'object') {
+    throw new Error('Dữ liệu bảng giá không hợp lệ!');
+  }
+
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  if (!save) throw new Error('Không tìm thấy dữ liệu quán!');
+
+  let currentPrices = {};
+  try {
+    currentPrices = JSON.parse(save.custom_prices || '{}');
+  } catch (e) {
+    currentPrices = {};
+  }
+
+  for (const [recipeId, price] of Object.entries(customPrices)) {
+    if (RECIPES[recipeId]) {
+      const numPrice = Math.round(Number(price));
+      if (!isNaN(numPrice) && numPrice >= 5000 && numPrice <= 200000) {
+        currentPrices[recipeId] = numPrice;
+      }
+    }
+  }
+
+  await db.prepare('UPDATE game_saves SET custom_prices = ?, updated_at = ? WHERE store_id = ?')
+    .run(JSON.stringify(currentPrices), new Date().toISOString(), storeId);
+
+  invalidateStoreCache(storeId);
+
+  return {
+    success: true,
+    customPrices: currentPrices
+  };
+}
+
 module.exports = {
   generateOrder,
   handleSnackDecision,
   recordOrderFailure,
-  inviteTiktoker
+  inviteTiktoker,
+  negotiateOrder,
+  setCustomPrices
 };

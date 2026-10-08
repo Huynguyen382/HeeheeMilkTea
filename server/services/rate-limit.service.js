@@ -10,23 +10,23 @@ class RateLimitService {
     this.userLimits = new Map();
     this.concurrentUsers = new Set();
     
-    // Configuration
+    // Configuration tuned for 300 concurrent users on Free Tier
     this.config = {
       // IP-based rate limiting
       ipLimitWindowMs: 60000, // 1 minute window
-      ipMaxRequests: 100, // 100 requests per minute per IP
+      ipMaxRequests: parseInt(process.env.IP_MAX_REQUESTS) || 300, // 300 requests per minute per IP
       
-      // User-based rate limiting (stricter)
+      // User-based rate limiting
       userLimitWindowMs: 60000, // 1 minute window  
-      userMaxRequests: 30, // 30 requests per minute per user
+      userMaxRequests: parseInt(process.env.USER_MAX_REQUESTS) || 90, // 90 requests per minute per user (1.5 req/s)
       
       // Concurrent user limits (free tier protection)
-      maxConcurrentUsers: process.env.MAX_CONCURRENT_USERS || 300,
+      maxConcurrentUsers: parseInt(process.env.MAX_CONCURRENT_USERS) || 300,
       userTimeoutMs: 300000, // 5 minutes timeout for inactive users
       
       // Global rate limiting
-      globalRPS: process.env.GLOBAL_RPS || 50, // Requests per second globally
-      globalBurst: process.env.GLOBAL_BURST || 100 // Burst capacity
+      globalRPS: parseInt(process.env.GLOBAL_RPS) || 250, // Requests per second globally (handles 300 CCU easily)
+      globalBurst: parseInt(process.env.GLOBAL_BURST) || 500 // Burst capacity
     };
     
     // Global request tracking for overall RPS limiting

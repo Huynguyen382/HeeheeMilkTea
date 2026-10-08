@@ -244,11 +244,11 @@ class DatabaseCircuitBreaker extends CircuitBreaker {
 
     /**
      * Start periodic health monitoring
+     * Note: Active periodic polling is disabled to allow serverless Neon compute to auto-suspend when idle.
+     * Circuit breaker naturally detects failures on actual operations and resets in HALF_OPEN state.
      */
     startHealthMonitoring() {
-        setInterval(() => {
-            this.monitorConnectionPool();
-        }, this.healthCheckInterval);
+        // No-op for background polling to conserve Neon compute hours.
     }
 
     /**

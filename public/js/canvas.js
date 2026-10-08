@@ -49,6 +49,11 @@ class GameCanvas {
     this.hasAmulet = false;
     this.talismanCount = 0;
     this.activeCollabs = [];
+    this.collabCustomerStates = [
+      { state: 'idle', timer: 60, x: 0, targetX: 0, type: 1, quote: '', hasDrink: false },
+      { state: 'idle', timer: 140, x: 0, targetX: 0, type: 2, quote: '', hasDrink: false },
+      { state: 'idle', timer: 220, x: 0, targetX: 0, type: 3, quote: '', hasDrink: false }
+    ];
     this.isInvisible = false;
     this.invisibilityRemaining = 0;
     this.lastAmuletClickTime = 0;
@@ -113,16 +118,18 @@ class GameCanvas {
     // Motorbike Delivery Shipper System
     this.motorbikeShipper = {
       active: false,
-      state: 'idle', // 'idle', 'approaching', 'parked', 'departing'
+      state: 'idle', // 'idle', 'approaching', 'walking_to_counter', 'waiting_for_drink', 'carrying_drink', 'stowing_drink', 'departing', 'departing_empty'
       x: 390,
-      targetX: 235,
-      walkX: 235,
+      targetX: 230,
+      walkX: 230,
       speed: 2.3,
       timer: 0,
       orderId: null,
+      hasDrink: false,
       bubble: '🛵 Ship hỏa tốc!'
     };
     this.shipperSpawnTimer = 1800; // ~30 seconds
+    this.onShipperArrived = null;
 
     // Police Patrol System (Đã giảm tần suất xuất hiện)
     this.policePatrol = {
@@ -200,6 +207,11 @@ class GameCanvas {
 
     let accumulatedX = 185;
     this.queue = currentOrders.map((order, idx) => {
+      const isShipper = !!order.isShipper;
+      if (isShipper && !this.motorbikeShipper.active) {
+        this.spawnMotorbikeShipper(order.orderId);
+      }
+
       const startX = idx === 0 
         ? (this.customerX > 0 && this.customerX < 200 ? this.customerX : -35) 
         : (accumulatedX + 35);
@@ -235,7 +247,8 @@ class GameCanvas {
         targetY: targetY,
         state: 'waiting',
         isDrinking: false,
-        drinkLevel: 1.0
+        drinkLevel: 1.0,
+        isShipper: isShipper
       };
     });
 
@@ -268,8 +281,10 @@ class GameCanvas {
   advanceQueue() {
     if (this.queue.length > 0) {
       const leavingCust = this.queue.shift();
-      leavingCust.state = 'leaving';
-      this.leavingCustomers.push(leavingCust);
+      if (!leavingCust.isShipper) {
+        leavingCust.state = 'leaving';
+        this.leavingCustomers.push(leavingCust);
+      }
 
       this.queue.forEach((cust, idx) => {
         cust.targetX = 185 + (idx * 38);
@@ -282,6 +297,194 @@ class GameCanvas {
 
       if (this.queue.length === 0) {
         this.customerActive = false;
+      }
+    }
+  }
+
+  cancelCustomer(quote = 'Đắt quá mình hủy đơn! 😤') {
+    if (this.queue.length > 0) {
+      const leavingCust = this.queue.shift();
+      if (!leavingCust.isShipper) {
+        leavingCust.state = 'leaving';
+        leavingCust.isCancelled = true;
+        leavingCust.hasDrink = false;
+        leavingCust.quote = quote;
+        this.leavingCustomers.push(leavingCust);
+      }
+
+      this.floatingTexts.push({
+        text: '❌ Khách hủy đơn!',
+        x: 185,
+        y: 75,
+        alpha: 1.0,
+        color: '#ff5555'
+      });
+
+      this.queue.forEach((cust, idx) => {
+        cust.targetX = 185 + (idx * 38);
+        if (idx === 0) {
+          this.customerType = cust.customerType;
+          this.customerQuote = cust.quote;
+          this.bubbleType = 'dialogue';
+        }
+      });
+
+      if (this.queue.length === 0) {
+        this.customerActive = false;
+      }
+    }
+  }
+
+  spawnMotorbikeShipper(orderId = null) {
+    if (!this.motorbikeShipper) return;
+    const ms = this.motorbikeShipper;
+    if (ms.active) {
+      if (orderId && !ms.orderId) ms.orderId = orderId;
+      return;
+    }
+    ms.active = true;
+    ms.state = 'approaching';
+    ms.x = this.width + 25;
+    ms.targetX = 230;
+    ms.walkX = 230;
+    ms.speed = 2.3;
+    ms.timer = 0;
+    ms.orderId = orderId;
+    ms.hasDrink = false;
+    ms.bubble = '🛵 Có đơn ship hỏa tốc!';
+  }
+
+  onShipperOrderServed(orderId = null) {
+    if (!this.motorbikeShipper || !this.motorbikeShipper.active) return;
+    const ms = this.motorbikeShipper;
+    ms.state = 'carrying_drink';
+    ms.hasDrink = true;
+    ms.bubble = '🥤 Đã nhận đồ, đi giao ngay!';
+    this.floatingTexts.push({
+      text: '📦 ĐÃ LẤY HÀNG!',
+      x: Math.max(160, ms.walkX - 10),
+      y: 95,
+      alpha: 1.0,
+      color: '#50fa7b'
+    });
+  }
+
+  onShipperOrderFailed(orderId = null) {
+    if (!this.motorbikeShipper || !this.motorbikeShipper.active) return;
+    const ms = this.motorbikeShipper;
+    ms.state = 'departing_empty';
+    ms.hasDrink = false;
+    ms.bubble = '❌ Khách đợi lâu quá hủy đơn rồi!';
+  }
+
+  updateCollabCustomers() {
+    const slots = [
+      { x: 205, y: 92 },
+      { x: 375, y: 92 },
+      { x: 545, y: 92 }
+    ];
+
+    if (!this.collabCustomerStates) {
+      this.collabCustomerStates = [
+        { state: 'idle', timer: 60, x: 0, targetX: 0, type: 1, quote: '', hasDrink: false },
+        { state: 'idle', timer: 140, x: 0, targetX: 0, type: 2, quote: '', hasDrink: false },
+        { state: 'idle', timer: 220, x: 0, targetX: 0, type: 3, quote: '', hasDrink: false }
+      ];
+    }
+
+    const orderPhrases = [
+      '🧋 Cho 1 ly nha!',
+      '✨ 1 ly ít đường ít đá!',
+      '🍵 Cho 1 ly full topping!',
+      '🔥 Pha nhanh giùm mình!',
+      '🌟 Quán này ngon lắm!',
+      '🥤 1 Thái xanh thơm béo!',
+      '🍑 1 Đào cam sả nha!'
+    ];
+    const thankPhrases = [
+      'Ngon tuyệt! 🥰',
+      'Cảm ơn quán! ✨',
+      '5⭐ uy tín nha! ⭐',
+      'Uống dính quá! 🧋'
+    ];
+
+    for (let i = 0; i < 3; i++) {
+      const partner = (this.activeCollabs && this.activeCollabs[i]) ? this.activeCollabs[i] : null;
+      const cState = this.collabCustomerStates[i];
+      if (!cState) continue;
+
+      const isOnline = !!(partner && (partner.is_online || partner.online));
+      if (!isOnline) {
+        if (cState.state !== 'idle') {
+          cState.state = 'idle';
+          cState.timer = 80 + i * 40;
+          cState.hasDrink = false;
+        }
+        continue;
+      }
+
+      const slot = slots[i];
+      const counterX = slot.x + 64;
+
+      if (cState.state === 'idle') {
+        cState.timer--;
+        if (cState.timer <= 0) {
+          cState.state = 'approaching';
+          cState.x = slot.x + 145;
+          cState.targetX = counterX;
+          cState.hasDrink = false;
+          cState.type = Math.floor(Math.random() * 45);
+          cState.quote = orderPhrases[Math.floor(Math.random() * orderPhrases.length)];
+        }
+      } else if (cState.state === 'approaching') {
+        cState.x -= 1.1;
+        if (cState.x <= cState.targetX) {
+          cState.x = cState.targetX;
+          cState.state = 'ordering';
+          cState.timer = 150 + Math.floor(Math.random() * 90);
+        }
+      } else if (cState.state === 'ordering') {
+        cState.timer--;
+        if (cState.timer <= 0) {
+          cState.state = 'leaving';
+          cState.hasDrink = true;
+          cState.quote = thankPhrases[Math.floor(Math.random() * thankPhrases.length)];
+
+          this.floatingTexts.push({
+            text: '✨ +32.000đ',
+            x: slot.x + 46,
+            y: 82,
+            alpha: 1.0,
+            color: '#50fa7b'
+          });
+          this.floatingTexts.push({
+            text: '❤️ Collab +10%',
+            x: slot.x + 48,
+            y: 72,
+            alpha: 1.0,
+            color: '#f1c40f'
+          });
+
+          for (let p = 0; p < 4; p++) {
+            this.particles.push({
+              x: counterX - 5 + Math.random() * 10,
+              y: 110 + Math.random() * 5,
+              vx: (Math.random() - 0.5) * 2,
+              vy: -Math.random() * 1.5,
+              life: 18,
+              maxLife: 18,
+              color: '#55efc4',
+              size: 2
+            });
+          }
+        }
+      } else if (cState.state === 'leaving') {
+        cState.x += 1.3;
+        if (cState.x > slot.x + 175) {
+          cState.state = 'idle';
+          cState.hasDrink = false;
+          cState.timer = 70 + Math.floor(Math.random() * 100);
+        }
       }
     }
   }
@@ -418,43 +621,102 @@ class GameCanvas {
         this.shipperSpawnTimer--;
         if (this.shipperSpawnTimer <= 0) {
           this.shipperSpawnTimer = 2200 + Math.random() * 2200; // Spawns every 35-75s
-          ms.active = true;
-          ms.state = 'approaching';
-          ms.x = this.width + 25;
-          ms.targetX = 230;
-          ms.bubble = '🛵 Có đơn ship hỏa tốc!';
-          ms.timer = 0;
+          this.spawnMotorbikeShipper();
         }
       } else {
         if (ms.state === 'approaching') {
           ms.x -= ms.speed;
           if (ms.x <= ms.targetX) {
-            ms.state = 'parked';
+            ms.x = ms.targetX;
             ms.walkX = ms.x;
-            ms.timer = 360; // ~6s to park, walk over & grab drink
-            ms.bubble = '📦 Lấy đơn mang về nhé!';
+            ms.state = 'walking_to_counter';
+            ms.bubble = '📦 Lấy đơn giao hàng nhé!';
           }
-        } else if (ms.state === 'parked') {
+        } else if (ms.state === 'walking_to_counter') {
+          ms.walkX -= 1.1;
+          if (ms.walkX <= 185) {
+            ms.walkX = 185;
+            ms.state = 'waiting_for_drink';
+            ms.bubble = '📦 Cho em lấy đơn ship hỏa tốc!';
+            if (typeof this.onShipperArrived === 'function') {
+              this.onShipperArrived();
+            }
+          }
+        } else if (ms.state === 'waiting_for_drink') {
+          // Stands patiently at the counter waiting for the drink to be prepared & served
+          if (this.tick % 240 === 0) {
+            const waitQuotes = [
+              '☕ Quán làm nhanh nha, khách app giục quá!',
+              '📦 Đang đợi quán làm trà sữa giao đi...',
+              '🛵 Đơn hỏa tốc ráng làm chuẩn vị giùm em nha!',
+              '✨ Trà thơm quá, xong sớm em phóng vèo đi giao!'
+            ];
+            ms.bubble = waitQuotes[Math.floor(Math.random() * waitQuotes.length)];
+          }
+        } else if (ms.state === 'carrying_drink') {
+          // Walking back from counter (185) to parked motorbike (ms.x) holding drink
+          ms.walkX += 1.2;
+          if (ms.walkX >= ms.x) {
+            ms.walkX = ms.x;
+            ms.state = 'stowing_drink';
+            ms.timer = 45; // ~0.75s to stow into insulated box
+            ms.bubble = '📦 Cất vào thùng giữ nhiệt!';
+            for (let i = 0; i < 6; i++) {
+              this.particles.push({
+                x: ms.x - 5 + (Math.random() * 8 - 4),
+                y: 125 + (Math.random() * 6 - 3),
+                vx: (Math.random() - 0.5) * 2,
+                vy: -Math.random() * 1.5,
+                life: 20,
+                maxLife: 20,
+                color: '#2ecc71',
+                size: 2
+              });
+            }
+          }
+        } else if (ms.state === 'stowing_drink') {
           ms.timer--;
-          if (ms.timer > 180) {
-            if (ms.walkX > 185) ms.walkX -= 1.1;
-            if (ms.timer === 260) ms.bubble = '🥤 Đã nhận đồ, đi giao ngay!';
-          } else {
-            if (ms.walkX < ms.x) ms.walkX += 1.1;
-          }
           if (ms.timer <= 0) {
+            ms.hasDrink = false;
             ms.state = 'departing';
-            ms.bubble = '💨 Chúc quán đắt hàng!';
+            ms.bubble = '💨 Chúc quán đắt hàng, em đi giao đây!';
+          }
+        } else if (ms.state === 'departing_empty') {
+          // Walking back without drink after cancellation/timeout
+          ms.walkX += 1.2;
+          if (ms.walkX >= ms.x) {
+            ms.walkX = ms.x;
+            ms.state = 'departing';
+            ms.bubble = '💨 Tiếc quá, em chạy cuốc khác vậy!';
           }
         } else if (ms.state === 'departing') {
-          ms.x -= ms.speed * 1.5;
+          ms.x -= ms.speed * 1.6;
+          // Exhaust dust particles
+          if (this.tick % 4 === 0) {
+            this.particles.push({
+              x: ms.x + 20,
+              y: 138,
+              vx: 0.8 + Math.random() * 0.5,
+              vy: -0.3 - Math.random() * 0.4,
+              life: 14,
+              maxLife: 14,
+              color: '#bdc3c7',
+              size: 2
+            });
+          }
           if (ms.x < -60) {
             ms.active = false;
             ms.state = 'idle';
+            ms.orderId = null;
+            ms.hasDrink = false;
+            this.shipperSpawnTimer = 2200 + Math.random() * 2200;
           }
         }
       }
     }
+
+    // Update Active Online Collab Stall Customers
+    this.updateCollabCustomers();
 
     // Update Police Patrol System
     if (this.policePatrol) {
@@ -710,6 +972,7 @@ class GameCanvas {
     if (this.queue && this.queue.length > 0) {
       for (let i = this.queue.length - 1; i >= 0; i--) {
         const qCust = this.queue[i];
+        if (qCust.isShipper) continue; // Skip pedestrian sprite since Motorbike Shipper is rendered by drawMotorbikeShipper
         this.drawCustomer(ctx, qCust.currentX, qCust.targetY || 108, qCust.customerType, i === 0, qCust.quote, qCust.name);
       }
     } else if (this.customerActive) {
@@ -718,6 +981,26 @@ class GameCanvas {
 
     this.leavingCustomers.forEach(lc => {
       this.drawCustomer(ctx, lc.currentX, 108, lc.customerType, false, '', lc.name);
+      if (lc.isCancelled && lc.quote) {
+        ctx.save();
+        ctx.font = 'bold 7px sans-serif';
+        const txt = lc.quote;
+        const tw = ctx.measureText(txt).width;
+        const bw = tw + 8;
+        const bh = 14;
+        const bx = Math.min(this.width - bw - 2, Math.max(2, lc.currentX + 5 - bw / 2));
+        const by = 80;
+        ctx.fillStyle = 'rgba(20, 8, 12, 0.9)';
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeStyle = '#ff5555';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx, by, bw, bh);
+        ctx.fillStyle = '#ff7675';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(txt, bx + bw / 2, by + bh / 2);
+        ctx.restore();
+      }
     });
 
     // 7. POLICE PATROL OFFICER (Cảnh sát trật tự tuần tra)

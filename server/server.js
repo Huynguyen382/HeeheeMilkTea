@@ -162,10 +162,10 @@ app.post('/api/monitoring/circuit-breaker/reset', (req, res) => {
 // Add error tracking middleware (must be after all routes)
 app.use(errorTrackingMiddleware);
 
-// Health check with detailed stats
+// Health check with detailed stats (passive by default to prevent waking Neon DB)
 app.get('/api/health', async (req, res) => {
   try {
-    const dbHealth = await db.healthCheck();
+    const dbHealth = await db.healthCheck(req.query.check_db === 'true');
     const cacheStats = await gameService.getCacheStats();
     const rateLimitStats = rateLimitService.getStats();
     
@@ -215,7 +215,7 @@ app.get('/api/health/detailed', async (req, res) => {
   }
   
   try {
-    const dbHealth = await db.healthCheck();
+    const dbHealth = await db.healthCheck(req.query.check_db === 'true');
     const cacheStats = await gameService.getCacheStats();
     const rateLimitStats = rateLimitService.getStats();
     const poolStats = db.getPoolStats();
@@ -254,7 +254,7 @@ function setupAutoPing() {
   const intervalMs = intervalMinutes * 60 * 1000;
 
   if (pingUrl) {
-    const fullUrl = pingUrl.replace(/\/$/, '') + '/api/health/detailed';
+    const fullUrl = pingUrl.replace(/\/$/, '') + '/api/health';
     console.log(`[Auto-Ping] Enabled! Target: ${fullUrl} every ${intervalMinutes} minutes.`);
 
     setInterval(async () => {

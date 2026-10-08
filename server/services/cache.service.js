@@ -261,13 +261,21 @@ const gameCache = {
   
   // Static data cache (long TTL)
   staticData: new CacheService(),
+
+  // Session / Token authentication cache (critical for 300 CCU without DB overhead)
+  sessions: new CacheService(),
+
+  // Collab presence & data cache (15s TTL, prevents 200 queries/sec polling)
+  collabs: new CacheService(),
   
   // Get combined stats
   getStats() {
     return {
       storeState: this.storeState.getStats(),
       orderGeneration: this.orderGeneration.getStats(),
-      staticData: this.staticData.getStats()
+      staticData: this.staticData.getStats(),
+      sessions: this.sessions.getStats(),
+      collabs: this.collabs.getStats()
     };
   },
   
@@ -276,6 +284,8 @@ const gameCache = {
     this.storeState.clear();
     this.orderGeneration.clear();
     this.staticData.clear();
+    this.sessions.clear();
+    this.collabs.clear();
   }
 };
 

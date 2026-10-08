@@ -7,6 +7,9 @@ const { gameCache } = require('../cache.service');
 function invalidateStoreCache(storeId) {
   if (storeId) {
     gameCache.storeState.delete(`store:${storeId}`);
+    if (gameCache.collabs) {
+      gameCache.collabs.delete(`collab:${storeId}`);
+    }
   }
 }
 

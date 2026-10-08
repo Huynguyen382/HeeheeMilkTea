@@ -67,8 +67,13 @@ const API = {
     return await this.request('/store/state');
   },
 
-  async getOrder() {
-    return await this.request('/game/order');
+  async getOrder(isShipper = false) {
+    const endpoint = isShipper ? '/game/order?isShipper=true' : '/game/order';
+    return await this.request(endpoint);
+  },
+
+  async getShipperOrder() {
+    return await this.getOrder(true);
   },
 
   async serveOrder(orderId, timeTaken, recipeId, sugar, ice, toppings = [], pausedTimeMs = 0) {
@@ -85,6 +90,14 @@ const API = {
 
   async snackDecision(accept) {
     return await this.request('/game/snack-decision', 'POST', { accept });
+  },
+
+  async negotiateOrder(orderId, accept) {
+    return await this.request('/game/negotiate', 'POST', { orderId, accept });
+  },
+
+  async setCustomPrices(customPrices) {
+    return await this.request('/game/custom-prices', 'POST', { customPrices });
   },
 
   async reportOrderFail(orderId, isTiktoker = false) {
@@ -109,6 +122,10 @@ const API = {
 
   async cancelCollab(collabId) {
     return await this.request('/game/collab/cancel', 'POST', { collabId });
+  },
+
+  async heartbeat() {
+    return await this.request('/game/heartbeat', 'POST');
   },
 
   async getFriends() {

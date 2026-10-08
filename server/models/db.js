@@ -21,18 +21,19 @@ const db = {
       // Ensure BIGINT (int8) is parsed as JavaScript Number
       types.setTypeParser(20, (val) => (val === null ? null : parseInt(val, 10)));
 
-      // Optimized connection pool for free tier scaling
+      // Neon PostgreSQL Free Tier Optimized Pool Configuration:
+      // min: 0 allows connections to drain to 0 when idle, enabling Neon compute auto-suspend
+      // idleTimeoutMillis: 15000 closes idle connections quickly
+      // connectionTimeoutMillis: 10000 handles Neon serverless cold-start smoothly
       pgPool = new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
-        // Free tier optimized settings
-        max: process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX) : 10, // Reduced for free tier
-        min: process.env.DB_POOL_MIN ? parseInt(process.env.DB_POOL_MIN) : 2,
-        idleTimeoutMillis: 30000, // Close idle connections after 30s
-        connectionTimeoutMillis: 5000, // Fail fast if can't connect
-        maxUses: 1000, // Recycle connections periodically
-        // Statement timeout for long-running queries (5 seconds)
-        statement_timeout: 5000
+        max: process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX) : 20,
+        min: 0, // CRITICAL: 0 connections when idle allows Neon to auto-suspend and save compute hours
+        idleTimeoutMillis: 15000, // Close idle connections after 15s so Neon compute sleeps
+        connectionTimeoutMillis: 10000, // 10s timeout allows Neon to wake up from cold start
+        maxUses: 2000,
+        statement_timeout: 8000
       });
 
       // Handle pool errors
@@ -144,6 +145,7 @@ const db = {
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS decorations TEXT DEFAULT '[]';
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS rest_until_ts BIGINT DEFAULT 0;
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS active_buffs TEXT DEFAULT '{}';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS custom_prices TEXT DEFAULT '{}';
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS teacoin BIGINT DEFAULT 0;
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS daily_quests TEXT DEFAULT '{}';
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS orders_served BIGINT DEFAULT 0;
@@ -153,8 +155,15 @@ const db = {
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_tips BIGINT DEFAULT 0;
            ALTER TABLE collabs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'accepted';
            ALTER TABLE collabs ADD COLUMN IF NOT EXISTS created_at TEXT;
+
+           CREATE INDEX IF NOT EXISTS idx_stores_session_token ON stores(session_token);
+           CREATE INDEX IF NOT EXISTS idx_stores_store_code ON stores(store_code);
+           CREATE INDEX IF NOT EXISTS idx_active_orders_store_id ON active_orders(store_id);
+           CREATE INDEX IF NOT EXISTS idx_collabs_stores ON collabs(host_store_id, friend_store_id, status);
+           CREATE INDEX IF NOT EXISTS idx_daily_stats_store_date ON daily_stats(store_id, real_date);
+           CREATE INDEX IF NOT EXISTS idx_friends_stores ON friends(user_store_id, friend_store_id);
          `);
-         console.log('Neon PostgreSQL schema initialized successfully.');
+         console.log('Neon PostgreSQL schema initialized successfully with optimized indexes.');
       } finally {
         client.release();
       }
@@ -190,6 +199,7 @@ const db = {
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN active_buffs TEXT DEFAULT '{}';"); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN properties TEXT DEFAULT '{}';"); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN decorations TEXT DEFAULT '[]';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN custom_prices TEXT DEFAULT '{}';"); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN teacoin INTEGER DEFAULT 0;'); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN daily_quests TEXT DEFAULT '{}';"); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
@@ -201,6 +211,11 @@ const db = {
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_tips INTEGER DEFAULT 0;'); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN status TEXT DEFAULT 'accepted';"); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN created_at TEXT;"); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_stores_session_token ON stores(session_token);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_stores_store_code ON stores(store_code);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_active_orders_store_id ON active_orders(store_id);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_collabs_stores ON collabs(host_store_id, friend_store_id, status);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_daily_stats_store_date ON daily_stats(store_id, real_date);'); } catch (e) {}
 
       sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS game_saves (
@@ -421,9 +436,21 @@ const db = {
     };
   },
 
-  // Database health and monitoring
-  async healthCheck() {
+  // Database health and monitoring (passive by default to preserve Neon Free compute hours)
+  async healthCheck(forceQuery = false) {
     if (pgPool) {
+      if (!forceQuery) {
+        return {
+          status: 'healthy',
+          type: 'postgresql',
+          passive: true,
+          pool: {
+            totalCount: pgPool.totalCount || 0,
+            idleCount: pgPool.idleCount || 0,
+            waitingCount: pgPool.waitingCount || 0
+          }
+        };
+      }
       try {
         const start = Date.now();
         await pgPool.query('SELECT 1');

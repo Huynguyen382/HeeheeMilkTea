@@ -61,6 +61,9 @@ async function register(username, password, storeName) {
   `).run(storeId, hash, now);
 
   const state = await gameService.getStoreState(storeId);
+  if (gameCache.sessions) {
+    gameCache.sessions.set(token, { id: storeId, username: cleanUser, store_code: storeCode, store_name: finalStoreName, session_token: token }, 300000);
+  }
   return {
     success: true,
     message: 'Đăng ký tiệm trà sữa thành công! Chúc mừng bạn đã chính thức khởi nghiệp.',
@@ -89,7 +92,14 @@ async function login(account, password) {
 
   // Generate fresh session token
   const token = crypto.randomBytes(16).toString('hex');
+  if (store.session_token && gameCache.sessions) {
+    gameCache.sessions.delete(store.session_token);
+  }
   await db.prepare('UPDATE stores SET session_token = ? WHERE id = ?').run(token, store.id);
+  store.session_token = token;
+  if (gameCache.sessions) {
+    gameCache.sessions.set(token, store, 300000);
+  }
 
   const state = await gameService.getStoreState(store.id);
   state.session_token = token;
@@ -104,6 +114,10 @@ async function login(account, password) {
 
 // Logout
 async function logout(storeId) {
+  const store = await db.prepare('SELECT session_token FROM stores WHERE id = ?').get(storeId);
+  if (store && store.session_token && gameCache.sessions) {
+    gameCache.sessions.delete(store.session_token);
+  }
   await db.prepare('UPDATE stores SET session_token = NULL WHERE id = ?').run(storeId);
   return { success: true, message: 'Đã đăng xuất an toàn.' };
 }

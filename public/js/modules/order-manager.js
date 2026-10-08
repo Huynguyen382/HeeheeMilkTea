@@ -53,6 +53,12 @@ export async function scheduleNextOrder(delay = 4000) {
       // Keep unserved pending orders and append new ones up to max 14 customers
       const pendingQueue = state.orderQueue.filter(o => o.orderId !== (state.currentOrder && state.currentOrder.orderId));
       state.orderQueue = [...pendingQueue, ...res.order.orders].slice(0, 14);
+
+      const shipperOrder = res.order.orders.find(o => o.isShipper);
+      if (shipperOrder && state.canvas && !state.canvas.motorbikeShipper?.active) {
+        state.canvas.spawnMotorbikeShipper(shipperOrder.orderId);
+      }
+
       if (state.canvas && state.canvas.setCustomerQueue) {
         state.canvas.setCustomerQueue(state.orderQueue);
       }
@@ -175,6 +181,11 @@ export async function handleOrderTimeout() {
   if (state.canvas) state.canvas.triggerFailEffects();
   const failedCust = state.currentOrder;
   const isTiktoker = failedCust ? !!failedCust.isTiktoker : false;
+  const isShipperOrder = !!(failedCust && (failedCust.isShipper || failedCust.orderId === state.canvas?.motorbikeShipper?.orderId));
+
+  if (isShipperOrder && state.canvas && state.canvas.onShipperOrderFailed) {
+    state.canvas.onShipperOrderFailed(failedCust.orderId);
+  }
 
   showToast(`❌ Khách hàng [${failedCust ? failedCust.customerName : 'Khách'}] sốt ruột bỏ đi vì đợi quá lâu!`);
 
@@ -188,6 +199,9 @@ export async function handleOrderTimeout() {
   }
 
   state.orderQueue.shift();
+  if (state.canvas && state.canvas.advanceQueue) {
+    state.canvas.advanceQueue();
+  }
   state.currentOrder = null;
   state.isShaken = false;
   state.isPoured = false;
@@ -208,5 +222,64 @@ export async function handleOrderTimeout() {
       scheduleNextOrder(isBigCampaign ? 1500 : (isViral ? 2200 : 3500));
     }
   }, 1000);
+}
+
+// Handle shipper arrival at counter: actually places a delivery order
+export async function handleShipperOrderArrival() {
+  if (state.isGamePaused) return null;
+  if (state.orderQueue && state.orderQueue.length >= 14) return null;
+
+  try {
+    const res = await window.API.getOrder(true);
+    if (!res || !res.order) return null;
+
+    if (res.order.resting) {
+      startRestCountdown(res.order.restUntil, res.order.restReason || 'snack_sick');
+      return null;
+    }
+
+    const newOrders = res.order.orders || [];
+    if (newOrders.length === 0) return null;
+
+    const shipperOrder = newOrders[0];
+    shipperOrder.isShipper = true;
+
+    if (state.canvas && state.canvas.motorbikeShipper) {
+      state.canvas.motorbikeShipper.orderId = shipperOrder.orderId;
+    }
+
+    showToast('🛵 Shipper Huy đã tới quầy nhận đơn giao hàng hỏa tốc! 📦', 4500);
+    if (window.sound) window.sound.bell();
+
+    if (!state.currentOrder) {
+      state.orderQueue = [shipperOrder, ...state.orderQueue].slice(0, 14);
+      if (state.canvas && state.canvas.setCustomerQueue) {
+        state.canvas.setCustomerQueue(state.orderQueue);
+      }
+      startNextOrderInQueue();
+    } else {
+      const currentId = state.currentOrder.orderId;
+      const currIdx = state.orderQueue.findIndex(o => o.orderId === currentId);
+      if (currIdx !== -1) {
+        state.orderQueue.splice(currIdx + 1, 0, shipperOrder);
+      } else {
+        state.orderQueue.push(shipperOrder);
+      }
+      state.orderQueue = state.orderQueue.slice(0, 14);
+      if (state.canvas && state.canvas.setCustomerQueue) {
+        state.canvas.setCustomerQueue(state.orderQueue);
+      }
+      updateUI();
+    }
+
+    return shipperOrder;
+  } catch (err) {
+    console.error('Failed to handle shipper order arrival:', err);
+    return null;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.handleShipperOrderArrival = handleShipperOrderArrival;
 }
 

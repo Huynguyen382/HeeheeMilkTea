@@ -928,8 +928,8 @@ export const eventMethods = {
     ctx.font = 'bold 6px monospace';
     ctx.fillText('TEA', mx - 9, my - 5);
 
-    // Kickstand when parked
-    if (ms.state === 'parked') {
+    // Kickstand when parked / waiting
+    if (ms.state !== 'approaching' && ms.state !== 'departing') {
       ctx.strokeStyle = '#7f8c8d';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -943,39 +943,68 @@ export const eventMethods = {
       // Riding on the bike
       ctx.fillStyle = '#27ae60'; // Delivery jacket
       ctx.fillRect(mx + 2, my - 12, 7, 9);
+      // Reflective stripe on back
+      ctx.fillStyle = '#a3e635';
+      ctx.fillRect(mx + 2, my - 8, 7, 2);
       ctx.fillStyle = '#2c3e50'; // Helmet
       ctx.fillRect(mx + 3, my - 17, 6, 6);
       ctx.fillStyle = '#f1c40f'; // Visor
       ctx.fillRect(mx + 7, my - 15, 2, 3);
-    } else if (ms.state === 'parked') {
-      // Shipper walks from motorbike to stall counter (ms.walkX)
+    } else {
+      // Shipper walks or stands at ms.walkX (walking_to_counter, waiting_for_drink, carrying_drink, stowing_drink, departing_empty)
       const wx = ms.walkX;
       const wy = 112;
-      const walkBob = Math.sin(this.tick * 0.3) * 2;
+      const isWalking = (ms.state === 'walking_to_counter' || ms.state === 'carrying_drink' || ms.state === 'departing_empty');
+      const walkBob = isWalking ? Math.sin(this.tick * 0.3) * 2 : 0;
+      const legStride = isWalking ? Math.sin(this.tick * 0.3) * 2 : 0;
 
       // Legs
       ctx.fillStyle = '#2c3e50';
-      ctx.fillRect(wx + 1, wy + 20, 3, 10);
-      ctx.fillRect(wx + 5, wy + 20, 3, 10);
+      ctx.fillRect(wx + 1 + legStride, wy + 20, 3, 10);
+      ctx.fillRect(wx + 5 - legStride, wy + 20, 3, 10);
       // Jacket
       ctx.fillStyle = '#27ae60';
       ctx.fillRect(wx, wy + 9 + walkBob, 9, 11);
+      // Reflective stripe (Áo phản quang)
+      ctx.fillStyle = '#a3e635';
+      ctx.fillRect(wx, wy + 13 + walkBob, 9, 2);
       // Delivery Helmet
       ctx.fillStyle = '#27ae60';
       ctx.fillRect(wx + 1, wy + 1 + walkBob, 7, 8);
       ctx.fillStyle = '#ffeaa7'; // Face
       ctx.fillRect(wx + 2, wy + 5 + walkBob, 4, 3);
 
+      // Drink cup held in hand when carrying drink!
+      if (ms.hasDrink) {
+        const cupX = wx - 4;
+        const cupY = wy + 11 + walkBob;
+        // Plastic cup
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(cupX, cupY, 4, 6);
+        // Tea inside
+        ctx.fillStyle = '#e67e22';
+        ctx.fillRect(cupX + 1, cupY + 2, 2, 3);
+        // Cup lid
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(cupX - 1, cupY - 1, 6, 2);
+        // Straw
+        ctx.fillStyle = '#f1c40f';
+        ctx.fillRect(cupX + 1, cupY - 3, 1, 3);
+      }
+
       // Shipper speech bubble
       if (ms.bubble) {
+        ctx.font = 'bold 7px sans-serif';
+        const tw = ctx.measureText(ms.bubble).width;
+        const bw = Math.max(70, tw + 10);
+        const bx = wx - Math.floor(bw / 2) + 4;
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(wx - 25, wy - 15, 75, 13);
+        ctx.fillRect(bx, wy - 15, bw, 13);
         ctx.strokeStyle = '#27ae60';
         ctx.lineWidth = 1;
-        ctx.strokeRect(wx - 25, wy - 15, 75, 13);
+        ctx.strokeRect(bx, wy - 15, bw, 13);
         ctx.fillStyle = '#2c3e50';
-        ctx.font = 'bold 7px sans-serif';
-        ctx.fillText(ms.bubble, wx - 23, wy - 5);
+        ctx.fillText(ms.bubble, bx + 5, wy - 5);
       }
     }
     ctx.restore();

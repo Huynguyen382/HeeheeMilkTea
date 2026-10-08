@@ -23,7 +23,13 @@ const db = {
 
       pgPool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false },
+        max: process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX) : 20,
+        min: 0, // CRITICAL: 0 connections when idle allows Neon to auto-suspend
+        idleTimeoutMillis: 15000,
+        connectionTimeoutMillis: 10000,
+        maxUses: 2000,
+        statement_timeout: 8000
       });
 
       // Test connection
@@ -114,6 +120,7 @@ const db = {
           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS decorations TEXT DEFAULT '[]';
           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS rest_until_ts BIGINT DEFAULT 0;
           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS active_buffs TEXT DEFAULT '{}';
+          ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS custom_prices TEXT DEFAULT '{}';
           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS orders_served BIGINT DEFAULT 0;
           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_orders BIGINT DEFAULT 0;
           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_earned BIGINT DEFAULT 0;
@@ -121,8 +128,14 @@ const db = {
           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_tips BIGINT DEFAULT 0;
           ALTER TABLE collabs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'accepted';
           ALTER TABLE collabs ADD COLUMN IF NOT EXISTS created_at TEXT;
+
+          CREATE INDEX IF NOT EXISTS idx_stores_session_token ON stores(session_token);
+          CREATE INDEX IF NOT EXISTS idx_stores_store_code ON stores(store_code);
+          CREATE INDEX IF NOT EXISTS idx_active_orders_store_id ON active_orders(store_id);
+          CREATE INDEX IF NOT EXISTS idx_collabs_stores ON collabs(host_store_id, friend_store_id, status);
+          CREATE INDEX IF NOT EXISTS idx_daily_stats_store_date ON daily_stats(store_id, real_date);
         `);
-        console.log('Neon PostgreSQL schema initialized successfully.');
+        console.log('Neon PostgreSQL schema initialized successfully with optimized indexes.');
       } finally {
         client.release();
       }
@@ -158,6 +171,7 @@ const db = {
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN active_buffs TEXT DEFAULT \'{}\';'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN properties TEXT DEFAULT \'{}\';'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN decorations TEXT DEFAULT \'[]\';'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN custom_prices TEXT DEFAULT \'{}\';'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN negotiation TEXT;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN orders_served INTEGER DEFAULT 0;'); } catch (e) {}
@@ -167,6 +181,11 @@ const db = {
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN shift_tips INTEGER DEFAULT 0;'); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN status TEXT DEFAULT 'accepted';"); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE collabs ADD COLUMN created_at TEXT;"); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_stores_session_token ON stores(session_token);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_stores_store_code ON stores(store_code);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_active_orders_store_id ON active_orders(store_id);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_collabs_stores ON collabs(host_store_id, friend_store_id, status);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_daily_stats_store_date ON daily_stats(store_id, real_date);'); } catch (e) {}
 
       sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS game_saves (

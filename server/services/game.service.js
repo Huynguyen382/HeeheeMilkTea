@@ -29,7 +29,9 @@ const {
   generateOrder,
   handleSnackDecision,
   recordOrderFailure,
-  inviteTiktoker
+  inviteTiktoker,
+  negotiateOrder,
+  setCustomPrices
 } = require('./game/order.service');
 
 const {
@@ -49,7 +51,9 @@ const {
   addCollab,
   acceptCollab,
   declineCollab,
-  cancelCollab
+  cancelCollab,
+  recordStoreHeartbeat,
+  isStoreOnline
 } = require('./game/collab.service');
 
 const {
@@ -110,6 +114,8 @@ module.exports = {
   handleSnackDecision,
   recordOrderFailure,
   inviteTiktoker,
+  negotiateOrder,
+  setCustomPrices,
 
   // Daily Quests & TeaCoin
   DAILY_QUESTS_TEMPLATE,
@@ -128,6 +134,8 @@ module.exports = {
   acceptCollab,
   declineCollab,
   cancelCollab,
+  recordStoreHeartbeat,
+  isStoreOnline,
 
   // Friend System
   getFriends,
