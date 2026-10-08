@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { updateMixingButtonsState } from './workflow.js';
 import { renderTiktokerModal } from './events.js';
 import { showToast } from './toast.js';
+import { updateWeatherUI } from './weather.js';
 
 // DOM Element cache
 const elStoreName = document.getElementById('store-name');
@@ -76,6 +77,19 @@ export function updateBuffsUI(buffs) {
     if (bStealth) bStealth.style.display = 'none';
   }
 
+  // Check live event buff
+  const bEvent = document.getElementById('buff-live-event');
+  if (bEvent) {
+    if (buffs.current_event && buffs.current_event.expires_at > Date.now()) {
+      const secLeft = Math.max(0, Math.ceil((buffs.current_event.expires_at - Date.now()) / 1000));
+      bEvent.style.display = 'inline-block';
+      bEvent.innerHTML = `${buffs.current_event.icon || '🎪'} <b>${buffs.current_event.name}</b> (${secLeft}s)`;
+      hasAny = true;
+    } else {
+      bEvent.style.display = 'none';
+    }
+  }
+
   bar.style.display = hasAny ? 'flex' : 'none';
 }
 
@@ -113,6 +127,9 @@ export function updateUI() {
   if (elTimeBadge && state.canvas && state.canvas.getTimeOfDayLabel) {
     elTimeBadge.innerText = state.canvas.getTimeOfDayLabel();
   }
+
+  // Update Dynamic Weather HUD badge & sync Canvas
+  updateWeatherUI(state.storeState.weather);
 
   // Debt warning hint in HUD
   const hudDebtWrap = document.getElementById('hud-debt-wrap');

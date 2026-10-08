@@ -168,9 +168,9 @@ async function generateOrderOptimized(db, storeId) {
     const toppingDiff = orderToppings.length - baseToppingCount;
     
     if (toppingDiff > 0) {
-      price += toppingDiff * 3000; // Thêm topping: +3.000đ mỗi loại
+      price += toppingDiff * 7000; // Thêm topping: +7.000đ mỗi loại
     } else if (toppingDiff < 0) {
-      price = Math.max(10000, price - 2000); // Không lấy topping: giảm 2.000đ
+      price = Math.max(25000, price + toppingDiff * 6000); // Không lấy topping: giảm 6.000đ, không dưới 25.000đ
     }
 
     if (cust.tipMult) price = Math.floor(price * cust.tipMult);
@@ -188,15 +188,18 @@ async function generateOrderOptimized(db, storeId) {
       price = Math.floor(price * locationConfig.priceMultiplier);
     }
 
+    // Luôn đảm bảo giá trà sữa tối thiểu 25.000đ
+    price = Math.max(25000, price);
+
     // Đàm phán: khách chủ động đề nghị giá thấp hơn
     let negotiation = null;
     const customerBonus = locationConfig.customerBonus || 0;
     const hagglerChance = Math.min(0.6, NEGOTIATION.haggleChance + customerBonus * 0.2);
     
     if (fastRandom.next() < hagglerChance) {
-      const discountRatio = 0.1 + fastRandom.next() * NEGOTIATION.maxDiscount;
+      const discountRatio = 0.08 + fastRandom.next() * 0.15;
       const discountAmount = Math.floor(price * discountRatio);
-      const requestedPrice = Math.max(1000, price - discountAmount);
+      const requestedPrice = Math.max(25000, price - discountAmount);
       const line = NEGOTIATION.haggleLines[fastRandom.int(0, NEGOTIATION.haggleLines.length - 1)]
         .replace('{discount}', discountAmount.toLocaleString('vi-VN'));
       

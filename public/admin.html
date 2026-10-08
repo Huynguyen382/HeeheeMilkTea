@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Quản Trị Trà Sữa HeeHee</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+
+  <!-- ADMIN AUTH OVERLAY -->
+  <div id="auth-overlay">
+    <div class="login-card">
+      <div class="login-icon">🧋</div>
+      <h2 class="login-title">Trung Tâm Quản Trị</h2>
+      <p class="login-subtitle">Hệ Thống Quản Lý Tiệm Trà Sữa HeeHee</p>
+      <form id="admin-login-form">
+        <div class="form-group" style="margin-bottom: 12px; text-align: left;">
+          <label for="admin-username-input">Tên Tài Khoản Quản Trị (Username)</label>
+          <input type="text" id="admin-username-input" class="input-control" placeholder="Ví dụ: admin" value="admin" required autofocus autocomplete="username">
+        </div>
+        <div class="form-group" style="margin-bottom: 16px; text-align: left;">
+          <label for="admin-password-input">Mật Khẩu Quản Trị (Password / Admin Key)</label>
+          <input type="password" id="admin-password-input" class="input-control" placeholder="Nhập mật khẩu..." value="admin123" required autocomplete="current-password">
+          <small style="color: #64748b; margin-top: 4px;">Mặc định ban đầu: Tài khoản <code>admin</code> • Mật khẩu: <code>admin123</code></small>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px;">
+          🚀 Đăng Nhập Bảng Quản Trị
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP LAYOUT -->
+  <div id="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🧋</div>
+        <div class="brand-text">
+          <h1>HeeHee Admin</h1>
+          <span>Game Control Center</span>
+        </div>
+      </div>
+      <ul class="nav-menu">
+        <li class="nav-item active" data-tab="tab-dashboard">
+          <span class="icon">📊</span>
+          <span>Tổng Quan</span>
+        </li>
+        <li class="nav-item" data-tab="tab-stores">
+          <span class="icon">🏪</span>
+          <span>Quản Lý Người Chơi</span>
+          <span class="nav-badge" id="badge-total-stores">0</span>
+        </li>
+        <li class="nav-item" data-tab="tab-orders">
+          <span class="icon">📋</span>
+          <span>Đơn Hàng Hiện Tại</span>
+          <span class="nav-badge" id="badge-active-orders" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">0</span>
+        </li>
+        <li class="nav-item" data-tab="tab-events">
+          <span class="icon">🎪</span>
+          <span>Sự Kiện & Lễ Hội</span>
+        </li>
+        <li class="nav-item" data-tab="tab-weather">
+          <span class="icon">⛈️</span>
+          <span>Thời Tiết & Sấm Sét</span>
+        </li>
+        <li class="nav-item" data-tab="tab-npcs">
+          <span class="icon">🎭</span>
+          <span>Danh Mục NPC (55 Nhân Vật)</span>
+        </li>
+        <li class="nav-item" data-tab="tab-bulk-inv">
+          <span class="icon">📦</span>
+          <span>Bơm Kho Nguyên Liệu</span>
+        </li>
+        <li class="nav-item" data-tab="tab-logs">
+          <span class="icon">🛡️</span>
+          <span>Nhật Ký & Chống Hack</span>
+        </li>
+        <li class="nav-item" data-tab="tab-system">
+          <span class="icon">⚙️</span>
+          <span>Hệ Thống & Máy Chủ</span>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Database:</span>
+          <strong id="sidebar-db-type" style="color: var(--admin-primary);">SQLite</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Server Uptime:</span>
+          <span id="sidebar-uptime">0s</span>
+        </div>
+        <button id="btn-quick-play" class="btn btn-secondary btn-xs" style="margin-top: 6px;" onclick="window.open('/', '_blank')">
+          🎮 Mở Trò Chơi
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h2 class="page-title" id="page-title-display">📊 Tổng Quan Hệ Thống</h2>
+        </div>
+        <div class="topbar-right">
+          <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span>Server Live</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-all" title="Làm mới dữ liệu">
+            🔄 Làm Mới
+          </button>
+          <button class="btn btn-danger btn-sm" id="btn-admin-logout" title="Đăng xuất">
+            🚪 Đăng Xuất
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT BODY -->
+      <main class="content-body">
+        
+        <!-- ============================================== -->
+        <!-- TAB 1: DASHBOARD OVERVIEW -->
+        <!-- ============================================== -->
+        <section id="tab-dashboard" class="tab-pane active">
+          <!-- STATS CARDS -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Tổng Quán Trà Sữa</span>
+                <span class="stat-icon">🏪</span>
+              </div>
+              <div class="stat-value" id="kpi-total-stores">0</div>
+              <div class="stat-desc">Số tài khoản / cửa hàng đã tạo</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Tổng Tiền Toàn Server</span>
+                <span class="stat-icon">💰</span>
+              </div>
+              <div class="stat-value" id="kpi-total-money" style="color: #34d399;">0đ</div>
+              <div class="stat-desc">Tổng số tiền người chơi đang sở hữu</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Tổng Nợ Ngân Hàng</span>
+                <span class="stat-icon">💳</span>
+              </div>
+              <div class="stat-value" id="kpi-total-debt" style="color: #f87171;">0đ</div>
+              <div class="stat-desc">Tổng nợ còn lại chưa thanh toán</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Đơn Đang Pha Chế</span>
+                <span class="stat-icon">⏳</span>
+              </div>
+              <div class="stat-value" id="kpi-active-orders" style="color: #fbbf24;">0</div>
+              <div class="stat-desc">Đơn hàng active_orders trong DB</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Doanh Thu Hôm Nay</span>
+                <span class="stat-icon">📈</span>
+              </div>
+              <div class="stat-value" id="kpi-today-earned" style="color: #60a5fa;">0đ</div>
+              <div class="stat-desc" id="kpi-today-orders">0 đơn hoàn thành</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-title">Bộ Nhớ RAM Node.js</span>
+                <span class="stat-icon">⚡</span>
+              </div>
+              <div class="stat-value" id="kpi-ram-usage">0 MB</div>
+              <div class="stat-desc" id="kpi-circuit-breaker">Circuit Breaker: CLOSED</div>
+            </div>
+          </div>
+
+          <!-- QUICK SERVER TOOLS -->
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>⚡ Phím Tắt Thao Tác Khẩn Cấp</h2>
+            </div>
+            <div class="card-body">
+              <div class="quick-actions-bar" style="margin-bottom: 0;">
+                <button class="btn btn-secondary" onclick="AdminApp.flushCache()">
+                  🧹 Xóa Trắng Cache Bộ Nhớ
+                </button>
+                <button class="btn btn-secondary" onclick="AdminApp.clearRateLimit()">
+                  🔓 Mở Khóa Chặn Rate-Limit
+                </button>
+                <button class="btn btn-secondary" onclick="AdminApp.resetCircuitBreaker()">
+                  🔄 Khôi Phục Circuit Breaker
+                </button>
+                <button class="btn btn-primary" onclick="AdminApp.openCreateStoreModal()">
+                  ➕ Tạo Cửa Hàng Mới
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TOP PLAYERS & RECENT LOGS -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+            <!-- Top Rich Stores -->
+            <div class="admin-card">
+              <div class="card-header">
+                <h2>🏆 Top Đại Gia Trà Sữa (Nhiều Tiền Nhất)</h2>
+              </div>
+              <div class="card-body" style="padding: 0;">
+                <div class="table-responsive">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Tên Quán</th>
+                        <th>Chương</th>
+                        <th>Số Dư Tiền</th>
+                        <th>Nợ Còn</th>
+                        <th>Hành Động</th>
+                      </tr>
+                    </thead>
+                    <tbody id="top-rich-tbody">
+                      <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Đang tải dữ liệu...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top In Debt -->
+            <div class="admin-card">
+              <div class="card-header">
+                <h2>💸 Top Con Nợ Ngân Hàng</h2>
+              </div>
+              <div class="card-body" style="padding: 0;">
+                <div class="table-responsive">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Tên Quán</th>
+                        <th>Mã Quán</th>
+                        <th>Nợ Còn Lại</th>
+                        <th>Danh Tiếng</th>
+                        <th>Hành Động</th>
+                      </tr>
+                    </thead>
+                    <tbody id="top-debt-tbody">
+                      <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Đang tải dữ liệu...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB 2: STORES & PLAYERS MANAGEMENT -->
+        <!-- ============================================== -->
+        <section id="tab-stores" class="tab-pane" style="display: none;">
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>🏪 Danh Sách Toàn Bộ Cửa Hàng & Người Chơi</h2>
+              <div class="card-actions">
+                <div class="search-box">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="stores-search-input" class="input-control" placeholder="Tìm tên, mã quán, username...">
+                </div>
+                <select id="stores-filter-select" class="input-control" style="width: 150px;">
+                  <option value="all">Tất cả quán</option>
+                  <option value="jailed">Đang bị phạt tù</option>
+                  <option value="active_orders">Có đơn hàng</option>
+                  <option value="chapter_1">Chương 1</option>
+                  <option value="chapter_2">Chương 2</option>
+                  <option value="chapter_3">Chương 3</option>
+                </select>
+                <button class="btn btn-primary" onclick="AdminApp.openCreateStoreModal()">
+                  ➕ Thêm Tiệm Mới
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Tên Tiệm / Tài Khoản</th>
+                      <th>Mã Quán</th>
+                      <th>Chương / Ngày</th>
+                      <th>Tiền Vốn (đ)</th>
+                      <th>Nợ (đ)</th>
+                      <th>Teacoin</th>
+                      <th>Uy Tín</th>
+                      <th>Đơn Chờ</th>
+                      <th>Trạng Thái</th>
+                      <th style="text-align: right;">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stores-list-tbody">
+                    <tr><td colspan="11" style="text-align: center; padding: 20px;">Đang tải danh sách quán...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB 3: ACTIVE ORDERS -->
+        <!-- ============================================== -->
+        <section id="tab-orders" class="tab-pane" style="display: none;">
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>📋 Đơn Hàng Đang Hoạt Động (Real-time Active Orders)</h2>
+              <div class="card-actions">
+                <button class="btn btn-success" onclick="AdminApp.openSpawnOrderModal()">
+                  ⚡ Ép Tạo Đơn Mới (VIP/Shipper)
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Mã Đơn</th>
+                      <th>Cửa Hàng</th>
+                      <th>Khách Hàng</th>
+                      <th>Món Trà Sữa</th>
+                      <th>Đường / Đá / Topping</th>
+                      <th>Giá Bán</th>
+                      <th>Thời Gian Còn</th>
+                      <th style="text-align: right;">Hành Động Can Thiệp</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orders-list-tbody">
+                    <tr><td colspan="8" style="text-align: center; padding: 20px;">Không có đơn hàng nào đang chờ.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB: EVENTS & FESTIVALS -->
+        <!-- ============================================== -->
+        <section id="tab-events" class="tab-pane" style="display: none;">
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>🎪 Quản Lý Sự Kiện & Lễ Hội Trong Game (Live Events)</h2>
+              <div class="card-actions">
+                <span style="font-size: 13px; color: var(--text-muted);">Tác động tức thì tới gameplay thời gian thực</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="background: rgba(255, 255, 255, 0.02); padding: 16px; border-radius: 8px; border: 1px solid var(--admin-border); margin-bottom: 24px;">
+                <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--admin-primary);">⚡ Bộ Kích Hoạt Sự Kiện Nhanh:</h3>
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; align-items: flex-end;">
+                  <div class="form-group">
+                    <label>Chọn Phạm Vi Kích Hoạt:</label>
+                    <select id="event-target-store-select" class="input-control">
+                      <option value="all">📢 Toàn Bộ Máy Chủ (Tất cả quán cùng diễn ra)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Chọn Sự Kiện Cần Kích Hoạt:</label>
+                    <select id="event-select-trigger" class="input-control">
+                      <option value="hoi_cho_am_thuc">🎪 Hội Chợ Ẩm Thực Phố Đêm (90s - Doanh thu x2, Khách đông gấp 2.5)</option>
+                      <option value="mua_rao_mua_he">🌧️ Cơn Mưa Rào Mùa Hè (120s - Trú mưa, Kiên nhẫn +50%)</option>
+                      <option value="kiem_tra_vsattp">📋 Thanh Tra An Toàn Thực Phẩm (45s - Thưởng 500 TeaCoin & +0.3⭐ uy tín)</option>
+                      <option value="tiktok_viral_surge">📱 Cơn Sốt TikTok Triệu View Bùng Nổ (90s - Tip x3, Topping ngập tràn)</option>
+                      <option value="nang_nong_40_do">☀️ Nắng Nóng Đột Ngột 40°C (90s - Giá bán +20%, Đắt hàng giải khát)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <button class="btn btn-primary" onclick="AdminApp.triggerSelectedEvent()" style="padding: 10px 20px;">
+                      🚀 Kích Hoạt Sự Kiện Ngay
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- EVENTS CARDS GRID -->
+              <h3 style="font-size: 15px; margin-bottom: 14px;">📋 Chi Tiết 5 Sự Kiện Mới Trong Game:</h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;" id="events-cards-grid">
+                <!-- Dynamically populated or rendered -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB: WEATHER & THUNDERSTORM CONTROLLER -->
+        <!-- ============================================== -->
+        <section id="tab-weather" class="tab-pane" style="display: none;">
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>⛈️ Điều Khiển Thời Tiết & Giông Bão Sấm Sét</h2>
+              <div class="card-actions">
+                <span style="font-size: 13px; color: var(--text-muted);">
+                  Tác động trực tiếp lên cảnh trời, lượng khách & sấm sét
+                </span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="background: rgba(162, 155, 254, 0.08); border: 1.5px solid #a29bfe; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                <h3 style="font-size: 15px; color: #a29bfe; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                  <span>⚡ Can Thiệp Thời Tiết Real-time:</span>
+                </h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                  Thời tiết trong game tự động thay đổi ngẫu nhiên mỗi khi người chơi kết ca (sang ngày mới). Quản trị viên có thể ép buộc kích hoạt bất kỳ hình thái thời tiết nào cho 1 tiệm hoặc phát sóng toàn server ngay tại đây!
+                </p>
+
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                  <div class="form-group">
+                    <label>Phạm Vi Áp Dụng:</label>
+                    <select id="weather-target-scope" class="input-control" onchange="AdminApp.toggleWeatherScopeUI()">
+                      <option value="broadcast">📢 Toàn Bộ Máy Chủ (Tất cả người chơi)</option>
+                      <option value="single">🏪 Tiệm Cụ Thể (Chọn bên dưới)</option>
+                    </select>
+                  </div>
+                  <div class="form-group" id="weather-store-select-group" style="display: none;">
+                    <label>Chọn Tiệm Trà Sữa:</label>
+                    <select id="weather-store-select" class="input-control">
+                      <option value="">-- Đang tải danh sách tiệm --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                  <label>Chọn Kiểu Thời Tiết:</label>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;" id="weather-radio-grid">
+                    <label style="background: rgba(255,255,255,0.05); border: 1.5px solid #f1c40f; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                      <input type="radio" name="admin-weather-type" value="sunny" checked>
+                      <div>
+                        <div style="font-weight: bold; color: #f1c40f;">☀️ Nắng Vàng</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Khách dạo phố +25%</div>
+                      </div>
+                    </label>
+
+                    <label style="background: rgba(255,255,255,0.05); border: 1.5px solid #74b9ff; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                      <input type="radio" name="admin-weather-type" value="rainy">
+                      <div>
+                        <div style="font-weight: bold; color: #74b9ff;">🌧️ Mưa Rào</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Khách kiên nhẫn +40%</div>
+                      </div>
+                    </label>
+
+                    <label style="background: rgba(162, 155, 254, 0.15); border: 1.5px solid #a29bfe; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                      <input type="radio" name="admin-weather-type" value="stormy">
+                      <div>
+                        <div style="font-weight: bold; color: #a29bfe;">⛈️ Giông Bão Sấm Sét</div>
+                        <div style="font-size: 11px; color: #fdcb6e;">⚡ Chớp lóe & Ship +60%</div>
+                      </div>
+                    </label>
+
+                    <label style="background: rgba(255,255,255,0.05); border: 1.5px solid #a4b0be; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                      <input type="radio" name="admin-weather-type" value="cloudy">
+                      <div>
+                        <div style="font-weight: bold; color: #dfe6e9;">⛅ Nhiều Mây</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Râm mát ổn định</div>
+                      </div>
+                    </label>
+
+                    <label style="background: rgba(255,255,255,0.05); border: 1.5px solid #55efc4; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                      <input type="radio" name="admin-weather-type" value="windy">
+                      <div>
+                        <div style="font-weight: bold; color: #55efc4;">🍃 Gió Mùa</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Lá hoa bay nhanh</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button class="btn btn-primary" onclick="AdminApp.applySelectedWeather()" style="padding: 10px 22px;">
+                    🌦️ Áp Dụng Thời Tiết Ngay
+                  </button>
+                  <button class="btn btn-danger" onclick="AdminApp.forceTriggerStorm()" style="padding: 10px 22px; background: linear-gradient(135deg, #a29bfe, #6c5ce7); border: none;">
+                    ⚡ Kích Hoạt Giông Bão & Sấm Sét Khẩn Cấp!
+                  </button>
+                </div>
+              </div>
+
+              <!-- WEATHER CARDS EXPLANATION -->
+              <h3 style="font-size: 15px; margin-bottom: 14px;">📖 Tác Động Cơ Chế Của Các Kiểu Thời Tiết:</h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                <div style="background: var(--admin-card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px;">
+                  <div style="font-size: 24px; margin-bottom: 4px;">☀️ Nắng Vàng Rực Rỡ</div>
+                  <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                    Trời trong xanh mây trắng. Khách dạo phố đông đúc ghé quán (+25%), các món trà hoa thanh nhiệt, giải khát nhiều đá bán rất chạy.
+                  </div>
+                </div>
+
+                <div style="background: var(--admin-card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px;">
+                  <div style="font-size: 24px; margin-bottom: 4px;">🌧️ Mưa Rào Mát Rượi</div>
+                  <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                    Mưa tí tách rải rác trên vỉa hè. Khách tạt vào trú mưa kiên nhẫn hơn (+40%), thích gọi thêm các loại topping ấm nóng hoặc trà sữa béo ngậy.
+                  </div>
+                </div>
+
+                <div style="background: rgba(162, 155, 254, 0.08); border: 1.5px solid #a29bfe; border-radius: 8px; padding: 14px;">
+                  <div style="font-size: 24px; margin-bottom: 4px; color: #a29bfe;">⛈️ Giông Bão Sấm Sét</div>
+                  <div style="font-size: 12px; color: #dfe6e9; line-height: 1.5;">
+                    Mây đen sà thấp, mưa rào xối xả kèm sấm sét giật chớp lóe sáng chân thực. Khách ngại ra đường nhưng số lượng đơn ship xe máy hỏa tốc bùng nổ (+60%) và tiền tip shipper tăng +25%!
+                  </div>
+                </div>
+
+                <div style="background: var(--admin-card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px;">
+                  <div style="font-size: 24px; margin-bottom: 4px;">⛅ Trời Râm & 🍃 Gió Mùa</div>
+                  <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                    Thời tiết dịu dàng, lá cây và cánh hoa bay lượn nhẹ nhàng. Lượng khách ghé mua mang đi tăng đều đặn.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB: NPCS DIRECTORY (55 CHARACTERS) -->
+        <!-- ============================================== -->
+        <section id="tab-npcs" class="tab-pane" style="display: none;">
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>🎭 Danh Mục 55 Khách Hàng NPC Toàn Game</h2>
+              <div class="card-actions">
+                <div class="search-box">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="npcs-search-input" class="input-control" placeholder="Tìm tên NPC, nghề nghiệp...">
+                </div>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nhân Vật</th>
+                      <th>Phân Loại</th>
+                      <th>Món Ưa Thích</th>
+                      <th>Độ Kiên Nhẫn</th>
+                      <th>Thưởng Tip</th>
+                      <th>Lời Thoại Tiêu Biểu</th>
+                      <th style="text-align: right;">Triệu Hồi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="npcs-list-tbody">
+                    <tr><td colspan="8" style="text-align: center; padding: 20px;">Đang tải danh sách NPC...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB 4: BULK INVENTORY -->
+        <!-- ============================================== -->
+        <section id="tab-bulk-inv" class="tab-pane" style="display: none;">
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>📦 Bơm Kho Nguyên Liệu Hàng Loạt</h2>
+            </div>
+            <div class="card-body">
+              <p style="color: var(--text-muted); margin-bottom: 20px;">
+                Chọn một cửa hàng và số lượng muốn bơm vào kho (Cốt trà, Topping, Ly cốc). Thao tác này sẽ cập nhật kho ngay lập tức.
+              </p>
+              <form id="bulk-inventory-form">
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
+                  <div class="form-group">
+                    <label>Chọn Cửa Hàng Cần Cấp Nguyên Liệu:</label>
+                    <select id="bulk-inv-store-select" class="input-control" required>
+                      <option value="">-- Chọn cửa hàng --</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Tùy Chọn Bơm Nhanh:</label>
+                    <div style="display: flex; gap: 8px;">
+                      <button type="button" class="btn btn-warning" onclick="AdminApp.fillBulkInvInputs(100)">Đặt tất cả = 100</button>
+                      <button type="button" class="btn btn-success" onclick="AdminApp.fillBulkInvInputs(999)">Bơm Đầy Max = 999</button>
+                      <button type="button" class="btn btn-secondary" onclick="AdminApp.fillBulkInvInputs(0)">Xóa hết = 0</button>
+                    </div>
+                  </div>
+                </div>
+
+                <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--admin-primary);">🍵 Cốt Trà Chính</h3>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Trà Đen Tân Cương (tra_den)</label>
+                    <input type="number" id="bulk-inv-tra_den" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Trà Thái Xanh (tra_thai_xanh)</label>
+                    <input type="number" id="bulk-inv-tra_thai_xanh" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Sữa Tươi Thanh Trùng (sua_tuoi)</label>
+                    <input type="number" id="bulk-inv-sua_tuoi" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Lục Trà Lài (tra_lai)</label>
+                    <input type="number" id="bulk-inv-tra_lai" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Trà Ô Long Nướng (tra_olong)</label>
+                    <input type="number" id="bulk-inv-tra_olong" class="input-control" value="100" min="0">
+                  </div>
+                </div>
+
+                <h3 style="font-size: 14px; margin-bottom: 12px; margin-top: 16px; color: var(--admin-primary);">⚫ Topping & Vật Tư</h3>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Trân Châu Đen (tranchau_den)</label>
+                    <input type="number" id="bulk-inv-tranchau_den" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Thạch Lá Dứa (thach_la_dua)</label>
+                    <input type="number" id="bulk-inv-thach_la_dua" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Sốt Đường Đen (tranchau_duongden)</label>
+                    <input type="number" id="bulk-inv-tranchau_duongden" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Đào Miếng (dao_mieng)</label>
+                    <input type="number" id="bulk-inv-dao_mieng" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Cam Vàng (cam_vang)</label>
+                    <input type="number" id="bulk-inv-cam_vang" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Sả Tươi (sa_tuoi)</label>
+                    <input type="number" id="bulk-inv-sa_tuoi" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Sương Sáo (suong_sao)</label>
+                    <input type="number" id="bulk-inv-suong_sao" class="input-control" value="100" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Ly Cốc Mang Đi (cups)</label>
+                    <input type="number" id="bulk-inv-cups" class="input-control" value="100" min="0">
+                  </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                  <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
+                    💾 Lưu Cập Nhật Kho Cửa Hàng
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB 5: AUDIT LOGS -->
+        <!-- ============================================== -->
+        <section id="tab-logs" class="tab-pane" style="display: none;">
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>🛡️ Lịch Sử Sự Kiện & Nhật Ký Hệ Thống (Audit Logs)</h2>
+              <div class="card-actions">
+                <button class="btn btn-danger btn-sm" onclick="AdminApp.clearAuditLogs()">
+                  🗑️ Xóa Sạch Nhật Ký
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Cửa Hàng</th>
+                      <th>Loại Sự Kiện</th>
+                      <th>Chi Tiết Nội Dung</th>
+                      <th>Thời Gian Ghi Nhận</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logs-list-tbody">
+                    <tr><td colspan="5" style="text-align: center; padding: 20px;">Chưa có nhật ký ghi nhận.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB 6: SYSTEM TOOLS -->
+        <!-- ============================================== -->
+        <section id="tab-system" class="tab-pane" style="display: none;">
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>⚙️ Công Cụ Chuẩn Đoán & Điều Khiển Máy Chủ</h2>
+            </div>
+            <div class="card-body">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div style="background: rgba(255, 255, 255, 0.02); padding: 20px; border-radius: 8px; border: 1px solid var(--admin-border);">
+                  <h3 style="font-size: 16px; margin-bottom: 10px; color: var(--admin-primary);">🧹 Quản Lý Bộ Nhớ Cache</h3>
+                  <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                    Game lưu cache trạng thái cửa hàng và dữ liệu tĩnh trong RAM. Xóa cache khi muốn ép hệ thống đọc lại toàn bộ từ Database.
+                  </p>
+                  <button class="btn btn-warning" onclick="AdminApp.flushCache()">
+                    Xóa Toàn Bộ Memory Cache
+                  </button>
+                </div>
+
+                <div style="background: rgba(255, 255, 255, 0.02); padding: 20px; border-radius: 8px; border: 1px solid var(--admin-border);">
+                  <h3 style="font-size: 16px; margin-bottom: 10px; color: var(--admin-info);">⚡ Circuit Breaker (Cầu Dao DB)</h3>
+                  <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                    Tự động ngắt kết nối khi DB bị quá tải hoặc lỗi liên tiếp. Nhấn reset để mở lại cầu dao về trạng thái an toàn CLOSED.
+                  </p>
+                  <button class="btn btn-info" onclick="AdminApp.resetCircuitBreaker()">
+                    Reset Cầu Dao Về Bình Thường
+                  </button>
+                </div>
+
+                <div style="background: rgba(255, 255, 255, 0.02); padding: 20px; border-radius: 8px; border: 1px solid var(--admin-border);">
+                  <h3 style="font-size: 16px; margin-bottom: 10px; color: var(--admin-success);">🔓 Rate Limiting & Chặn IP</h3>
+                  <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+                    Xóa các danh sách chặn truy cập và đếm số request của người chơi hoặc IP spam.
+                  </p>
+                  <button class="btn btn-success" onclick="AdminApp.clearRateLimit()">
+                    Mở Khóa Toàn Bộ Request
+                  </button>
+                </div>
+              </div>
+
+              <!-- SYSTEM INFORMATION TABLE -->
+              <div style="margin-top: 30px;">
+                <h3 style="font-size: 16px; margin-bottom: 14px;">📋 Thông Số Kỹ Thuật Node.js Server</h3>
+                <div class="table-responsive">
+                  <table class="admin-table">
+                    <tbody>
+                      <tr>
+                        <td style="width: 200px; font-weight: 600;">Hệ Điều Hành:</td>
+                        <td id="sys-info-os">Windows (Node.js)</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: 600;">Cơ Sở Dữ Liệu:</td>
+                        <td id="sys-info-db">Đang kiểm tra...</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: 600;">Node.js Uptime:</td>
+                        <td id="sys-info-uptime">0s</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: 600;">Trạng Thái Cầu Dao:</td>
+                        <td id="sys-info-cb">CLOSED</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: PLAYER & STORE DETAIL EDITOR -->
+  <!-- ============================================== -->
+  <div id="modal-store-editor" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 900px;">
+      <div class="modal-header">
+        <h3 id="modal-editor-title">
+          <span>🛠️ Chỉnh Sửa Quán:</span>
+          <span id="editor-store-name-display" style="color: var(--admin-primary);">...</span>
+        </h3>
+        <button class="modal-close-btn" onclick="AdminApp.closeStoreEditor()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- QUICK SHORTCUTS ROW -->
+        <div class="quick-actions-bar">
+          <button class="btn btn-success btn-xs" onclick="AdminApp.quickAction('add_money', 10000000)">+10Tr Tiền</button>
+          <button class="btn btn-success btn-xs" onclick="AdminApp.quickAction('add_money', 100000000)">+100Tr Tiền</button>
+          <button class="btn btn-info btn-xs" onclick="AdminApp.quickAction('clear_debt')">Xóa Hết Nợ</button>
+          <button class="btn btn-warning btn-xs" onclick="AdminApp.quickAction('add_teacoin', 1000)">+1.000 Teacoin</button>
+          <button class="btn btn-primary btn-xs" onclick="AdminApp.quickAction('full_inventory')">Bơm Kho Max 999</button>
+          <button class="btn btn-purple btn-xs" onclick="AdminApp.quickAction('unlock_all_recipes')">Mở Tất Cả Công Thức</button>
+          <button class="btn btn-purple btn-xs" onclick="AdminApp.quickAction('unlock_all_upgrades')">Mở Hết Máy & Thú Cưng</button>
+          <button class="btn btn-secondary btn-xs" onclick="AdminApp.quickAction('unban_unjail')">Thả Tù & Hồi Sức</button>
+          <button class="btn btn-secondary btn-xs" onclick="AdminApp.quickAction('reset_daily_cap')">Reset Cap Ngày</button>
+          <button class="btn btn-secondary btn-xs" onclick="AdminApp.quickAction('complete_all_quests')">Xong Hết Nhiệm Vụ</button>
+        </div>
+
+        <!-- SUBTABS NAVIGATION -->
+        <div class="subtabs">
+          <button class="subtab-btn active" data-subtab="subtab-stats">📈 Chỉ Số Cơ Bản</button>
+          <button class="subtab-btn" data-subtab="subtab-inventory">📦 Kho Nguyên Liệu</button>
+          <button class="subtab-btn" data-subtab="subtab-upgrades">🛠️ Nâng Cấp & Pet</button>
+          <button class="subtab-btn" data-subtab="subtab-recipes">📜 Menu & Giá Bán</button>
+          <button class="subtab-btn" data-subtab="subtab-properties">🏢 Đất & Trang Trí</button>
+          <button class="subtab-btn" data-subtab="subtab-account">🔐 Tài Khoản & Danger</button>
+        </div>
+
+        <input type="hidden" id="edit-store-id">
+
+        <!-- SUBTAB 1: STATS -->
+        <div id="subtab-stats" class="subtab-pane active">
+          <form id="form-edit-stats">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Tiền Vốn (VND):</label>
+                <input type="number" id="edit-stat-money" class="input-control" required min="0">
+              </div>
+              <div class="form-group">
+                <label>Nợ Ngân Hàng (VND):</label>
+                <input type="number" id="edit-stat-debt" class="input-control" required min="0">
+              </div>
+              <div class="form-group">
+                <label>Teacoin (🪙):</label>
+                <input type="number" id="edit-stat-teacoin" class="input-control" required min="0">
+              </div>
+              <div class="form-group">
+                <label>Điểm Danh Tiếng (1.0 - 5.0 ⭐):</label>
+                <input type="number" id="edit-stat-reputation" class="input-control" step="0.1" min="1.0" max="5.0" required>
+              </div>
+              <div class="form-group">
+                <label>Chương (Chapter: 1, 2, 3):</label>
+                <select id="edit-stat-chapter" class="input-control">
+                  <option value="1">Chương 1: Khởi Nghiệp Vỉa Hè</option>
+                  <option value="2">Chương 2: Mở Rộng Địa Bàn</option>
+                  <option value="3">Chương 3: Trùm Trà Sữa Đô Thị</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Ngày Trong Game (Day):</label>
+                <input type="number" id="edit-stat-day" class="input-control" min="1" required>
+              </div>
+              <div class="form-group">
+                <label>Trạng Thái Phạt Tù:</label>
+                <select id="edit-stat-is-jailed" class="input-control">
+                  <option value="0">Tự do bình thường</option>
+                  <option value="1">Bị giam giữ / phạt tù</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Lý Do Phạt Tù (nếu có):</label>
+                <input type="text" id="edit-stat-jail-reason" class="input-control" placeholder="Lý do phạt...">
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <button type="submit" class="btn btn-primary">💾 Lưu Chỉ Số Cơ Bản</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- SUBTAB 2: INVENTORY -->
+        <div id="subtab-inventory" class="subtab-pane">
+          <form id="form-edit-inventory">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h4 style="font-size: 14px; color: var(--admin-primary);">Chỉnh Sửa Kho Của Quán:</h4>
+              <button type="button" class="btn btn-success btn-xs" onclick="AdminApp.fillEditorInv(999)">Bơm Đầy Tất Cả 999</button>
+            </div>
+            <div class="form-grid" id="editor-inventory-grid">
+              <!-- Dynamically populated -->
+            </div>
+            <div style="margin-top: 16px;">
+              <button type="submit" class="btn btn-primary">💾 Lưu Kho Nguyên Liệu</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- SUBTAB 3: UPGRADES & PETS -->
+        <div id="subtab-upgrades" class="subtab-pane">
+          <form id="form-edit-upgrades">
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--admin-primary);">🛠️ Máy Móc Quầy Hàng & Xe:</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Máy Dập Nắp Tự Động:</label>
+                <select id="edit-upg-may-dap-nap" class="input-control">
+                  <option value="0">Chưa mua</option>
+                  <option value="1">Đã sở hữu</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Bình Ủ Inox 10L:</label>
+                <select id="edit-upg-binh-u-lon" class="input-control">
+                  <option value="0">Chưa mua</option>
+                  <option value="1">Đã sở hữu</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Xe Wave Giao Hàng Cho Lâm:</label>
+                <select id="edit-upg-xe-wave" class="input-control">
+                  <option value="0">Chưa mua</option>
+                  <option value="1">Đã sở hữu</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Bùa Ẩn Thân (Số Lượng: 0 - 3):</label>
+                <input type="number" id="edit-upg-bua-an-than" class="input-control" min="0" max="3" value="0">
+              </div>
+            </div>
+
+            <h4 style="font-size: 14px; margin-top: 16px; margin-bottom: 10px; color: var(--admin-primary);">🐾 Thú Cưng Giữ Quán (Pets):</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>🐶 Cún Corgi Chân Ngắn (+20% Tip):</label>
+                <select id="edit-upg-pet-corgi" class="input-control">
+                  <option value="none">Chưa có</option>
+                  <option value="active">Đang giữ quán</option>
+                  <option value="stolen">Bị kẻ trộm bắt cóc</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🐱 Mèo Tam Thể Chiêu Tài (+15% Doanh Thu):</label>
+                <select id="edit-upg-pet-meo" class="input-control">
+                  <option value="none">Chưa có</option>
+                  <option value="active">Đang giữ quán</option>
+                  <option value="stolen">Bị kẻ trộm bắt cóc</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🐹 Capybara Siêu Chill (+40% Kiên Nhẫn):</label>
+                <select id="edit-upg-pet-capybara" class="input-control">
+                  <option value="none">Chưa có</option>
+                  <option value="active">Đang giữ quán</option>
+                  <option value="stolen">Bị kẻ trộm bắt cóc</option>
+                </select>
+              </div>
+            </div>
+
+            <h4 style="font-size: 14px; margin-top: 16px; margin-bottom: 10px; color: var(--admin-primary);">✨ Vật Phẩm Đặc Biệt Mới (Special Items):</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>📻 Loa Kẹo Kéo Sôi Động (+35% khách):</label>
+                <select id="edit-upg-loa-keo-keo" class="input-control">
+                  <option value="0">Chưa mua</option>
+                  <option value="1">Đã kích hoạt</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🧂 Túi Muối Phong Thủy Đuổi Vía (Chặn trộm & bùng):</label>
+                <select id="edit-upg-tui-muoi" class="input-control">
+                  <option value="0">Chưa mua</option>
+                  <option value="1">Đã kích hoạt</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>⚡ Máy Lắc Siêu Tốc Barista Pro (Lắc 0.5s):</label>
+                <select id="edit-upg-may-lac" class="input-control">
+                  <option value="0">Chưa mua</option>
+                  <option value="1">Đã kích hoạt</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🎫 Vé Vàng VIP Shark Hưng (Số Lượng):</label>
+                <input type="number" id="edit-upg-ve-vang" class="input-control" min="0" max="99" value="0">
+              </div>
+              <div class="form-group">
+                <label>💡 Biển Hiệu LED Neon Cyberpunk (+0.3⭐ uy tín):</label>
+                <select id="edit-upg-bien-led" class="input-control">
+                  <option value="0">Chưa mua</option>
+                  <option value="1">Đã lắp đặt</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <button type="submit" class="btn btn-primary">💾 Lưu Nâng Cấp & Thú Cưng & Vật Phẩm</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- SUBTAB 4: RECIPES & CUSTOM PRICES -->
+        <div id="subtab-recipes" class="subtab-pane">
+          <form id="form-edit-recipes">
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--admin-primary);">📜 Các Món Trong Menu (Tích chọn để mở khóa):</h4>
+            <div id="editor-recipes-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-bottom: 20px;">
+              <!-- Dynamically populated checkboxes -->
+            </div>
+
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--admin-primary);">🏷️ Tùy Chỉnh Giá Bán Lẻ Quán (Custom Prices):</h4>
+            <div id="editor-custom-prices-grid" class="form-grid">
+              <!-- Dynamically populated inputs -->
+            </div>
+
+            <div style="margin-top: 16px;">
+              <button type="submit" class="btn btn-primary">💾 Lưu Menu & Giá Bán</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- SUBTAB 5: PROPERTIES & DECORATIONS -->
+        <div id="subtab-properties" class="subtab-pane">
+          <form id="form-edit-properties">
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--admin-primary);">🏡 Mặt Bằng & Bất Động Sản:</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Nhà Gỗ Mộc Mạc Ở Quê (ngoi_nha):</label>
+                <select id="edit-prop-ngoi_nha" class="input-control">
+                  <option value="0">Chưa xây</option>
+                  <option value="1">Đã sở hữu</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Vườn Trái Cây Ở Quê (vuon_trai):</label>
+                <select id="edit-prop-vuon_trai" class="input-control">
+                  <option value="0">Chưa xây</option>
+                  <option value="1">Đã sở hữu</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Căn Hộ Chung Cư Đô Thị (chung_cu):</label>
+                <select id="edit-prop-chung_cu" class="input-control">
+                  <option value="0">Chưa xây</option>
+                  <option value="1">Đã sở hữu</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Cửa Hàng Nhánh Đô Thị (shop_mini):</label>
+                <select id="edit-prop-shop_mini" class="input-control">
+                  <option value="0">Chưa xây</option>
+                  <option value="1">Đã sở hữu</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <button type="submit" class="btn btn-primary">💾 Lưu Tài Sản Quán</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- SUBTAB 6: ACCOUNT & DANGER ZONE -->
+        <div id="subtab-account" class="subtab-pane">
+          <form id="form-edit-account">
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--admin-primary);">👤 Thông Tin Tài Khoản:</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Tên Quán Trà Sữa:</label>
+                <input type="text" id="edit-acc-store-name" class="input-control" required>
+              </div>
+              <div class="form-group">
+                <label>Tên Đăng Nhập (Username):</label>
+                <input type="text" id="edit-acc-username" class="input-control" placeholder="Bỏ trống nếu là chơi nhanh">
+              </div>
+              <div class="form-group">
+                <label>Mật Khẩu Mới (chỉ nhập nếu muốn đổi):</label>
+                <input type="password" id="edit-acc-password" class="input-control" placeholder="Nhập mật khẩu mới...">
+              </div>
+            </div>
+            <div style="margin-top: 10px; margin-bottom: 24px;">
+              <button type="submit" class="btn btn-primary">💾 Cập Nhật Tài Khoản</button>
+            </div>
+          </form>
+
+          <div style="border-top: 1px solid var(--admin-border); padding-top: 20px;">
+            <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--admin-danger);">⚠️ Vùng Nguy Hiểm (Danger Zone):</h4>
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+              <button class="btn btn-warning" onclick="AdminApp.resetCurrentStoreSave()">
+                🔄 Reset Tiến Trình Game Về Ban Đầu
+              </button>
+              <button class="btn btn-danger" onclick="AdminApp.deleteCurrentStore()">
+                🗑️ Xóa Vĩnh Viễn Cửa Hàng Này
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="AdminApp.closeStoreEditor()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CREATE NEW STORE -->
+  <!-- ============================================== -->
+  <div id="modal-create-store" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>➕ Tạo Cửa Hàng Trà Sữa Mới</h3>
+        <button class="modal-close-btn" onclick="AdminApp.closeCreateStoreModal()">&times;</button>
+      </div>
+      <form id="form-create-store">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Tên Quán Trà Sữa (*):</label>
+            <input type="text" id="create-store-name" class="input-control" placeholder="Ví dụ: Tiệm Trà Sữa Thỏ Bảy Màu" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Tên Đăng Nhập (Username - Tùy chọn):</label>
+            <input type="text" id="create-username" class="input-control" placeholder="Để trống nếu chơi nhanh">
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Mật Khẩu (nếu có tài khoản):</label>
+            <input type="password" id="create-password" class="input-control" placeholder="Mặc định: 123456">
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Vốn Khởi Đầu (VND):</label>
+            <input type="number" id="create-money" class="input-control" value="500000" min="0">
+          </div>
+          <div class="form-group">
+            <label>Bắt Đầu Tại Chương:</label>
+            <select id="create-chapter" class="input-control">
+              <option value="1">Chương 1</option>
+              <option value="2">Chương 2</option>
+              <option value="3">Chương 3</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AdminApp.closeCreateStoreModal()">Hủy Bỏ</button>
+          <button type="submit" class="btn btn-primary">Tạo Quán Ngay</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: SPAWN ORDER -->
+  <!-- ============================================== -->
+  <div id="modal-spawn-order" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>⚡ Ép Tạo Đơn Hàng Mới Cho Cửa Hàng</h3>
+        <button class="modal-close-btn" onclick="AdminApp.closeSpawnOrderModal()">&times;</button>
+      </div>
+      <form id="form-spawn-order">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label>Chọn Cửa Hàng:</label>
+            <select id="spawn-store-select" class="input-control" required>
+              <option value="">-- Chọn quán --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Loại Khách Hàng:</label>
+            <select id="spawn-order-type" class="input-control">
+              <option value="normal">Khách Thường (Bé Lan, Sinh Viên, v.v.)</option>
+              <option value="shipper">Anh Shipper (Kèm Đơn Ăn Vặt Bánh Tráng)</option>
+              <option value="tiktoker">Tú TikToker Triệu View (Đơn VIP Nhiều Topping)</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AdminApp.closeSpawnOrderModal()">Hủy</button>
+          <button type="submit" class="btn btn-success">Ép Tạo Đơn Ngay</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- ADMIN CLIENT SCRIPT -->
+  <script src="/js/admin.js"></script>
+</body>
+</html>
+

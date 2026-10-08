@@ -28,12 +28,18 @@ const authRoutes = require('./routes/auth.routes');
 const storeRoutes = require('./routes/store.routes');
 const gameRoutes = require('./routes/game.routes');
 const anticheatRoutes = require('./routes/anticheat.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// Admin Webpage Route
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
+});
 
 // Apply monitoring middleware (must be before rate limiting)
 app.use(monitoringMiddleware);
@@ -54,6 +60,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/anticheat', anticheatRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Admin endpoints for monitoring
 app.get('/api/admin/ratelimit-stats', adminStatsMiddleware);

@@ -8,6 +8,7 @@ import { cartMethods } from './canvas/cart.js';
 import { primitiveMethods } from './canvas/primitives.js';
 import { npcMethods } from './canvas/npc.js';
 import { eventMethods } from './canvas/events.js';
+import { weatherMethods } from './canvas/weather.js';
 
 class GameCanvas {
   setChapter(chapter) {
@@ -164,6 +165,14 @@ class GameCanvas {
       { x: 155, y: 30, w: 58, h: 16, speed: 0.09 },
       { x: 275, y: 14, w: 50, h: 15, speed: 0.15 }
     ];
+
+    // Dynamic Weather State
+    this.weather = { id: 'sunny', name: 'Nắng Vàng', icon: '☀️' };
+    this.raindrops = [];
+    this.lightning = null;
+    this.lightningTimer = 0;
+    this.screenFlash = 0;
+    this.screenShake = 0;
 
     this.initLoop();
   }
@@ -918,6 +927,9 @@ class GameCanvas {
         this.floatingTexts.splice(i, 1);
       }
     }
+
+    // Update Weather (Rain, Storms, Thunderstorm Lightning)
+    this.updateWeather();
   }
 
   render() {
@@ -925,6 +937,14 @@ class GameCanvas {
     ctx.save();
     ctx.scale(2, 2);
     ctx.imageSmoothingEnabled = false;
+
+    // Apply screen shake if thunder lightning strikes
+    if (this.screenShake > 0) {
+      const shakeAmp = Math.min(6, this.screenShake);
+      const shakeX = (Math.random() - 0.5) * shakeAmp;
+      const shakeY = (Math.random() - 0.5) * shakeAmp;
+      ctx.translate(shakeX, shakeY);
+    }
 
     // 1. SKY & DISTANT STREET BACKGROUND WITH NEON SIGNS (HUST PARABOL or CHAPTER 1 PHỐ NHỎ)
     this.drawBackground(ctx);
@@ -1031,6 +1051,9 @@ class GameCanvas {
       ctx.globalCompositeOperation = 'source-over';
     }
 
+    // 10. WEATHER OVERLAYS: RAIN STREAKS, LIGHTNING BOLTS & SCREEN FLASH
+    this.drawWeatherEffects(ctx);
+
     ctx.restore();
   }
 }
@@ -1044,7 +1067,8 @@ Object.assign(
   cartMethods,
   primitiveMethods,
   npcMethods,
-  eventMethods
+  eventMethods,
+  weatherMethods
 );
 
 // Global window export for browser compatibility

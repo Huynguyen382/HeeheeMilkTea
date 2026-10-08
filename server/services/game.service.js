@@ -160,5 +160,14 @@ module.exports = {
   // Inventory & Shifts
   buyIngredients,
   endShift,
-  skipRest
+  skipRest,
+
+  // Events & World Dynamic
+  ...require('./game/event.service'),
+
+  // Weather System
+  ...require('./game/weather.service'),
+
+  // Room & Decor System
+  ...require('./game/room.service')
 };

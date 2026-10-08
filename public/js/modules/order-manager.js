@@ -279,7 +279,33 @@ export async function handleShipperOrderArrival() {
   }
 }
 
+/**
+ * Instantly insert an order (e.g. Admin NPC summon or special wave) into front or top of queue
+ */
+export function insertCustomOrderIntoQueue(customOrder) {
+  if (!customOrder) return;
+
+  const orders = customOrder.orders && customOrder.orders.length > 0 ? customOrder.orders : [customOrder];
+
+  if (!state.currentOrder) {
+    state.orderQueue = [...orders, ...state.orderQueue].slice(0, 14);
+    if (state.canvas && state.canvas.setCustomerQueue) {
+      state.canvas.setCustomerQueue(state.orderQueue);
+    }
+    startNextOrderInQueue();
+  } else {
+    // Insert immediately right behind current order so it appears next
+    state.orderQueue.splice(1, 0, ...orders);
+    state.orderQueue = state.orderQueue.slice(0, 14);
+    if (state.canvas && state.canvas.setCustomerQueue) {
+      state.canvas.setCustomerQueue(state.orderQueue);
+    }
+    updateUI();
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.handleShipperOrderArrival = handleShipperOrderArrival;
+  window.insertCustomOrderIntoQueue = insertCustomOrderIntoQueue;
 }
 

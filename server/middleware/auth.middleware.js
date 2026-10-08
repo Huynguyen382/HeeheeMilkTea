@@ -4,7 +4,18 @@ const { gameCache } = require('../services/cache.service');
 
 // Middleware to authenticate store session with in-memory caching (zero DB queries on cached hits)
 async function authStore(req, res, next) {
-  const token = req.headers['x-session-token'];
+  let token = req.headers['x-session-token'];
+  if (!token && req.headers['authorization']) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7).trim();
+    } else {
+      token = authHeader.trim();
+    }
+  }
+  if (!token && req.query && req.query.token) {
+    token = req.query.token.trim();
+  }
   if (!token) {
     return res.status(401).json({ error: 'Chưa đăng nhập tiệm trà sữa!' });
   }

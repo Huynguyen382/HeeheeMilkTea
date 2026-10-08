@@ -394,8 +394,8 @@ const fallbacks = {
             recipeName: 'Trà Sữa Truyền Thống',
             sugar: '50%',
             ice: 'Vừa đá',
-            toppings: [],
-            price: 15000,
+            toppings: ['tranchau_den'],
+            price: 32000,
             patienceMs: 60000,
             expiresAt: Date.now() + 60000
         }],

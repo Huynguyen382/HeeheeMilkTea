@@ -124,8 +124,12 @@ const API = {
     return await this.request('/game/collab/cancel', 'POST', { collabId });
   },
 
-  async heartbeat() {
-    return await this.request('/game/heartbeat', 'POST');
+  async heartbeat(since = 0) {
+    return await this.request('/game/heartbeat', 'POST', { since });
+  },
+
+  async getLiveEvents(since = 0) {
+    return await this.request(`/game/live-events?since=${since}`);
   },
 
   async getFriends() {
@@ -218,6 +222,36 @@ const API = {
 
   async claimDailyQuest(questId) {
     return await this.request('/game/quests/claim', 'POST', { questId });
+  },
+
+  // Weather System
+  async getWeather() {
+    return await this.request('/game/weather');
+  },
+
+  async changeWeather(weatherId) {
+    return await this.request('/game/weather/change', 'POST', { weatherId });
+  },
+
+  // Room & Cozy Home
+  async getRoom() {
+    return await this.request('/game/room');
+  },
+
+  async buyRoomDecor(decorId) {
+    return await this.request('/game/room/buy', 'POST', { decorId });
+  },
+
+  async equipRoomDecor(decorId, equipped) {
+    return await this.request('/game/room/equip', 'POST', { decorId, equipped });
+  },
+
+  async visitFriendRoom(identifier) {
+    return await this.request(`/game/room/visit/${encodeURIComponent(identifier)}`);
+  },
+
+  async cheerFriendRoom(toStoreId, message) {
+    return await this.request('/game/room/cheer', 'POST', { toStoreId, message });
   }
 };
 

@@ -179,12 +179,21 @@ async function generateOrder(storeId, options = {}) {
     
     let quote = cust.dialogues[Math.floor(Math.random() * cust.dialogues.length)];
     if (options.isShipper) {
-      const shipperQuotes = [
+      const isStorm = activeBuffs.weather && activeBuffs.weather.id === 'stormy';
+      const isRain = activeBuffs.weather && activeBuffs.weather.id === 'rainy';
+      const shipperQuotes = isStorm ? [
+        '⚡ Trời mưa to sấm sét giật ầm ầm! Khách trùm chăn đặt ship hỏa tốc nổ máy app luôn nè chị! 🛵⛈️',
+        '⛈️ Giông bão sấm chớp giật dữ quá, khách boa tip thêm tiền ship đó quán! Làm nhanh em phóng đi giao nha! 💨',
+        '🛵 Đơn ship giông bão hỏa tốc #8899 nè chị! Đội mưa đi ship nhưng có tiền tip cao là vui rồi! ⚡'
+      ] : (isRain ? [
+        '🌧️ Trời mưa rào khách lười ra đường nên app nổ đơn liên tục nè quán ơi! 🛵',
+        '📦 Đơn ship ngày mưa mát mẻ, cho em nhận ly giao liền nha chị! 💨'
+      ] : [
         'Chị ơi đơn app #9928 hỏa tốc nè, khách đang ngóng lắm, làm nhanh em đi giao nha! 🛵',
         'Trời nắng chang chang, làm ly giao liền giúp em nha quán ơi! 💨',
         'Đơn app này khách dặn kĩ lắm, em chờ quán pha xong em đi ship ngay! 📦',
         'Chào quán! Cho em nhận đơn giao hàng hỏa tốc này nha, khách hối quá trời! 🧋'
-      ];
+      ]);
       quote = shipperQuotes[Math.floor(Math.random() * shipperQuotes.length)];
     } else if (isInvitedTiktoker && i === 0) {
       quote = 'Hello HeeHee! Nhận lời mời của quán, hôm nay Tú vác máy quay qua làm clip review thực tế xem có đỉnh nóc kịch trần không nha! Ngon là Tú kéo bão sao cho quán liền!';
@@ -224,9 +233,9 @@ async function generateOrder(storeId, options = {}) {
     const baseToppingCount = (recipe.toppings && recipe.toppings.length > 0) ? recipe.toppings.length : 0;
     const toppingDiff = orderToppings.length - baseToppingCount;
     if (toppingDiff > 0) {
-      price += toppingDiff * 3000; // Thêm topping: +3.000đ mỗi loại
+      price += toppingDiff * 7000; // Thêm topping: +7.000đ mỗi loại
     } else if (toppingDiff < 0) {
-      price = Math.max(10000, price - 2000); // Không lấy topping: giảm 2.000đ
+      price = Math.max(25000, price + toppingDiff * 6000); // Bớt topping: giảm 6.000đ mỗi loại, không dưới 25.000đ
     }
 
     if (cust.tipMult) price = Math.floor(price * cust.tipMult);
@@ -246,6 +255,9 @@ async function generateOrder(storeId, options = {}) {
     if (locationConfig && locationConfig.priceMultiplier !== 1) {
       price = Math.floor(price * locationConfig.priceMultiplier);
     }
+
+    // Luôn đảm bảo giá trà sữa tối thiểu 25.000đ
+    price = Math.max(25000, price);
 
     // Đàm phán & Mặc cả: Khi đặt giá quá cao các NPC có thể mặc cả
     let negotiation = null;
@@ -272,8 +284,8 @@ async function generateOrder(storeId, options = {}) {
       let line;
       if (priceRatio > 1.0) {
         // NPC bức xúc/kì kèo vì giá quá cao
-        const targetRef = Math.floor(marketBasePrice * (1.0 + Math.random() * 0.15)) + (toppingDiff > 0 ? toppingDiff * 3000 : 0);
-        requestedPrice = Math.min(price - 1000, Math.max(marketBasePrice, targetRef));
+        const targetRef = Math.floor(marketBasePrice * (1.0 + Math.random() * 0.15)) + (toppingDiff > 0 ? toppingDiff * 7000 : 0);
+        requestedPrice = Math.max(25000, Math.min(price - 1000, Math.max(marketBasePrice, targetRef)));
         const discountAmount = price - requestedPrice;
 
         const highPriceHaggleLines = [
@@ -295,9 +307,9 @@ async function generateOrder(storeId, options = {}) {
         };
       } else {
         // Mặc cả thông thường
-        const discountRatio = 0.1 + Math.random() * 0.2;
+        const discountRatio = 0.08 + Math.random() * 0.12;
         const discountAmount = Math.floor(price * discountRatio);
-        requestedPrice = Math.max(1000, price - discountAmount);
+        requestedPrice = Math.max(25000, price - discountAmount);
         line = NEGOTIATION.haggleLines[Math.floor(Math.random() * NEGOTIATION.haggleLines.length)]
           .replace('{discount}', discountAmount.toLocaleString('vi-VN'));
 
@@ -724,7 +736,7 @@ async function setCustomPrices(storeId, customPrices) {
   for (const [recipeId, price] of Object.entries(customPrices)) {
     if (RECIPES[recipeId]) {
       const numPrice = Math.round(Number(price));
-      if (!isNaN(numPrice) && numPrice >= 5000 && numPrice <= 200000) {
+      if (!isNaN(numPrice) && numPrice >= 20000 && numPrice <= 200000) {
         currentPrices[recipeId] = numPrice;
       }
     }

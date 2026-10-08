@@ -1,0 +1,679 @@
+/* ===================================================
+   COZY ROOM & WEATHER SYSTEM STYLES
+   Full-Screen Landscape Room Experience with Virtual Joystick
+   =================================================== */
+
+/* Weather HUD Badge */
+#weather-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(30, 25, 45, 0.85);
+  border: 1px solid #74b9ff;
+  color: #74b9ff;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.82rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+#weather-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 8px rgba(116, 185, 255, 0.4);
+}
+#weather-badge.stormy {
+  border-color: #a29bfe;
+  color: #a29bfe;
+  background: rgba(45, 20, 60, 0.85);
+  animation: stormPulse 2s infinite ease-in-out;
+}
+@keyframes stormPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(162, 155, 254, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(162, 155, 254, 0.8); }
+}
+
+/* ===================================================
+   FULLSCREEN ROOM CONTAINER & LAYOUT
+   =================================================== */
+#modal-my-room.modal-overlay,
+#modal-friend-room.modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  background: #0f0a14;
+  z-index: 99999;
+  display: none;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#modal-my-room .room-modal-content,
+#modal-friend-room .room-modal-content {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border-radius: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+  background: #150e1c;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Stage Canvas Container */
+.room-stage-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  background: #1d1224;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.room-stage-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
+/* ===================================================
+   FLOATING TOP HUD (MATCHING SCREENSHOT)
+   =================================================== */
+.room-hud-top {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  z-index: 40;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+
+.room-hud-top > * {
+  pointer-events: auto;
+}
+
+.room-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(24, 14, 34, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(243, 156, 18, 0.6);
+  border-radius: 24px;
+  padding: 5px 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+}
+
+.room-hud-title {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #fdcb6e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.cozy-points-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #ffeaa7;
+}
+
+.cozy-tier-pill {
+  background: linear-gradient(135deg, #c0392b, #8e44ad);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-radius: 16px;
+  padding: 2px 9px;
+  font-size: 0.72rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.room-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-room-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.84rem;
+  font-weight: bold;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(26, 16, 36, 0.85);
+  backdrop-filter: blur(8px);
+  color: #f5ebe6;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-room-hud:hover,
+.btn-room-hud:active {
+  transform: translateY(-1px);
+  border-color: #fdcb6e;
+  color: #fdcb6e;
+  box-shadow: 0 4px 16px rgba(253, 203, 110, 0.4);
+}
+
+.btn-room-hud.primary {
+  background: linear-gradient(135deg, #f39c12, #d35400);
+  border: 1.5px solid rgba(255, 234, 167, 0.65);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(243, 156, 18, 0.4);
+}
+
+.btn-room-hud.primary:hover {
+  box-shadow: 0 0 16px rgba(243, 156, 18, 0.75);
+}
+
+.btn-room-hud.close-btn {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  padding: 6px 14px;
+}
+.btn-room-hud.close-btn:hover {
+  background: #c0392b;
+}
+
+/* ===================================================
+   VIRTUAL JOYSTICK
+   =================================================== */
+.room-joystick-zone {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  z-index: 50;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.room-joystick-base {
+  position: relative;
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(50, 32, 68, 0.65) 0%, rgba(18, 12, 25, 0.88) 100%);
+  border: 2px solid rgba(253, 203, 110, 0.5);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.7), inset 0 0 18px rgba(253, 203, 110, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  touch-action: none;
+}
+
+.room-joystick-base:active,
+.room-joystick-base.active {
+  border-color: #fdcb6e;
+  box-shadow: 0 0 28px rgba(253, 203, 110, 0.6), inset 0 0 24px rgba(253, 203, 110, 0.35);
+}
+
+.room-joystick-stick {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffeaa7 0%, #fdcb6e 60%, #e17055 100%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+  transition: transform 0.04s ease-out;
+  will-change: transform;
+}
+
+.joystick-dir-indicator {
+  position: absolute;
+  font-size: 10px;
+  color: rgba(253, 203, 110, 0.5);
+  pointer-events: none;
+  user-select: none;
+}
+.joy-up { top: 5px; left: 50%; transform: translateX(-50%); }
+.joy-down { bottom: 5px; left: 50%; transform: translateX(-50%); }
+.joy-left { left: 6px; top: 50%; transform: translateY(-50%); }
+.joy-right { right: 6px; top: 50%; transform: translateY(-50%); }
+
+.joystick-hint {
+  font-size: 0.72rem;
+  color: rgba(253, 203, 110, 0.9);
+  font-weight: 800;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  letter-spacing: 0.5px;
+}
+
+/* ===================================================
+   ACTION / INTERACT BUTTON CLUSTER (MATCHING SCREENSHOT)
+   =================================================== */
+.room-action-btn-zone {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.action-btn-sparkle {
+  color: rgba(255, 234, 167, 0.85);
+  font-size: 1.6rem;
+  line-height: 1;
+  text-shadow: 0 0 10px rgba(255, 234, 167, 0.9);
+  animation: sparkleFloat 2.2s infinite ease-in-out;
+  pointer-events: none;
+  align-self: flex-start;
+  margin-left: -12px;
+  margin-bottom: -4px;
+}
+
+@keyframes sparkleFloat {
+  0%, 100% { transform: scale(0.9) translateY(0); opacity: 0.7; }
+  50% { transform: scale(1.2) translateY(-4px); opacity: 1; }
+}
+
+.btn-room-action-round {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff9eb5 0%, #ff7675 75%, #e84393 100%);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 16px rgba(232, 67, 147, 0.45), 0 2px 6px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  touch-action: manipulation;
+}
+
+.btn-room-action-round:hover,
+.btn-room-action-round:active {
+  transform: scale(1.12);
+  box-shadow: 0 0 22px rgba(255, 118, 117, 0.85);
+}
+
+.btn-action-interact.highlight {
+  background: radial-gradient(circle at 35% 35%, #fff3b0 0%, #ffd369 65%, #e67e22 100%);
+  border-color: #ffffff;
+  color: #2d1800;
+  animation: interactPulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes interactPulse {
+  0% { transform: scale(1); box-shadow: 0 0 12px rgba(253, 203, 110, 0.7); }
+  100% { transform: scale(1.15); box-shadow: 0 0 28px rgba(253, 203, 110, 1); }
+}
+
+.btn-action-gift {
+  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  font-size: 1.15rem;
+  background: radial-gradient(circle at 35% 35%, #ff7675 0%, #d63031 90%);
+}
+
+.btn-action-chat {
+  width: 48px;
+  height: 48px;
+  font-size: 1.25rem;
+}
+
+.interact-key-hint {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+
+/* ===================================================
+   FURNITURE CATALOG DRAWER (SLIDE-IN PANEL)
+   =================================================== */
+.room-decor-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  max-width: 90vw;
+  background: rgba(20, 14, 26, 0.96);
+  backdrop-filter: blur(16px);
+  box-shadow: -8px 0 35px rgba(0, 0, 0, 0.85);
+  border-left: 2px solid #fdcb6e;
+  z-index: 65;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.room-decor-drawer.open {
+  transform: translateX(0);
+}
+
+.room-decor-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.room-decor-drawer-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fdcb6e;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-drawer-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #dfe6e9;
+  font-size: 1.2rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.btn-drawer-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.decor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.decor-card {
+  background: #1e1424;
+  border: 1px solid #432e48;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.decor-card:hover {
+  border-color: #fdcb6e;
+  transform: translateY(-2px);
+}
+
+.decor-card.equipped {
+  border-color: #50fa7b;
+  background: rgba(80, 250, 123, 0.06);
+}
+
+.decor-card-top {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.decor-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.decor-info {
+  flex: 1;
+}
+
+.decor-name {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #f5ebe6;
+  line-height: 1.2;
+}
+
+.decor-cozy {
+  font-size: 0.75rem;
+  color: #fdcb6e;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.decor-effect {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.btn-decor-buy {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 0.82rem;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, #00cec9, #0984e3);
+  color: #fff;
+  transition: opacity 0.2s;
+}
+
+.btn-decor-buy:hover {
+  opacity: 0.9;
+}
+
+.btn-decor-toggle {
+  width: 100%;
+  padding: 5px 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #dfe6e9;
+}
+
+.btn-decor-toggle.active {
+  background: rgba(80, 250, 123, 0.22);
+  border-color: #50fa7b;
+  color: #50fa7b;
+}
+
+/* ===================================================
+   PHONE ROTATE HINT (PORTRAIT MODE DETECTOR)
+   =================================================== */
+.room-rotate-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(14, 9, 20, 0.95);
+  backdrop-filter: blur(14px);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  color: #fff;
+}
+
+.room-rotate-hint.show {
+  display: flex;
+}
+
+.rotate-phone-anim {
+  font-size: 4.2rem;
+  display: inline-block;
+  animation: phoneRotateAnim 2.4s infinite ease-in-out;
+  margin-bottom: 16px;
+}
+
+@keyframes phoneRotateAnim {
+  0%, 15% { transform: rotate(0deg); }
+  45%, 70% { transform: rotate(90deg); }
+  90%, 100% { transform: rotate(0deg); }
+}
+
+.rotate-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fdcb6e;
+  margin-bottom: 8px;
+}
+
+.rotate-desc {
+  font-size: 0.92rem;
+  color: #dfe6e9;
+  max-width: 320px;
+  line-height: 1.45;
+  margin-bottom: 22px;
+}
+
+.btn-rotate-dismiss {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  border-radius: 20px;
+  padding: 9px 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-rotate-dismiss:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: #fdcb6e;
+  color: #fdcb6e;
+}
+
+/* Guestbook Cheer in Friend Room */
+.guestbook-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.btn-cheer-heart {
+  background: linear-gradient(135deg, #ff7675, #d63031);
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.92rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.2s;
+}
+.btn-cheer-heart:hover {
+  transform: scale(1.04);
+}
+
+/* ===================================================
+   RESPONSIVE OPTIMIZATIONS
+   =================================================== */
+@media (max-width: 600px) {
+  .room-hud-left {
+    padding: 4px 10px;
+    gap: 6px;
+  }
+  .room-hud-title {
+    font-size: 0.8rem;
+  }
+  .cozy-points-badge {
+    font-size: 0.78rem;
+  }
+  .btn-room-hud {
+    padding: 5px 9px;
+    font-size: 0.78rem;
+  }
+  .room-joystick-base {
+    width: 100px;
+    height: 100px;
+  }
+  .room-joystick-stick {
+    width: 42px;
+    height: 42px;
+  }
+  .btn-room-interact {
+    width: 62px;
+    height: 62px;
+    font-size: 1.25rem;
+  }
+  .btn-room-interact .interact-text {
+    font-size: 0.6rem;
+  }
+}

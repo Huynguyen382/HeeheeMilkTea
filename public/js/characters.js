@@ -540,6 +540,78 @@
       dialogues: ["Meo meo~ Chị Thảo ơi khách đông kín tiệm rồi kìa meo!", "Vẫy tay trái mang lại tài lộc, vẫy tay phải đem lại niềm vui!", "Meo~ Cho bé xin một thìa pudding thơm béo nha chị Thảo!"],
       palette: { hair: '#EA580C', skin: '#FFFFFF', clothes: '#EF4444', sub: '#FACC15', pants: '#FFFFFF' },
       style: 'lucky_cat', prop: 'bell'
+    },
+
+    // --- CÁC NHÂN VẬT ĐẶC BIỆT MỚI (51 -> 55) ---
+    {
+      id: 51, name: 'Bà Bảy Bán Chè Bưởi', role: 'NGHỆ NHÂN CHÈ TRUYỀN THỐNG', cat: 'traditional',
+      age: '65 tuổi', personality: 'Hiền hậu, hào sảng, sành ăn đồ ngọt',
+      favoriteDrink: 'Trà Sữa Truyền Thống',
+      desc: 'Chiếc nón lá mộc mạc, nụ cười đôn hậu của bà cụ bán chè bưởi thơm nức tiếng đầu ngõ.',
+      tags: ['#BàBảyChèBưởi', '#ĐượmHươngTruyềnThống', '#SànhĂnNgọt'],
+      dialogues: [
+        "Bà nếm thử thấy trà sữa của con đậm đà, trân châu dẻo bùi chuẩn chỉ lắm!",
+        "Hôm nào rảnh qua gánh chè bà cho chén chè bưởi giòn sần sật béo ngậy nước cốt dừa nha!",
+        "Bán buôn có tâm thế này khách ủng hộ dài dài con ơi!"
+      ],
+      palette: { hair: '#94A3B8', skin: '#FCD7B0', clothes: '#0D9488', sub: '#CCFBF1', pants: '#1F2937' },
+      style: 'grandma', prop: 'basket'
+    },
+    {
+      id: 52, name: 'Shark Hưng Đầu Tư', role: 'NHÀ ĐẦU TƯ SHARK TANK VIP', cat: 'vip',
+      age: '45 tuổi', personality: 'Quyết đoán, sắc bén, chịu chi',
+      favoriteDrink: 'Trà Ô Long Nướng Sương Sáo',
+      desc: 'Bộ vest xanh navy lịch lãm, phong thái đĩnh đạc, sẵn sàng rót vốn đầu tư chuỗi quán lớn.',
+      tags: ['#SharkHưng', '#ĐầuTưTriệuĐô', '#KháchHàngVIP', '#ChốtĐơnLớn'],
+      dialogues: [
+        "Tôi đầu tư 500 triệu cho 20% cổ phần chuỗi trà sữa này, chốt đơn!",
+        "Hương vị ô long hun khói này có tiềm năng vươn tầm quốc tế đấy!",
+        "Tôi mua 20 ly cho toàn bộ ban giám đốc công ty tôi!"
+      ],
+      palette: { hair: '#1E293B', skin: '#FFE0BD', clothes: '#1E3A8A', sub: '#F59E0B', pants: '#172554' },
+      style: 'investor', prop: 'briefcase'
+    },
+    {
+      id: 53, name: 'Trâm Streamer Cosplay', role: 'IDOL LIVESTREAM ANIME', cat: 'streamer',
+      age: '20 tuổi', personality: 'Nhí nhảnh, dễ thương, mê sống ảo',
+      favoriteDrink: 'Trà Sữa Thái Xanh',
+      desc: 'Tóc hồng hai bím tai mèo siêu xinh, cầm gậy selfie livestream kéo theo hàng ngàn fan hâm mộ.',
+      tags: ['#TrâmCosplay', '#IdolTikTok', '#StreamerTriệuFollow'],
+      dialogues: [
+        "Konnichiwa! Em đang live trên TikTok nè, chào 50.000 bạn đang xem đi chị!",
+        "Màu xanh thái mát mắt lên hình lung linh quá trời luôn á!",
+        "Các bạn fan ơi ghé ủng hộ quán chị Thảo boba nha, ngon xỉu up xỉu down!"
+      ],
+      palette: { hair: '#EC4899', skin: '#FFE0BD', clothes: '#8B5CF6', sub: '#F472B6', pants: '#DDD6FE' },
+      style: 'cosplay', prop: 'phone_live'
+    },
+    {
+      id: 54, name: 'Anh Hiếu IT Chạy Deadline', role: 'SENIOR DEVELOPER THỨC ĐÊM', cat: 'pro',
+      age: '28 tuổi', personality: 'Tập trung cao độ, cần caffeine gấp',
+      favoriteDrink: 'Trà Ô Long Nướng',
+      desc: 'Mắt thâm quầng nhẹ vì fix bug đêm, đeo ba lô laptop, tay gõ phím thoăn thoắt.',
+      tags: ['#HiếuCoder', '#ChạyDeadline', '#CầnNhiềuCaffeine', '#FixBugXuyênĐêm'],
+      dialogues: [
+        "Cứu em một ly ô long nướng đậm đặc x2 trà để em fix bug deploy đêm nay!",
+        "Uống ngụm trà sữa này code chạy mượt mà 0 bug luôn chị ơi!",
+        "Có ly trà này em gõ bàn phím xuyên màn đêm không biết mệt!"
+      ],
+      palette: { hair: '#0F172A', skin: '#FCD7B0', clothes: '#0284C7', sub: '#38BDF8', pants: '#334155' },
+      style: 'engineer', prop: 'laptop'
+    },
+    {
+      id: 55, name: 'Cô Giáo Mai Dạy Văn', role: 'GIÁO VIÊN TRƯỜNG CHUYÊN', cat: 'teacher',
+      age: '32 tuổi', personality: 'Thanh lịch, dịu dàng, chu đáo',
+      favoriteDrink: 'Trà Đào Cam Sả',
+      desc: 'Tà áo dài hồng cánh sen nhã nhặn, giọng nói truyền cảm nhẹ nhàng như thơ ca.',
+      tags: ['#CôGiáoMai', '#ÁoDàiThướtTha', '#ThanhLịchNhẹNhàng'],
+      dialogues: [
+        "Hương đào và cam sả thanh tao như một khúc ca mùa thu vậy em.",
+        "Sau những tiết giảng say sưa, vị trà mát lành làm dịu cổ họng cô rất nhiều.",
+        "Chúc quán em ngày càng phát đạt và luôn giữ được cái tâm trong từng ly trà nhé!"
+      ],
+      palette: { hair: '#3E2723', skin: '#FFE0BD', clothes: '#F43F5E', sub: '#FFE4E6', pants: '#4C0519' },
+      style: 'teacher', prop: 'book'
     }
   ];
 
@@ -568,7 +640,7 @@
 
     // Number query (type index or id)
     if (typeof query === 'number') {
-      if (query >= 1 && query <= 50) {
+      if (query >= 1 && query <= CHARACTERS.length) {
         var byId = CHARACTERS.find(function (c) { return c.id === query; });
         if (byId) return byId;
       }
@@ -591,6 +663,13 @@
       return n.includes(str) || str.includes(n);
     });
     if (partial) return partial;
+
+    // Legacy and New keyword aliases
+    if (str.includes('bà bảy') || str.includes('chè bưởi')) return CHARACTERS[50];
+    if (str.includes('shark') || str.includes('đầu tư')) return CHARACTERS[51];
+    if (str.includes('trâm') || str.includes('streamer') || str.includes('cosplay')) return CHARACTERS[52];
+    if (str.includes('hiếu') || str.includes('deadline')) return CHARACTERS[53];
+    if (str.includes('cô mai') || str.includes('cô giáo') || str.includes('dạy văn')) return CHARACTERS[54];
 
     // Legacy keyword aliases
     if (str.includes('lan')) return CHARACTERS[2]; // Bé Lan Khăn Quàng

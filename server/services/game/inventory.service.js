@@ -99,6 +99,17 @@ async function endShift(storeId) {
   activeBuffs.rest_reason = 'end_shift';
   activeBuffs.rest_until = restUntilTs;
 
+  // Generate new random daily weather for the next day
+  const { getRandomWeather } = require('./weather.service');
+  const nextWeather = getRandomWeather();
+  activeBuffs.weather = {
+    id: nextWeather.id,
+    name: nextWeather.name,
+    icon: nextWeather.icon,
+    desc: nextWeather.desc,
+    since: Date.now()
+  };
+
   const updatedSave = {
     store_id: storeId,
     chapter: save.chapter,

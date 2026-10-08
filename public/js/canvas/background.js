@@ -2,13 +2,23 @@
 
 export const backgroundMethods = {
   drawClouds(ctx, tod) {
-    if (tod === 'night') return; // Buổi tối dùng trăng và sao thay mây
+    const isStorm = this.weather && this.weather.id === 'stormy';
+    const isRain = this.weather && this.weather.id === 'rainy';
+    if (tod === 'night' && !isStorm && !isRain) return; // Buổi tối quang đãng dùng trăng sao
     this.clouds.forEach(c => {
       let topColor = '#ffffff';
       let bottomColor = '#dfe6e9';
       let alpha = 0.88;
 
-      if (tod === 'morning') {
+      if (isStorm) {
+        topColor = '#485460';
+        bottomColor = '#1e272e';
+        alpha = 0.95;
+      } else if (isRain) {
+        topColor = '#808e9b';
+        bottomColor = '#485460';
+        alpha = 0.92;
+      } else if (tod === 'morning') {
         topColor = '#ffffff';
         bottomColor = '#ffeaa7';
         alpha = 0.82;
@@ -49,9 +59,23 @@ export const backgroundMethods = {
       return;
     }
 
-    // 1. SKY GRADIENT DYNAMIC THEO GIỜ TRONG NGÀY
+    // 1. SKY GRADIENT DYNAMIC THEO THỜI TIẾT & GIỜ TRONG NGÀY
     const skyGrad = ctx.createLinearGradient(0, 0, 0, 145);
-    if (tod === 'morning') {
+    const isStorm = this.weather && this.weather.id === 'stormy';
+    const isRain = this.weather && this.weather.id === 'rainy';
+
+    if (isStorm) {
+      // Giông bão: Bầu trời tím sẫm cuồn cuộn mây giông
+      skyGrad.addColorStop(0, '#0a0a14');
+      skyGrad.addColorStop(0.45, '#19152b');
+      skyGrad.addColorStop(0.85, '#2e2544');
+      skyGrad.addColorStop(1, '#1b1b2f');
+    } else if (isRain) {
+      // Mưa rào: Trời xám bạc mát rượi
+      skyGrad.addColorStop(0, '#2d3436');
+      skyGrad.addColorStop(0.5, '#4b6584');
+      skyGrad.addColorStop(1, '#778ca3');
+    } else if (tod === 'morning') {
       // Bình minh ban mai: Xanh lam trong trẻo chuyển vàng mơ nắng sớm
       skyGrad.addColorStop(0, '#2e6bb5');
       skyGrad.addColorStop(0.38, '#5fa7e8');
@@ -376,9 +400,21 @@ export const backgroundMethods = {
   },
 
   drawHUSTParabolBackground(ctx, tod) {
-    // 1. SKY GRADIENT
+    // 1. SKY GRADIENT THEO THỜI TIẾT
     const skyGrad = ctx.createLinearGradient(0, 0, 0, 145);
-    if (tod === 'morning') {
+    const isStorm = this.weather && this.weather.id === 'stormy';
+    const isRain = this.weather && this.weather.id === 'rainy';
+
+    if (isStorm) {
+      skyGrad.addColorStop(0, '#0a0b12');
+      skyGrad.addColorStop(0.45, '#1e1c30');
+      skyGrad.addColorStop(0.85, '#2b2442');
+      skyGrad.addColorStop(1, '#1b1b2f');
+    } else if (isRain) {
+      skyGrad.addColorStop(0, '#2f3542');
+      skyGrad.addColorStop(0.5, '#57606f');
+      skyGrad.addColorStop(1, '#a4b0be');
+    } else if (tod === 'morning') {
       skyGrad.addColorStop(0, '#2980b9');
       skyGrad.addColorStop(0.4, '#6dd5fa');
       skyGrad.addColorStop(0.75, '#fbc531');

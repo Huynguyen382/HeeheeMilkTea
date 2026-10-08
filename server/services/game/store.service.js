@@ -179,11 +179,20 @@ async function getStoreState(storeId) {
     },
     collabs: await getCollabData(id),
     daily_stats: daily,
+    weather: (() => {
+      const buffs = JSON.parse(save.active_buffs || '{}');
+      const { WEATHER_TYPES } = require('./weather.service');
+      if (buffs.weather && WEATHER_TYPES[buffs.weather.id]) {
+        return WEATHER_TYPES[buffs.weather.id];
+      }
+      return WEATHER_TYPES.sunny;
+    })(),
     recipes_db: staticData.recipes_db,
     customers_db: staticData.customers_db,
     locations: staticData.locations,
     ingredients: staticData.ingredients,
     decorations_db: staticData.decorations_db,
+    room_decorations_db: require('../../data/room_decorations').ROOM_DECORATIONS,
     negotiation: staticData.negotiation
   };
 

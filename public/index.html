@@ -7,6 +7,7 @@
   <title>🧋 Tiệm Trà Sữa HeeHee – Khởi Nghiệp Trà Sữa Pixel</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/room.css">
 </head>
 <body>
 
@@ -67,6 +68,10 @@
         <div id="time-of-day-badge" class="time-badge" style="cursor: pointer;" title="Nhấn để đổi khung cảnh (Sáng / Trưa / Chiều / Tối)">
           🌅 Sáng
         </div>
+        <!-- Thời tiết hiện tại (Nắng, Mưa, Giông Bão Sấm Sét) -->
+        <div id="weather-badge" class="time-badge" title="Thời tiết hiện tại - Nhấn để xem chi tiết & dự báo">
+          ☀️ Nắng Vàng
+        </div>
       </div>
     </div>
 
@@ -77,6 +82,7 @@
       <span id="buff-patience" style="display: none; background: rgba(80, 250, 123, 0.2); border: 1px solid #50fa7b; color: #50fa7b; border-radius: 4px; padding: 2px 6px;">⏱️ Khách Kiên Nhẫn +40%</span>
       <span id="buff-tip" style="display: none; background: rgba(241, 250, 140, 0.2); border: 1px solid #f1fa8c; color: #f1fa8c; border-radius: 4px; padding: 2px 6px;">💰 Tip Thưởng +10%</span>
       <span id="buff-stealth" style="display: none; background: rgba(139, 233, 253, 0.2); border: 1px solid #8be9fd; color: #8be9fd; border-radius: 4px; padding: 2px 6px;">🔮 Ẩn Thân Kích Hoạt</span>
+      <span id="buff-live-event" style="display: none; background: rgba(245, 158, 11, 0.25); border: 1.5px solid #f59e0b; color: #fbbf24; border-radius: 4px; padding: 2px 7px; font-weight: bold;">🎪 Sự Kiện Đang Diễn Ra</span>
     </div>
 
     <!-- LOW REPUTATION (< 3.0⭐) ALERT & RESCUE BANNER -->
@@ -247,6 +253,10 @@
       <span class="nb-icon">🛒</span>
       <span class="nb-text">Nâng Cấp</span>
     </button>
+    <button class="nav-btn nav-btn-room" id="nav-my-room" title="Về nhà: Căn phòng ấm cúng & trang trí nội thất">
+      <span class="nb-icon">🏠</span>
+      <span class="nb-text">Căn Phòng</span>
+    </button>
     <button class="nav-btn nav-btn-shift" id="nav-end-shift" title="Tổng kết doanh thu ngày & kết thúc ca làm">
       <span class="nb-icon">🌅</span>
       <span class="nb-text">Kết Ca</span>
@@ -391,6 +401,13 @@
       <div class="menu-group">
         <div class="menu-group-title">⚙️ CÀI ĐẶT & BỐI CẢNH</div>
         <div class="menu-action-grid">
+          <button class="menu-item-btn" id="menu-btn-room" style="border-color: #fdcb6e; color: #fdcb6e;">
+            <span class="m-icon">🏠</span>
+            <div class="m-info">
+              <span class="m-title">Căn Phòng Của Tôi</span>
+              <span class="m-desc">Trang trí nội thất, hồi phục & đón bạn</span>
+            </div>
+          </button>
           <button class="menu-item-btn" id="btn-toggle-scene">
             <span class="m-icon">🏛️</span>
             <div class="m-info">
@@ -403,6 +420,13 @@
             <div class="m-info">
               <span class="m-title">Âm Nhạc BGM</span>
               <span class="m-desc">Bật/tắt nhạc nền & bài hát</span>
+            </div>
+          </button>
+          <button class="menu-item-btn" id="btn-open-admin-dashboard" onclick="window.open('/admin', '_blank')" style="border-color: #f1c40f; color: #f1c40f;">
+            <span class="m-icon">🎛️</span>
+            <div class="m-info">
+              <span class="m-title">Trang Quản Trị Admin</span>
+              <span class="m-desc">Chỉnh sửa tiền, nợ, kho & hệ thống</span>
             </div>
           </button>
         </div>
@@ -714,6 +738,50 @@
           <button class="btn-action-wide" data-buy-upgrade="xe_wave">Mua (1.200.000đ)</button>
         </div>
 
+        <!-- SPECIAL ITEMS SECTION -->
+        <div style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #f1c40f;">
+          <div style="font-weight: bold; color: #f1c40f; font-size: 1.15rem; margin-bottom: 4px;">✨ VẬT PHẨM ĐẶC BIỆT MỚI</div>
+          <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 6px;">
+            Trang bị siêu cấp giúp tiệm trà sữa bùng nổ doanh số và thu hút khách VIP!
+          </div>
+
+          <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #f1c40f; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>📻 Loa Kẹo Kéo Sôi Động</b>
+              <span style="color: #f1c40f; font-size: 0.88rem; font-weight: bold;">+35% Lượng Khách</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Phát nhạc remix sôi động thu hút người đi đường ghé quầy nườm nượp!</div>
+            <button class="btn-action-wide" data-buy-upgrade="loa_keo_keo">Mua (850.000đ)</button>
+          </div>
+
+          <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #f1c40f; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🧂 Túi Muối Phong Thủy Đuổi Vía</b>
+              <span style="color: #50fa7b; font-size: 0.88rem; font-weight: bold;">Chặn Trộm & Bùng</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Xua tan vận xui, miễn nhiễm hoàn toàn trước kẻ trộm thú cưng và khách bùng tiền!</div>
+            <button class="btn-action-wide" data-buy-upgrade="tui_muoi_phong_thuy">Mua (300.000đ)</button>
+          </div>
+
+          <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #f1c40f; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>⚡ Máy Lắc Siêu Tốc Barista Pro</b>
+              <span style="color: #8be9fd; font-size: 0.88rem; font-weight: bold;">Lắc 0.5s & +10% Tip</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Công nghệ lắc ly từ tính tự động cực êm chỉ trong nháy mắt, nâng tầm ly trà sữa!</div>
+            <button class="btn-action-wide" data-buy-upgrade="may_lac_sieu_toc">Mua (1.500.000đ)</button>
+          </div>
+
+          <div style="background: #1f121c; padding: 8px; border-radius: 6px; border: 1px solid #f1c40f;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>💡 Biển Hiệu LED Neon Cyberpunk</b>
+              <span style="color: #ff79c6; font-size: 0.88rem; font-weight: bold;">+0.3⭐ Uy Tín Vĩnh Viễn</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Bảng hiệu đèn neon phát sáng rực rỡ trong đêm, khách rủ nhau check-in sống ảo!</div>
+            <button class="btn-action-wide" data-buy-upgrade="bien_led_neon">Mua (2.000.000đ)</button>
+          </div>
+        </div>
+
         <!-- PET SHOP SECTION -->
         <div style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #ff79c6;">
           <div style="font-weight: bold; color: #ff79c6; font-size: 1.15rem; margin-bottom: 4px;">🐾 THÚ CƯNG GIỮ QUÁN (PETS)</div>
@@ -770,7 +838,7 @@
           <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #e17055; margin-bottom: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>🍊 Hồng Trà Tắc Xí Muội</b>
-              <span style="color: #f1fa8c; font-size: 0.9rem; font-weight: bold;">Giá Bán: 12.000đ/ly</span>
+              <span style="color: #f1fa8c; font-size: 0.9rem; font-weight: bold;">Giá Bán: 25.000đ/ly</span>
             </div>
             <div style="margin: 3px 0; font-size: 0.85rem;">
               <span style="color: #ffb86c;">🍵 Cốt Trà: <b style="color: #50fa7b;">Trà Đen Đậm</b></span> | <span style="color: #8be9fd;">Topping: Không</span>
@@ -783,7 +851,7 @@
           <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #00b894; margin-bottom: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>🌿 Trà Sữa Thái Xanh</b>
-              <span style="color: #50fa7b; font-size: 0.9rem; font-weight: bold;">Giá Bán: 18.000đ/ly</span>
+              <span style="color: #50fa7b; font-size: 0.9rem; font-weight: bold;">Giá Bán: 35.000đ/ly</span>
             </div>
             <div style="margin: 3px 0; font-size: 0.85rem;">
               <span style="color: #ffb86c;">🍵 Cốt Trà: <b style="color: #50fa7b;">Thái Xanh</b></span> | <span style="color: #8be9fd;">Topping: Thạch Lá Dứa</span>
@@ -796,7 +864,7 @@
           <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #fdcb6e; margin-bottom: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>🥛 Sữa Tươi Trân Châu Đường Đen</b>
-              <span style="color: #ffeaa7; font-size: 0.9rem; font-weight: bold;">Giá Bán: 25.000đ/ly</span>
+              <span style="color: #ffeaa7; font-size: 0.9rem; font-weight: bold;">Giá Bán: 42.000đ/ly</span>
             </div>
             <div style="margin: 3px 0; font-size: 0.85rem;">
               <span style="color: #ffb86c;">🍵 Cốt Trà: <b style="color: #50fa7b;">Sữa Tươi</b></span> | <span style="color: #8be9fd;">Topping: Đường Đen</span>
@@ -809,7 +877,7 @@
           <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #e84393; margin-bottom: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>🍑 Trà Đào Cam Sả</b>
-              <span style="color: #ff79c6; font-size: 0.9rem; font-weight: bold;">Giá Bán: 28.000đ/ly</span>
+              <span style="color: #ff79c6; font-size: 0.9rem; font-weight: bold;">Giá Bán: 48.000đ/ly</span>
             </div>
             <div style="margin: 3px 0; font-size: 0.85rem;">
               <span style="color: #ffb86c;">🍵 Cốt Trà: <b style="color: #50fa7b;">Lục Trà Lài (Nút Lài)</b></span> | <span style="color: #8be9fd;">Topping: <b style="color: #50fa7b;">Đào + Cam + Sả (Đủ bộ 3)</b></span>
@@ -822,7 +890,7 @@
           <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #a29bfe;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>🔥 Trà Ô Long Nướng Sương Sáo</b>
-              <span style="color: #bd93f9; font-size: 0.9rem; font-weight: bold;">Giá Bán: 35.000đ/ly</span>
+              <span style="color: #bd93f9; font-size: 0.9rem; font-weight: bold;">Giá Bán: 45.000đ/ly</span>
             </div>
             <div style="margin: 3px 0; font-size: 0.85rem;">
               <span style="color: #ffb86c;">🍵 Cốt Trà: <b style="color: #50fa7b;">Ô Long Nướng</b></span> | <span style="color: #8be9fd;">Topping: Sương Sáo</span>
@@ -1096,12 +1164,12 @@
           <div class="guide-item">
             <div class="guide-item-title">📋 CÔNG THỨC PHA CHẾ CÁC MÓN (CỐT TRÀ & TOPPING)</div>
             <div class="guide-item-content">
-              • 🧋 <b>Trà Sữa Truyền Thống:</b> Cốt <b style="color: #50fa7b;">[Trà Đen Đậm]</b> + ⚫ Trân Châu Đen (15.000đ)<br>
-              • 🍊 <b>Hồng Trà Tắc Xí Muội:</b> Cốt <b style="color: #50fa7b;">[Trà Đen Đậm]</b> + 🚫 Không Topping (12.000đ)<br>
-              • 🌿 <b>Trà Sữa Thái Xanh:</b> Cốt <b style="color: #50fa7b;">[Thái Xanh]</b> + 🍃 Thạch Lá Dứa (18.000đ)<br>
-              • 🥛 <b>Sữa Tươi Đường Đen:</b> Cốt <b style="color: #50fa7b;">[Sữa Tươi]</b> + 🍯 Đường Đen (25.000đ)<br>
-              • 🍑 <b>Trà Đào Cam Sả:</b> Cốt <b style="color: #50fa7b;">[Lục Trà Lài] (nút Lài)</b> + 🍑 Đào Miếng + 🍊 Cam Vàng + 🌱 Sả Tươi (28.000đ)<br>
-              • 🔥 <b>Trà Ô Long Nướng:</b> Cốt <b style="color: #50fa7b;">[Ô Long Nướng]</b> + 🍮 Sương Sáo (35.000đ)
+              • 🧋 <b>Trà Sữa Truyền Thống:</b> Cốt <b style="color: #50fa7b;">[Trà Đen Đậm]</b> + ⚫ Trân Châu Đen (32.000đ)<br>
+              • 🍊 <b>Hồng Trà Tắc Xí Muội:</b> Cốt <b style="color: #50fa7b;">[Trà Đen Đậm]</b> + 🚫 Không Topping (25.000đ)<br>
+              • 🌿 <b>Trà Sữa Thái Xanh:</b> Cốt <b style="color: #50fa7b;">[Thái Xanh]</b> + 🍃 Thạch Lá Dứa (35.000đ)<br>
+              • 🥛 <b>Sữa Tươi Đường Đen:</b> Cốt <b style="color: #50fa7b;">[Sữa Tươi]</b> + 🍯 Đường Đen (42.000đ)<br>
+              • 🍑 <b>Trà Đào Cam Sả:</b> Cốt <b style="color: #50fa7b;">[Lục Trà Lài] (nút Lài)</b> + 🍑 Đào Miếng + 🍊 Cam Vàng + 🌱 Sả Tươi (48.000đ)<br>
+              • 🔥 <b>Trà Ô Long Nướng:</b> Cốt <b style="color: #50fa7b;">[Ô Long Nướng]</b> + 🍮 Sương Sáo (45.000đ)
             </div>
           </div>
 
@@ -1167,6 +1235,218 @@
       </div>
       <div id="shift-summary-content">
         <!-- Rendered dynamically with retro receipt receipt styling -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CĂN PHÒNG ẤM CÚNG CỦA HEEHEE (MY COZY ROOM - FULLSCREEN LANDSCAPE) -->
+  <div class="modal-overlay" id="modal-my-room" style="z-index: 99999;">
+    <div class="modal-content room-modal-content">
+      <!-- Portrait Rotation Reminder Overlay -->
+      <div class="room-rotate-hint" id="room-rotate-hint">
+        <div class="rotate-phone-anim">📱</div>
+        <div class="rotate-title">Xoay Ngang Điện Thoại 🔄</div>
+        <div class="rotate-desc">Vui lòng xoay ngang thiết bị để có góc nhìn rộng và điều khiển joystick tốt nhất!</div>
+        <button class="btn-rotate-dismiss" id="btn-dismiss-rotate">Tiếp tục chơi xoay dọc</button>
+      </div>
+
+      <!-- Floating Top HUD Bar -->
+      <div class="room-hud-top">
+        <div class="room-hud-left">
+          <div class="room-hud-title">
+            <span>🏠 CĂN PHÒNG CỦA HEEHEE</span>
+          </div>
+          <div class="cozy-points-badge">
+            <span>Điểm:</span>
+            <span id="room-cozy-points">0⭐</span>
+          </div>
+          <span class="cozy-tier-pill" id="room-cozy-tier">Phòng Trọ Đơn Sơ</span>
+          <span id="room-cozy-title" style="display: none;">🌱 Căn phòng khởi nghiệp mộc mạc</span>
+        </div>
+
+        <div class="room-hud-right">
+          <button class="btn-room-hud primary" id="btn-open-decor-shop">
+            <span>🛍️ Cửa Hàng Nội Thất</span>
+          </button>
+          <button class="btn-room-hud" id="btn-room-invite-friends">
+            <span>👥 Mời Bạn Bè</span>
+          </button>
+          <button class="btn-room-hud" id="btn-room-fullscreen-toggle" title="Bật/Tắt Toàn Màn Hình">
+            <span>⛶</span>
+          </button>
+          <button class="btn-room-hud close-btn" id="close-my-room" title="Thoát Căn Phòng">
+            <span>✕ Thoát</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Room Interactive Canvas Stage -->
+      <div class="room-stage-wrapper">
+        <canvas id="room-stage-canvas" class="room-stage-canvas" width="800" height="400"></canvas>
+      </div>
+
+      <!-- Virtual Joystick Zone -->
+      <div class="room-joystick-zone" id="room-joystick-zone">
+        <div class="room-joystick-base" id="room-joystick-base">
+          <div class="room-joystick-stick" id="room-joystick-stick"></div>
+          <div class="joystick-dir-indicator joy-up">▲</div>
+          <div class="joystick-dir-indicator joy-down">▼</div>
+          <div class="joystick-dir-indicator joy-left">◀</div>
+          <div class="joystick-dir-indicator joy-right">▶</div>
+        </div>
+        <div class="joystick-hint">🕹️ Di chuyển (WASD)</div>
+      </div>
+
+      <!-- Action / Interact Button Zone -->
+      <div class="room-action-btn-zone" id="room-action-btn-zone">
+        <div class="action-btn-sparkle">✦</div>
+        <button class="btn-room-action-round btn-action-gift" id="btn-room-quick-shop" title="Nội thất">
+          <span>🛍️</span>
+        </button>
+        <button class="btn-room-action-round btn-action-interact" id="btn-room-interact" title="Tương tác (Space / E)">
+          <span>💡</span>
+        </button>
+        <button class="btn-room-action-round btn-action-chat" id="btn-room-chat" title="Tâm sự & Nghĩ ngợi">
+          <span>💬</span>
+        </button>
+        <div class="interact-key-hint">Phím Space / E</div>
+      </div>
+
+      <!-- Slide-in Furniture Catalog Drawer -->
+      <div class="room-decor-drawer" id="room-decor-shop-section">
+        <div class="room-decor-drawer-header">
+          <div class="room-decor-drawer-title">
+            <span>🛋️ BÀI TRÍ & NỘI THẤT</span>
+          </div>
+          <button class="btn-drawer-close" id="btn-close-decor-shop" title="Đóng">&times;</button>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
+          Mua đồ & bật/tắt đặt vào căn phòng của bạn
+        </div>
+        <div class="decor-grid" id="room-decor-grid">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: THAM QUAN NHÀ BẠN BÈ (FRIEND'S COZY ROOM - FULLSCREEN LANDSCAPE) -->
+  <div class="modal-overlay" id="modal-friend-room" style="z-index: 100000;">
+    <div class="modal-content room-modal-content">
+      <!-- Portrait Rotation Reminder Overlay -->
+      <div class="room-rotate-hint" id="friend-room-rotate-hint">
+        <div class="rotate-phone-anim">📱</div>
+        <div class="rotate-title">Xoay Ngang Điện Thoại 🔄</div>
+        <div class="rotate-desc">Vui lòng xoay ngang thiết bị để tham quan nhà bạn bè trọn vẹn nhất!</div>
+        <button class="btn-rotate-dismiss" id="btn-dismiss-friend-rotate">Tiếp tục chơi xoay dọc</button>
+      </div>
+
+      <!-- Floating Top HUD Bar -->
+      <div class="room-hud-top">
+        <div class="room-hud-left">
+          <div class="room-hud-title" id="friend-room-title">
+            <span>🏠 NHÀ CỦA BẠN BÈ</span>
+          </div>
+          <div style="font-size: 0.82rem; font-weight: bold; color: #7fffd4;" id="friend-room-owner">
+            @BạnBè
+          </div>
+          <div class="cozy-points-badge" style="color: #8be9fd;">
+            <span>Điểm:</span>
+            <span id="friend-room-cozy-points">0⭐</span>
+          </div>
+          <span class="cozy-tier-pill" style="background: linear-gradient(135deg, #0984e3, #00cec9);" id="friend-room-cozy-tier">Căn Hộ</span>
+        </div>
+
+        <div class="room-hud-right">
+          <button class="btn-room-hud primary" id="btn-cheer-friend-room">
+            <span>❤️ Thả Tim</span>
+          </button>
+          <button class="btn-room-hud" id="btn-friend-items-toggle">
+            <span>📦 Đồ Nội Thất</span>
+          </button>
+          <button class="btn-room-hud" id="btn-friend-room-fullscreen-toggle" title="Bật/Tắt Toàn Màn Hình">
+            <span>⛶</span>
+          </button>
+          <button class="btn-room-hud close-btn" id="close-friend-room" title="Thoát">
+            <span>✕ Thoát</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Friend Room Canvas Stage -->
+      <div class="room-stage-wrapper">
+        <canvas id="friend-room-canvas" class="room-stage-canvas" width="800" height="400"></canvas>
+      </div>
+
+      <!-- Friend Room Virtual Joystick Zone -->
+      <div class="room-joystick-zone" id="friend-room-joystick-zone">
+        <div class="room-joystick-base" id="friend-room-joystick-base">
+          <div class="room-joystick-stick" id="friend-room-joystick-stick"></div>
+          <div class="joystick-dir-indicator joy-up">▲</div>
+          <div class="joystick-dir-indicator joy-down">▼</div>
+          <div class="joystick-dir-indicator joy-left">◀</div>
+          <div class="joystick-dir-indicator joy-right">▶</div>
+        </div>
+        <div class="joystick-hint">🕹️ Di chuyển (WASD)</div>
+      </div>
+
+      <!-- Friend Room Action / Interact Button Zone -->
+      <div class="room-action-btn-zone">
+        <button class="btn-room-interact" id="btn-friend-room-interact" title="Tương tác với đồ vật">
+          <span class="interact-icon">✨</span>
+          <span class="interact-text">Tương Tác</span>
+        </button>
+        <div class="interact-key-hint">Phím Space / E</div>
+      </div>
+
+      <!-- Slide-in Friend Furnishings Drawer -->
+      <div class="room-decor-drawer" id="friend-room-items-drawer">
+        <div class="room-decor-drawer-header">
+          <div class="room-decor-drawer-title">
+            <span>📦 ĐỒ NỘI THẤT CỦA BẠN BÈ</span>
+          </div>
+          <button class="btn-drawer-close" id="btn-close-friend-items">&times;</button>
+        </div>
+        <div id="friend-room-items-list" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto;">
+          <!-- Dynamically filled -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DỰ BÁO & THÔNG TIN THỜI TIẾT (WEATHER INFO) -->
+  <div class="modal-overlay" id="modal-weather-info" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 440px; border-color: #74b9ff; background: #161a29;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #74b9ff; display: flex; align-items: center; gap: 6px;">
+          <span>🌦️ DỰ BÁO THỜI TIẾT & HIỆU ỨNG</span>
+        </div>
+        <button class="btn-close" id="close-weather-info">&times;</button>
+      </div>
+
+      <div style="text-align: center; padding: 14px 10px; background: rgba(255,255,255,0.04); border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <div style="font-size: 3.2rem; line-height: 1;" id="weather-modal-icon">☀️</div>
+        <div style="font-size: 1.3rem; font-weight: 800; color: #fdcb6e; margin-top: 6px;" id="weather-modal-name">Nắng Vàng Rực Rỡ</div>
+        <div style="font-size: 0.9rem; color: #dfe6e9; margin-top: 4px;" id="weather-modal-desc">
+          Trời quang đãng nắng ấm chan hòa. Khách đi dạo phố nhiều, lượng khách ghé quầy tăng +25%!
+        </div>
+      </div>
+
+      <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px;">
+        <div style="font-size: 0.88rem; font-weight: bold; color: var(--gold); margin-bottom: 6px;">⚡ TÁC ĐỘNG TỚI QUÁN TRÀ SỮA:</div>
+        <ul id="weather-modal-effects" style="margin: 0; padding-left: 20px; font-size: 0.85rem; line-height: 1.5; color: #dfe6e9;">
+          <!-- Injected dynamically -->
+        </ul>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button id="btn-test-lightning" class="btn-action-wide" style="display: none; margin: 0; background: linear-gradient(135deg, #a29bfe, #6c5ce7); color: #fff; font-weight: bold;">
+          ⚡ Kích Hoạt Sấm Sét Thử Nghiệm!
+        </button>
+      </div>
+
+      <div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; margin-top: 10px;">
+        💡 Thời tiết thay đổi ngẫu nhiên mỗi khi Kết Ca (sang ngày mới) hoặc do Admin kích hoạt từ trang quản trị!
       </div>
     </div>
   </div>

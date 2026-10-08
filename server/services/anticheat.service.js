@@ -253,8 +253,8 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   });
   currentInv['ly_nap'] = Math.max(0, (currentInv['ly_nap'] || 0) - 1);
 
-  // Ingredient cost estimation
-  const drinkIngredientCost = 3500 + Math.max(0, orderToppings.length - 1) * 1000;
+  // Ingredient cost estimation (Cốt trà + ly nắp ~7.000đ + topping ~3.500đ/loại)
+  const drinkIngredientCost = 7000 + (orderToppings.length * 3500);
 
   // Update daily stats & shift stats
   try {

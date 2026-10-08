@@ -166,6 +166,9 @@ export function initModals() {
                 </div>
               </div>
               <div style="display: flex; gap: 5px; align-items: center;">
+                <button class="btn-action-sm btn-visit-friend-room" data-code="${escapeHtml(friend.store_code)}" data-name="${escapeHtml(friend.store_name)}" style="background: #fdcb6e; color: #000; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold;" title="Đến tham quan căn phòng của bạn bè">
+                  🏠 Thăm Nhà
+                </button>
                 <button class="btn-action-sm btn-gift-friend" data-id="${friend.friendship_id}" data-name="${escapeHtml(friend.store_name)}" ${friend.canSendGift ? '' : 'disabled'} style="background: ${friend.canSendGift ? '#ff79c6' : '#4a5568'}; color: #fff; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; border: none; cursor: ${friend.canSendGift ? 'pointer' : 'not-allowed'}; font-weight: bold;" title="Tặng quà mỗi ngày nhận 10.000đ cho cả hai">
                   ${friend.canSendGift ? '🎁 Tặng Quà' : '✓ Đã Tặng'}
                 </button>
@@ -483,6 +486,16 @@ export function initModals() {
           showToast('❌ Lỗi kết nối!');
           btnInviteCollab.disabled = false;
         }
+        return;
+      }
+
+      const btnVisitFrRoom = e.target.closest('.btn-visit-friend-room');
+      if (btnVisitFrRoom) {
+        const code = btnVisitFrRoom.getAttribute('data-code');
+        if (modalCollab) modalCollab.style.display = 'none';
+        import('./room.js').then(roomMod => {
+          roomMod.visitFriendRoom(code);
+        });
         return;
       }
 

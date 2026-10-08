@@ -9,8 +9,8 @@ const RECIPES = {
     id: 'tra_sua_truyen_thong',
     name: 'Trà Sữa Truyền Thống',
     chapter: 1,
-    basePrice: 15000,
-    cost: 5000,
+    basePrice: 32000,
+    cost: 10500,
     tea: 'den',
     toppings: ['tranchau_den'],
     desc: '🍵 Cốt trà: [Trà Đen Đậm] • Cốt trà đen đậm đà hòa quyện sữa đặc béo ngậy, trân châu đen dẻo dai'
@@ -19,8 +19,8 @@ const RECIPES = {
     id: 'hong_tra_tac',
     name: 'Hồng Trà Tắc Xí Muội',
     chapter: 1,
-    basePrice: 12000,
-    cost: 4000,
+    basePrice: 25000,
+    cost: 7000,
     tea: 'den',
     toppings: [],
     desc: '🍵 Cốt trà: [Trà Đen Đậm] • Trà đen giải khát thanh mát, vị tắc chua thanh & xí muội mằn mặn'
@@ -29,8 +29,8 @@ const RECIPES = {
     id: 'tra_thai_xanh',
     name: 'Trà Sữa Thái Xanh',
     chapter: 1,
-    basePrice: 18000,
-    cost: 6000,
+    basePrice: 35000,
+    cost: 11500,
     tea: 'thai_xanh',
     toppings: ['thach_la_dua'],
     desc: '🌿 Cốt trà: [Thái Xanh] • Màu xanh mát mắt, hương hoa lài thơm mát nồng nàn cùng thạch lá dứa'
@@ -39,8 +39,8 @@ const RECIPES = {
     id: 'sua_tuoi_duong_den',
     name: 'Sữa Tươi Trân Châu Đường Đen',
     chapter: 2,
-    basePrice: 25000,
-    cost: 8000,
+    basePrice: 42000,
+    cost: 14000,
     tea: 'sua_tuoi',
     toppings: ['tranchau_duongden'],
     desc: '🥛 Cốt trà: [Sữa Tươi] • Sữa tươi thanh trùng cùng trân châu nấu đường đen dẻo quánh hot trend'
@@ -49,8 +49,8 @@ const RECIPES = {
     id: 'tra_dao_cam_sa',
     name: 'Trà Đào Cam Sả',
     chapter: 2,
-    basePrice: 28000,
-    cost: 9000,
+    basePrice: 48000,
+    cost: 19500,
     tea: 'lai',
     toppings: ['dao_mieng', 'cam_vang', 'sa_tuoi'],
     desc: '🌸 Cốt trà: [Lục Trà Lài] • Bắt buộc đủ 3 món: Đào Miếng + Cam Vàng + Sả Tươi thơm nức mũi'
@@ -59,8 +59,8 @@ const RECIPES = {
     id: 'tra_olong_nuong',
     name: 'Trà Ô Long Nướng Sương Sáo',
     chapter: 3,
-    basePrice: 35000,
-    cost: 11000,
+    basePrice: 45000,
+    cost: 14500,
     tea: 'olong_nuong',
     toppings: ['suong_sao'],
     desc: '🔥 Cốt trà: [Ô Long Nướng] • Vị khói sao cháy mộc mạc thượng hạng hòa quyện thạch sương sáo mềm mướt'
@@ -168,17 +168,31 @@ try {
 
 const CUSTOMERS = (CHARACTERS_DATA && CHARACTERS_DATA.length > 1)
   ? CHARACTERS_DATA.slice(1).map((c, idx) => {
-      const isTiktoker = (c.id === 12 || c.style === 'tiktoker');
+      const isTiktoker = (c.id === 12 || c.id === 53 || c.style === 'tiktoker' || c.cat === 'streamer');
       const isShipper = (c.id === 24 || c.style === 'shipper');
+      const isVIP = (c.id === 52 || c.cat === 'vip');
+      let tipMult = 1.05;
+      if (isVIP) tipMult = 3.5;
+      else if (isTiktoker) tipMult = 2.2;
+      else if (c.cat === 'traditional') tipMult = 1.5;
+      else if (c.cat === 'pro') tipMult = 1.3;
+
+      let patience = 30000;
+      if (isTiktoker) patience = 24000;
+      else if (isShipper) patience = 25000;
+      else if (c.cat === 'traditional' || c.cat === 'teacher') patience = 38000;
+      else if (isVIP) patience = 35000;
+
       return {
         type: idx,
         id: c.id,
         name: c.name,
-        patience: isTiktoker ? 22000 : (isShipper ? 24000 : 30000),
+        patience: patience,
         fav: mapCustomerFav(c.favoriteDrink),
-        tipMult: isTiktoker ? 2.0 : (c.cat === 'pro' ? 1.2 : 1.05),
+        tipMult: tipMult,
         isTiktoker: isTiktoker,
         isShipper: isShipper,
+        isVIP: isVIP,
         dialogues: (c.dialogues && c.dialogues.length > 0) ? c.dialogues : ['Cho một ly trà sữa thơm ngon nha!']
       };
     })
@@ -216,6 +230,38 @@ const UPGRADES = {
   binh_u_lon: { name: 'Bình Ủ Inox 10L', cost: 400000, desc: 'Cốt trà thơm lâu, không sợ thiu chua' },
   xe_wave: { name: 'Xe Wave Giao Hàng Cho Lâm', cost: 1200000, desc: 'Tăng tốc độ ship và rượt bắt kẻ bùng tiền' },
   
+  // VẬT PHẨM ĐẶC BIỆT MỚI (SPECIAL ITEMS)
+  loa_keo_keo: {
+    name: '📻 Loa Kẹo Kéo Sôi Động',
+    cost: 850000,
+    type: 'special',
+    desc: 'Phát nhạc remix sôi động thu hút khách đi đường, tăng +35% tần suất khách ghé quầy!'
+  },
+  tui_muoi_phong_thuy: {
+    name: '🧂 Túi Muối Phong Thủy Đuổi Vía',
+    cost: 300000,
+    type: 'special',
+    desc: 'Treo đầu xe đuổi vía xấu, miễn nhiễm hoàn toàn trước kẻ trộm thú cưng và khách quỵt tiền!'
+  },
+  may_lac_sieu_toc: {
+    name: '⚡ Máy Lắc Siêu Tốc Barista Pro',
+    cost: 1500000,
+    type: 'special',
+    desc: 'Công nghệ lắc từ tính siêu tốc chỉ trong 0.5s, nâng cao chất lượng ly trà sữa và tăng +10% tiền tip!'
+  },
+  ve_vang_vip: {
+    name: '🎫 Vé Vàng Mời Khách VIP Shark Hưng',
+    cost: 600000,
+    type: 'special',
+    desc: 'Vật phẩm tiêu hao: Mời trực tiếp Shark Hưng hoặc Streamer ghé quán, thanh toán x3 - x5 giá ly!'
+  },
+  bien_led_neon: {
+    name: '💡 Biển Hiệu LED Neon Cyberpunk',
+    cost: 2000000,
+    type: 'special',
+    desc: 'Bảng đèn neon phát sáng rực rỡ trong đêm, cộng vĩnh viễn +0.3⭐ danh tiếng quán và hút khách trẻ!'
+  },
+
   // HỆ THỐNG THÚ CƯNG GIỮ QUÁN (PETS)
   pet_corgi: {
     name: '🐶 Cún Corgi Chân Ngắn (Mông Trái Tim)',
@@ -245,35 +291,35 @@ const UPGRADES = {
     cost: 120000,
     type: 'recipe',
     recipeId: 'hong_tra_tac',
-    desc: 'Mở khóa món Hồng Trà Tắc Xí Muội vào Menu quán! Giá bán: 12.000đ/ly.'
+    desc: 'Mở khóa món Hồng Trà Tắc Xí Muội vào Menu quán! Giá bán: 25.000đ/ly.'
   },
   recipe_tra_thai_xanh: {
     name: '📜 Công Thức: Trà Sữa Thái Xanh',
     cost: 250000,
     type: 'recipe',
     recipeId: 'tra_thai_xanh',
-    desc: 'Mở khóa món Trà Sữa Thái Xanh vào Menu quán! Giá bán: 18.000đ/ly.'
+    desc: 'Mở khóa món Trà Sữa Thái Xanh vào Menu quán! Giá bán: 35.000đ/ly.'
   },
   recipe_sua_tuoi_duong_den: {
     name: '📜 Công Thức: Sữa Tươi Trân Châu Đường Đen',
     cost: 500000,
     type: 'recipe',
     recipeId: 'sua_tuoi_duong_den',
-    desc: 'Mở khóa món Sữa Tươi Đường Đen hot trend vào Menu quán! Giá bán: 25.000đ/ly.'
+    desc: 'Mở khóa món Sữa Tươi Đường Đen hot trend vào Menu quán! Giá bán: 42.000đ/ly.'
   },
   recipe_tra_dao_cam_sa: {
     name: '📜 Công Thức: Trà Đào Cam Sả',
     cost: 800000,
     type: 'recipe',
     recipeId: 'tra_dao_cam_sa',
-    desc: 'Mở khóa món Trà Đào Cam Sả giải nhiệt vào Menu quán! Giá bán: 28.000đ/ly.'
+    desc: 'Mở khóa món Trà Đào Cam Sả giải nhiệt vào Menu quán! Giá bán: 48.000đ/ly.'
   },
   recipe_tra_olong_nuong: {
     name: '📜 Công Thức: Trà Ô Long Nướng Sương Sáo',
     cost: 1500000,
     type: 'recipe',
     recipeId: 'tra_olong_nuong',
-    desc: 'Mở khóa món Trà Ô Long Nướng Thượng Hạng vào Menu quán! Giá bán: 35.000đ/ly.'
+    desc: 'Mở khóa món Trà Ô Long Nướng Thượng Hạng vào Menu quán! Giá bán: 45.000đ/ly.'
   }
 };
 

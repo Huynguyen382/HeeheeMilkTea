@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const db = require('../models/db');
 const anticheat = require('./anticheat.service');
 const gameService = require('./game.service');
+const { gameCache } = require('./cache.service');
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');

@@ -59,7 +59,7 @@ export function openPricingModal() {
     const recipe = recipesDb[key] || {
       id: key,
       name: 'Trà Sữa Truyền Thống',
-      basePrice: 15000,
+      basePrice: 32000,
       tea: 'den'
     };
 
@@ -88,7 +88,7 @@ export function openPricingModal() {
         <span style="font-size: 0.86rem; color: #ffeaa7;">Giá bán quán đặt:</span>
         <div style="display: flex; align-items: center; gap: 6px;">
           <button class="btn-price-step" data-step="-1000" data-recipe="${key}" style="background: #341f30; border: 1px solid #7d446f; color: #fff; width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1.1rem; line-height: 1;">-</button>
-          <input type="number" id="input-price-${key}" class="pricing-input" data-recipe="${key}" data-base="${recipe.basePrice}" value="${currentPrice}" step="1000" min="5000" max="200000" style="width: 85px; text-align: center; font-weight: bold; color: #f1c40f; background: #110813; border: 1px solid #f1c40f; border-radius: 4px; padding: 4px; font-size: 0.95rem;">
+          <input type="number" id="input-price-${key}" class="pricing-input" data-recipe="${key}" data-base="${recipe.basePrice}" value="${currentPrice}" step="1000" min="20000" max="200000" style="width: 85px; text-align: center; font-weight: bold; color: #f1c40f; background: #110813; border: 1px solid #f1c40f; border-radius: 4px; padding: 4px; font-size: 0.95rem;">
           <span style="font-size: 0.85rem; color: #a4b0be;">đ</span>
           <button class="btn-price-step" data-step="1000" data-recipe="${key}" style="background: #341f30; border: 1px solid #7d446f; color: #fff; width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1.1rem; line-height: 1;">+</button>
         </div>

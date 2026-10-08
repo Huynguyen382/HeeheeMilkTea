@@ -278,6 +278,57 @@ class SoundManager {
     setTimeout(() => this.playTone(900, 'sawtooth', 0.25, 0.25), 600);
   }
 
+  // Realistic Procedural Thunder Clap & Rumble for Stormy Weather
+  thunder() {
+    if (!this.soundEnabled) return;
+    this.init();
+    try {
+      const now = this.ctx.currentTime;
+      // 1. Initial sharp crack / lightning strike
+      const strikeOsc = this.ctx.createOscillator();
+      const strikeGain = this.ctx.createGain();
+      const strikeFilter = this.ctx.createBiquadFilter();
+      strikeFilter.type = 'bandpass';
+      strikeFilter.frequency.setValueAtTime(800, now);
+      strikeFilter.Q.setValueAtTime(1.5, now);
+
+      strikeOsc.type = 'sawtooth';
+      strikeOsc.frequency.setValueAtTime(160, now);
+      strikeOsc.frequency.exponentialRampToValueAtTime(40, now + 0.35);
+
+      strikeGain.gain.setValueAtTime(0.4, now);
+      strikeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+      strikeOsc.connect(strikeFilter);
+      strikeFilter.connect(strikeGain);
+      strikeGain.connect(this.ctx.destination);
+      strikeOsc.start(now);
+      strikeOsc.stop(now + 0.35);
+
+      // 2. Heavy bass rolling thunder rumble
+      const rumbleOsc = this.ctx.createOscillator();
+      const rumbleGain = this.ctx.createGain();
+      const rumbleFilter = this.ctx.createBiquadFilter();
+      rumbleFilter.type = 'lowpass';
+      rumbleFilter.frequency.setValueAtTime(260, now);
+      rumbleFilter.frequency.exponentialRampToValueAtTime(45, now + 1.8);
+
+      rumbleOsc.type = 'sawtooth';
+      rumbleOsc.frequency.setValueAtTime(75, now);
+      rumbleOsc.frequency.linearRampToValueAtTime(32, now + 1.8);
+
+      rumbleGain.gain.setValueAtTime(0.01, now);
+      rumbleGain.gain.linearRampToValueAtTime(0.35, now + 0.08);
+      rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+      rumbleOsc.connect(rumbleFilter);
+      rumbleFilter.connect(rumbleGain);
+      rumbleGain.connect(this.ctx.destination);
+      rumbleOsc.start(now);
+      rumbleOsc.stop(now + 1.8);
+    } catch (e) {}
+  }
+
   // --- BACKGROUND MUSIC CONTROLLER ---
   // Cycles through tracks: Track 0 -> Track 1 -> Track 2 -> Track 3 -> Mute -> Track 0
   cycleBGM() {
