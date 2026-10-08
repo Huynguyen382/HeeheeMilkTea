@@ -241,18 +241,27 @@ export async function handleShipperOrderArrival() {
     const newOrders = res.order.orders || [];
     if (newOrders.length === 0) return null;
 
-    const shipperOrder = newOrders[0];
-    shipperOrder.isShipper = true;
+    newOrders.forEach(o => { o.isShipper = true; });
+    const count = newOrders.length;
 
     if (state.canvas && state.canvas.motorbikeShipper) {
-      state.canvas.motorbikeShipper.orderId = shipperOrder.orderId;
+      state.canvas.motorbikeShipper.orderId = newOrders[0].orderId;
+      state.canvas.motorbikeShipper.totalCount = count;
+      state.canvas.motorbikeShipper.servedCount = 0;
+      state.canvas.motorbikeShipper.bubble = count > 1 
+        ? `📦 Đơn app hỏa tốc ${count} ly nha quán!` 
+        : `📦 Cho em lấy đơn ship hỏa tốc!`;
     }
 
-    showToast('🛵 Shipper Huy đã tới quầy nhận đơn giao hàng hỏa tốc! 📦', 4500);
+    if (count > 1) {
+      showToast(`🛵 Shipper Huy đã tới quầy nhận đơn khủng ${count} LY giao hỏa tốc! 📦🧋`, 5000);
+    } else {
+      showToast('🛵 Shipper Huy đã tới quầy nhận đơn giao hàng hỏa tốc! 📦', 4500);
+    }
     if (window.sound) window.sound.bell();
 
     if (!state.currentOrder) {
-      state.orderQueue = [shipperOrder, ...state.orderQueue].slice(0, 14);
+      state.orderQueue = [...newOrders, ...state.orderQueue].slice(0, 14);
       if (state.canvas && state.canvas.setCustomerQueue) {
         state.canvas.setCustomerQueue(state.orderQueue);
       }
@@ -261,9 +270,9 @@ export async function handleShipperOrderArrival() {
       const currentId = state.currentOrder.orderId;
       const currIdx = state.orderQueue.findIndex(o => o.orderId === currentId);
       if (currIdx !== -1) {
-        state.orderQueue.splice(currIdx + 1, 0, shipperOrder);
+        state.orderQueue.splice(currIdx + 1, 0, ...newOrders);
       } else {
-        state.orderQueue.push(shipperOrder);
+        state.orderQueue.push(...newOrders);
       }
       state.orderQueue = state.orderQueue.slice(0, 14);
       if (state.canvas && state.canvas.setCustomerQueue) {
@@ -272,7 +281,7 @@ export async function handleShipperOrderArrival() {
       updateUI();
     }
 
-    return shipperOrder;
+    return newOrders[0];
   } catch (err) {
     console.error('Failed to handle shipper order arrival:', err);
     return null;

@@ -124,7 +124,18 @@ async function generateOrder(storeId, options = {}) {
     }
   }
   if (options.isShipper) {
-    waveSize = 1;
+    // Shipper randomly orders multiple drinks, up to 12 orders
+    // Weighted distribution: 1-2 drinks (30%), 3-5 drinks (35%), 6-9 drinks (25%), 10-12 drinks (10%)
+    const randShipperWave = Math.random();
+    if (randShipperWave < 0.30) {
+      waveSize = Math.floor(Math.random() * 2) + 1; // 1 - 2 đơn
+    } else if (randShipperWave < 0.65) {
+      waveSize = Math.floor(Math.random() * 3) + 3; // 3 - 5 đơn
+    } else if (randShipperWave < 0.90) {
+      waveSize = Math.floor(Math.random() * 4) + 6; // 6 - 9 đơn
+    } else {
+      waveSize = Math.floor(Math.random() * 3) + 10; // 10 - 12 đơn
+    }
   }
   waveSize = Math.min(14, Math.max(1, waveSize));
 
@@ -181,18 +192,19 @@ async function generateOrder(storeId, options = {}) {
     if (options.isShipper) {
       const isStorm = activeBuffs.weather && activeBuffs.weather.id === 'stormy';
       const isRain = activeBuffs.weather && activeBuffs.weather.id === 'rainy';
+      const orderTag = waveSize > 1 ? ` [Ly ${i + 1}/${waveSize}]` : '';
       const shipperQuotes = isStorm ? [
-        '⚡ Trời mưa to sấm sét giật ầm ầm! Khách trùm chăn đặt ship hỏa tốc nổ máy app luôn nè chị! 🛵⛈️',
-        '⛈️ Giông bão sấm chớp giật dữ quá, khách boa tip thêm tiền ship đó quán! Làm nhanh em phóng đi giao nha! 💨',
-        '🛵 Đơn ship giông bão hỏa tốc #8899 nè chị! Đội mưa đi ship nhưng có tiền tip cao là vui rồi! ⚡'
+        `⚡ Trời mưa to sấm sét giật ầm ầm! Khách trùm chăn đặt ship hỏa tốc nổ máy app luôn nè chị! 🛵⛈️${orderTag}`,
+        `⛈️ Giông bão sấm chớp giật dữ quá, khách boa tip thêm tiền ship đó quán! Làm nhanh em phóng đi giao nha! 💨${orderTag}`,
+        `🛵 Đơn ship giông bão hỏa tốc #8899 nè chị! Đội mưa đi ship nhưng có tiền tip cao là vui rồi! ⚡${orderTag}`
       ] : (isRain ? [
-        '🌧️ Trời mưa rào khách lười ra đường nên app nổ đơn liên tục nè quán ơi! 🛵',
-        '📦 Đơn ship ngày mưa mát mẻ, cho em nhận ly giao liền nha chị! 💨'
+        `🌧️ Trời mưa rào khách lười ra đường nên app nổ đơn liên tục nè quán ơi! 🛵${orderTag}`,
+        `📦 Đơn ship ngày mưa mát mẻ, cho em nhận ${waveSize > 1 ? waveSize + ' ly' : 'ly'} giao liền nha chị! 💨${orderTag}`
       ] : [
-        'Chị ơi đơn app #9928 hỏa tốc nè, khách đang ngóng lắm, làm nhanh em đi giao nha! 🛵',
-        'Trời nắng chang chang, làm ly giao liền giúp em nha quán ơi! 💨',
-        'Đơn app này khách dặn kĩ lắm, em chờ quán pha xong em đi ship ngay! 📦',
-        'Chào quán! Cho em nhận đơn giao hàng hỏa tốc này nha, khách hối quá trời! 🧋'
+        `Chị ơi đơn app ${waveSize > 1 ? '(' + waveSize + ' ly)' : '#9928'} hỏa tốc nè, khách đang ngóng lắm, làm nhanh em đi giao nha! 🛵${orderTag}`,
+        `Trời nắng chang chang, làm ${waveSize > 1 ? waveSize + ' ly' : 'ly'} giao liền giúp em nha quán ơi! 💨${orderTag}`,
+        `Đơn app này khách dặn kĩ lắm, em chờ quán pha đủ ${waveSize > 1 ? waveSize + ' ly' : ''} em đi ship ngay! 📦${orderTag}`,
+        `Chào quán! Cho em nhận đơn giao hàng hỏa tốc ${waveSize > 1 ? waveSize + ' ly ' : ''}này nha, khách công ty giục quá trời! 🧋${orderTag}`
       ]);
       quote = shipperQuotes[Math.floor(Math.random() * shipperQuotes.length)];
     } else if (isInvitedTiktoker && i === 0) {

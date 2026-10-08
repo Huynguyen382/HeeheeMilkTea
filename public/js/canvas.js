@@ -126,6 +126,8 @@ class GameCanvas {
       speed: 2.3,
       timer: 0,
       orderId: null,
+      totalCount: 1,
+      servedCount: 0,
       hasDrink: false,
       bubble: '🛵 Ship hỏa tốc!'
     };
@@ -366,24 +368,49 @@ class GameCanvas {
   onShipperOrderServed(orderId = null) {
     if (!this.motorbikeShipper || !this.motorbikeShipper.active) return;
     const ms = this.motorbikeShipper;
+    ms.servedCount = (ms.servedCount || 0) + 1;
     ms.state = 'carrying_drink';
     ms.hasDrink = true;
-    ms.bubble = '🥤 Đã nhận đồ, đi giao ngay!';
-    this.floatingTexts.push({
-      text: '📦 ĐÃ LẤY HÀNG!',
-      x: Math.max(160, ms.walkX - 10),
-      y: 95,
-      alpha: 1.0,
-      color: '#50fa7b'
-    });
+
+    // Check if there are still shipper orders left in queue
+    const remainingShipperOrders = (this.queue || []).filter(o => o.isShipper && o.orderId !== orderId).length;
+    if (remainingShipperOrders > 0) {
+      ms.bubble = `🥤 Nhận ly ${ms.servedCount}! Còn ${remainingShipperOrders} ly nữa nha!`;
+      this.floatingTexts.push({
+        text: `📦 ĐÃ LẤY LY ${ms.servedCount}/${ms.servedCount + remainingShipperOrders}!`,
+        x: Math.max(160, ms.walkX - 10),
+        y: 95,
+        alpha: 1.0,
+        color: '#50fa7b'
+      });
+    } else {
+      ms.bubble = ms.servedCount > 1 
+        ? `🥤 Đã nhận đủ ${ms.servedCount} ly! Phóng đi giao ngay!` 
+        : '🥤 Đã nhận đồ, đi giao ngay!';
+      this.floatingTexts.push({
+        text: ms.servedCount > 1 ? `📦 ĐÃ ĐỦ ${ms.servedCount} LY!` : '📦 ĐÃ LẤY HÀNG!',
+        x: Math.max(160, ms.walkX - 10),
+        y: 95,
+        alpha: 1.0,
+        color: '#50fa7b'
+      });
+    }
   }
 
   onShipperOrderFailed(orderId = null) {
     if (!this.motorbikeShipper || !this.motorbikeShipper.active) return;
     const ms = this.motorbikeShipper;
-    ms.state = 'departing_empty';
-    ms.hasDrink = false;
-    ms.bubble = '❌ Khách đợi lâu quá hủy đơn rồi!';
+    const remainingShipperOrders = (this.queue || []).filter(o => o.isShipper && o.orderId !== orderId).length;
+    if (remainingShipperOrders === 0 && (!ms.servedCount || ms.servedCount === 0)) {
+      ms.state = 'departing_empty';
+      ms.hasDrink = false;
+      ms.bubble = '❌ Khách đợi lâu quá hủy đơn rồi!';
+    } else if (remainingShipperOrders === 0 && ms.servedCount > 0) {
+      // Still deliver already prepared drinks
+      ms.state = 'carrying_drink';
+      ms.hasDrink = true;
+      ms.bubble = `📦 Giao trước ${ms.servedCount} ly đã xong vậy!`;
+    }
   }
 
   updateCollabCustomers() {
@@ -687,8 +714,17 @@ class GameCanvas {
           ms.timer--;
           if (ms.timer <= 0) {
             ms.hasDrink = false;
-            ms.state = 'departing';
-            ms.bubble = '💨 Chúc quán đắt hàng, em đi giao đây!';
+            const remainingShipperOrders = (this.queue || []).filter(o => o.isShipper).length;
+            if (remainingShipperOrders > 0) {
+              // Return to counter to wait for the next drinks!
+              ms.state = 'walking_to_counter';
+              ms.bubble = `📦 Đã cất ${ms.servedCount} ly! Đợi lấy nốt ${remainingShipperOrders} ly!`;
+            } else {
+              ms.state = 'departing';
+              ms.bubble = ms.servedCount > 1 
+                ? `💨 Đã nhận đủ ${ms.servedCount} ly, chúc quán đắt hàng em đi giao đây!` 
+                : '💨 Chúc quán đắt hàng, em đi giao đây!';
+            }
           }
         } else if (ms.state === 'departing_empty') {
           // Walking back without drink after cancellation/timeout

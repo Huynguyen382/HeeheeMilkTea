@@ -923,10 +923,15 @@ export const eventMethods = {
     ctx.strokeStyle = '#d35400';
     ctx.lineWidth = 1;
     ctx.strokeRect(mx - 10, my - 13, 11, 11);
-    // Box logo "TEA"
+    // Box logo or drinks counter
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 6px monospace';
-    ctx.fillText('TEA', mx - 9, my - 5);
+    if (ms.servedCount && ms.servedCount > 0) {
+      ctx.font = 'bold 7px monospace';
+      ctx.fillText(`${ms.servedCount}🧋`, mx - 9, my - 4);
+    } else {
+      ctx.font = 'bold 6px monospace';
+      ctx.fillText('TEA', mx - 9, my - 5);
+    }
 
     // Kickstand when parked / waiting
     if (ms.state !== 'approaching' && ms.state !== 'departing') {
