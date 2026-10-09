@@ -249,14 +249,14 @@ export async function handleShipperOrderArrival() {
       state.canvas.motorbikeShipper.totalCount = count;
       state.canvas.motorbikeShipper.servedCount = 0;
       state.canvas.motorbikeShipper.bubble = count > 1 
-        ? `📦 Đơn app hỏa tốc ${count} ly nha quán!` 
-        : `📦 Cho em lấy đơn ship hỏa tốc!`;
+        ? `🛵 Anh Lâm: Đơn app ${count} ly hỏa tốc nha quán!` 
+        : `🛵 Anh Lâm: Cho anh lấy đơn ship hỏa tốc!`;
     }
 
     if (count > 1) {
-      showToast(`🛵 Shipper Huy đã tới quầy nhận đơn khủng ${count} LY giao hỏa tốc! 📦🧋`, 5000);
+      showToast(`🛵 Anh Lâm Shipper đã tới quầy nhận đơn khủng ${count} LY giao hỏa tốc! 📦🧋`, 5000);
     } else {
-      showToast('🛵 Shipper Huy đã tới quầy nhận đơn giao hàng hỏa tốc! 📦', 4500);
+      showToast('🛵 Anh Lâm Shipper đã tới quầy nhận đơn giao hàng hỏa tốc! 📦', 4500);
     }
     if (window.sound) window.sound.bell();
 

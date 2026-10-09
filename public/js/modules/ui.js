@@ -77,6 +77,23 @@ export function updateBuffsUI(buffs) {
     if (bStealth) bStealth.style.display = 'none';
   }
 
+  // Check sabotage penalty buff
+  const bSabotage = document.getElementById('buff-sabotage');
+  if (bSabotage) {
+    if (buffs.sabotage) {
+      const sab = buffs.sabotage;
+      bSabotage.style.display = 'inline-block';
+      if (sab.type === 'market_inspection') {
+        bSabotage.innerHTML = `👮 <b>Quản Lý Thị Trường Niêm Phong</b> (${sab.waves} đợt: -60% Khách, -40% Tiền)`;
+      } else {
+        bSabotage.innerHTML = `📉 <b>Bị Bóc Phốt Mạng Xã Hội</b> (${sab.waves} đợt: -50% Khách, -30% Tiền)`;
+      }
+      hasAny = true;
+    } else {
+      bSabotage.style.display = 'none';
+    }
+  }
+
   // Check live event buff
   const bEvent = document.getElementById('buff-live-event');
   if (bEvent) {
@@ -325,27 +342,42 @@ export function updateUI() {
     }
   }
 
-  // Debt Modal & Chapter 2 Unlock UI
+  // Debt Modal & Chapter Progression UI
   const debtSec = document.getElementById('chapter-2-unlock-section');
+  const chap3Sec = document.getElementById('chapter-3-unlock-section');
   const debtPayControls = document.getElementById('debt-pay-controls');
   const navDebtBtn = document.getElementById('nav-debt');
   const menuDebtTitle = document.getElementById('menu-debt-title');
   if (save.debt_remaining === 0) {
     if (debtSec) debtSec.style.display = (save.chapter === 1) ? 'block' : 'none';
     if (debtPayControls) debtPayControls.style.display = 'none';
+
+    const canUnlockChap3 = (save.chapter === 2 && (save.money || 0) >= 50000000);
+    if (chap3Sec) chap3Sec.style.display = canUnlockChap3 ? 'block' : 'none';
+
     if (menuDebtTitle) {
-      menuDebtTitle.innerText = (save.chapter === 1) ? '🚀 Lên Chương 2' : '✅ Đã Hết Nợ';
+      if (save.chapter === 1) menuDebtTitle.innerText = '🚀 Lên Chương 2';
+      else if (canUnlockChap3) menuDebtTitle.innerText = '🏰 Lên Chương 3';
+      else if (save.chapter === 2) menuDebtTitle.innerText = '🏆 Mục Tiêu 50Tr';
+      else menuDebtTitle.innerText = '⭐ Flagship Store';
     } else if (navDebtBtn) {
       if (save.chapter === 1) {
         navDebtBtn.innerHTML = '🚀 Lên Chương 2';
         navDebtBtn.style.color = '#f1c40f';
+      } else if (canUnlockChap3) {
+        navDebtBtn.innerHTML = '🏰 Lên Chương 3';
+        navDebtBtn.style.color = '#f4c430';
+      } else if (save.chapter === 2) {
+        navDebtBtn.innerHTML = '🏆 Mục Tiêu 50Tr';
+        navDebtBtn.style.color = '#8be9fd';
       } else {
-        navDebtBtn.innerHTML = '✅ Đã Hết Nợ';
+        navDebtBtn.innerHTML = '⭐ Flagship Store';
         navDebtBtn.style.color = '#50fa7b';
       }
     }
   } else {
     if (debtSec) debtSec.style.display = 'none';
+    if (chap3Sec) chap3Sec.style.display = 'none';
     if (debtPayControls) debtPayControls.style.display = 'block';
     if (menuDebtTitle) {
       menuDebtTitle.innerText = '💰 Sổ Nợ Anh Bảnh';

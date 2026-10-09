@@ -53,7 +53,11 @@ export const RECIPE_TEA_MAP = {
   tra_thai_xanh: { teaId: 'thai_xanh', teaName: 'Thái Xanh', icon: '🌿', btnLabel: 'Thái Xanh' },
   sua_tuoi_duong_den: { teaId: 'sua_tuoi', teaName: 'Sữa Tươi', icon: '🥛', btnLabel: 'Sữa Tươi' },
   tra_dao_cam_sa: { teaId: 'lai', teaName: 'Lục Trà Lài', icon: '🌸', btnLabel: 'Lục Trà Lài' },
-  tra_olong_nuong: { teaId: 'olong_nuong', teaName: 'Ô Long Nướng', icon: '🔥', btnLabel: 'Ô Long Nướng' }
+  tra_olong_nuong: { teaId: 'olong_nuong', teaName: 'Ô Long Nướng', icon: '🔥', btnLabel: 'Ô Long Nướng' },
+  nitro_cold_brew: { teaId: 'olong_nuong', teaName: 'Ô Long Nướng', icon: '💨', btnLabel: 'Ô Long Nướng' },
+  tra_sua_dat_vang: { teaId: 'den', teaName: 'Trà Đen Đậm', icon: '👑', btnLabel: 'Trà Đen Đậm' },
+  tra_sen_tay_ho: { teaId: 'lai', teaName: 'Lục Trà Lài', icon: '🪷', btnLabel: 'Lục Trà Lài' },
+  kem_kho_banh_bong: { teaId: 'thai_xanh', teaName: 'Thái Xanh', icon: '🔥', btnLabel: 'Thái Xanh' }
 };
 
 export const TEA_INV_MAP = {

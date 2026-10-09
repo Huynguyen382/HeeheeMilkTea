@@ -159,6 +159,84 @@ const ROOM_DECORATIONS = {
     desc: 'Đệm tròn bọc lông tuyết mềm mượt cho cún Corgi hoặc Mèo ngủ.',
     gridSlot: 'pet_bed',
     render: { type: 'pet_bed', color: '#82ccdd' }
+  },
+
+  // TỦ ĐỒ THỜI TRANG HEEHEE (OUTFITS)
+  outfit_barista: {
+    id: 'outfit_barista',
+    name: 'Đồng Phục Barista Cổ Điển',
+    category: 'outfit',
+    icon: '☕',
+    price: 300000,
+    currency: 'money',
+    cozyPoints: 15,
+    effect: 'Tạp dề barista màu cà phê sữa năng động, tăng +5% tốc độ phục vụ quầy',
+    desc: 'Áo sơ mi trắng kết hợp tạp dề nâu cà phê đậm chất pha chế chuyên nghiệp.',
+    gridSlot: 'outfit',
+    render: {
+      type: 'outfit',
+      dressColor: '#6F4E37',
+      trimColor: '#ffffff',
+      apronColor: '#4a2c11',
+      collarColor: '#ffffff'
+    }
+  },
+  outfit_lolita_pastel: {
+    id: 'outfit_lolita_pastel',
+    name: 'Váy Lolita Pastel Ngọt Ngào',
+    category: 'outfit',
+    icon: '🎀',
+    price: 650000,
+    currency: 'money',
+    cozyPoints: 20,
+    effect: 'Xinh xắn đáng yêu đốn tim khách hàng, tăng +10% tiền Tip',
+    desc: 'Váy xòe bồng bềnh phối ren màu hồng phấn pastel và tím mộng mơ.',
+    gridSlot: 'outfit',
+    render: {
+      type: 'outfit',
+      dressColor: '#ff9ff3',
+      trimColor: '#feca57',
+      apronColor: '#54a0ff',
+      collarColor: '#ffffff'
+    }
+  },
+  outfit_ao_dai_sen: {
+    id: 'outfit_ao_dai_sen',
+    name: 'Áo Dài Hoa Sen Truyền Thống',
+    category: 'outfit',
+    icon: '🪷',
+    price: 1200000,
+    currency: 'money',
+    cozyPoints: 30,
+    effect: 'Duyên dáng thanh tao đậm chất Việt Nam, tăng +15% danh tiếng quán',
+    desc: 'Áo dài lụa tơ tằm thêu hoa sen Tây Hồ tao nhã quý phái.',
+    gridSlot: 'outfit',
+    render: {
+      type: 'outfit',
+      dressColor: '#00d2d3',
+      trimColor: '#ff9ff3',
+      apronColor: '#1dd1a1',
+      collarColor: '#feca57'
+    }
+  },
+  outfit_master_chef: {
+    id: 'outfit_master_chef',
+    name: 'Set Đồ Master Chef Hoàng Gia',
+    category: 'outfit',
+    icon: '👑',
+    price: 2500000,
+    currency: 'money',
+    cozyPoints: 45,
+    effect: 'Khí chất bậc thầy pha chế đẳng cấp quốc tế, tăng +20% giá trị đồ uống',
+    desc: 'Áo đầu bếp cao cấp dát viền vàng kim óng ánh của nghệ nhân ẩm thực.',
+    gridSlot: 'outfit',
+    render: {
+      type: 'outfit',
+      dressColor: '#222f3e',
+      trimColor: '#f1c40f',
+      apronColor: '#e67e22',
+      collarColor: '#f1c40f'
+    }
   }
 };
 

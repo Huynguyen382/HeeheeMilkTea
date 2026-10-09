@@ -287,8 +287,10 @@ export const primitiveMethods = {
     const bob = Math.round(Math.sin(this.tick * 0.1) * 1); // Crisp integer breathing bob
     const isBlinking = (this.tick % 80) < 4;
 
+    const outfit = this.currentOutfit || (window.activeOutfitRender) || null;
+
     if (typeof drawOwnerBarista === 'function') {
-      drawOwnerBarista(ctx, hx, hy, bob, isBlinking);
+      drawOwnerBarista(ctx, hx, hy, bob, isBlinking, outfit);
     }
   },
 
@@ -301,6 +303,73 @@ export const primitiveMethods = {
     if (typeof drawOwnerForearms === 'function') {
       drawOwnerForearms(ctx, hx, hy, bob, this.isShaking, this.tick);
     }
+  },
+
+  // --- TRỢ THỦ BÉ BẮP (Đứng quầy phụ dập nắp ly) ---
+  drawBeBap(ctx) {
+    const bx = 116;
+    const by = 80;
+    const bob = Math.round(Math.sin(this.tick * 0.12 + 1) * 1);
+    const isBlinking = (this.tick % 70) < 4;
+
+    const pR = (x, y, w, h, col) => {
+      ctx.fillStyle = col;
+      ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+    };
+    const pD = (x, y, col) => {
+      ctx.fillStyle = col;
+      ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
+    };
+
+    const bX = bx;
+    const bY = by + bob;
+
+    // Hai búi tóc tròn & Nơ vàng bắp ngô
+    pR(bX + 1, bY - 8, 3, 3, '#5C2D13');
+    pR(bX + 11, bY - 8, 3, 3, '#5C2D13');
+    pR(bX + 2, bY - 5, 2, 2, '#FACC15');
+    pR(bX + 11, bY - 5, 2, 2, '#FACC15');
+
+    // KẸP TÓC BẮP NGÔ 🌽 BÊN TRÁI
+    pR(bX + 0, bY - 10, 2, 3, '#FDE047');
+    pD(bX + 1, bY - 9, '#F59E0B');
+    pD(bX + 0, bY - 7, '#16A34A');
+
+    // Tóc mái ngang nâu
+    pR(bX + 3, bY - 7, 9, 3, '#5C2D13');
+    pR(bX + 4, bY - 8, 7, 2, '#78350F');
+    pR(bX + 2, bY - 4, 2, 4, '#5C2D13');
+    pR(bX + 11, bY - 4, 2, 4, '#5C2D13');
+
+    // Mặt & má hồng
+    pR(bX + 4, bY - 4, 7, 5, '#FFE0BD');
+    if (!isBlinking) {
+      pD(bX + 5, bY - 3, '#1E293B');
+      pD(bX + 9, bY - 3, '#1E293B');
+    } else {
+      pD(bX + 5, bY - 3, '#94A3B8');
+      pD(bX + 9, bY - 3, '#94A3B8');
+    }
+    pD(bX + 4, bY - 1, '#FB7185'); // má hồng
+    pD(bX + 10, bY - 1, '#FB7185');
+    pD(bX + 7, bY - 1, '#F43F5E'); // miệng cười
+
+    // Áo trắng & yếm vàng bắp ngô
+    pR(bX + 4, bY + 1, 7, 2, '#FFFBEB');
+    pR(bX + 3, bY + 3, 9, 7, '#FBBF24');
+    pD(bX + 5, bY + 5, '#F59E0B');
+    pD(bX + 9, bY + 5, '#F59E0B');
+
+    // Tạp dề cam & cánh tay
+    pR(bX + 3, bY + 8, 9, 2, '#EA580C');
+    pR(bX + 2, bY + 3, 2, 4, '#FFFBEB');
+    pR(bX + 11, bY + 3, 2, 4, '#FFFBEB');
+
+    // Chân & vớ trắng sau quầy
+    pR(bX + 4, bY + 10, 3, 6, '#FFFFFF');
+    pR(bX + 8, bY + 10, 3, 6, '#FFFFFF');
+    pR(bX + 3, bY + 16, 4, 3, '#78350F');
+    pR(bX + 8, bY + 16, 4, 3, '#78350F');
   }
 };
 

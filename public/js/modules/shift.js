@@ -119,15 +119,19 @@ export function openEndShiftModal() {
 
           state.storeState = await window.API.getState();
           updateUI();
-          showToast(`🌅 Kết ca Ngày ${res.previousDay} thành công! Lợi nhuận: ${res.netProfit >= 0 ? '+' : ''}${res.netProfit.toLocaleString('vi-VN')}đ`, 4000);
+          showToast(`🌅 Kết ca Ngày ${res.previousDay} thành công! Đã bắt đầu Ngày ${res.day_in_game} tươi sáng!`, 4000);
 
-          // Bật thông báo nghỉ ngơi sau một ngày làm việc mệt mỏi (2 phút)
-          if (res.resting && res.restUntil) {
-            startRestCountdown(res.restUntil, res.restReason || 'end_shift');
-          } else {
-            state.isGamePaused = false;
-            scheduleNextOrder(2500);
+          // Chuyển ngay thời gian trong game tới 7h00 sáng để bắt đầu ca mới đón bình minh
+          if (state.canvas && typeof state.canvas.setInGameTimeTo7AM === 'function') {
+            state.canvas.setInGameTimeTo7AM();
           }
+
+          // Đảm bảo đóng overlay nghỉ ngơi và tiếp tục nhận đơn hàng
+          const overlayResting = document.getElementById('overlay-resting');
+          if (overlayResting) overlayResting.style.display = 'none';
+
+          state.isGamePaused = false;
+          scheduleNextOrder(2000);
         } else {
           if (window.sound) window.sound.fail();
           showToast('❌ ' + (res.message || 'Không thể kết ca'));

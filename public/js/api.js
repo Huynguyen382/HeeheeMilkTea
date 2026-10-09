@@ -168,6 +168,14 @@ const API = {
     return await this.request('/game/use-talisman', 'POST');
   },
 
+  async useSabotageCard(cardId, targetStoreCode) {
+    return await this.request('/game/use-sabotage', 'POST', { cardId, targetStoreCode });
+  },
+
+  async useSupportCard(cardId) {
+    return await this.request('/game/use-support-card', 'POST', { cardId });
+  },
+
   async advanceDay() {
     return await this.request('/game/advance-day', 'POST');
   },
@@ -206,6 +214,10 @@ const API = {
 
   async unlockChapter2() {
     return await this.request('/game/unlock-chapter-2', 'POST');
+  },
+
+  async unlockChapter3() {
+    return await this.request('/game/unlock-chapter-3', 'POST');
   },
 
   async policeFine() {

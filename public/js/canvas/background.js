@@ -53,6 +53,10 @@ export const backgroundMethods = {
 
   drawBackground(ctx) {
     const tod = this.getTimeOfDay();
+    if (this.chapter >= 3 || this.sceneSetting === 'walking_street') {
+      this.drawWalkingStreetFlagshipBackground(ctx, tod);
+      return;
+    }
     const isHUST = (this.chapter >= 2) && (this.sceneSetting === 'hust' || !this.sceneSetting);
     if (isHUST) {
       this.drawHUSTParabolBackground(ctx, tod);
@@ -187,6 +191,11 @@ export const backgroundMethods = {
 
     // 3. MÂY TRÔI BAN NGÀY
     this.drawClouds(ctx, tod);
+
+    // 3b. TIA NẮNG XUYÊN MÂY (VOLUMETRIC GOD RAYS BAN MAI & HOÀNG HÔN)
+    if ((tod === 'morning' || tod === 'afternoon') && (!isStorm && !isRain)) {
+      this.drawGodRays(ctx, tod);
+    }
 
     // 4. TÒA NHÀ PHÍA XA (SILHOUETTES THEO BUỔI TRẢI DÀI TOÀN BỘ CHIỀU NGANG 720PX)
     let bldColor = '#18091d';
@@ -335,15 +344,6 @@ export const backgroundMethods = {
       ctx.fillRect(i - 2, lightY + 2, 4, 6);
     }
 
-    // 10. HOA ANH ĐÀO BAY TRONG GIÓ
-    this.petals.forEach(p => {
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = 0.85;
-      ctx.beginPath();
-      ctx.ellipse(p.x, p.y, p.size + 1, p.size, Math.PI / 4, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.globalAlpha = 1.0;
   },
 
   drawStreetLamp(ctx) {
@@ -488,6 +488,11 @@ export const backgroundMethods = {
 
     // Clouds
     this.drawClouds(ctx, tod);
+
+    // Volumetric God Rays across Parabol Gate
+    if ((tod === 'morning' || tod === 'afternoon') && (!isStorm && !isRain)) {
+      this.drawGodRays(ctx, tod);
+    }
 
     // Birds flying over HUST in morning/noon
     if (tod === 'morning' || tod === 'noon') {
@@ -882,6 +887,456 @@ export const backgroundMethods = {
       ctx.fillRect(lx, 150 + (idx * 7) % 35, 2, 1.5);
       ctx.fillRect(lx + 4, 151 + (idx * 5) % 30, 1.5, 1.5);
     });
+  },
+
+  // --- CHAPTER 3: FLAGSHIP STORE 2 TẦNG PHỐ ĐI BỘ HOÀN KIẾM / PHỐ CỔ ---
+  drawWalkingStreetFlagshipBackground(ctx, tod) {
+    const isStorm = this.weather && this.weather.id === 'stormy';
+    const isRain = this.weather && this.weather.id === 'rainy';
+
+    // 1. SKY GRADIENT
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, 145);
+    if (isStorm) {
+      skyGrad.addColorStop(0, '#0a0a14');
+      skyGrad.addColorStop(0.5, '#1e1a32');
+      skyGrad.addColorStop(1, '#1b1b2f');
+    } else if (isRain) {
+      skyGrad.addColorStop(0, '#2d3436');
+      skyGrad.addColorStop(0.5, '#4b6584');
+      skyGrad.addColorStop(1, '#636e72');
+    } else if (tod === 'morning') {
+      skyGrad.addColorStop(0, '#1e3799');
+      skyGrad.addColorStop(0.4, '#4a69bd');
+      skyGrad.addColorStop(0.75, '#f6b93b');
+      skyGrad.addColorStop(1, '#ffeaa7');
+    } else if (tod === 'noon') {
+      skyGrad.addColorStop(0, '#0c2461');
+      skyGrad.addColorStop(0.45, '#1e3799');
+      skyGrad.addColorStop(0.85, '#4a69bd');
+      skyGrad.addColorStop(1, '#82ccdd');
+    } else if (tod === 'afternoon') {
+      skyGrad.addColorStop(0, '#2c003e');
+      skyGrad.addColorStop(0.35, '#511845');
+      skyGrad.addColorStop(0.7, '#900c3f');
+      skyGrad.addColorStop(0.9, '#c70039');
+      skyGrad.addColorStop(1, '#ff5733');
+    } else {
+      // Night (Phố đêm lung linh)
+      skyGrad.addColorStop(0, '#090a0f');
+      skyGrad.addColorStop(0.45, '#141829');
+      skyGrad.addColorStop(0.85, '#1f2440');
+      skyGrad.addColorStop(1, '#181b30');
+    }
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, this.width, 145);
+
+    // 2. CELESTIAL BODIES (Moon & Stars / Sun)
+    if (tod === 'night') {
+      // Crescent Moon
+      ctx.fillStyle = 'rgba(255, 234, 167, 0.25)';
+      ctx.beginPath();
+      ctx.arc(38, 26, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff7d6';
+      ctx.beginPath();
+      ctx.arc(38, 26, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#141829';
+      ctx.beginPath();
+      ctx.arc(34, 24, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Twinkling stars
+      const stars = [
+        { x: 16, y: 14 }, { x: 72, y: 18 }, { x: 110, y: 10 },
+        { x: 165, y: 16 }, { x: 215, y: 12 }, { x: 295, y: 20 },
+        { x: 350, y: 15 }, { x: 410, y: 22 }
+      ];
+      ctx.fillStyle = '#ffffff';
+      stars.forEach((s, idx) => {
+        const flicker = (Math.sin(this.tick * 0.12 + idx * 1.5) + 1) * 0.4 + 0.3;
+        ctx.globalAlpha = flicker;
+        ctx.fillRect(s.x, s.y, 2, 2);
+      });
+      ctx.globalAlpha = 1.0;
+    } else {
+      // Sun
+      const sx = tod === 'morning' ? 45 : (tod === 'noon' ? 200 : 55);
+      const sy = tod === 'morning' ? 28 : (tod === 'noon' ? 18 : 42);
+      const sunHalo = ctx.createRadialGradient(sx, sy, 3, sx, sy, 30);
+      sunHalo.addColorStop(0, tod === 'afternoon' ? 'rgba(255, 87, 51, 0.8)' : 'rgba(255, 255, 255, 0.85)');
+      sunHalo.addColorStop(0.5, 'rgba(255, 234, 167, 0.3)');
+      sunHalo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sunHalo;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 30, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = tod === 'afternoon' ? '#ff5733' : '#ffffff';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 9, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Clouds
+    this.drawClouds(ctx, tod);
+
+    // Volumetric God Rays across Walking Street Flagship
+    if ((tod === 'morning' || tod === 'afternoon') && (!isStorm && !isRain)) {
+      this.drawGodRays(ctx, tod);
+    }
+
+    // 3. BACKGROUND FRENCH COLONIAL SHOPHOUSES (Phố Cổ Hà Nội)
+    const ochreWall = (tod === 'night') ? '#3a3220' : '#e5ba55';
+    const ochreShade = (tod === 'night') ? '#262014' : '#b88b2e';
+    const tileRoof = (tod === 'night') ? '#2c1810' : '#8b3a2b';
+    const greenShutter = (tod === 'night') ? '#13281c' : '#1e5f38';
+
+    // Left ancient townhouse silhouette (x = 0 to 120)
+    ctx.fillStyle = ochreShade;
+    ctx.fillRect(0, 35, 115, 110);
+    ctx.fillStyle = ochreWall;
+    ctx.fillRect(0, 35, 105, 110);
+
+    // Traditional red tiled shingle roof (mái ngói âm dương rêu phong)
+    ctx.fillStyle = tileRoof;
+    ctx.beginPath();
+    ctx.moveTo(0, 35);
+    ctx.lineTo(55, 20);
+    ctx.lineTo(115, 35);
+    ctx.fill();
+
+    // Vintage wooden shutters on left shophouse
+    ctx.fillStyle = greenShutter;
+    ctx.fillRect(15, 45, 18, 25);
+    ctx.fillRect(60, 45, 18, 25);
+    // Louver lines
+    ctx.fillStyle = '#0f172a';
+    for (let ly = 48; ly < 68; ly += 4) {
+      ctx.fillRect(16, ly, 16, 1);
+      ctx.fillRect(61, ly, 16, 1);
+    }
+
+    // Hanging strings of Vietnamese festive lanterns across the street
+    const lanternColors = ['#e74c3c', '#f1c40f', '#e67e22', '#2ecc71', '#9b59b6'];
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, 24);
+    ctx.quadraticCurveTo(this.width * 0.5, 36, this.width, 22);
+    ctx.stroke();
+
+    for (let lx = 30; lx < this.width; lx += 45) {
+      const t = lx / this.width;
+      const wireY = 24 + Math.sin(t * Math.PI) * 12;
+      const sway = Math.sin(this.tick * 0.08 + lx) * 1.5;
+      const col = lanternColors[(Math.floor(lx / 45)) % lanternColors.length];
+
+      // Lantern cord
+      ctx.fillStyle = '#222';
+      ctx.fillRect(lx, wireY, 1, 5);
+
+      // Lantern body
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.roundRect(lx - 4 + sway, wireY + 5, 9, 11, 3);
+      ctx.fill();
+
+      // Golden tassel
+      ctx.fillStyle = '#f1c40f';
+      ctx.fillRect(lx + sway, wireY + 16, 1, 4);
+
+      if (tod === 'night') {
+        // Warm glow around lanterns at night
+        ctx.fillStyle = 'rgba(255, 234, 167, 0.15)';
+        ctx.beginPath();
+        ctx.arc(lx + sway, wireY + 10, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 4. THE HEEHEE FLAGSHIP STORE (2-STORY MODERN BOUTIQUE)
+    const bldgX = 110;
+    const bldgY = 18;
+    const bldgW = Math.max(310, this.width - 110);
+    const bldgH = 127;
+
+    // Building primary facade - Warm cream marble & Rose gold trims
+    const facadeColor = (tod === 'night') ? '#1e1622' : '#fcf5ed';
+    const trimGold = '#f4c430';
+    const darkWood = '#3d1f14';
+
+    ctx.fillStyle = facadeColor;
+    ctx.fillRect(bldgX, bldgY, bldgW, bldgH);
+
+    // Cornice / Crown moulding top edge
+    ctx.fillStyle = trimGold;
+    ctx.fillRect(bldgX - 4, bldgY - 3, bldgW + 8, 4);
+    ctx.fillStyle = (tod === 'night') ? '#2a1a2f' : '#e0d2c3';
+    ctx.fillRect(bldgX - 2, bldgY + 1, bldgW + 4, 3);
+
+    // --- TẦNG 2 (BAN CÔNG NGẮM PHỐ & DINE-IN SYSTEM) ---
+    const fl2Y = bldgY + 4;
+    const fl2H = 55;
+
+    // French arched windows with warm indoor glow
+    const winWidth = 32;
+    const winHeight = 36;
+    const winGap = 16;
+    for (let wx = bldgX + 16; wx < bldgX + bldgW - 40; wx += (winWidth + winGap)) {
+      // Interior warm light
+      const winGrad = ctx.createLinearGradient(wx, fl2Y + 8, wx, fl2Y + 8 + winHeight);
+      winGrad.addColorStop(0, '#ffeaa7');
+      winGrad.addColorStop(1, '#fab1a0');
+      ctx.fillStyle = (tod === 'night') ? winGrad : '#dfe6e9';
+      ctx.beginPath();
+      ctx.roundRect(wx, fl2Y + 6, winWidth, winHeight, [12, 12, 0, 0]);
+      ctx.fill();
+
+      // Window arch molding
+      ctx.strokeStyle = darkWood;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(wx, fl2Y + 6, winWidth, winHeight, [12, 12, 0, 0]);
+      ctx.stroke();
+
+      // Window panes grid
+      ctx.fillStyle = darkWood;
+      ctx.fillRect(wx + winWidth * 0.5 - 1, fl2Y + 6, 2, winHeight);
+      ctx.fillRect(wx, fl2Y + 22, winWidth, 1.5);
+    }
+
+    // Floor 2 Balcony Floor Sump
+    ctx.fillStyle = '#2c3e50';
+    ctx.fillRect(bldgX, fl2Y + fl2H - 8, bldgW, 8);
+    ctx.fillStyle = trimGold;
+    ctx.fillRect(bldgX, fl2Y + fl2H - 9, bldgW, 1.5);
+
+    // Balcony Wrought Iron Railing with Lotus details
+    ctx.strokeStyle = '#1e272e';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(bldgX, fl2Y + fl2H - 20);
+    ctx.lineTo(bldgX + bldgW, fl2Y + fl2H - 20);
+    ctx.stroke();
+
+    // Railing balusters
+    for (let rx = bldgX + 6; rx < bldgX + bldgW; rx += 8) {
+      ctx.fillStyle = '#1e272e';
+      ctx.fillRect(rx, fl2Y + fl2H - 20, 1.5, 12);
+      // Gold finial dots on railing
+      ctx.fillStyle = trimGold;
+      ctx.fillRect(rx - 0.5, fl2Y + fl2H - 22, 2.5, 2.5);
+    }
+
+    // Lotus Flower Planters on Balcony (Chậu Sen Bách Diệp Tây Hồ)
+    const planterXList = [bldgX + 10, bldgX + 90, bldgX + 175, bldgX + 250];
+    planterXList.forEach(px => {
+      if (px < bldgX + bldgW - 20) {
+        // Planter box
+        ctx.fillStyle = '#636e72';
+        ctx.fillRect(px, fl2Y + fl2H - 16, 22, 8);
+        ctx.fillStyle = trimGold;
+        ctx.fillRect(px + 1, fl2Y + fl2H - 17, 20, 1.5);
+
+        // Lotus Pad (lá sen tròn)
+        ctx.fillStyle = '#27ae60';
+        ctx.beginPath();
+        ctx.arc(px + 6, fl2Y + fl2H - 18, 4, 0, Math.PI * 2);
+        ctx.arc(px + 16, fl2Y + fl2H - 17, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Lotus Blossom (hoa sen hồng)
+        ctx.fillStyle = '#ff7675';
+        ctx.beginPath();
+        ctx.arc(px + 11, fl2Y + fl2H - 22, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fd79a8';
+        ctx.fillRect(px + 10, fl2Y + fl2H - 24, 2, 3);
+      }
+    });
+
+    // Dine-In Cafe Tables on the Balcony (Bàn Cafe View Phố)
+    const tableX = bldgX + 50;
+    if (tableX + 25 < bldgX + bldgW) {
+      // Parasol / Dù che pastel
+      ctx.fillStyle = '#fab1a0';
+      ctx.beginPath();
+      ctx.moveTo(tableX + 12, fl2Y + 12);
+      ctx.lineTo(tableX + 2, fl2Y + 22);
+      ctx.lineTo(tableX + 22, fl2Y + 22);
+      ctx.fill();
+      ctx.fillStyle = '#e17055';
+      ctx.fillRect(tableX + 11, fl2Y + 22, 2, 14);
+
+      // Wooden Cafe Table
+      ctx.fillStyle = '#b33939';
+      ctx.fillRect(tableX + 5, fl2Y + 34, 14, 2.5);
+      ctx.fillRect(tableX + 11, fl2Y + 36.5, 2, 7);
+
+      // Mini Boba Cup on Table (Ly trà sữa của khách Dine-in)
+      ctx.fillStyle = '#f4c430';
+      ctx.fillRect(tableX + 10, fl2Y + 30.5, 4, 4);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(tableX + 11.5, fl2Y + 28, 1, 3); // Straw
+    }
+
+    // --- TẦNG 1: QUẦY BAR FLAGSHIP & CỬA KÍNH SANG TRỌNG ---
+    const fl1Y = fl2Y + fl2H;
+    const fl1H = bldgH - fl2H;
+
+    // Grand Entrance Awning / Mái hiên hoàng gia (Vàng & Đen sọc quý phái)
+    const awningY = fl1Y - 4;
+    const awningH = 14;
+    const stripeW = 10;
+    for (let ax = bldgX; ax < bldgX + bldgW; ax += stripeW) {
+      const isGoldStripe = (Math.floor((ax - bldgX) / stripeW) % 2 === 0);
+      ctx.fillStyle = isGoldStripe ? '#f4c430' : '#2d1d28';
+      ctx.beginPath();
+      ctx.moveTo(ax, awningY);
+      ctx.lineTo(ax + stripeW, awningY);
+      ctx.lineTo(ax + stripeW - 2, awningY + awningH);
+      ctx.lineTo(ax - 2, awningY + awningH);
+      ctx.fill();
+
+      // Scalloped fringe at bottom of awning
+      ctx.fillStyle = isGoldStripe ? '#e67e22' : '#1e0c18';
+      ctx.beginPath();
+      ctx.arc(ax + stripeW * 0.5 - 2, awningY + awningH, 3, 0, Math.PI);
+      ctx.fill();
+    }
+
+    // Glowing 3D Neon Signboard: "★ HEEHEE BOBA FLAGSHIP STORE ★"
+    const signBoxX = bldgX + 25;
+    const signBoxY = fl1Y + 12;
+    const signBoxW = Math.min(260, bldgW - 50);
+    const signBoxH = 18;
+
+    ctx.fillStyle = '#1e0c18';
+    ctx.beginPath();
+    ctx.roundRect(signBoxX, signBoxY, signBoxW, signBoxH, 4);
+    ctx.fill();
+
+    // Animated Neon Glow
+    const neonPulse = (Math.sin(this.tick * 0.1) + 1) * 0.2 + 0.8;
+    ctx.strokeStyle = `rgba(244, 196, 48, ${neonPulse})`;
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.shadowColor = 'rgba(244, 196, 48, 0.8)';
+    ctx.shadowBlur = 6 * neonPulse;
+    ctx.fillStyle = '#f4c430';
+    ctx.fillText('★ HEEHEE BOBA FLAGSHIP STORE ★', signBoxX + signBoxW * 0.5, signBoxY + signBoxH * 0.5 + 0.5);
+    ctx.restore();
+
+    // Floor-to-ceiling boutique glass windows below awning
+    const glassY = signBoxY + signBoxH + 4;
+    const glassH = 145 - glassY;
+    if (glassH > 0) {
+      // Interior boutique ambiance (warm golden reflections)
+      const glassGrad = ctx.createLinearGradient(bldgX, glassY, bldgX, glassY + glassH);
+      glassGrad.addColorStop(0, (tod === 'night') ? 'rgba(255, 234, 167, 0.25)' : 'rgba(255, 255, 255, 0.4)');
+      glassGrad.addColorStop(1, (tod === 'night') ? 'rgba(243, 156, 18, 0.15)' : 'rgba(223, 230, 233, 0.3)');
+      ctx.fillStyle = glassGrad;
+      ctx.fillRect(bldgX + 15, glassY, bldgW - 30, glassH);
+
+      // Gold framed pillars
+      ctx.fillStyle = trimGold;
+      ctx.fillRect(bldgX + 12, glassY, 3, glassH);
+      ctx.fillRect(bldgX + bldgW - 15, glassY, 3, glassH);
+    }
+
+    // 5. PEDESTRIAN PROMENADE GROUND (Quảng Trường Đi Bộ & Đá Lát Hoa Cương)
+    const roadY = 145;
+    const roadH = this.height - roadY;
+
+    // Kerbstone with polished granite finish
+    ctx.fillStyle = (tod === 'night') ? '#1e272e' : '#7f8c8d';
+    ctx.fillRect(0, roadY, this.width, 3);
+    ctx.fillStyle = trimGold;
+    ctx.fillRect(0, roadY + 2.5, this.width, 1);
+
+    // Promenade Paving with clean diamond pavers
+    const paveColor1 = (tod === 'night') ? '#191d24' : '#bdc3c7';
+    const paveColor2 = (tod === 'night') ? '#13161c' : '#a4b0be';
+    ctx.fillStyle = paveColor1;
+    ctx.fillRect(0, roadY + 3.5, this.width, roadH);
+
+    // Diagonal paver grout lines
+    ctx.strokeStyle = paveColor2;
+    ctx.lineWidth = 1;
+    for (let px = -roadH; px < this.width + roadH; px += 18) {
+      ctx.beginPath();
+      ctx.moveTo(px, roadY + 3.5);
+      ctx.lineTo(px + roadH, this.height);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(px + roadH, roadY + 3.5);
+      ctx.lineTo(px, this.height);
+      ctx.stroke();
+    }
+
+    // Cast-iron Antique Parisian Lamp Post (Đèn Phố Cổ Cột Gang)
+    const lampX = 95;
+    ctx.fillStyle = '#2d3436';
+    ctx.fillRect(lampX - 1.5, 95, 3, 50); // Post
+    ctx.fillRect(lampX - 5, 142, 10, 3);  // Base
+
+    // Lamp head & arm
+    ctx.fillRect(lampX - 8, 92, 16, 3);
+    ctx.fillRect(lampX - 5, 82, 10, 10);
+
+    // Glowing Lantern Light
+    ctx.fillStyle = (tod === 'night') ? '#ffeaa7' : '#ffffff';
+    ctx.fillRect(lampX - 4, 83, 8, 8);
+
+    if (tod === 'night') {
+      const lampGlow = ctx.createRadialGradient(lampX, 87, 2, lampX, 87, 26);
+      lampGlow.addColorStop(0, 'rgba(255, 234, 167, 0.55)');
+      lampGlow.addColorStop(0.5, 'rgba(243, 156, 18, 0.2)');
+      lampGlow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = lampGlow;
+      ctx.beginPath();
+      ctx.arc(lampX, 87, 26, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  },
+
+  drawGodRays(ctx, tod) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    const isMorning = (tod === 'morning');
+    const rayColor = isMorning ? 'rgba(255, 245, 180, ' : 'rgba(255, 160, 100, ';
+    const originX = isMorning ? 55 : 65;
+    const originY = isMorning ? 32 : 55;
+
+    // 4 Dynamic volumetric light shafts sweeping across the sky
+    const rayAngles = [-0.15, 0.22, 0.58, 0.95];
+    rayAngles.forEach((baseAngle, idx) => {
+      const pulse = Math.sin(this.tick * 0.04 + idx * 1.5) * 0.04 + 0.12;
+      const angle = baseAngle + Math.sin(this.tick * 0.02 + idx) * 0.05;
+      const length = 280;
+      const spread = 24;
+
+      const grad = ctx.createLinearGradient(originX, originY, originX + Math.cos(angle) * length, originY + Math.sin(angle) * length);
+      grad.addColorStop(0, rayColor + (pulse * 1.6) + ')');
+      grad.addColorStop(0.5, rayColor + (pulse * 0.8) + ')');
+      grad.addColorStop(1, rayColor + '0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.lineTo(originX + Math.cos(angle - 0.08) * length - spread, originY + Math.sin(angle - 0.08) * length);
+      ctx.lineTo(originX + Math.cos(angle + 0.08) * length + spread, originY + Math.sin(angle + 0.08) * length);
+      ctx.closePath();
+      ctx.fill();
+    });
+    ctx.restore();
   }
 };
+
 

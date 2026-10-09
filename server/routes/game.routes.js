@@ -3,7 +3,6 @@ const db = require('../models/db');
 const gameService = require('../services/game.service');
 const anticheat = require('../services/anticheat.service');
 const { authStore } = require('../middleware/auth.middleware');
-const liveSync = require('../services/live-sync.service');
 
 const router = express.Router();
 const handle = (label, fn) => async (req, res) => {
@@ -23,8 +22,6 @@ router.post('/serve', authStore, async (req, res) => {
   } catch (err) { console.error('Serve order error:', err); res.status(500).json({ error: err.message }); }
 });
 router.post('/snack-decision', authStore, handle('Snack decision', req => gameService.handleSnackDecision(req.store.id, !!req.body.accept)));
-router.post('/negotiate', authStore, handle('Negotiate order', req => gameService.negotiateOrder(req.store.id, req.body.orderId, !!req.body.accept)));
-router.post('/custom-prices', authStore, handle('Set custom prices', req => gameService.setCustomPrices(req.store.id, req.body.customPrices)));
 router.post('/order-fail', authStore, handle('Order fail', req => gameService.recordOrderFailure(req.store.id, req.body.orderId, !!req.body.isTiktoker)));
 router.get('/collabs', authStore, handle('Get collabs', req => gameService.getCollabData(req.store.id)));
 router.post('/collab', authStore, async (req, res) => {
@@ -35,30 +32,6 @@ router.post('/collab', authStore, async (req, res) => {
 router.post('/collab/accept', authStore, handle('Accept collab', req => gameService.acceptCollab(req.store.id, req.body.collabId)));
 router.post('/collab/decline', authStore, handle('Decline collab', req => gameService.declineCollab(req.store.id, req.body.collabId)));
 router.post('/collab/cancel', authStore, handle('Cancel collab', req => gameService.cancelCollab(req.store.id, req.body.collabId)));
-router.post('/heartbeat', authStore, (req, res) => {
-  const since = Number(req.body.since || 0);
-  const events = liveSync.pullEvents(req.store.id, since);
-  res.json({ success: true, timestamp: Date.now(), events });
-});
-
-// Live Event Stream (Server-Sent Events) for instant real-time pushes
-router.get('/live-stream', authStore, (req, res) => {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache, no-transform',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no'
-  });
-  res.write('\n');
-  liveSync.registerSSE(req.store.id, res);
-});
-
-// Live Events Polling fallback
-router.get('/live-events', authStore, (req, res) => {
-  const since = Number(req.query.since || 0);
-  const events = liveSync.pullEvents(req.store.id, since);
-  res.json({ success: true, timestamp: Date.now(), events });
-});
 
 // Friend System Routes
 router.get('/friends', authStore, handle('Get friends', req => gameService.getFriends(req.store.id)));
@@ -88,15 +61,11 @@ router.post('/skip-rest', authStore, handle('Skip rest', req => gameService.skip
 router.get('/quests', authStore, handle('Get daily quests', req => gameService.getDailyQuests(req.store.id)));
 router.post('/quests/claim', authStore, handle('Claim daily quest', req => gameService.claimDailyQuest(req.store.id, req.body.questId)));
 
-// Weather System Routes
-router.get('/weather', authStore, handle('Get weather', req => gameService.getCurrentWeather(req.store.id)));
-router.post('/weather/change', authStore, handle('Change weather', req => gameService.setWeatherForStore(req.store.id, req.body.weatherId)));
-
-// Room & Cozy Home Routes
+// Cozy Room & Outfits Routes
 router.get('/room', authStore, handle('Get room state', req => gameService.getRoomState(req.store.id)));
 router.post('/room/buy', authStore, handle('Buy room decor', req => gameService.buyRoomDecor(req.store.id, req.body.decorId)));
 router.post('/room/equip', authStore, handle('Equip room decor', req => gameService.equipRoomDecor(req.store.id, req.body.decorId, req.body.equipped)));
 router.get('/room/visit/:identifier', authStore, handle('Visit friend room', req => gameService.getFriendRoom(req.params.identifier)));
-router.post('/room/cheer', authStore, handle('Cheer friend room', req => gameService.cheerFriendRoom(req.store.id, Number(req.body.toStoreId), req.body.message)));
+router.post('/room/cheer', authStore, handle('Cheer friend room', req => gameService.cheerFriendRoom(req.store.id, req.body.toStoreId, req.body.message)));
 
 module.exports = router;

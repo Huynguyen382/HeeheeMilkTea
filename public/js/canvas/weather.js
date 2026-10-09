@@ -59,12 +59,34 @@ export const weatherMethods = {
               size: 1.5
             });
           }
+          if (!this.rainRipples) this.rainRipples = [];
+          if (Math.random() < 0.35 && this.rainRipples.length < 24) {
+            this.rainRipples.push({
+              x: drop.x,
+              y: 144 + Math.random() * 52,
+              r: 1,
+              maxR: 4 + Math.random() * 5,
+              alpha: 0.75
+            });
+          }
           drop.y = -10;
           drop.x = Math.random() * (this.width + 60) - 20;
         }
 
         if (drop.x < -40) drop.x = this.width + 20;
       });
+
+      // Update expanding rain puddle ripples
+      if (this.rainRipples) {
+        for (let rIdx = this.rainRipples.length - 1; rIdx >= 0; rIdx--) {
+          const rip = this.rainRipples[rIdx];
+          rip.r += 0.35;
+          rip.alpha -= 0.045;
+          if (rip.alpha <= 0 || rip.r >= rip.maxR) {
+            this.rainRipples.splice(rIdx, 1);
+          }
+        }
+      }
     }
 
     // 2. Storm Lightning System
@@ -152,10 +174,53 @@ export const weatherMethods = {
   drawWeatherEffects(ctx) {
     if (!this.weather) return;
 
-    // 1. Draw Rain Streaks
+    // 1. Draw Wet Pavement Sheen, Lamp Reflections, Puddle Ripples & Rain Streaks
     if ((this.weather.id === 'rainy' || this.weather.id === 'stormy') && this.raindrops) {
       ctx.save();
       const isStorm = this.weather.id === 'stormy';
+
+      // 1a. Wet Pavement Sheen & Gloss Layer (y: 142 to 200)
+      ctx.save();
+      ctx.fillStyle = isStorm ? 'rgba(10, 20, 35, 0.42)' : 'rgba(15, 25, 40, 0.32)';
+      ctx.fillRect(0, 142, this.width, this.height - 142);
+
+      // Light Reflections on Wet Surface (Cart & Street Lamps)
+      ctx.globalCompositeOperation = 'screen';
+
+      // Stall / Cart Golden Glow Reflection on wet road
+      const cartRefGrad = ctx.createLinearGradient(0, 144, 0, 185);
+      cartRefGrad.addColorStop(0, 'rgba(241, 196, 15, 0.28)');
+      cartRefGrad.addColorStop(0.5, 'rgba(230, 126, 34, 0.12)');
+      cartRefGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = cartRefGrad;
+      ctx.fillRect(68, 144, 75, 40);
+
+      // Street Lamp Wet Reflections
+      const lampXs = (this.chapter === 3) ? [645] : [188, 528, 705];
+      lampXs.forEach(lx => {
+        const lampRefGrad = ctx.createLinearGradient(0, 144, 0, 195);
+        lampRefGrad.addColorStop(0, 'rgba(255, 234, 167, 0.32)');
+        lampRefGrad.addColorStop(0.6, 'rgba(243, 156, 18, 0.12)');
+        lampRefGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = lampRefGrad;
+        ctx.fillRect(lx - 12, 144, 24, 48);
+      });
+      ctx.restore();
+
+      // 1b. Rain Puddle Ripple Rings on Pavement
+      if (this.rainRipples && this.rainRipples.length > 0) {
+        ctx.save();
+        this.rainRipples.forEach(rip => {
+          ctx.strokeStyle = `rgba(223, 249, 251, ${rip.alpha})`;
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.ellipse(rip.x, rip.y, rip.r * 2.2, rip.r * 0.7, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+
+      // 1c. Rain Streaks
       ctx.strokeStyle = isStorm ? 'rgba(223, 249, 251, 0.75)' : 'rgba(200, 230, 255, 0.55)';
       ctx.lineWidth = isStorm ? 1.5 : 1.0;
 

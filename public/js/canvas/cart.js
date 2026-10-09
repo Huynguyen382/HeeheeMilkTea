@@ -336,7 +336,7 @@ export const cartMethods = {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     let fontSize = 9.5;
-    const signText = '🧋 TRÀ SỮA HEEHEE';
+    const signText = (this.chapter >= 3) ? '★ HEEHEE FLAGSHIP ★' : '🧋 TRÀ SỮA HEEHEE';
     ctx.font = `bold ${fontSize}px sans-serif`;
     while (ctx.measureText(signText).width > plaqueW - 14 && fontSize > 6) {
       fontSize -= 0.5;
@@ -437,6 +437,103 @@ export const cartMethods = {
     ctx.fillRect(stoolX + 8, stoolY - 7, 4, 7);
     ctx.fillStyle = '#f1c40f';
     ctx.fillRect(stoolX + 9, stoolY - 5, 2, 4);
+
+    // --- PARKED FLEET VEHICLES DISPLAY (HỆ THỐNG XE ĐỖ BÊN QUÁN) ---
+    this.drawParkedVehicles(ctx, cx, cy);
+  },
+
+  drawParkedVehicles(ctx, cx, cy) {
+    const upgrades = (this.upgrades || (window.state && window.state.storeState && window.state.storeState.save && window.state.storeState.save.upgrades)) || {};
+    let upMap = typeof upgrades === 'string' ? {} : upgrades;
+    try {
+      if (typeof upgrades === 'string') upMap = JSON.parse(upgrades);
+    } catch (e) {}
+
+    // 1. Xe Đạp Thồ Sen Tây Hồ (🚲 Gác cạnh quán)
+    if (upMap.xe_dap_tho_sen) {
+      const bx = cx - 28;
+      const by = cy + 38;
+      // Bicycle wheels
+      ctx.fillStyle = '#2d3436';
+      ctx.beginPath();
+      ctx.arc(bx, by + 12, 6, 0, Math.PI * 2);
+      ctx.arc(bx + 16, by + 12, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#dfe6e9'; // Spokes center
+      ctx.fillRect(bx - 0.5, by + 11.5, 1, 1);
+      ctx.fillRect(bx + 15.5, by + 11.5, 1, 1);
+      // Frame (Vintage green)
+      ctx.strokeStyle = '#27ae60';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(bx, by + 12);
+      ctx.lineTo(bx + 7, by + 12);
+      ctx.lineTo(bx + 13, by + 6);
+      ctx.lineTo(bx + 16, by + 12);
+      ctx.moveTo(bx + 7, by + 12);
+      ctx.lineTo(bx + 5, by + 4); // seat post
+      ctx.lineTo(bx, by + 12);
+      ctx.stroke();
+      // Handlebar & Saddle
+      ctx.fillStyle = '#795548';
+      ctx.fillRect(bx + 3, by + 3, 5, 1.5); // saddle
+      ctx.strokeStyle = '#95a5a6';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(bx + 13, by + 6);
+      ctx.lineTo(bx + 12, by + 2);
+      ctx.lineTo(bx + 14, by + 2);
+      ctx.stroke();
+      // Lotus Flower Basket on Rear Rack (Bó hoa sen Tây Hồ tươi thắm)
+      ctx.fillStyle = '#55efc4';
+      ctx.beginPath();
+      ctx.arc(bx + 1, by + 6, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff7675'; // Lotus blossoms
+      ctx.beginPath();
+      ctx.arc(bx + 2, by + 4, 2, 0, Math.PI * 2);
+      ctx.arc(bx - 1, by + 5, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 2. Xe Dream Chiến Tem Lửa (🏍️ Đỗ cạnh vỉa hè)
+    if (upMap.xe_dream_chien && (!this.motorbikeShipper || !this.motorbikeShipper.active)) {
+      const dx = cx - 18;
+      const dy = cy + 50;
+      // Ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.beginPath();
+      ctx.ellipse(dx + 8, dy + 10, 10, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Wheels
+      ctx.fillStyle = '#111';
+      ctx.fillRect(dx - 3, dy + 5, 4, 4);
+      ctx.fillRect(dx + 13, dy + 5, 4, 4);
+      // Silver spokes
+      ctx.fillStyle = '#bdc3c7';
+      ctx.fillRect(dx - 2, dy + 6, 2, 2);
+      ctx.fillRect(dx + 14, dy + 6, 2, 2);
+      // Engine block & Exhaust pipe (Bô Dream sáng loáng)
+      ctx.fillStyle = '#7f8c8d';
+      ctx.fillRect(dx + 2, dy + 4, 6, 4);
+      ctx.fillStyle = '#ecf0f1';
+      ctx.fillRect(dx + 3, dy + 7, 10, 1.5);
+      // Dark Red Body with Fire Decal (Đỏ mận tem lửa)
+      ctx.fillStyle = '#78281f';
+      ctx.fillRect(dx, dy + 1, 14, 4);
+      ctx.fillStyle = '#f39c12'; // Fire decal
+      ctx.fillRect(dx + 4, dy + 2, 5, 1);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(dx + 7, dy + 1, 2, 1);
+      // Black seat
+      ctx.fillStyle = '#2c3e50';
+      ctx.fillRect(dx, dy - 1, 9, 2);
+      // Headlight & Mirror
+      ctx.fillStyle = '#f1c40f';
+      ctx.fillRect(dx + 13, dy, 2, 2);
+      ctx.fillStyle = '#bdc3c7';
+      ctx.fillRect(dx + 11, dy - 3, 1, 3);
+    }
   },
 
   drawWheel(ctx, x, y) {

@@ -8,7 +8,6 @@ import { cartMethods } from './canvas/cart.js';
 import { primitiveMethods } from './canvas/primitives.js';
 import { npcMethods } from './canvas/npc.js';
 import { eventMethods } from './canvas/events.js';
-import { weatherMethods } from './canvas/weather.js';
 
 class GameCanvas {
   setChapter(chapter) {
@@ -50,11 +49,6 @@ class GameCanvas {
     this.hasAmulet = false;
     this.talismanCount = 0;
     this.activeCollabs = [];
-    this.collabCustomerStates = [
-      { state: 'idle', timer: 60, x: 0, targetX: 0, type: 1, quote: '', hasDrink: false },
-      { state: 'idle', timer: 140, x: 0, targetX: 0, type: 2, quote: '', hasDrink: false },
-      { state: 'idle', timer: 220, x: 0, targetX: 0, type: 3, quote: '', hasDrink: false }
-    ];
     this.isInvisible = false;
     this.invisibilityRemaining = 0;
     this.lastAmuletClickTime = 0;
@@ -126,8 +120,6 @@ class GameCanvas {
       speed: 2.3,
       timer: 0,
       orderId: null,
-      totalCount: 1,
-      servedCount: 0,
       hasDrink: false,
       bubble: '🛵 Ship hỏa tốc!'
     };
@@ -167,14 +159,6 @@ class GameCanvas {
       { x: 155, y: 30, w: 58, h: 16, speed: 0.09 },
       { x: 275, y: 14, w: 50, h: 15, speed: 0.15 }
     ];
-
-    // Dynamic Weather State
-    this.weather = { id: 'sunny', name: 'Nắng Vàng', icon: '☀️' };
-    this.raindrops = [];
-    this.lightning = null;
-    this.lightningTimer = 0;
-    this.screenFlash = 0;
-    this.screenShake = 0;
 
     this.initLoop();
   }
@@ -312,40 +296,6 @@ class GameCanvas {
     }
   }
 
-  cancelCustomer(quote = 'Đắt quá mình hủy đơn! 😤') {
-    if (this.queue.length > 0) {
-      const leavingCust = this.queue.shift();
-      if (!leavingCust.isShipper) {
-        leavingCust.state = 'leaving';
-        leavingCust.isCancelled = true;
-        leavingCust.hasDrink = false;
-        leavingCust.quote = quote;
-        this.leavingCustomers.push(leavingCust);
-      }
-
-      this.floatingTexts.push({
-        text: '❌ Khách hủy đơn!',
-        x: 185,
-        y: 75,
-        alpha: 1.0,
-        color: '#ff5555'
-      });
-
-      this.queue.forEach((cust, idx) => {
-        cust.targetX = 185 + (idx * 38);
-        if (idx === 0) {
-          this.customerType = cust.customerType;
-          this.customerQuote = cust.quote;
-          this.bubbleType = 'dialogue';
-        }
-      });
-
-      if (this.queue.length === 0) {
-        this.customerActive = false;
-      }
-    }
-  }
-
   spawnMotorbikeShipper(orderId = null) {
     if (!this.motorbikeShipper) return;
     const ms = this.motorbikeShipper;
@@ -368,161 +318,24 @@ class GameCanvas {
   onShipperOrderServed(orderId = null) {
     if (!this.motorbikeShipper || !this.motorbikeShipper.active) return;
     const ms = this.motorbikeShipper;
-    ms.servedCount = (ms.servedCount || 0) + 1;
     ms.state = 'carrying_drink';
     ms.hasDrink = true;
-
-    // Check if there are still shipper orders left in queue
-    const remainingShipperOrders = (this.queue || []).filter(o => o.isShipper && o.orderId !== orderId).length;
-    if (remainingShipperOrders > 0) {
-      ms.bubble = `🥤 Nhận ly ${ms.servedCount}! Còn ${remainingShipperOrders} ly nữa nha!`;
-      this.floatingTexts.push({
-        text: `📦 ĐÃ LẤY LY ${ms.servedCount}/${ms.servedCount + remainingShipperOrders}!`,
-        x: Math.max(160, ms.walkX - 10),
-        y: 95,
-        alpha: 1.0,
-        color: '#50fa7b'
-      });
-    } else {
-      ms.bubble = ms.servedCount > 1 
-        ? `🥤 Đã nhận đủ ${ms.servedCount} ly! Phóng đi giao ngay!` 
-        : '🥤 Đã nhận đồ, đi giao ngay!';
-      this.floatingTexts.push({
-        text: ms.servedCount > 1 ? `📦 ĐÃ ĐỦ ${ms.servedCount} LY!` : '📦 ĐÃ LẤY HÀNG!',
-        x: Math.max(160, ms.walkX - 10),
-        y: 95,
-        alpha: 1.0,
-        color: '#50fa7b'
-      });
-    }
+    ms.bubble = '🥤 Đã nhận đồ, đi giao ngay!';
+    this.floatingTexts.push({
+      text: '📦 ĐÃ LẤY HÀNG!',
+      x: Math.max(160, ms.walkX - 10),
+      y: 95,
+      alpha: 1.0,
+      color: '#50fa7b'
+    });
   }
 
   onShipperOrderFailed(orderId = null) {
     if (!this.motorbikeShipper || !this.motorbikeShipper.active) return;
     const ms = this.motorbikeShipper;
-    const remainingShipperOrders = (this.queue || []).filter(o => o.isShipper && o.orderId !== orderId).length;
-    if (remainingShipperOrders === 0 && (!ms.servedCount || ms.servedCount === 0)) {
-      ms.state = 'departing_empty';
-      ms.hasDrink = false;
-      ms.bubble = '❌ Khách đợi lâu quá hủy đơn rồi!';
-    } else if (remainingShipperOrders === 0 && ms.servedCount > 0) {
-      // Still deliver already prepared drinks
-      ms.state = 'carrying_drink';
-      ms.hasDrink = true;
-      ms.bubble = `📦 Giao trước ${ms.servedCount} ly đã xong vậy!`;
-    }
-  }
-
-  updateCollabCustomers() {
-    const slots = [
-      { x: 205, y: 92 },
-      { x: 375, y: 92 },
-      { x: 545, y: 92 }
-    ];
-
-    if (!this.collabCustomerStates) {
-      this.collabCustomerStates = [
-        { state: 'idle', timer: 60, x: 0, targetX: 0, type: 1, quote: '', hasDrink: false },
-        { state: 'idle', timer: 140, x: 0, targetX: 0, type: 2, quote: '', hasDrink: false },
-        { state: 'idle', timer: 220, x: 0, targetX: 0, type: 3, quote: '', hasDrink: false }
-      ];
-    }
-
-    const orderPhrases = [
-      '🧋 Cho 1 ly nha!',
-      '✨ 1 ly ít đường ít đá!',
-      '🍵 Cho 1 ly full topping!',
-      '🔥 Pha nhanh giùm mình!',
-      '🌟 Quán này ngon lắm!',
-      '🥤 1 Thái xanh thơm béo!',
-      '🍑 1 Đào cam sả nha!'
-    ];
-    const thankPhrases = [
-      'Ngon tuyệt! 🥰',
-      'Cảm ơn quán! ✨',
-      '5⭐ uy tín nha! ⭐',
-      'Uống dính quá! 🧋'
-    ];
-
-    for (let i = 0; i < 3; i++) {
-      const partner = (this.activeCollabs && this.activeCollabs[i]) ? this.activeCollabs[i] : null;
-      const cState = this.collabCustomerStates[i];
-      if (!cState) continue;
-
-      const isOnline = !!(partner && (partner.is_online || partner.online));
-      if (!isOnline) {
-        if (cState.state !== 'idle') {
-          cState.state = 'idle';
-          cState.timer = 80 + i * 40;
-          cState.hasDrink = false;
-        }
-        continue;
-      }
-
-      const slot = slots[i];
-      const counterX = slot.x + 64;
-
-      if (cState.state === 'idle') {
-        cState.timer--;
-        if (cState.timer <= 0) {
-          cState.state = 'approaching';
-          cState.x = slot.x + 145;
-          cState.targetX = counterX;
-          cState.hasDrink = false;
-          cState.type = Math.floor(Math.random() * 45);
-          cState.quote = orderPhrases[Math.floor(Math.random() * orderPhrases.length)];
-        }
-      } else if (cState.state === 'approaching') {
-        cState.x -= 1.1;
-        if (cState.x <= cState.targetX) {
-          cState.x = cState.targetX;
-          cState.state = 'ordering';
-          cState.timer = 150 + Math.floor(Math.random() * 90);
-        }
-      } else if (cState.state === 'ordering') {
-        cState.timer--;
-        if (cState.timer <= 0) {
-          cState.state = 'leaving';
-          cState.hasDrink = true;
-          cState.quote = thankPhrases[Math.floor(Math.random() * thankPhrases.length)];
-
-          this.floatingTexts.push({
-            text: '✨ +32.000đ',
-            x: slot.x + 46,
-            y: 82,
-            alpha: 1.0,
-            color: '#50fa7b'
-          });
-          this.floatingTexts.push({
-            text: '❤️ Collab +10%',
-            x: slot.x + 48,
-            y: 72,
-            alpha: 1.0,
-            color: '#f1c40f'
-          });
-
-          for (let p = 0; p < 4; p++) {
-            this.particles.push({
-              x: counterX - 5 + Math.random() * 10,
-              y: 110 + Math.random() * 5,
-              vx: (Math.random() - 0.5) * 2,
-              vy: -Math.random() * 1.5,
-              life: 18,
-              maxLife: 18,
-              color: '#55efc4',
-              size: 2
-            });
-          }
-        }
-      } else if (cState.state === 'leaving') {
-        cState.x += 1.3;
-        if (cState.x > slot.x + 175) {
-          cState.state = 'idle';
-          cState.hasDrink = false;
-          cState.timer = 70 + Math.floor(Math.random() * 100);
-        }
-      }
-    }
+    ms.state = 'departing_empty';
+    ms.hasDrink = false;
+    ms.bubble = '❌ Khách đợi lâu quá hủy đơn rồi!';
   }
 
   update() {
@@ -714,17 +527,8 @@ class GameCanvas {
           ms.timer--;
           if (ms.timer <= 0) {
             ms.hasDrink = false;
-            const remainingShipperOrders = (this.queue || []).filter(o => o.isShipper).length;
-            if (remainingShipperOrders > 0) {
-              // Return to counter to wait for the next drinks!
-              ms.state = 'walking_to_counter';
-              ms.bubble = `📦 Đã cất ${ms.servedCount} ly! Đợi lấy nốt ${remainingShipperOrders} ly!`;
-            } else {
-              ms.state = 'departing';
-              ms.bubble = ms.servedCount > 1 
-                ? `💨 Đã nhận đủ ${ms.servedCount} ly, chúc quán đắt hàng em đi giao đây!` 
-                : '💨 Chúc quán đắt hàng, em đi giao đây!';
-            }
+            ms.state = 'departing';
+            ms.bubble = '💨 Chúc quán đắt hàng, em đi giao đây!';
           }
         } else if (ms.state === 'departing_empty') {
           // Walking back without drink after cancellation/timeout
@@ -759,9 +563,6 @@ class GameCanvas {
         }
       }
     }
-
-    // Update Active Online Collab Stall Customers
-    this.updateCollabCustomers();
 
     // Update Police Patrol System
     if (this.policePatrol) {
@@ -963,9 +764,6 @@ class GameCanvas {
         this.floatingTexts.splice(i, 1);
       }
     }
-
-    // Update Weather (Rain, Storms, Thunderstorm Lightning)
-    this.updateWeather();
   }
 
   render() {
@@ -973,14 +771,6 @@ class GameCanvas {
     ctx.save();
     ctx.scale(2, 2);
     ctx.imageSmoothingEnabled = false;
-
-    // Apply screen shake if thunder lightning strikes
-    if (this.screenShake > 0) {
-      const shakeAmp = Math.min(6, this.screenShake);
-      const shakeX = (Math.random() - 0.5) * shakeAmp;
-      const shakeY = (Math.random() - 0.5) * shakeAmp;
-      ctx.translate(shakeX, shakeY);
-    }
 
     // 1. SKY & DISTANT STREET BACKGROUND WITH NEON SIGNS (HUST PARABOL or CHAPTER 1 PHỐ NHỎ)
     this.drawBackground(ctx);
@@ -1037,26 +827,6 @@ class GameCanvas {
 
     this.leavingCustomers.forEach(lc => {
       this.drawCustomer(ctx, lc.currentX, 108, lc.customerType, false, '', lc.name);
-      if (lc.isCancelled && lc.quote) {
-        ctx.save();
-        ctx.font = 'bold 7px sans-serif';
-        const txt = lc.quote;
-        const tw = ctx.measureText(txt).width;
-        const bw = tw + 8;
-        const bh = 14;
-        const bx = Math.min(this.width - bw - 2, Math.max(2, lc.currentX + 5 - bw / 2));
-        const by = 80;
-        ctx.fillStyle = 'rgba(20, 8, 12, 0.9)';
-        ctx.fillRect(bx, by, bw, bh);
-        ctx.strokeStyle = '#ff5555';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx, by, bw, bh);
-        ctx.fillStyle = '#ff7675';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(txt, bx + bw / 2, by + bh / 2);
-        ctx.restore();
-      }
     });
 
     // 7. POLICE PATROL OFFICER (Cảnh sát trật tự tuần tra)
@@ -1087,9 +857,6 @@ class GameCanvas {
       ctx.globalCompositeOperation = 'source-over';
     }
 
-    // 10. WEATHER OVERLAYS: RAIN STREAKS, LIGHTNING BOLTS & SCREEN FLASH
-    this.drawWeatherEffects(ctx);
-
     ctx.restore();
   }
 }
@@ -1103,8 +870,7 @@ Object.assign(
   cartMethods,
   primitiveMethods,
   npcMethods,
-  eventMethods,
-  weatherMethods
+  eventMethods
 );
 
 // Global window export for browser compatibility

@@ -85,6 +85,74 @@ export const STORY_DATA = {
         role: 'Menu đại học',
         text: 'Sinh viên cực mê các món hot trend như Sữa Tươi Trân Châu Đường Đen và Trà Đào Cam Sả chị ơi!\n\nChị mau vào mục [Nâng Cấp] để sắm ngay các công thức mới này nhé! Menu càng phong phú, doanh thu càng bùng nổ!',
         hint: { icon: '🍹', text: 'Mở khóa công thức Sữa Tươi Đường Đen & Trà Đào Cam Sả để đón bão sinh viên!' }
+      },
+      {
+        avatar: '🦹‍♂️',
+        speaker: 'Lão Ba (Chủ Quán Trâu Vàng)',
+        role: 'Đối thủ cạnh tranh xảo quyệt',
+        text: 'Hừm! Lại thêm một con bé hỉ mũi chưa sạch dám kéo xe tới địa bàn Cổng Phụ Bách Khoa à?\n\nQuán \'Trà Sữa Trâu Vàng\' của tao ở đây bao năm nay chưa ngán bất kỳ ai đâu nhé! Liệu hồn mà dọn đi sớm, kẻo mất cả chì lẫn chài!',
+        hint: { icon: '⚔️', text: 'Xuất hiện đối thủ cạnh tranh! Cuộc chiến giành khách bắt đầu!' }
+      },
+      {
+        avatar: '🌽',
+        speaker: 'Bé Bắp (Tham Mưu Chiến Thuật)',
+        role: 'Mở khóa Thẻ Hãm Hại',
+        text: 'Chị HeeHee đừng sợ! Ở Chương 2 này, chúng mình đã có vũ khí mới trong mục [Nâng Cấp - Thẻ Hãm Hại]:\n\n• 📱 Thẻ Bóc Phốt (500k): Thuê TikToker bóc phốt dìm hàng đối thủ khiến khách e ngại tẩy chay (-50% khách & -30% doanh thu trong 10 đợt đơn)!\n• 👮 Thẻ Quản Lý Thị Trường (850k): Báo thanh tra ập vào kiểm tra đột xuất đối thủ (-60% khách & -40% doanh thu trong 10 đợt đơn)!',
+        hint: { icon: '🃏', text: 'Mở khóa 2 Thẻ Hãm Hại trong mục [Nâng Cấp] để làm suy yếu đối thủ!' }
+      },
+      {
+        avatar: '🛵',
+        speaker: 'Anh Lâm (Shipper Tình Báo)',
+        role: 'Tác dụng tức thì',
+        text: 'Chỉ cần chọn Thẻ Hãm Hại, nhập Mã Quán đối thủ hoặc chọn nhanh từ danh sách Bạn bè, đòn tấn công sẽ CÓ TÁC DỤNG NGAY LẬP TỨC!\n\nQuán bị dính đòn sẽ vang còi báo động 🚨, khách quay xe bỏ đi rầm rộ!\n\nNhưng nhớ canh chừng, đối thủ cũng có thể trả đũa chúng ta bất cứ lúc nào đấy nhé!',
+        hint: { icon: '⚡', text: 'Thẻ có tác dụng tức thì ngay khi kích hoạt lên mã quán đối thủ!' }
+      },
+      {
+        avatar: '🧋',
+        speaker: 'HeeHee (Quyết Tâm)',
+        role: 'Chinh phục Phố Thương Mại',
+        text: 'Tuyệt vời! Chúng ta vừa phục vụ khách tận tâm bằng những ly trà hảo hạng, vừa vận dụng chiến thuật thông minh để bảo vệ thị phần!\n\nMục tiêu lớn nhất của Chương 2: Gom đủ 50.000.000đ để thuê mặt bằng lớn tại Phố Thương Mại sầm uất!\n\nCả đội cùng cố gắng nào!',
+        hint: { icon: '🏆', text: 'Tích lũy 50.000.000đ để hoàn thành Chương 2 và tiến vào Phố Thương Mại!' }
+      }
+    ]
+  },
+  3: {
+    title: 'Chương 3: Trùm Trà Sữa Đô Thị (Flagship Store 2 Tầng)',
+    scenes: [
+      {
+        avatar: '🦹‍♂️',
+        speaker: 'Lão Ba (Chủ Quán Trâu Vàng)',
+        role: 'Tâm phục khẩu phục',
+        text: 'Ta nhận thua rồi, cô bé HeeHee à! Hương vị trà nguyên bản thanh tao và cách phục vụ sạch sẽ, tận tâm của cháu đã hoàn toàn chinh phục sinh viên Bách Khoa!\n\nTừ nay ta xin rửa tay gác kiếm, chuyển giao độc quyền xưởng trân châu nghệ nhân của ta cho tiệm HeeHee! Chúc cháu tiến quân ra Phố Đi Bộ đại thắng!',
+        hint: { icon: '🤝', text: 'Lão Ba chịu thua! Toàn bộ khu sinh viên đã công nhận trà sữa HeeHee!' }
+      },
+      {
+        avatar: '🏛️',
+        speaker: 'HeeHee (Tổng Giám Đốc)',
+        role: 'Khai trương Flagship Store',
+        text: 'Tạm biệt chiếc xe đẩy inox vỉa hè đầy kỷ niệm! Chào mừng mọi người đến với FLAGSHIP STORE 2 TẦNG ngay trung tâm Phố Đi Bộ Hà Nội!\n\n• Tầng 1: Quầy bar ốp đá cẩm thạch sang trọng, máy pha Nitro Cold Brew hiện đại!\n• Tầng 2: Không gian thưởng trà ngắm phố, bàn ghế gỗ cao cấp đón khách ngồi lại (Dine-in) thưởng thức!',
+        hint: { icon: '✨', text: 'Mặt bằng 2 tầng sang trọng với trải nghiệm khách ngồi tại bàn (Dine-in)!' }
+      },
+      {
+        avatar: '🌽',
+        speaker: 'Bé Bắp (Cửa Hàng Trưởng)',
+        role: 'Thăng chức quản lý',
+        text: 'Em đã được chị HeeHee thăng chức lên CỬA HÀNG TRƯỞNG rồi nè!\n\nTừ giờ, em sẽ phụ trách TỰ ĐỘNG DẬP NẮP 100% tất cả các ly trà mà chị không cần bấm tay nữa! Tốc độ pha chế x2, phục vụ khách siêu mượt mà!',
+        hint: { icon: '⭐', text: 'Cửa Hàng Trưởng Bé Bắp tự động dập nắp ly trà ngay khi rót cốc xong!' }
+      },
+      {
+        avatar: '🛵',
+        speaker: 'Anh Lâm (Đội Trưởng Logistics)',
+        role: 'Tổng chỉ huy đội xe',
+        text: 'Còn anh Lâm giờ là ĐỘI TRƯỞNG LOGISTICS, quản lý cả một đội xe Dream chiến và xe Wave giao hàng phủ khắp các quận!\n\nMỗi đơn shipper giao đi được cộng thêm +35% doanh thu và đơn hàng liên tục đổ về không ngơi tay!',
+        hint: { icon: '📦', text: 'Đội Trưởng Logistics Anh Lâm buff thêm +35% doanh thu cho mỗi đơn giao hàng!' }
+      },
+      {
+        avatar: '👑',
+        speaker: 'HeeHee (Nhà Sáng Lập)',
+        role: 'Menu Thượng Lưu & Nhượng Quyền',
+        text: 'Tại Flagship Store, chúng ta mở khóa thực đơn thượng lưu: Trà Sữa Dát Vàng 24K, Nitro Cold Brew, Trà Sen Tây Hồ Thượng Hạng, Kem Khò Bánh Bỏng!\n\nKhách VIP ngồi lại còn hào phóng bo thêm tiền Tip siêu khủng từ 15k - 30k mỗi ly!\n\nMục tiêu tiếp theo: Tích lũy 200.000.000đ để tiến tới Chương 4 - Nhượng quyền toàn cầu!',
+        hint: { icon: '🚀', text: 'Khai phá thực đơn thượng lưu, thu tiền tip Dine-In và chuẩn bị cho Đế Chế Nhượng Quyền!' }
       }
     ]
   }

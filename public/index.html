@@ -6,8 +6,18 @@
   <meta name="theme-color" content="#1a1016">
   <title>🧋 Tiệm Trà Sữa HeeHee – Khởi Nghiệp Trà Sữa Pixel</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/room.css">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+          console.warn('Service Worker registration skipped:', err);
+        });
+      });
+    }
+  </script>
 </head>
 <body>
 
@@ -82,6 +92,7 @@
       <span id="buff-patience" style="display: none; background: rgba(80, 250, 123, 0.2); border: 1px solid #50fa7b; color: #50fa7b; border-radius: 4px; padding: 2px 6px;">⏱️ Khách Kiên Nhẫn +40%</span>
       <span id="buff-tip" style="display: none; background: rgba(241, 250, 140, 0.2); border: 1px solid #f1fa8c; color: #f1fa8c; border-radius: 4px; padding: 2px 6px;">💰 Tip Thưởng +10%</span>
       <span id="buff-stealth" style="display: none; background: rgba(139, 233, 253, 0.2); border: 1px solid #8be9fd; color: #8be9fd; border-radius: 4px; padding: 2px 6px;">🔮 Ẩn Thân Kích Hoạt</span>
+      <span id="buff-sabotage" style="display: none; background: rgba(255, 85, 85, 0.3); border: 1.5px solid #ff5555; color: #ff5555; border-radius: 4px; padding: 2px 7px; font-weight: bold; animation: pulse 1.5s infinite;">🚨 Đang Bị Quán Khác Chơi Xấu</span>
       <span id="buff-live-event" style="display: none; background: rgba(245, 158, 11, 0.25); border: 1.5px solid #f59e0b; color: #fbbf24; border-radius: 4px; padding: 2px 7px; font-weight: bold;">🎪 Sự Kiện Đang Diễn Ra</span>
     </div>
 
@@ -673,6 +684,51 @@
     </div>
   </div>
 
+  <!-- MODAL: SỬ DỤNG THẺ HÃM HẠI (SABOTAGE ACTION) -->
+  <div class="modal-overlay" id="modal-use-sabotage">
+    <div class="modal-content" style="max-width: 440px; border-color: #ff5555;">
+      <div class="modal-header">
+        <div class="modal-title" id="sabotage-modal-title" style="color: #ff5555;">⚔️ SỬ DỤNG THẺ HÃM HẠI</div>
+        <button class="btn-close" id="close-use-sabotage">&times;</button>
+      </div>
+      <div style="padding: 6px 0;">
+        <div id="sabotage-card-banner" style="background: rgba(255, 85, 85, 0.15); border: 1px solid #ff5555; border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+          <div style="font-weight: bold; color: #ff79c6; font-size: 1.05rem;" id="sabotage-card-display-name">📱 Thẻ Bóc Phốt TikToker</div>
+          <div style="font-size: 0.84rem; color: #f5ebe6; margin-top: 4px;" id="sabotage-card-display-desc">
+            Tung clip bóc phốt triệu view khiến đối thủ giảm 50% khách & -30% doanh thu trong 10 đợt đơn!
+          </div>
+          <div style="font-size: 0.8rem; color: #f1fa8c; margin-top: 6px;" id="sabotage-card-display-count">
+            🎒 Số lượng còn lại trong kho: 1 thẻ
+          </div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="color: var(--gold); font-size: 0.9rem; font-weight: bold;">🎯 Nhập Mã Quán Đối Thủ Muốn Hãm Hại:</label>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <input type="text" id="sabotage-target-code-input" class="input-box" placeholder="Ví dụ: HYHY-123456" style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+            💡 Bạn có thể chọn nhanh từ danh sách bạn bè bên dưới hoặc gõ trực tiếp Mã Quán của đối thủ!
+          </div>
+        </div>
+
+        <!-- QUICK SELECT FROM FRIENDS -->
+        <div style="margin-bottom: 14px;">
+          <div style="font-weight: bold; color: #8be9fd; font-size: 0.88rem; margin-bottom: 6px;">
+            👥 Hoặc Chọn Nhanh Quán Bạn Bè / Đối Tác:
+          </div>
+          <div id="sabotage-friends-quick-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;">
+            <div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic;">Đang tải danh sách bạn bè...</div>
+          </div>
+        </div>
+
+        <button class="btn-action-wide" id="btn-confirm-use-sabotage" style="margin: 0; background: linear-gradient(135deg, #ff5555, #c0392b); color: #fff; font-weight: bold; font-size: 1rem; padding: 10px;">
+          ⚡ KÍCH HOẠT HÃM HẠI NGAY LẬP TỨC
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: TRẢ NỢ ANH BẢNH -->
   <div class="modal-overlay" id="modal-debt">
     <div class="modal-content">
@@ -695,6 +751,12 @@
         <div style="color: #2ecc71; font-weight: bold; font-size: 1.05rem;">🎉 ĐÃ THANH TOÁN SẠCH NỢ ANH BẢNH!</div>
         <div style="color: #dfe6e9; font-size: 0.9rem; margin: 5px 0;">Đã hoàn thành toàn bộ nghĩa vụ tài chính! Bạn đủ điều kiện rời quê lên phố khởi nghiệp trước <b>Cổng Parabol Đại học Bách Khoa</b>!</div>
         <button id="btn-unlock-chapter-2" class="btn-action-wide" style="background: linear-gradient(135deg, #f1c40f, #e67e22); color: #111; font-weight: bold; font-size: 0.98rem; padding: 9px; margin-top: 4px;">🚀 MỞ KHÓA CHƯƠNG 2: CỔNG PARABOL BÁCH KHOA</button>
+      </div>
+      <!-- CHAPTER 3 UNLOCK SECTION (Sau khi hoàn thành Chương 2 và tích lũy đủ 50.000.000đ) -->
+      <div id="chapter-3-unlock-section" style="display: none; margin-top: 10px; padding: 10px; background: rgba(244, 196, 48, 0.15); border: 2px solid #f4c430; border-radius: 6px; text-align: center;">
+        <div style="color: #f4c430; font-weight: bold; font-size: 1.05rem;">👑 ĐẠI CHIẾN BÁCH KHOA TOÀN THẮNG!</div>
+        <div style="color: #dfe6e9; font-size: 0.9rem; margin: 5px 0;">Đã tích lũy đủ 50.000.000đ! Lão Ba (Trâu Vàng) tâm phục khẩu phục. HeeHee chính thức gom đủ vốn mở <b>Flagship Store 2 Tầng Phố Đi Bộ</b>!</div>
+        <button id="btn-unlock-chapter-3" class="btn-action-wide" style="background: linear-gradient(135deg, #f4c430, #2ecc71); color: #111; font-weight: bold; font-size: 0.98rem; padding: 9px; margin-top: 4px;">🏰 MỞ KHÓA CHƯƠNG 3: FLAGSHIP PHỐ ĐI BỘ</button>
       </div>
     </div>
   </div>
@@ -772,6 +834,118 @@
             </div>
             <div style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0;">Bảng hiệu đèn neon phát sáng rực rỡ trong đêm, khách rủ nhau check-in sống ảo!</div>
             <button class="btn-action-wide" data-buy-upgrade="bien_led_neon">Mua (2.000.000đ)</button>
+          </div>
+        </div>
+
+        <!-- SABOTAGE CARDS SECTION (CHƯƠNG 2) -->
+        <div id="section-sabotage-cards" style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #ff5555;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div style="font-weight: bold; color: #ff5555; font-size: 1.15rem;">⚔️ THẺ HÃM HẠI QUÁN ĐỐI THỦ (CHƯƠNG 2)</div>
+            <span style="background: rgba(255,85,85,0.2); color: #ff5555; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #ff5555; font-weight: bold;">PvP Cạnh Tranh</span>
+          </div>
+          <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;">
+            Vũ khí thương trường! Dùng thẻ để <b>giảm lập tức khách & doanh thu</b> của quán đối thủ qua Mã Quán hoặc danh sách bạn bè!
+          </div>
+
+          <!-- Card 1: Bóc Phốt TikToker -->
+          <div style="background: #1c0e12; padding: 10px; border-radius: 6px; border: 1px solid #ff79c6; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #ff79c6;">📱 Thẻ Bóc Phốt TikToker</b>
+              <span id="badge-card-boc-phot" style="color: #f1fa8c; font-size: 0.88rem; font-weight: bold;">Sở hữu: 0/5</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Tung clip bóc phốt nguyên liệu bẩn triệu view lên xu hướng! Quán đối thủ bị tẩy chay, <b>giảm 50% khách & -30% doanh thu trong 10 đợt đơn</b>!
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="btn-action-wide" data-buy-upgrade="the_boc_phot" style="flex: 1; margin: 0; background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff;">Mua Thẻ (500.000đ)</button>
+              <button class="btn-action-wide btn-use-sabotage-card" data-card="the_boc_phot" data-name="Thẻ Bóc Phốt TikToker" style="flex: 1; margin: 0; background: #ff5555; color: #fff; font-weight: bold;">⚡ Dùng Thẻ</button>
+            </div>
+          </div>
+
+          <!-- Card 2: Quản Lý Thị Trường -->
+          <div style="background: #1c0e12; padding: 10px; border-radius: 6px; border: 1px solid #ff5555; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #ff5555;">👮 Thẻ Quản Lý Thị Trường Thanh Tra</b>
+              <span id="badge-card-qltt" style="color: #f1fa8c; font-size: 0.88rem; font-weight: bold;">Sở hữu: 0/5</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Điều thanh tra liên ngành ập vào kiểm tra đột xuất nguồn gốc! Quán đối thủ bị niêm phong tạm thời, <b>tụt 60% khách & mất 40% doanh thu trong 10 đợt đơn</b>!
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="btn-action-wide" data-buy-upgrade="the_quan_ly_thi_truong" style="flex: 1; margin: 0; background: linear-gradient(135deg, #ff5555, #c0392b); color: #fff;">Mua Thẻ (850.000đ)</button>
+              <button class="btn-action-wide btn-use-sabotage-card" data-card="the_quan_ly_thi_truong" data-name="Thẻ Quản Lý Thị Trường" style="flex: 1; margin: 0; background: #e74c3c; color: #fff; font-weight: bold;">⚡ Dùng Thẻ</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DEFENSE & SUPPORT CARDS SECTION (CHƯƠNG 2 & 3) -->
+        <div id="section-defense-cards" style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #50fa7b;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div style="font-weight: bold; color: #50fa7b; font-size: 1.15rem;">🛡️ THẺ PHÒNG THỦ &amp; KHẮC CHẾ (CARD BATTLE 2.0)</div>
+            <span style="background: rgba(80,250,123,0.2); color: #50fa7b; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #50fa7b; font-weight: bold;">Khắc Chế Chiến Thuật</span>
+          </div>
+          <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;">
+            Bảo vệ quán trước những đòn chơi xấu và tạo đột phá doanh thu tức thì!
+          </div>
+
+          <!-- Card 3: ATTP 5 Sao -->
+          <div style="background: #0f1f17; padding: 10px; border-radius: 6px; border: 1px solid #50fa7b; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #50fa7b;">🛡️ Giấy Chứng Nhận ATTP 5 Sao</b>
+              <span id="badge-card-attp" style="color: #f1fa8c; font-size: 0.88rem; font-weight: bold;">Sở hữu: 0/5</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Hóa giải ngay lập tức lệnh niêm phong của Quản Lý Thị Trường; <b>hồi phục 100% lượng khách</b>!
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="btn-action-wide" data-buy-upgrade="the_attp_5sao" style="flex: 1; margin: 0; background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff;">Mua Thẻ (600.000đ)</button>
+              <button class="btn-action-wide btn-use-support-card" data-card="the_attp_5sao" data-name="Giấy ATTP 5 Sao" style="flex: 1; margin: 0; background: #2ecc71; color: #fff; font-weight: bold;">🛡️ Kích Hoạt</button>
+            </div>
+          </div>
+
+          <!-- Card 4: Video Đính Chính -->
+          <div style="background: #141724; padding: 10px; border-radius: 6px; border: 1px solid #8be9fd; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #8be9fd;">🎥 Video Đính Chính &amp; Phỏng Vấn</b>
+              <span id="badge-card-dinh-chinh" style="color: #f1fa8c; font-size: 0.88rem; font-weight: bold;">Sở hữu: 0/5</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Dập tắt clip bóc phốt TikToker; <b>lội ngược dòng tăng +30% khách & doanh thu trong 5 đợt</b> nhờ sự minh bạch!
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="btn-action-wide" data-buy-upgrade="the_dinh_chinh" style="flex: 1; margin: 0; background: linear-gradient(135deg, #0984e3, #6c5ce7); color: #fff;">Mua Thẻ (700.000đ)</button>
+              <button class="btn-action-wide btn-use-support-card" data-card="the_dinh_chinh" data-name="Video Đính Chính" style="flex: 1; margin: 0; background: #0984e3; color: #fff; font-weight: bold;">🎥 Phát Clip</button>
+            </div>
+          </div>
+
+          <!-- Card 5: Idol Triệu View -->
+          <div style="background: #1e1320; padding: 10px; border-radius: 6px; border: 1px solid #ff79c6; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #ff79c6;">🎤 Hợp Đồng Idol Triệu View</b>
+              <span id="badge-card-idol" style="color: #f1fa8c; font-size: 0.88rem; font-weight: bold;">Sở hữu: 0/5</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Ca sĩ thần tượng nổi tiếng ghé check-in; <b>bão fan hâm mộ xếp hàng vòng quanh phố trong 15 đợt đơn</b>!
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="btn-action-wide" data-buy-upgrade="the_idol_trieu_view" style="flex: 1; margin: 0; background: linear-gradient(135deg, #e84393, #fd79a8); color: #fff;">Mua Thẻ (1.200.000đ)</button>
+              <button class="btn-action-wide btn-use-support-card" data-card="the_idol_trieu_view" data-name="Idol Triệu View" style="flex: 1; margin: 0; background: #e84393; color: #fff; font-weight: bold;">🎤 Mời Idol</button>
+            </div>
+          </div>
+
+          <!-- Card 6: Mưa Rào Giải Nhiệt -->
+          <div style="background: #0f1c24; padding: 10px; border-radius: 6px; border: 1px solid #00cec9; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #00cec9;">🌧️ Cơn Mưa Rào Giải Nhiệt</b>
+              <span id="badge-card-mua" style="color: #f1fa8c; font-size: 0.88rem; font-weight: bold;">Sở hữu: 0/5</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Không khí mát lành dịu mát, <b>hồi phục ngay lập tức 50% thanh kiên nhẫn</b> của toàn bộ khách hàng đang chờ!
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="btn-action-wide" data-buy-upgrade="the_mua_giai_nhiet" style="flex: 1; margin: 0; background: linear-gradient(135deg, #00cec9, #0984e3); color: #fff;">Mua Thẻ (350.000đ)</button>
+              <button class="btn-action-wide btn-use-support-card" data-card="the_mua_giai_nhiet" data-name="Mưa Rào Giải Nhiệt" style="flex: 1; margin: 0; background: #00cec9; color: #000; font-weight: bold;">🌧️ Giải Nhiệt</button>
+            </div>
           </div>
         </div>
 
@@ -880,7 +1054,7 @@
           </div>
 
           <!-- Recipe 5: Trà Ô Long Nướng Sương Sáo -->
-          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #a29bfe;">
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #a29bfe; margin-bottom: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>🔥 Trà Ô Long Nướng Sương Sáo</b>
               <span style="color: #bd93f9; font-size: 0.9rem; font-weight: bold;">Giá Bán: 45.000đ/ly</span>
@@ -890,6 +1064,134 @@
             </div>
             <div style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 4px;">Trà ô long sao cháy thượng hạng đậm vị khói cùng sương sáo thanh mát.</div>
             <button class="btn-action-wide" data-buy-upgrade="recipe_tra_olong_nuong" style="background: #6c5ce7;">Mở Khóa Công Thức (1.500.000đ)</button>
+          </div>
+
+          <!-- Recipe 6: Trà Nitro Lạnh Sủi Bọt (Chương 3) -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #8be9fd; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>💨 Trà Nitro Lạnh Sủi Bọt</b>
+              <span style="color: #8be9fd; font-size: 0.9rem; font-weight: bold;">Giá Bán: 55.000đ/ly</span>
+            </div>
+            <div style="margin: 3px 0; font-size: 0.85rem;">
+              <span style="color: #ffb86c;">🍵 Cốt Trà: <b style="color: #50fa7b;">Ô Long Nướng</b></span> | <span style="color: #8be9fd;">Topping: Sương Sáo + Trân Châu Đen</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 4px;">Công nghệ Nitro sủi bọt kem mịn màng mát lạnh kết hợp trân châu & sương sáo.</div>
+            <button class="btn-action-wide" data-buy-upgrade="recipe_nitro_cold_brew" style="background: #0984e3;">Mở Khóa Công Thức (2.200.000đ)</button>
+          </div>
+
+          <!-- Recipe 7: Trà Sữa Dát Vàng 24K (Chương 3) -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #f1fa8c; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>👑 Trà Sữa Hoàng Gia Dát Vàng 24K</b>
+              <span style="color: #f1fa8c; font-size: 0.9rem; font-weight: bold;">Giá Bán: 88.000đ/ly</span>
+            </div>
+            <div style="margin: 3px 0; font-size: 0.85rem;">
+              <span style="color: #ffb86c;">🍵 Cốt Trà: <b style="color: #50fa7b;">Trà Đen Đậm</b></span> | <span style="color: #8be9fd;">Topping: Trân Châu Đen + Đường Đen</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 4px;">Trà sữa thượng hạng phủ lá vàng 24K thực phẩm lấp lánh dành cho giới thượng lưu.</div>
+            <button class="btn-action-wide" data-buy-upgrade="recipe_tra_sua_dat_vang" style="background: linear-gradient(135deg, #f1fa8c, #e17055); color: #000; font-weight: bold;">Mở Khóa Công Thức (4.500.000đ)</button>
+          </div>
+
+          <!-- Recipe 8: Trà Sen Bách Diệp Tây Hồ (Chương 3) -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #55efc4; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🪷 Trà Sen Bách Diệp Tây Hồ</b>
+              <span style="color: #55efc4; font-size: 0.9rem; font-weight: bold;">Giá Bán: 68.000đ/ly</span>
+            </div>
+            <div style="margin: 3px 0; font-size: 0.85rem;">
+              <span style="color: #ffb86c;">🍵 Cốt Trà: <b style="color: #50fa7b;">Lục Trà Lài</b></span> | <span style="color: #8be9fd;">Topping: Đào Miếng + Sả Tươi</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 4px;">Tinh hoa trà sen ngát hương sớm quyện đào miếng giòn ngọt & sả thanh mát.</div>
+            <button class="btn-action-wide" data-buy-upgrade="recipe_tra_sen_tay_ho" style="background: #00b894;">Mở Khóa Công Thức (3.000.000đ)</button>
+          </div>
+
+          <!-- Recipe 9: Trà Sữa Kem Khò Bánh Bỏng (Chương 3) -->
+          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #ff7675; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b>🔥 Trà Sữa Kem Khò Bánh Bỏng</b>
+              <span style="color: #ff7675; font-size: 0.9rem; font-weight: bold;">Giá Bán: 62.000đ/ly</span>
+            </div>
+            <div style="margin: 3px 0; font-size: 0.85rem;">
+              <span style="color: #ffb86c;">🍵 Cốt Trà: <b style="color: #50fa7b;">Thái Xanh</b></span> | <span style="color: #8be9fd;">Topping: Thạch Lá Dứa + Đường Đen</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 4px;">Kem khò lửa caramel thơm lừng, rắc bánh bỏng giòn tan béo ngậy.</div>
+            <button class="btn-action-wide" data-buy-upgrade="recipe_kem_kho_banh_bong" style="background: #d63031;">Mở Khóa Công Thức (2.800.000đ)</button>
+          </div>
+        </div>
+
+        <!-- STAFF DELEGATION SECTION (CHƯƠNG 3) -->
+        <div style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #f4c430;">
+          <div style="font-weight: bold; color: #f4c430; font-size: 1.15rem; margin-bottom: 4px;">👥 PHÂN QUYỀN NHÂN SỰ (STAFF DELEGATION)</div>
+          <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;">
+            Thăng chức cho đồng đội để tự động hóa quy trình và bùng nổ năng suất bán hàng!
+          </div>
+
+          <!-- Staff 1: Bé Bắp -->
+          <div style="background: #241424; padding: 10px; border-radius: 6px; border: 1px solid #f4c430; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #f4c430;">👩‍💼 Bé Bắp: Cửa Hàng Trưởng</b>
+              <span style="color: #50fa7b; font-size: 0.78rem; font-weight: bold; background: rgba(80,250,123,0.15); padding: 2px 6px; border-radius: 4px;">Chương 3</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Bé Bắp quản lý quầy chuyên nghiệp: <b>Tăng +25% giá trị toàn bộ đơn hàng</b> và <b>tự động dập nắp ly siêu tốc</b>!
+            </div>
+            <button class="btn-action-wide" data-buy-upgrade="staff_be_bap_manager" style="background: linear-gradient(135deg, #f4c430, #e67e22); color: #000; font-weight: bold;">Thăng Chức (3.500.000đ)</button>
+          </div>
+
+          <!-- Staff 2: Anh Lâm -->
+          <div style="background: #241424; padding: 10px; border-radius: 6px; border: 1px solid #ff79c6; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #ff79c6;">🏍️ Anh Lâm: Đội Trưởng Logistics</b>
+              <span style="color: #50fa7b; font-size: 0.78rem; font-weight: bold; background: rgba(80,250,123,0.15); padding: 2px 6px; border-radius: 4px;">Chương 3</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Anh Lâm chỉ huy dàn xe Wave giao hàng hỏa tốc tỏa đi khắp thành phố: <b>Tăng +35% doanh thu mọi đơn shipper</b>!
+            </div>
+            <button class="btn-action-wide" data-buy-upgrade="staff_anh_lam_captain" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff; font-weight: bold;">Thăng Chức (4.500.000đ)</button>
+          </div>
+        </div>
+
+        <!-- VEHICLE FLEET SECTION (HỆ THỐNG XE CỘ & VẬN TẢI) -->
+        <div style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #00cec9;">
+          <div style="font-weight: bold; color: #00cec9; font-size: 1.15rem; margin-bottom: 4px;">🛵 HỆ THỐNG XE CỘ &amp; VẬN TẢI ĐA DẠNG</div>
+          <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;">
+            Đầu tư phương tiện để tối ưu hóa chi phí nhập hàng, hốt bão tiền tip shipper và nâng tầm danh tiếng tiệm!
+          </div>
+
+          <!-- Vehicle 1: Dream Chiến -->
+          <div style="background: #10252b; padding: 10px; border-radius: 6px; border: 1px solid #00cec9; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #00cec9;">🏍️ Xe Máy Dream Chiến Tem Lửa</b>
+              <span style="color: #f1fa8c; font-size: 0.78rem; font-weight: bold; background: rgba(241,250,140,0.15); padding: 2px 6px; border-radius: 4px;">Chương 2+</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Huyền thoại đường phố luồn lách ngõ ngách: <b>Tăng +50% tiền Tip</b> cho mọi đơn shipper mang đi!
+            </div>
+            <button class="btn-action-wide" data-buy-upgrade="xe_dream_chien" style="background: linear-gradient(135deg, #00cec9, #0984e3); color: #fff; font-weight: bold;">Sắm Dream Chiến (2.500.000đ)</button>
+          </div>
+
+          <!-- Vehicle 2: Bán Tải Pickup 4x4 -->
+          <div style="background: #10252b; padding: 10px; border-radius: 6px; border: 1px solid #e17055; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #e17055;">🛻 Xe Bán Tải Pickup 4x4</b>
+              <span style="color: #50fa7b; font-size: 0.78rem; font-weight: bold; background: rgba(80,250,123,0.15); padding: 2px 6px; border-radius: 4px;">Chương 3</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Chở hàng nghìn cân nguyên liệu từ Mộc Châu về kho: <b>Giảm 20% chi phí nhập hàng</b> tại Chợ Sỉ trọn đời!
+            </div>
+            <button class="btn-action-wide" data-buy-upgrade="xe_ban_tai_pickup" style="background: linear-gradient(135deg, #e17055, #d63031); color: #fff; font-weight: bold;">Sắm Bán Tải 4x4 (8.000.000đ)</button>
+          </div>
+
+          <!-- Vehicle 3: Xe Đạp Thồ Sen Tây Hồ -->
+          <div style="background: #10252b; padding: 10px; border-radius: 6px; border: 1px solid #55efc4; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <b style="color: #55efc4;">🚲 Xe Đạp Thồ Sen Tây Hồ</b>
+              <span style="color: #f1fa8c; font-size: 0.78rem; font-weight: bold; background: rgba(241,250,140,0.15); padding: 2px 6px; border-radius: 4px;">Chương 2+</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.84rem; margin: 4px 0;">
+              Gợi nhớ mùa sen ngát hương phố cổ Hà Nội: Mỗi lần kết ca tăng tự động <b>+0.20⭐ uy tín tiệm</b>!
+            </div>
+            <button class="btn-action-wide" data-buy-upgrade="xe_dap_tho_sen" style="background: linear-gradient(135deg, #55efc4, #00b894); color: #000; font-weight: bold;">Sắm Xe Đạp Thồ Sen (1.500.000đ)</button>
           </div>
         </div>
       </div>

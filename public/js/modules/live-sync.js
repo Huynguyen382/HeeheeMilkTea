@@ -103,6 +103,36 @@ export function handleLiveEvent(eventType, data) {
       break;
     }
 
+    case 'sabotaged': {
+      // Immediate impact when another store uses a Sabotage Card against this store!
+      if (!state.storeState) state.storeState = {};
+      if (!state.storeState.save) state.storeState.save = {};
+      if (data.buffs) {
+        state.storeState.save.active_buffs = data.buffs;
+      }
+      updateBuffsUI(state.storeState.save.active_buffs);
+      updateUI();
+
+      // Trigger siren sound and alarm floating text
+      if (window.sound && typeof window.sound.siren === 'function') {
+        window.sound.siren();
+      }
+
+      const isMarket = data.sabotageType === 'market_inspection';
+      if (state.canvas && state.canvas.floatingTexts) {
+        state.canvas.floatingTexts.push({
+          text: isMarket ? '🚨 QUẢN LÝ THỊ TRƯỜNG NIÊM PHONG!' : '📉 BỊ BÓC PHỐT TRIỆU VIEW!',
+          x: 45,
+          y: 70,
+          alpha: 1.0,
+          color: '#ff5555'
+        });
+      }
+
+      showToast(`⚠️ [${data.title}]: ${data.message} (Thực hiện bởi: ${data.attackerName || 'Đối thủ'})`, 8000);
+      break;
+    }
+
     default:
       console.log(`[LiveSync] Unhandled event type: ${eventType}`, data);
       break;
@@ -155,6 +185,13 @@ function connectSSE() {
       try {
         const data = JSON.parse(e.data);
         handleLiveEvent('state_updated', data);
+      } catch (err) {}
+    });
+
+    sseSource.addEventListener('sabotaged', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        handleLiveEvent('sabotaged', data);
       } catch (err) {}
     });
 

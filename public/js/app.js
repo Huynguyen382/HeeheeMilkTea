@@ -11,11 +11,9 @@ import { initStory } from './modules/story.js';
 import { initEvents } from './modules/events.js';
 import { initModals } from './modules/modals.js';
 import { initShift } from './modules/shift.js';
-import { initPricing } from './modules/pricing.js';
-import { initWeatherModule } from './modules/weather.js';
-import { initRoomModule } from './modules/room.js';
 import { initStore } from './modules/auth.js';
-import { initLiveSync } from './modules/live-sync.js';
+import { initRoomModule } from './modules/room.js';
+import { initWeatherModule } from './modules/weather.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. Initialize Game Canvas
@@ -35,13 +33,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initEvents();
   initModals();
   initShift();
-  initPricing();
-  initWeatherModule();
   initRoomModule();
+  initWeatherModule();
 
   // 3. Launch Store Authentication & Session Flow
   await initStore();
-
-  // 4. Start Live Sync with Server (Instant SSE & Heartbeat polling)
-  initLiveSync();
 });

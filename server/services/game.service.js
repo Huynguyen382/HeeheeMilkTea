@@ -68,12 +68,15 @@ const {
 const {
   payDebt,
   unlockChapter2,
+  unlockChapter3,
   policeFine
 } = require('./game/progression.service');
 
 const {
   buyUpgrade,
   useTalisman,
+  useSabotageCard,
+  useSupportCard,
   stealPet,
   redeemPet,
   shooThief
@@ -148,11 +151,14 @@ module.exports = {
   // Progression & Inspection
   payDebt,
   unlockChapter2,
+  unlockChapter3,
   policeFine,
 
   // Upgrades, Talismans & Pets
   buyUpgrade,
   useTalisman,
+  useSabotageCard,
+  useSupportCard,
   stealPet,
   redeemPet,
   shooThief,

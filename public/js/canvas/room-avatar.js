@@ -194,24 +194,31 @@ export const RoomAvatar = {
     ctx.ellipse(0, drawY - 26, 17, 21, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 6. Arms & Dress System
+    // 6. Arms & Dress System with dynamic Outfit customization
     const armSwing = isMoving ? Math.sin(player.stepTick * 2.2) * 5.2 : 0;
     const skirtTilt = isMoving ? Math.sin(player.stepTick * 2.2) * 1.8 : 0;
 
+    // Resolve outfit colors: default Lolita Pastel or equipped outfit skin
+    const outfit = player.outfit || {};
+    const dressColor = outfit.dressColor || '#f78da7';
+    const trimColor = outfit.trimColor || '#ffffff';
+    const collarColor = outfit.collarColor || '#ffffff';
+    const sleeveColor = outfit.sleeveColor || dressColor;
+
     // Left Arm (swings opposite)
-    ctx.fillStyle = '#f78da7';
+    ctx.fillStyle = sleeveColor;
     ctx.fillRect(-14 - armSwing * 0.4, drawY - 25 + armSwing * 0.3, 5, 10);
     ctx.fillStyle = '#ffeaa7'; // hand
     ctx.fillRect(-14 - armSwing * 0.4, drawY - 15 + armSwing * 0.3, 4, 4);
 
     // Right Arm (swings opposite)
-    ctx.fillStyle = '#f78da7';
+    ctx.fillStyle = sleeveColor;
     ctx.fillRect(9 + armSwing * 0.4, drawY - 25 - armSwing * 0.3, 5, 10);
     ctx.fillStyle = '#ffeaa7'; // hand
     ctx.fillRect(10 + armSwing * 0.4, drawY - 15 - armSwing * 0.3, 4, 4);
 
-    // Pink Flared A-Line Dress
-    ctx.fillStyle = '#f78da7';
+    // Flared A-Line Dress
+    ctx.fillStyle = dressColor;
     ctx.beginPath();
     ctx.moveTo(-12 + skirtTilt, drawY - 8);
     ctx.lineTo(12 + skirtTilt, drawY - 8);
@@ -220,12 +227,12 @@ export const RoomAvatar = {
     ctx.closePath();
     ctx.fill();
 
-    // White dress hemline lace trim
-    ctx.fillStyle = '#ffffff';
+    // Dress hemline lace / gold trim
+    ctx.fillStyle = trimColor;
     ctx.fillRect(-12 + skirtTilt, drawY - 9, 24, 2.5);
 
-    // White Peter Pan Collar
-    ctx.fillStyle = '#ffffff';
+    // Decorative Peter Pan Collar
+    ctx.fillStyle = collarColor;
     ctx.beginPath();
     ctx.ellipse(-4, drawY - 25, 4.2, 3, 0.2, 0, Math.PI * 2);
     ctx.ellipse(4, drawY - 25, 4.2, 3, -0.2, 0, Math.PI * 2);

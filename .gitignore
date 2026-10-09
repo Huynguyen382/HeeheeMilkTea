@@ -16,3 +16,4 @@ server/data/*.db
 .env
 ModelNPC.html
 backgroundStory2.html
+GAME_ROADMAP.md

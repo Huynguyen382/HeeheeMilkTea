@@ -943,41 +943,64 @@ export const eventMethods = {
       ctx.stroke();
     }
 
-    // Shipper Person
+    // Shipper Person (Anh Lâm - Chiến thần giao hàng)
     if (ms.state === 'approaching' || ms.state === 'departing') {
       // Riding on the bike
-      ctx.fillStyle = '#27ae60'; // Delivery jacket
+      ctx.fillStyle = '#16a34a'; // Delivery jacket xanh lá
       ctx.fillRect(mx + 2, my - 12, 7, 9);
       // Reflective stripe on back
-      ctx.fillStyle = '#a3e635';
+      ctx.fillStyle = '#f1f5f9';
       ctx.fillRect(mx + 2, my - 8, 7, 2);
-      ctx.fillStyle = '#2c3e50'; // Helmet
+      ctx.fillStyle = '#ea580c'; // Orange accent
+      ctx.fillRect(mx + 2, my - 6, 7, 1);
+      // Red sports helmet with white stripe
+      ctx.fillStyle = '#b91c1c';
       ctx.fillRect(mx + 3, my - 17, 6, 6);
-      ctx.fillStyle = '#f1c40f'; // Visor
-      ctx.fillRect(mx + 7, my - 15, 2, 3);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(mx + 5, my - 17, 2, 6);
+      // Pilot goggles (Kính phi công phản quang)
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(mx + 6, my - 16, 4, 3);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(mx + 7, my - 15, 3, 2);
     } else {
-      // Shipper walks or stands at ms.walkX (walking_to_counter, waiting_for_drink, carrying_drink, stowing_drink, departing_empty)
+      // Shipper walks or stands at ms.walkX (Anh Lâm đi lại lấy trà)
       const wx = ms.walkX;
       const wy = 112;
       const isWalking = (ms.state === 'walking_to_counter' || ms.state === 'carrying_drink' || ms.state === 'departing_empty');
       const walkBob = isWalking ? Math.sin(this.tick * 0.3) * 2 : 0;
       const legStride = isWalking ? Math.sin(this.tick * 0.3) * 2 : 0;
 
-      // Legs
-      ctx.fillStyle = '#2c3e50';
+      // Jeans legs
+      ctx.fillStyle = '#1e293b';
       ctx.fillRect(wx + 1 + legStride, wy + 20, 3, 10);
       ctx.fillRect(wx + 5 - legStride, wy + 20, 3, 10);
-      // Jacket
-      ctx.fillStyle = '#27ae60';
+      // Red sneakers
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(wx + 0 + legStride, wy + 28, 4, 2);
+      ctx.fillRect(wx + 5 - legStride, wy + 28, 4, 2);
+      // Green jacket with orange accent
+      ctx.fillStyle = '#16a34a';
       ctx.fillRect(wx, wy + 9 + walkBob, 9, 11);
-      // Reflective stripe (Áo phản quang)
-      ctx.fillStyle = '#a3e635';
+      // Reflective silver stripe (Áo phản quang)
+      ctx.fillStyle = '#f1f5f9';
       ctx.fillRect(wx, wy + 13 + walkBob, 9, 2);
-      // Delivery Helmet
-      ctx.fillStyle = '#27ae60';
-      ctx.fillRect(wx + 1, wy + 1 + walkBob, 7, 8);
-      ctx.fillStyle = '#ffeaa7'; // Face
-      ctx.fillRect(wx + 2, wy + 5 + walkBob, 4, 3);
+      ctx.fillStyle = '#ea580c';
+      ctx.fillRect(wx, wy + 15 + walkBob, 9, 1);
+      // Delivery Helmet (Mũ đỏ sọc trắng)
+      ctx.fillStyle = '#b91c1c';
+      ctx.fillRect(wx + 1, wy + 1 + walkBob, 7, 7);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(wx + 4, wy + 1 + walkBob, 2, 7);
+      // Pilot goggles on forehead
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(wx + 1, wy + 3 + walkBob, 7, 3);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(wx + 2, wy + 4 + walkBob, 2, 1);
+      ctx.fillRect(wx + 5, wy + 4 + walkBob, 2, 1);
+      // Face
+      ctx.fillStyle = '#fcd7b0';
+      ctx.fillRect(wx + 2, wy + 7 + walkBob, 5, 3);
 
       // Drink cup held in hand when carrying drink!
       if (ms.hasDrink) {

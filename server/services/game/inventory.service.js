@@ -25,6 +25,14 @@ async function buyIngredients(storeId, items) {
     currentInv[item.id] = (currentInv[item.id] || 0) + qty;
   }
 
+  const upgrades = JSON.parse(save.upgrades || '{}');
+  let discount = 1.0;
+  if (upgrades.xe_ban_tai_pickup) {
+    discount = 0.8; // Giảm 20% chi phí nhập hàng từ Mộc Châu về kho
+  }
+
+  totalCost = Math.round(totalCost * discount);
+
   if (save.money < totalCost) {
     return {
       success: false,
@@ -87,17 +95,14 @@ async function endShift(storeId) {
 
   const newMoney = Math.max(0, save.money - rentCost);
 
-  const restDurationMs = 2 * 60 * 1000; // 2 phút nghỉ ngơi sau một ngày làm việc
-  const restUntilTs = Date.now() + restDurationMs;
-
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
   activeBuffs.tiktoker_daily = {
     day: nextDay,
     count: 0,
     nextCost: 25000
   };
-  activeBuffs.rest_reason = 'end_shift';
-  activeBuffs.rest_until = restUntilTs;
+  delete activeBuffs.rest_reason;
+  delete activeBuffs.rest_until;
 
   // Generate new random daily weather for the next day
   const { getRandomWeather } = require('./weather.service');
@@ -110,21 +115,28 @@ async function endShift(storeId) {
     since: Date.now()
   };
 
+  const upgrades = JSON.parse(save.upgrades || '{}');
+  let reputationGain = 0;
+  if (upgrades.xe_dap_tho_sen) {
+    reputationGain = 0.20; // Bán trà sen dạo sáng sớm tăng uy tín quán
+  }
+  const newReputation = Math.min(5.0, Number((save.reputation + reputationGain).toFixed(2)));
+
   const updatedSave = {
     store_id: storeId,
     chapter: save.chapter,
     day_in_game: nextDay,
     money: newMoney,
     debt_remaining: save.debt_remaining,
-    reputation: save.reputation
+    reputation: newReputation
   };
   const hash = anticheat.generateSaveHash(updatedSave);
 
   await db.prepare(`
     UPDATE game_saves 
-    SET day_in_game = ?, money = ?, active_buffs = ?, rest_until_ts = ?, save_hash = ?, updated_at = ?
+    SET day_in_game = ?, money = ?, reputation = ?, active_buffs = ?, rest_until_ts = 0, save_hash = ?, updated_at = ?
     WHERE store_id = ?
-  `).run(nextDay, newMoney, JSON.stringify(activeBuffs), restUntilTs, hash, new Date().toISOString(), storeId);
+  `).run(nextDay, newMoney, newReputation, JSON.stringify(activeBuffs), hash, new Date().toISOString(), storeId);
 
   invalidateStoreCache(storeId);
 
@@ -154,11 +166,9 @@ async function endShift(storeId) {
     totalCosts,
     netProfit,
     newMoney,
-    resting: true,
-    restUntil: restUntilTs,
-    restReason: 'end_shift',
-    restDurationSeconds: 120,
-    message: `🎉 Kết ca Ngày ${save.day_in_game} thành công! Lợi nhuận ròng: ${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString('vi-VN')}đ. HeeHee đang nghỉ ngơi 2 phút sau một ngày làm việc mệt mỏi trước khi bắt đầu Ngày ${nextDay}!`
+    resting: false,
+    restUntil: 0,
+    message: `🎉 Kết ca Ngày ${save.day_in_game} thành công! Lợi nhuận ròng: ${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString('vi-VN')}đ. Đã bắt đầu Ngày ${nextDay} tươi sáng!`
   };
 }
 

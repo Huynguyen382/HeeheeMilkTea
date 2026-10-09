@@ -80,9 +80,34 @@ async function generateOrder(storeId, options = {}) {
   let waveSize = 1;
   const randWave = Math.random();
 
-  if (save.chapter >= 2) {
+  if (activeBuffs.idol_viral) {
+    // Thẻ Idol Triệu View: Ca sĩ nổi tiếng ghé tiệm kéo bão fan hâm mộ xếp hàng
+    waveSize = Math.floor(Math.random() * 6) + 10; // 10 - 15 khách
+  } else if (save.chapter >= 3) {
+    // Chapter 3: Flagship Store Phố Đi Bộ - Trung tâm sầm uất, lượng khách thượng lưu & Gen Z đông đúc
+    if (activeBuffs.sabotage) {
+      waveSize = activeBuffs.sabotage.type === 'market_inspection' 
+        ? (randWave < 0.7 ? 2 : 3)
+        : (randWave < 0.5 ? 3 : 4);
+    } else if (activeBuffs.tiktoker_status === 'viral') {
+      waveSize = Math.floor(Math.random() * 6) + 9;
+    } else if (activeBuffs.tiktoker_status === 'flop') {
+      waveSize = randWave < 0.5 ? 3 : 4;
+    } else if (save.reputation < 3.0) {
+      waveSize = randWave < 0.6 ? 2 : 3;
+    } else {
+      if (randWave < 0.3) waveSize = Math.floor(Math.random() * 4) + 6; // 6 - 9 khách
+      else if (randWave < 0.7) waveSize = Math.floor(Math.random() * 4) + 8; // 8 - 11 khách
+      else waveSize = Math.floor(Math.random() * 5) + 11; // 11 - 15 khách
+    }
+  } else if (save.chapter >= 2) {
     // Chapter 2: Trước cổng Bách Khoa - giờ tan trường sinh viên xếp hàng đông đúc
-    if (activeBuffs.tiktoker_status === 'viral') {
+    if (activeBuffs.sabotage) {
+      // Bị quán khác chơi xấu bằng Thẻ Hãm Hại (Bóc phốt hoặc Quản lý thị trường)
+      waveSize = activeBuffs.sabotage.type === 'market_inspection' 
+        ? (randWave < 0.7 ? 1 : 2) // Giảm cực mạnh chỉ còn 1 - 2 khách do thanh tra niêm phong quầy
+        : (randWave < 0.5 ? 2 : 3); // Bóc phốt: giảm còn 2 - 3 khách do người mua e ngại
+    } else if (activeBuffs.tiktoker_status === 'viral') {
       const isBigCampaign = (activeBuffs.tiktoker_cost || 0) >= 1000000;
       if (isBigCampaign) {
         waveSize = Math.floor(Math.random() * 6) + 9; // 9 - 14 khách
@@ -101,7 +126,9 @@ async function generateOrder(storeId, options = {}) {
     }
   } else {
     // Chapter 1: Xe đẩy quê 1 - 4 khách
-    if (activeBuffs.tiktoker_status === 'viral') {
+    if (activeBuffs.sabotage) {
+      waveSize = 1;
+    } else if (activeBuffs.tiktoker_status === 'viral') {
       const isBigCampaign = (activeBuffs.tiktoker_cost || 0) >= 1000000;
       if (isBigCampaign) {
         if (randWave < 0.60) waveSize = 4;
@@ -123,6 +150,12 @@ async function generateOrder(storeId, options = {}) {
       else waveSize = 4;
     }
   }
+
+  // Buff đính chính minh bạch tăng +30% lượng khách
+  if (activeBuffs.dinh_chinh_buff) {
+    waveSize = Math.min(15, Math.floor(waveSize * 1.3));
+  }
+
   if (options.isShipper) {
     // Shipper randomly orders multiple drinks, up to 12 orders
     // Weighted distribution: 1-2 drinks (30%), 3-5 drinks (35%), 6-9 drinks (25%), 10-12 drinks (10%)
@@ -211,6 +244,17 @@ async function generateOrder(storeId, options = {}) {
       quote = 'Hello HeeHee! Nhận lời mời của quán, hôm nay Tú vác máy quay qua làm clip review thực tế xem có đỉnh nóc kịch trần không nha! Ngon là Tú kéo bão sao cho quán liền!';
     }
 
+    const isDineIn = (!options.isShipper && !cust.isShipper && (save.chapter >= 3) && Math.random() < 0.45);
+    if (isDineIn && !isInvitedTiktoker) {
+      const dineInQuotes = [
+        `Cho mình một ly thưởng thức tại tầng 2 ngắm phố đi bộ nhé! 🪑`,
+        `Lát mình lên ban công tầng 2 ngồi nghe nhạc acoustic nha quán! ☕`,
+        `Mình chọn bàn view kính tầng 2 thưởng trà chiều nhé! ✨`,
+        `Quán 2 tầng đẹp quá, làm ly này xong mình lên lầu nhâm nhi cắn hạt hướng dương nha! 🪷`
+      ];
+      quote = dineInQuotes[Math.floor(Math.random() * dineInQuotes.length)];
+    }
+
     let sugar = sugars[Math.floor(Math.random() * sugars.length)];
     if (cust.type === 6 && Math.random() < 0.8) sugar = '0%'; // Gymer prefers 0% sugar
 
@@ -268,8 +312,16 @@ async function generateOrder(storeId, options = {}) {
       price = Math.floor(price * locationConfig.priceMultiplier);
     }
 
-    // Luôn đảm bảo giá trà sữa tối thiểu 25.000đ
-    price = Math.max(25000, price);
+    // Tác động của Thẻ Hãm Hại / Thẻ Hỗ Trợ tới doanh thu (Bóc phốt giảm 30%, Quản lý thị trường giảm 40%, Đính chính +30%)
+    if (activeBuffs.sabotage) {
+      const revenuePenalty = activeBuffs.sabotage.type === 'market_inspection' ? 0.60 : 0.70;
+      price = Math.max(15000, Math.floor(price * revenuePenalty));
+    } else if (activeBuffs.dinh_chinh_buff) {
+      price = Math.floor(price * 1.30); // Hiệu ứng minh bạch & tin tưởng
+    } else {
+      // Luôn đảm bảo giá trà sữa tối thiểu 25.000đ khi không bị phạt
+      price = Math.max(25000, price);
+    }
 
     // Đàm phán & Mặc cả: Khi đặt giá quá cao các NPC có thể mặc cả
     let negotiation = null;
@@ -383,7 +435,8 @@ async function generateOrder(storeId, options = {}) {
       negotiation,
       patienceMs,
       expiresAt,
-      isOverloaded: daily.is_overloaded
+      isOverloaded: daily.is_overloaded,
+      isDineIn: !!isDineIn
     });
   }
 
@@ -398,12 +451,49 @@ async function generateOrder(storeId, options = {}) {
   }
 
   // Decrement TikToker flop waves count (viral status ends only when target revenue 3x capital is earned)
+  let buffsUpdated = false;
   if (activeBuffs.tiktoker_status === 'flop') {
     activeBuffs.tiktoker_waves = (activeBuffs.tiktoker_waves || 1) - 1;
     if (activeBuffs.tiktoker_waves <= 0) {
       delete activeBuffs.tiktoker_status;
       delete activeBuffs.tiktoker_waves;
     }
+    buffsUpdated = true;
+  }
+
+  // Decrement Sabotage card waves (10 waves duration)
+  if (activeBuffs.sabotage) {
+    activeBuffs.sabotage.waves = (activeBuffs.sabotage.waves || 10) - 1;
+    if (activeBuffs.sabotage.waves <= 0) {
+      delete activeBuffs.sabotage;
+    }
+    buffsUpdated = true;
+  }
+
+  // Decrement Defense / Event card waves
+  if (activeBuffs.dinh_chinh_buff) {
+    activeBuffs.dinh_chinh_buff.waves = (activeBuffs.dinh_chinh_buff.waves || 5) - 1;
+    if (activeBuffs.dinh_chinh_buff.waves <= 0) {
+      delete activeBuffs.dinh_chinh_buff;
+    }
+    buffsUpdated = true;
+  }
+  if (activeBuffs.attp_shield) {
+    activeBuffs.attp_shield.waves = (activeBuffs.attp_shield.waves || 5) - 1;
+    if (activeBuffs.attp_shield.waves <= 0) {
+      delete activeBuffs.attp_shield;
+    }
+    buffsUpdated = true;
+  }
+  if (activeBuffs.idol_viral) {
+    activeBuffs.idol_viral.waves = (activeBuffs.idol_viral.waves || 15) - 1;
+    if (activeBuffs.idol_viral.waves <= 0) {
+      delete activeBuffs.idol_viral;
+    }
+    buffsUpdated = true;
+  }
+
+  if (buffsUpdated) {
     await db.prepare('UPDATE game_saves SET active_buffs = ? WHERE store_id = ?')
       .run(JSON.stringify(activeBuffs), storeId);
   }

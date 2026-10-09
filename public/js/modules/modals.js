@@ -175,6 +175,9 @@ export function initModals() {
                 <button class="btn-action-sm btn-invite-collab-shortcut" data-code="${escapeHtml(friend.store_code)}" style="background: #bd93f9; color: #000; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold;" title="Mời Collab liên minh quán">
                   🤝 Collab
                 </button>
+                <button class="btn-action-sm btn-quick-sabotage-friend" data-code="${escapeHtml(friend.store_code)}" data-name="${escapeHtml(friend.store_name)}" style="background: #ff5555; color: #fff; padding: 4px 8px; font-size: 0.78rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold;" title="Dùng Thẻ Hãm Hại lên quán này">
+                  ⚔️ Hãm Hại
+                </button>
                 <button class="btn-action-sm btn-remove-friend" data-id="${friend.friendship_id}" data-name="${escapeHtml(friend.store_name)}" style="background: #4a5568; color: #ff5555; padding: 4px 6px; font-size: 0.78rem; border-radius: 4px; border: none; cursor: pointer;" title="Xóa bạn">
                   ✕
                 </button>
@@ -638,6 +641,7 @@ export function initModals() {
   const btnPay500k = document.getElementById('btn-pay-500k');
   const btnPayAll = document.getElementById('btn-pay-all-debt');
   const btnUnlockChap2 = document.getElementById('btn-unlock-chapter-2');
+  const btnUnlockChap3 = document.getElementById('btn-unlock-chapter-3');
 
   async function handleDebtResult(res) {
     if (res.success) {
@@ -725,14 +729,78 @@ export function initModals() {
     });
   }
 
+  if (btnUnlockChap3) {
+    btnUnlockChap3.addEventListener('click', async () => {
+      const curMoney = state.storeState?.save?.money || 0;
+      if (curMoney < 50000000) {
+        if (window.sound && window.sound.fail) window.sound.fail();
+        showToast(`❌ Chưa đủ vốn 50.000.000đ! Hiện có ${curMoney.toLocaleString('vi-VN')}đ.`);
+        return;
+      }
+
+      try {
+        const res = await window.API.unlockChapter3();
+        if (res && res.success) {
+          if (window.sound) window.sound.coin();
+          showToast(res.message, 6500);
+          state.storeState = await window.API.getState();
+          if (state.canvas) {
+            state.canvas.setChapter(3);
+            state.canvas.setSceneSetting('walking_street');
+          }
+          localStorage.setItem('hyhy_scene_setting', 'walking_street');
+          updateUI();
+          if (modalDebt) modalDebt.style.display = 'none';
+          setTimeout(() => {
+            if (typeof window.openStoryModal === 'function') {
+              window.openStoryModal(0, 3);
+            }
+          }, 600);
+        } else {
+          showToast('❌ ' + (res.message || 'Chưa đủ điều kiện mở khóa Chương 3!'));
+        }
+      } catch (err) {
+        console.error('Unlock chapter 3 error:', err);
+        showToast('❌ Lỗi khi mở khóa Chương 3!');
+      }
+    });
+  }
+
   // --- UPGRADES MODAL ---
   const modalUpgrades = document.getElementById('modal-upgrades');
   const navUpgrades = document.getElementById('nav-upgrades');
   const closeUpgrades = document.getElementById('close-upgrades');
 
+  function updateSabotageCardsBadgeUI() {
+    const upgrades = state.storeState?.save?.upgrades || {};
+    const countBocPhot = Number(upgrades.the_boc_phot || 0);
+    const countQltt = Number(upgrades.the_quan_ly_thi_truong || 0);
+    const countAttp = Number(upgrades.the_attp_5sao || 0);
+    const countDinhChinh = Number(upgrades.the_dinh_chinh || 0);
+    const countIdol = Number(upgrades.the_idol_trieu_view || 0);
+    const countMua = Number(upgrades.the_mua_giai_nhiet || 0);
+
+    const badgeBocPhot = document.getElementById('badge-card-boc-phot');
+    const badgeQltt = document.getElementById('badge-card-qltt');
+    const badgeAttp = document.getElementById('badge-card-attp');
+    const badgeDinhChinh = document.getElementById('badge-card-dinh-chinh');
+    const badgeIdol = document.getElementById('badge-card-idol');
+    const badgeMua = document.getElementById('badge-card-mua');
+
+    if (badgeBocPhot) badgeBocPhot.innerText = `Sở hữu: ${countBocPhot}/5 thẻ`;
+    if (badgeQltt) badgeQltt.innerText = `Sở hữu: ${countQltt}/5 thẻ`;
+    if (badgeAttp) badgeAttp.innerText = `Sở hữu: ${countAttp}/5 thẻ`;
+    if (badgeDinhChinh) badgeDinhChinh.innerText = `Sở hữu: ${countDinhChinh}/5 thẻ`;
+    if (badgeIdol) badgeIdol.innerText = `Sở hữu: ${countIdol}/5 thẻ`;
+    if (badgeMua) badgeMua.innerText = `Sở hữu: ${countMua}/5 thẻ`;
+  }
+
   if (navUpgrades) {
     navUpgrades.addEventListener('click', () => {
-      if (modalUpgrades) modalUpgrades.style.display = 'flex';
+      if (modalUpgrades) {
+        modalUpgrades.style.display = 'flex';
+        updateSabotageCardsBadgeUI();
+      }
     });
   }
 
@@ -753,10 +821,13 @@ export function initModals() {
           showToast(res.message);
           state.storeState = await window.API.getState();
           updateUI();
-          if (upId !== 'bua_an_than') {
+          updateSabotageCardsBadgeUI();
+          if (upId !== 'bua_an_than' && !upId.startsWith('the_')) {
             btn.innerText = upId.startsWith('recipe_') ? 'Đã Thêm Vào Menu ✅' : 'Đã Sở Hữu ✅';
             if (upId.startsWith('recipe_')) btn.style.background = '#27ae60';
             btn.disabled = true;
+          } else {
+            btn.disabled = false;
           }
         } else {
           showToast('❌ ' + res.message);
@@ -768,6 +839,194 @@ export function initModals() {
       }
     });
   });
+
+  // --- USE SABOTAGE CARDS MODAL LOGIC ---
+  let selectedSabotageCard = 'the_boc_phot';
+  const modalUseSabotage = document.getElementById('modal-use-sabotage');
+  const closeUseSabotage = document.getElementById('close-use-sabotage');
+  const sabotageModalTitle = document.getElementById('sabotage-modal-title');
+  const sabotageCardName = document.getElementById('sabotage-card-display-name');
+  const sabotageCardDesc = document.getElementById('sabotage-card-display-desc');
+  const sabotageCardCount = document.getElementById('sabotage-card-display-count');
+  const sabotageTargetInput = document.getElementById('sabotage-target-code-input');
+  const sabotageFriendsList = document.getElementById('sabotage-friends-quick-list');
+  const btnConfirmSabotage = document.getElementById('btn-confirm-use-sabotage');
+
+  async function openSabotageModal(cardId = 'the_boc_phot', prefilledTargetCode = '') {
+    selectedSabotageCard = cardId;
+    const upgrades = state.storeState?.save?.upgrades || {};
+    const count = Number(upgrades[cardId] || 0);
+
+    const isMarket = (cardId === 'the_quan_ly_thi_truong');
+    if (sabotageModalTitle) {
+      sabotageModalTitle.innerText = isMarket 
+        ? '👮 ĐIỀU QUẢN LÝ THỊ TRƯỜNG THANH TRA' 
+        : '📱 TUNG CLIP BÓC PHỐT TIKTOKER';
+    }
+    if (sabotageCardName) {
+      sabotageCardName.innerText = isMarket
+        ? '👮 Thẻ Quản Lý Thị Trường Thanh Tra'
+        : '📱 Thẻ Bóc Phốt TikToker';
+    }
+    if (sabotageCardDesc) {
+      sabotageCardDesc.innerText = isMarket
+        ? 'Điều thanh tra liên ngành ập vào kiểm tra đột xuất! Quán đối thủ bị niêm phong tạm thời, tụt 60% khách & mất 40% doanh thu trong 10 đợt đơn!'
+        : 'Tung clip bóc phốt nguyên liệu bẩn triệu view lên xu hướng! Quán đối thủ bị tẩy chay, giảm 50% khách & -30% doanh thu trong 10 đợt đơn!';
+    }
+    if (sabotageCardCount) {
+      sabotageCardCount.innerText = `🎒 Bạn đang có: ${count} thẻ trong kho đồ`;
+      sabotageCardCount.style.color = count > 0 ? '#50fa7b' : '#ff5555';
+    }
+
+    if (sabotageTargetInput) {
+      sabotageTargetInput.value = prefilledTargetCode || '';
+    }
+
+    // Load friends for quick select
+    if (sabotageFriendsList) {
+      try {
+        const frRes = await window.API.getFriends();
+        if (frRes && frRes.success && frRes.friends && frRes.friends.length > 0) {
+          sabotageFriendsList.innerHTML = frRes.friends.map(fr => `
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 6px 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <b style="color: #7fffd4; font-size: 0.88rem;">${escapeHtml(fr.store_name)}</b>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">(${escapeHtml(fr.store_code)})</span>
+              </div>
+              <button class="btn-action-sm btn-pick-sabotage-target" data-code="${escapeHtml(fr.store_code)}" style="background: #ff5555; color: #fff; padding: 2px 8px; font-size: 0.76rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold;">
+                Chọn Quán Này 🎯
+              </button>
+            </div>
+          `).join('');
+        } else {
+          sabotageFriendsList.innerHTML = '<div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic;">Chưa có bạn bè trong danh sách. Hãy nhập trực tiếp Mã Quán đối thủ ở trên!</div>';
+        }
+      } catch (err) {
+        sabotageFriendsList.innerHTML = '<div style="font-size: 0.82rem; color: var(--text-muted);">Không thể tải danh sách bạn bè.</div>';
+      }
+    }
+
+    if (modalUseSabotage) modalUseSabotage.style.display = 'flex';
+  }
+
+  // Trigger from Upgrades Modal
+  document.querySelectorAll('.btn-use-sabotage-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.getAttribute('data-card') || 'the_boc_phot';
+      openSabotageModal(card);
+    });
+  });
+
+  // Trigger Use Support / Defense Card
+  document.querySelectorAll('.btn-use-support-card').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const card = btn.getAttribute('data-card');
+      const cardName = btn.getAttribute('data-name') || card;
+      const upgrades = state.storeState?.save?.upgrades || {};
+      const count = Number(upgrades[card] || 0);
+
+      if (count <= 0) {
+        showToast(`⚠️ Bạn chưa có thẻ [${cardName}] trong kho! Hãy bấm Mua Thẻ trước nhé!`, 3500);
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        const res = await window.API.useSupportCard(card);
+        if (res && res.success) {
+          if (window.sound && typeof window.sound.bell === 'function') {
+            window.sound.bell();
+          }
+          showToast(`✨ ${res.message}`, 6000);
+          state.storeState = await window.API.getState();
+          updateUI();
+          updateSabotageCardsBadgeUI();
+
+          // Cơn Mưa Rào Giải Nhiệt: Hồi phục kiên nhẫn
+          if (res.patienceRefreshed && state.currentOrder) {
+            state.orderStartTime = Date.now();
+            showToast('🌧️ Khách hàng vừa được hồi phục kiên nhẫn mát lành!', 3000);
+          }
+        } else {
+          showToast('❌ ' + (res?.message || 'Không thể kích hoạt thẻ!'));
+        }
+      } catch (err) {
+        showToast('❌ Lỗi kết nối khi kích hoạt thẻ!');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+
+  // Pick friend target shortcut
+  if (sabotageFriendsList) {
+    sabotageFriendsList.addEventListener('click', (e) => {
+      const pickBtn = e.target.closest('.btn-pick-sabotage-target');
+      if (pickBtn) {
+        const code = pickBtn.getAttribute('data-code');
+        if (sabotageTargetInput && code) {
+          sabotageTargetInput.value = code;
+          showToast(`🎯 Đã chọn mục tiêu: ${code}`, 2000);
+        }
+      }
+    });
+  }
+
+  // Close Sabotage Modal
+  if (closeUseSabotage) {
+    closeUseSabotage.addEventListener('click', () => {
+      if (modalUseSabotage) modalUseSabotage.style.display = 'none';
+    });
+  }
+
+  // Confirm Use Sabotage Card
+  if (btnConfirmSabotage) {
+    btnConfirmSabotage.addEventListener('click', async () => {
+      const targetCode = sabotageTargetInput ? sabotageTargetInput.value.trim().toUpperCase() : '';
+      if (!targetCode) {
+        showToast('⚠️ Vui lòng nhập Mã Quán đối thủ cần hãm hại!');
+        return;
+      }
+
+      btnConfirmSabotage.disabled = true;
+      btnConfirmSabotage.innerText = 'Đang kích hoạt đòn tấn công...';
+
+      try {
+        const res = await window.API.useSabotageCard(selectedSabotageCard, targetCode);
+        if (res && res.success) {
+          if (window.sound && typeof window.sound.siren === 'function') {
+            window.sound.siren();
+          } else if (window.sound) {
+            window.sound.bell();
+          }
+
+          showToast(`🎉 ${res.message}`, 7000);
+          state.storeState = await window.API.getState();
+          updateUI();
+          updateSabotageCardsBadgeUI();
+          if (modalUseSabotage) modalUseSabotage.style.display = 'none';
+        } else {
+          showToast('❌ ' + (res.message || 'Không thể sử dụng thẻ!'));
+        }
+      } catch (err) {
+        showToast('❌ Lỗi kết nối khi dùng thẻ!');
+      } finally {
+        btnConfirmSabotage.disabled = false;
+        btnConfirmSabotage.innerText = '⚡ KÍCH HOẠT HÃM HẠI NGAY LẬP TỨC';
+      }
+    });
+  }
+
+  // Trigger from Friend List quick sabotage button
+  if (modalCollab) {
+    modalCollab.addEventListener('click', (e) => {
+      const btnSabotageFr = e.target.closest('.btn-quick-sabotage-friend');
+      if (btnSabotageFr) {
+        const code = btnSabotageFr.getAttribute('data-code');
+        openSabotageModal('the_boc_phot', code);
+      }
+    });
+  }
 
   // --- ADVANCE DAY BUTTON ---
   const btnAdvanceDay = document.getElementById('nav-advance-day');

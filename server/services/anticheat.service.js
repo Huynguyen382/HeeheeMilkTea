@@ -192,13 +192,37 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   const activeCollabs = Math.min(3, collabRow ? (collabRow.cnt || 0) : 0);
   const collabBonusPercent = activeCollabs * 10;
   const collabBonus = Math.round(order.price * (collabBonusPercent / 100));
-  const payout = order.price + collabBonus;
+
+  // Thưởng nhân sự (Staff Upgrades)
+  const upgrades = JSON.parse(save.upgrades || '{}');
+  let staffBonus = 0;
+  if (upgrades.staff_be_bap_manager) {
+    staffBonus += Math.round(order.price * 0.25); // Bé Bắp Cửa Hàng Trưởng +25% giá trị toàn bộ đơn
+  }
+  const isShipperOrder = !!(order.customer_name && (order.customer_name.includes('Lâm') || order.customer_name.includes('Shipper')));
+  if (upgrades.staff_anh_lam_captain && isShipperOrder) {
+    staffBonus += Math.round(order.price * 0.35); // Anh Lâm Đội Trưởng Logistics +35% đơn shipper
+  }
+
+  // Thưởng phương tiện (Vehicle Fleet)
+  let vehicleBonus = 0;
+  if (upgrades.xe_dream_chien && isShipperOrder) {
+    vehicleBonus += Math.round(order.price * 0.50); // Xe Dream Chiến Tem Lửa +50% đơn shipper VIP
+  }
+
+  // Khách ngồi lại bàn (Dine-in System - Chương 3)
+  let dineInBonus = 0;
+  if (save.chapter >= 3 && !isShipperOrder && Math.random() < 0.45) {
+    dineInBonus = Math.floor(Math.random() * 15000) + 15000; // Tip rơi trên bàn 15.000đ - 30.000đ
+  }
+
+  const payout = order.price + collabBonus + staffBonus + vehicleBonus + dineInBonus;
   const isOverloadedNow = false;
 
   // 5. Check customer archetype effects (Tú TikToker review & Buff decrements)
   let tiktokerViral = false;
   let tiktokerGoalReached = false;
-  let repGain = 0.02;
+  let repGain = dineInBonus > 0 ? 0.04 : 0.02;
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
   const isTiktokerCustomer = !!(order.customer_name && order.customer_name.includes('Tú'));
   if (isTiktokerCustomer) {
@@ -241,7 +265,11 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     tra_thai_xanh: 'tra_thai_xanh',
     sua_tuoi_duong_den: 'sua_tuoi',
     tra_dao_cam_sa: 'tra_lai',
-    tra_olong_nuong: 'tra_olong'
+    tra_olong_nuong: 'tra_olong',
+    nitro_cold_brew: 'tra_olong',
+    tra_sua_dat_vang: 'tra_den',
+    tra_sen_tay_ho: 'tra_lai',
+    kem_kho_banh_bong: 'tra_thai_xanh'
   };
   const teaIngId = recipeTeaMap[order.recipe_id] || 'tra_den';
   currentInv[teaIngId] = Math.max(0, (currentInv[teaIngId] || 0) - 1);
@@ -353,6 +381,8 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     collabBonus,
     collabBonusPercent,
     activeCollabs,
+    staffBonus,
+    dineInBonus,
     newMoney,
     reputation: newRep,
     repGain,

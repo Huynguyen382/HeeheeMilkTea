@@ -94,6 +94,14 @@ export class RoomRenderer {
     this.ownerName = data.store_name || data.username || 'HeeHee';
     this.isFriend = !!data.isFriend;
 
+    // Detect equipped outfit
+    const equippedOutfit = (data.equippedItems || []).find(i => i.category === 'outfit');
+    if (equippedOutfit && equippedOutfit.render) {
+      this.player.outfit = equippedOutfit.render;
+    } else {
+      this.player.outfit = null;
+    }
+
     if (this.player.y < 350 || this.player.y > 520) {
       this.player.x = 705;
       this.player.y = 445;

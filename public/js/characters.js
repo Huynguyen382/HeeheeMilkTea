@@ -612,12 +612,56 @@
       ],
       palette: { hair: '#3E2723', skin: '#FFE0BD', clothes: '#F43F5E', sub: '#FFE4E6', pants: '#4C0519' },
       style: 'teacher', prop: 'book'
+    },
+
+    // --- BỘ BA CỐT TRUYỆN: BÉ BẮP, ANH LÂM & LÃO BA (56 -> 58) ---
+    {
+      id: 56, name: 'Bé Bắp (Trợ Thủ Đắc Lực)', role: 'THÁNH DẬP NẮP & ORDER QUẦY', cat: 'story',
+      age: '16 tuổi', personality: 'Lanh lợi, chăm chỉ, nhanh thoăn thoắt, mê bắp ngô và trân châu hoàng kim',
+      favoriteDrink: 'Sữa Tươi Kem Trứng Bắp Ngọt (Thêm Trân Châu Hoàng Kim)',
+      desc: 'Cô bé trợ thủ đắc lực sát cánh cùng HeeHee từ những ngày đầu xe đẩy. Tóc búi 2 chùm thắt nơ vàng, kẹp tóc hình bắp ngô xinh xắn, tay thoăn thoắt kéo cần máy dập nắp ly cạch cạch siêu tốc, màng dập căng đét không rỉ một giọt trà.',
+      tags: ['#BéBắp', '#ThánhDậpNắp', '#KẹpTócBắpNgô', '#TrợThủHeeHee', '#VàngBơCute'],
+      dialogues: [
+        "Chị HeeHee cứ yên tâm pha trà nhé, khâu dập nắp ly và ghi vé đơn hàng cứ để Bé Bắp lo cái vèo!",
+        "Máy dập nắp cạch cạch siêu tốc, màng dập căng đét 100 ly như 1 không rỉ một giọt trà nào!",
+        "Chị ơi khách mê món Sữa Tươi Bắp Hoàng Kim lắm nè, để em dập nắp giao liền cho khách nha!"
+      ],
+      palette: { hair: '#5C2D13', skin: '#FFE0BD', clothes: '#FFFBEB', sub: '#FBBF24', pants: '#D97706' },
+      style: 'bebap_assistant', prop: 'corn_sealer'
+    },
+    {
+      id: 57, name: 'Anh Lâm Shipper', role: 'CHIẾN THẦN GIAO HÀNG & TÌNH BÁO VỈA HÈ', cat: 'story',
+      age: '22 tuổi', personality: 'Nhiệt huyết, nghĩa khí, thạo mọi ngõ ngách, mê xe Wave kiểng',
+      favoriteDrink: 'Hồng Trà Tắc Khổng Lồ 1 Lít (Đầy Đá Ít Đường Đập Tan Cơn Khát)',
+      desc: 'Chiến thần giao hàng của tiệm với chiếc xe Wave hỏa tốc. Đội mũ bảo hiểm nửa đầu ngầu lòi có kính phi công kéo lên trán, áo khoác jacket shipper xanh lá phản quang sọc cam, đeo túi bao tử chéo ngực, một tay bấm điện thoại nổ đơn "Ting ting", một tay xách túi giữ nhiệt giao boba xuyên phố.',
+      tags: ['#AnhLâmShipper', '#WaveChiếnHỏaTốc', '#KínhPhiCông', '#TìnhBáoVỉaHè', '#ÁoKhoácPhảnQuang'],
+      dialogues: [
+        "HeeHee ơi, 12 đơn KTX Bách Khoa gói xong chưa? Anh Lâm vít ga 3 phút là tới tận cửa phòng!",
+        "Anh vừa đi thám thính về: Quán Trâu Vàng bên kia đường đang cay cú vì tiệm mình đông khách đấy!",
+        "Đường Hà Nội đông cỡ nào thì Wave chiến của anh cũng luồn lách giao trà sữa đúng hẹn từng giây!"
+      ],
+      palette: { hair: '#18181B', skin: '#FCD7B0', clothes: '#16A34A', sub: '#F97316', pants: '#1E293B' },
+      style: 'anhlam_shipper', prop: 'delivery_bag'
+    },
+    {
+      id: 58, name: 'Lão Ba (Chủ Quán Trâu Vàng)', role: 'ĐỐI THỦ CẠNH TRANH CỔNG PHỤ BÁCH KHOA', cat: 'story',
+      age: '48 tuổi', personality: 'Mưu mô, bảo thủ, hám lợi, thích chơi khăm đối thủ bằng thẻ bóc phốt',
+      favoriteDrink: 'Trà Sữa Trâu Vàng Khổng Lồ (Topping Trâu Vàng Đậm Vị Đắng Chát)',
+      desc: 'Chủ tiệm trà sữa đối thủ khét tiếng vỉa hè Cổng Phụ ĐH Bách Khoa. Dáng người bệ vệ bụng bự, ria mép con kiến vểnh ngược gian xảo, cổ đeo dây chuyền xích vàng to tổ bố, tạp dề da thêu Đầu Trâu Vàng sừng nhọn hoắt, tay vung muôi múc trân châu inox to tướng, chân xỏ đôi dép tổ ong vàng huyền thoại.',
+      tags: ['#LãoBaTrâuVàng', '#ĐốiThủChương2', '#DâyChuyềnVàng', '#MuôiTrânChâuKhổngLồ', '#DépTổOng'],
+      dialogues: [
+        "Hừm! Mấy đứa ranh con tụi mày tính cướp mối sinh viên của Trâu Vàng này à? Đừng hòng!",
+        "Alo TikToker hả? Đến làm ngay một clip bóc phốt dìm hàng cái tiệm HeeHee vỉa hè kia cho tao!",
+        "Quán của tao ở cổng Bách Khoa này 10 năm nay chưa ngán ai đâu nhé, liệu hồn mà biết điều!"
+      ],
+      palette: { hair: '#292524', skin: '#FCD7B0', clothes: '#991B1B', sub: '#78350F', pants: '#3F3F46' },
+      style: 'laoba_rival', prop: 'iron_ladle'
     }
   ];
 
   // =========================================================================
 
-  // 49 Customer NPCs (excluding Owner at index 0)
+  // 52 Customer & Story NPCs (excluding Owner at index 0)
   var CUSTOMERS_LIST = CHARACTERS.slice(1);
 
   // Character height in logical pixels (Sidewalk Y is 148)
@@ -627,7 +671,9 @@
     var s = char.style;
     if (s === 'lucky_cat') return 30;
     if (s === 'kid' || s === 'artist_kid') return 42; // Cute preschool / primary kids
+    if (s === 'bebap_assistant') return 48; // Bé Bắp cute teen assistant
     if (s === 'student_girl' || s === 'ballet_girl') return 50; // Middle school students
+    if (s === 'anhlam_shipper' || s === 'laoba_rival') return 56; // Shipper & Rival store owner
     if (s === 'gymer' || s === 'foreigner' || s === 'police' || s === 'pilot' || s === 'firefighter') return 58; // Tall athletic adults
     if (s === 'chef' || s === 'magician') return 58; // Tall hats
     return 54; // Standard adult height
@@ -664,7 +710,11 @@
     });
     if (partial) return partial;
 
-    // Legacy and New keyword aliases
+    // Story Characters & New keyword aliases
+    if (str.includes('bắp') || str.includes('bé bắp')) return CHARACTERS[55]; // Bé Bắp Trợ Thủ
+    if (str.includes('lâm') || str.includes('anh lâm')) return CHARACTERS[56]; // Anh Lâm Shipper
+    if (str.includes('lão ba') || str.includes('trâu vàng')) return CHARACTERS[57]; // Lão Ba Trâu Vàng
+
     if (str.includes('bà bảy') || str.includes('chè bưởi')) return CHARACTERS[50];
     if (str.includes('shark') || str.includes('đầu tư')) return CHARACTERS[51];
     if (str.includes('trâm') || str.includes('streamer') || str.includes('cosplay')) return CHARACTERS[52];
@@ -830,6 +880,204 @@
       // Second blue straw pointing to boy
       pRect(ctx, baseX + 13, baseY + 19, 2, 4, '#0EA5E9');
       pDot(ctx, baseX + 14, baseY + 18, '#0EA5E9');
+      return;
+    }
+
+    // --- SPECIAL 3: BÉ BẮP (Trợ thủ đắc lực quầy trà sữa) ---
+    if (style === 'bebap_assistant') {
+      var bX = baseX;
+      var bY = baseY + 2;
+
+      // Hai búi tóc tròn & nơ vàng bắp ngô
+      pRect(ctx, bX + 2, bY + 1, 4, 4, '#5C2D13');
+      pRect(ctx, bX + 16, bY + 1, 4, 4, '#5C2D13');
+      pRect(ctx, bX + 3, bY + 4, 3, 2, '#FACC15');
+      pRect(ctx, bX + 16, bY + 4, 3, 2, '#FACC15');
+      pDot(ctx, bX + 4, bY + 5, '#EA580C');
+      pDot(ctx, bX + 17, bY + 5, '#EA580C');
+
+      // KẸP TÓC BẮP NGÔ 🌽 ĐẶC TRƯNG
+      pRect(ctx, bX + 1, bY - 2, 3, 4, '#FDE047');
+      pDot(ctx, bX + 2, bY - 1, '#F59E0B');
+      pDot(ctx, bX + 1, bY + 0, '#F59E0B');
+      pRect(ctx, bX + 0, bY + 1, 2, 2, '#16A34A');
+      pDot(ctx, bX + 4, bY + 1, '#22C55E');
+
+      // Mái bằng & lọn tóc mai
+      pRect(ctx, bX + 5, bY + 2, 12, 5, '#5C2D13');
+      pRect(ctx, bX + 6, bY + 0, 10, 3, '#78350F');
+      pRect(ctx, bX + 4, bY + 5, 2, 7, '#5C2D13');
+      pRect(ctx, bX + 16, bY + 5, 2, 7, '#5C2D13');
+      pRect(ctx, bX + 6, bY + 6, 10, 2, '#78350F');
+
+      // Mặt bầu bĩnh & má hồng bánh bao
+      pRect(ctx, bX + 6, bY + 7, 10, 7, '#FFE0BD');
+      pRect(ctx, bX + 7, bY + 13, 8, 2, '#FCD7B0');
+      if (!isBlinking) {
+        pRect(ctx, bX + 7, bY + 8, 2, 3, '#1E293B'); pDot(ctx, bX + 7, bY + 8, '#FFFFFF');
+        pRect(ctx, bX + 13, bY + 8, 2, 3, '#1E293B'); pDot(ctx, bX + 13, bY + 8, '#FFFFFF');
+      } else {
+        pRect(ctx, bX + 7, bY + 9, 2, 1, '#1E293B');
+        pRect(ctx, bX + 13, bY + 9, 2, 1, '#1E293B');
+      }
+      pRect(ctx, bX + 5, bY + 10, 2, 2, '#FB7185');
+      pRect(ctx, bX + 15, bY + 10, 2, 2, '#FB7185');
+      pDot(ctx, bX + 10, bY + 12, '#F43F5E'); pDot(ctx, bX + 11, bY + 12, '#FFFFFF');
+
+      // Áo sơ mi trắng & Yếm vàng bơ ngô thêu logo hạt bắp
+      pRect(ctx, bX + 7, bY + 14, 8, 2, '#FFFBEB');
+      pRect(ctx, bX + 5, bY + 15, 12, 10, '#FBBF24');
+      pRect(ctx, bX + 6, bY + 14, 2, 4, '#F59E0B'); pDot(ctx, bX + 6, bY + 17, '#78350F');
+      pRect(ctx, bX + 14, bY + 14, 2, 4, '#F59E0B'); pDot(ctx, bX + 14, bY + 17, '#78350F');
+      pRect(ctx, bX + 9, bY + 18, 4, 3, '#FEF08A');
+      pDot(ctx, bX + 10, bY + 19, '#F59E0B'); pDot(ctx, bX + 11, bY + 19, '#16A34A');
+
+      // Tạp dề caro
+      pRect(ctx, bX + 5, bY + 23, 12, 3, '#EA580C');
+      pRect(ctx, bX + 6, bY + 25, 10, 2, '#FED7AA');
+      pDot(ctx, bX + 7, bY + 25, '#EA580C'); pDot(ctx, bX + 9, bY + 25, '#EA580C');
+      pDot(ctx, bX + 11, bY + 25, '#EA580C'); pDot(ctx, bX + 13, bY + 25, '#EA580C');
+
+      // Tay trái cầm boba
+      pRect(ctx, bX + 2, bY + 15 + sway, 3, 5, '#FFFBEB');
+      pRect(ctx, bX + 1, bY + 19 + sway, 3, 3, '#FFE0BD');
+      drawBobaCup(ctx, bX - 1, bY + 17 + sway, '#FACC15', '#F59E0B', '#FDE047');
+
+      // Tay phải cầm que ghi order / cần gạt máy dập nắp
+      pRect(ctx, bX + 17, bY + 15 - sway, 3, 5, '#FFFBEB');
+      pRect(ctx, bX + 18, bY + 19 - sway, 3, 3, '#FFE0BD');
+      pRect(ctx, bX + 19, bY + 17 - sway, 2, 5, '#DC2626');
+      pRect(ctx, bX + 20, bY + 15 - sway, 3, 2, '#1E293B');
+
+      // Chân váy & Giày búp bê
+      pRect(ctx, bX + 6, bY + 27, 4, 15, '#FFFFFF');
+      pRect(ctx, bX + 12, bY + 27, 4, 15, '#FFFFFF');
+      pRect(ctx, bX + 5, bY + 42, 5, 4, '#78350F'); pDot(ctx, bX + 7, bY + 43, '#FACC15');
+      pRect(ctx, bX + 12, bY + 42, 5, 4, '#78350F'); pDot(ctx, bX + 14, bY + 43, '#FACC15');
+      return;
+    }
+
+    // --- SPECIAL 4: ANH LÂM SHIPPER (Chiến thần giao hàng) ---
+    if (style === 'anhlam_shipper') {
+      var aX = baseX;
+      var aY = baseY + 1;
+
+      // Mũ bảo hiểm nửa đầu & Kính phi công
+      pRect(ctx, aX + 4, aY + 1, 14, 5, '#B91C1C');
+      pRect(ctx, aX + 6, aY + 0, 10, 2, '#DC2626');
+      pRect(ctx, aX + 10, aY + 1, 2, 5, '#FFFFFF');
+      pRect(ctx, aX + 4, aY + 3, 14, 3, '#0F172A');
+      pRect(ctx, aX + 5, aY + 4, 5, 2, '#38BDF8'); pDot(ctx, aX + 6, aY + 4, '#FFFFFF');
+      pRect(ctx, aX + 12, aY + 4, 5, 2, '#38BDF8'); pDot(ctx, aX + 13, aY + 4, '#FFFFFF');
+
+      // Tóc & Tai
+      pRect(ctx, aX + 5, aY + 6, 2, 4, '#18181B');
+      pRect(ctx, aX + 15, aY + 6, 2, 4, '#18181B');
+      pDot(ctx, aX + 4, aY + 8, skin); pDot(ctx, aX + 17, aY + 8, skin);
+
+      // Mặt nam tính
+      pRect(ctx, aX + 6, aY + 6, 10, 7, skin);
+      pRect(ctx, aX + 7, aY + 12, 8, 2, '#E5B88A');
+      pRect(ctx, aX + 7, aY + 7, 3, 1, '#18181B'); pRect(ctx, aX + 12, aY + 7, 3, 1, '#18181B');
+      if (!isBlinking) {
+        pRect(ctx, aX + 7, aY + 8, 2, 2, '#0F172A'); pDot(ctx, aX + 7, aY + 8, '#FFFFFF');
+        pRect(ctx, aX + 13, aY + 8, 2, 2, '#0F172A'); pDot(ctx, aX + 13, aY + 8, '#FFFFFF');
+      } else {
+        pRect(ctx, aX + 7, aY + 8, 2, 1, '#0F172A');
+        pRect(ctx, aX + 13, aY + 8, 2, 1, '#0F172A');
+      }
+      pRect(ctx, aX + 9, aY + 11, 4, 1, '#B91C1C'); pDot(ctx, aX + 11, aY + 11, '#FFFFFF');
+
+      // Áo Bomber Shipper Xanh Lá Phản Quang + Dải Cam
+      pRect(ctx, aX + 5, aY + 14, 12, 14, '#16A34A');
+      pRect(ctx, aX + 5, aY + 19, 12, 2, '#F1F5F9');
+      pRect(ctx, aX + 5, aY + 22, 12, 1, '#EA580C');
+      pRect(ctx, aX + 8, aY + 13, 6, 2, '#1E293B');
+
+      // Túi bao tử đen đeo chéo
+      pRect(ctx, aX + 7, aY + 17, 8, 4, '#0F172A');
+      pRect(ctx, aX + 9, aY + 18, 4, 1, '#FACC15');
+
+      // Tay Trái Cầm Smartphone Báo Đơn
+      pRect(ctx, aX + 2, aY + 15 + sway, 3, 6, '#16A34A');
+      pRect(ctx, aX + 1, aY + 20 + sway, 3, 2, skin);
+      pRect(ctx, aX - 1, aY + 18 + sway, 4, 6, '#18181B');
+      pRect(ctx, aX + 0, aY + 19 + sway, 2, 4, '#38BDF8');
+      pDot(ctx, aX + 1, aY + 19 + sway, '#EF4444');
+
+      // Tay Phải Cầm Túi Giữ Nhiệt
+      pRect(ctx, aX + 17, aY + 15 - sway, 3, 6, '#16A34A');
+      pRect(ctx, aX + 18, aY + 20 - sway, 3, 2, skin);
+      pRect(ctx, aX + 18, aY + 21 - sway, 6, 7, '#EA580C');
+      pRect(ctx, aX + 19, aY + 22 - sway, 4, 5, '#C2410C');
+      pRect(ctx, aX + 20, aY + 19 - sway, 2, 2, '#475569');
+
+      // Quần Jeans & Sneaker
+      pRect(ctx, aX + 6, aY + 28, 4, 21, '#1E293B');
+      pRect(ctx, aX + 12, aY + 28, 4, 21, '#1E293B');
+      pDot(ctx, aX + 7, aY + 35, '#64748B'); pDot(ctx, aX + 13, aY + 35, '#64748B');
+      pRect(ctx, aX + 5, aY + 49, 5, 4, '#DC2626'); pRect(ctx, aX + 5, aY + 52, 5, 1, '#FFFFFF');
+      pRect(ctx, aX + 12, aY + 49, 5, 4, '#DC2626'); pRect(ctx, aX + 12, aY + 52, 5, 1, '#FFFFFF');
+      return;
+    }
+
+    // --- SPECIAL 5: LÃO BA (Chủ Quán Trâu Vàng) ---
+    if (style === 'laoba_rival') {
+      var rX = baseX;
+      var rY = baseY + 0;
+
+      // Tóc & Tai
+      pRect(ctx, rX + 4, rY + 1, 15, 5, '#292524');
+      pRect(ctx, rX + 5, rY + 0, 12, 2, '#44403C');
+      pDot(ctx, rX + 4, rY + 3, '#94A3B8'); pDot(ctx, rX + 18, rY + 3, '#94A3B8');
+
+      // Mặt Tròn Bệ Vệ & Ria Mép Chữ Bát
+      pRect(ctx, rX + 5, rY + 5, 14, 9, skin);
+      pRect(ctx, rX + 6, rY + 13, 12, 2, '#E5B88A');
+      pRect(ctx, rX + 6, rY + 6, 4, 1, '#18181B'); pRect(ctx, rX + 14, rY + 6, 4, 1, '#18181B');
+      pRect(ctx, rX + 7, rY + 7, 3, 1, '#0F172A'); pRect(ctx, rX + 14, rY + 7, 3, 1, '#0F172A');
+      pRect(ctx, rX + 8, rY + 10, 8, 2, '#18181B');
+      pDot(ctx, rX + 7, rY + 11, '#18181B'); pDot(ctx, rX + 16, rY + 11, '#18181B');
+      pDot(ctx, rX + 11, rY + 11, '#FEF08A'); // tăm tre
+
+      // Dây Chuyền Vàng
+      pRect(ctx, rX + 8, rY + 13, 8, 2, '#FACC15');
+      pDot(ctx, rX + 10, rY + 14, '#FDE047'); pDot(ctx, rX + 12, rY + 14, '#FFFFFF');
+
+      // Bụng Bự Bệ Vệ, Áo Đỏ & Tạp Dề Đầu Trâu Vàng
+      pRect(ctx, rX + 3, rY + 14, 18, 15, '#991B1B');
+      pRect(ctx, rX + 4, rY + 16, 16, 13, '#78350F');
+      // Đầu Trâu Vàng
+      pRect(ctx, rX + 9, rY + 19, 6, 4, '#B45309');
+      pDot(ctx, rX + 10, rY + 20, '#DC2626'); pDot(ctx, rX + 13, rY + 20, '#DC2626');
+      pRect(ctx, rX + 7, rY + 18, 3, 1, '#FACC15'); pDot(ctx, rX + 6, rY + 17, '#FACC15');
+      pRect(ctx, rX + 14, rY + 18, 3, 1, '#FACC15'); pDot(ctx, rX + 17, rY + 17, '#FACC15');
+
+      // Tay Trái Chống Nạnh / Điện Thoại
+      pRect(ctx, rX + 0, rY + 15 + sway, 4, 7, '#991B1B');
+      pRect(ctx, rX + 0, rY + 21 + sway, 3, 3, skin);
+      pRect(ctx, rX - 2, rY + 19 + sway, 3, 5, '#18181B');
+      pDot(ctx, rX - 1, rY + 20 + sway, '#EF4444');
+
+      // Tay Phải Cầm Muôi Trân Châu Inox Khổng Lồ
+      pRect(ctx, rX + 19, rY + 15 - sway, 4, 7, '#991B1B');
+      pRect(ctx, rX + 20, rY + 21 - sway, 3, 3, skin);
+      pRect(ctx, rX + 21, rY + 12 - sway, 2, 12, '#94A3B8');
+      pDot(ctx, rX + 21, rY + 11 - sway, '#E2E8F0');
+      pRect(ctx, rX + 19, rY + 8 - sway, 6, 4, '#CBD5E1');
+      pRect(ctx, rX + 20, rY + 9 - sway, 4, 2, '#18181B');
+      pDot(ctx, rX + 21, rY + 8 - sway, '#78350F');
+
+      // Quần Lửng Kaki Rêu & Dép Tổ Ong Vàng
+      pRect(ctx, rX + 6, rY + 29, 5, 14, '#3F3F46');
+      pRect(ctx, rX + 13, rY + 29, 5, 14, '#3F3F46');
+      pRect(ctx, rX + 7, rY + 43, 3, 4, skin);
+      pRect(ctx, rX + 14, rY + 43, 3, 4, skin);
+      // Dép Tổ Ong
+      pRect(ctx, rX + 5, rY + 47, 6, 4, '#FDE047');
+      pDot(ctx, rX + 6, rY + 48, '#CA8A04'); pDot(ctx, rX + 8, rY + 48, '#CA8A04'); pDot(ctx, rX + 10, rY + 48, '#CA8A04');
+      pRect(ctx, rX + 13, rY + 47, 6, 4, '#FDE047');
+      pDot(ctx, rX + 14, rY + 48, '#CA8A04'); pDot(ctx, rX + 16, rY + 48, '#CA8A04'); pDot(ctx, rX + 18, rY + 48, '#CA8A04');
       return;
     }
 
@@ -1412,7 +1660,7 @@
   // 4. BARISTA OWNER SPRITE (CHỊ THẢO BOBA)
   // Stands tall inside the stall behind counter
   // ==========================================
-  function drawOwnerBarista(ctx, hx, hy, bob, isBlinking) {
+  function drawOwnerBarista(ctx, hx, hy, bob, isBlinking, outfit) {
     if (bob === undefined) bob = 0;
     if (isBlinking === undefined) isBlinking = false;
 
@@ -1421,42 +1669,63 @@
     var faceTop = headTop + 4;
     var headX = hx + 8;
 
+    // Custom outfit palette overrides
+    var skirtColor = '#831843';
+    var skirtPleat = '#500724';
+    var skirtHighlight = '#9D174D';
+    var blouseColor = '#FFF5F5';
+    var apronColor = '#FB7185';
+    var apronPocket = '#F43F5E';
+    var apronStrap = '#E11D48';
+    var ribbonColor = '#F43F5E';
+    var shoeColor = '#FB7185';
+
+    if (outfit && typeof outfit === 'object') {
+      if (outfit.dressColor) apronColor = outfit.dressColor;
+      if (outfit.apronColor) skirtColor = outfit.apronColor;
+      if (outfit.trimColor) ribbonColor = outfit.trimColor;
+      if (outfit.collarColor) blouseColor = outfit.collarColor;
+      skirtPleat = 'rgba(0,0,0,0.25)';
+      skirtHighlight = 'rgba(255,255,255,0.2)';
+      shoeColor = apronColor;
+    }
+
     // 1. SNEAKER SHOES ON STALL FLOOR (Y = 144)
-    pRect(ctx, hx + 3, 142, 6, 2, '#FB7185');
-    pRect(ctx, hx + 11, 142, 6, 2, '#FB7185');
+    pRect(ctx, hx + 3, 142, 6, 2, shoeColor);
+    pRect(ctx, hx + 11, 142, 6, 2, shoeColor);
     pRect(ctx, hx + 2, 143, 8, 1, '#FFFFFF'); // white soles
     pRect(ctx, hx + 10, 143, 8, 1, '#FFFFFF');
 
     // 2. SLENDER LEGS IN WHITE ANKLE SOCKS
     pRect(ctx, hx + 4, 138, 5, 4, '#FFFFFF');
     pRect(ctx, hx + 12, 138, 5, 4, '#FFFFFF');
-    pDot(ctx, hx + 6, 139, '#F43F5E'); // pink ribbon
-    pDot(ctx, hx + 14, 139, '#F43F5E');
+    pDot(ctx, hx + 6, 139, ribbonColor); // ribbon
+    pDot(ctx, hx + 14, 139, ribbonColor);
 
     pRect(ctx, hx + 4, 114 + bob, 4, 25, skin);
     pRect(ctx, hx + 12, 114 + bob, 4, 25, skin);
     pRect(ctx, hx + 7, 114 + bob, 1, 25, '#F6C8A6');
     pRect(ctx, hx + 12, 114 + bob, 1, 25, '#F6C8A6');
 
-    // 3. PLEATED BERRY SKIRT (Below counter)
+    // 3. PLEATED SKIRT (Below counter)
     var skirtTop = 104 + bob;
-    pRect(ctx, hx - 2, skirtTop, 22, 14, '#831843');
+    pRect(ctx, hx - 2, skirtTop, 22, 14, skirtColor);
     for (var px = hx - 1; px <= hx + 18; px += 3) {
-      pRect(ctx, px, skirtTop, 1, 13, '#500724');
-      pRect(ctx, px + 1, skirtTop + 1, 1, 12, '#9D174D');
+      pRect(ctx, px, skirtTop, 1, 13, skirtPleat);
+      pRect(ctx, px + 1, skirtTop + 1, 1, 12, skirtHighlight);
     }
-    pRect(ctx, hx - 2, skirtTop + 13, 22, 1, '#F43F5E');
+    pRect(ctx, hx - 2, skirtTop + 13, 22, 1, ribbonColor);
 
-    // 4. WHITE PASTEL BLOUSE (Above counter at 114)
+    // 4. BLOUSE (Above counter at 114)
     var torsoTop = 92 + bob;
-    pRect(ctx, hx - 1, torsoTop, 20, 16, '#FFF5F5');
+    pRect(ctx, hx - 1, torsoTop, 20, 16, blouseColor);
     pRect(ctx, hx + 6, torsoTop, 6, 3, skin); // neckline
 
-    // 5. SWEET PINK BOBA APRON
-    pRect(ctx, hx + 2, torsoTop + 2, 14, 14, '#FB7185');
-    pRect(ctx, hx + 1, torsoTop + 10, 16, 6, '#F43F5E');
-    pRect(ctx, hx + 3, torsoTop + 1, 2, 8, '#E11D48'); // straps
-    pRect(ctx, hx + 13, torsoTop + 1, 2, 8, '#E11D48');
+    // 5. BOBA APRON
+    pRect(ctx, hx + 2, torsoTop + 2, 14, 14, apronColor);
+    pRect(ctx, hx + 1, torsoTop + 10, 16, 6, apronPocket);
+    pRect(ctx, hx + 3, torsoTop + 1, 2, 8, apronStrap); // straps
+    pRect(ctx, hx + 13, torsoTop + 1, 2, 8, apronStrap);
 
     // Embroidered mini boba cup on chest
     pRect(ctx, hx + 8, torsoTop + 4, 3, 4, '#FFFFFF');
@@ -1464,8 +1733,8 @@
     pDot(ctx, hx + 9, torsoTop + 3, '#FDE047'); // straw
 
     // Apron front utility pocket
-    pRect(ctx, hx + 4, torsoTop + 9, 10, 6, '#F43F5E');
-    pRect(ctx, hx + 5, torsoTop + 10, 8, 4, '#FB7185');
+    pRect(ctx, hx + 4, torsoTop + 9, 10, 6, apronPocket);
+    pRect(ctx, hx + 5, torsoTop + 10, 8, 4, apronColor);
 
     // 6. CHESTNUT HAIR (Back Dome)
     pRect(ctx, headX - 8, headTop - 3, 18, 16, '#4E2A16');

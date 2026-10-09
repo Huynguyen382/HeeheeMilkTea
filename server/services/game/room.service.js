@@ -151,14 +151,24 @@ async function equipRoomDecor(storeId, decorId, equipStatus) {
   }
 
   let found = false;
+  const isOutfit = item.category === 'outfit';
+
   const newDecorations = decorations.map(d => {
     const id = typeof d === 'string' ? d : d.id;
+    const currentEquipped = typeof d === 'string' ? true : !!d.equipped;
+    const dItem = ROOM_DECORATIONS[id];
+
     if (id === decorId) {
       found = true;
-      const currentEquipped = typeof d === 'string' ? true : !!d.equipped;
       const shouldEquip = (typeof equipStatus === 'boolean') ? equipStatus : !currentEquipped;
       return { id, equipped: shouldEquip, updated_at: Date.now() };
     }
+
+    // If equipping a new outfit, unequip any other outfit
+    if (isOutfit && dItem && dItem.category === 'outfit' && ((typeof equipStatus === 'boolean') ? equipStatus : !currentEquipped)) {
+      return { id, equipped: false, updated_at: Date.now() };
+    }
+
     return typeof d === 'string' ? { id: d, equipped: true } : d;
   });
 

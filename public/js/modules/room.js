@@ -375,12 +375,12 @@ export function initRoomModule() {
  * Open Player's Room (Fullscreen + Landscape + Joystick)
  */
 export async function openMyRoom() {
+  if (!modalMyRoom) modalMyRoom = document.getElementById('modal-my-room');
   if (!modalMyRoom) return;
-  rotateHintDismissedMyRoom = false;
   modalMyRoom.style.display = 'flex';
 
-  // Request Fullscreen & Landscape Orientation
-  await enterFullscreenAndLandscape(modalMyRoom);
+  // Request Fullscreen & Landscape Orientation (non-blocking)
+  enterFullscreenAndLandscape(modalMyRoom).catch(e => console.warn('enterFullscreen error:', e));
 
   const canvas = document.getElementById('room-stage-canvas');
   if (canvas && !roomRenderer) {
@@ -452,6 +452,13 @@ export async function refreshMyRoomData() {
         roomRenderer.setData(currentRoomData);
       }
 
+      // Sync equipped outfit globally to street canvas
+      const equippedOutfit = (res.equippedItems || []).find(i => i.category === 'outfit');
+      window.activeOutfitRender = equippedOutfit ? equippedOutfit.render : null;
+      if (state.canvas) {
+        state.canvas.currentOutfit = window.activeOutfitRender;
+      }
+
       // Render Furniture Catalog
       renderDecorShop(res.catalog || []);
     }
@@ -472,11 +479,12 @@ function renderDecorShop(catalog) {
     const card = document.createElement('div');
     card.className = `decor-card ${item.equipped ? 'equipped' : ''}`;
 
+    const isOutfit = item.category === 'outfit';
     let actionBtnHtml = '';
     if (item.owned) {
       actionBtnHtml = `
         <button class="btn-decor-toggle ${item.equipped ? 'active' : ''}" data-decor-id="${item.id}" data-action="toggle">
-          ${item.equipped ? '✓ Đang Đặt Trong Phòng' : '+ Đặt Vào Phòng'}
+          ${item.equipped ? (isOutfit ? '✓ Đang Mặc' : '✓ Đang Đặt') : (isOutfit ? '👗 Mặc Trang Phục' : '+ Đặt Vào Phòng')}
         </button>
       `;
     } else {
@@ -492,10 +500,10 @@ function renderDecorShop(catalog) {
         <span class="decor-icon">${item.icon}</span>
         <div class="decor-info">
           <div class="decor-name">${item.name}</div>
-          <div class="decor-cozy">+${item.cozyPoints}⭐ Ấm Cúng</div>
+          <div class="decor-cozy" style="color: ${isOutfit ? '#ff9ff3' : '#fbc531'};">+${item.cozyPoints}⭐ ${isOutfit ? 'Thời Trang' : 'Ấm Cúng'}</div>
         </div>
       </div>
-      <div class="decor-effect">${item.effect}</div>
+      <div class="decor-effect" style="color: ${isOutfit ? '#ff9ff3' : 'inherit'};">${isOutfit ? '👗 ' : ''}${item.effect}</div>
       ${actionBtnHtml}
     `;
 

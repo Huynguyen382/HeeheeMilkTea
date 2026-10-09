@@ -187,7 +187,7 @@ export function renderStoryQuests() {
         progressText: `${(3000000 - debt).toLocaleString('vi-VN')}đ / 3Tr`
       }
     ];
-  } else if (currentChapter >= 2) {
+  } else if (currentChapter === 2) {
     const targetMoney = 50000000; // Mục tiêu Endgame Chương 2
     quests = [
       {
@@ -233,11 +233,64 @@ export function renderStoryQuests() {
         progressText: `${daily.collab_count || save.active_collabs || 0}/1 đối tác`
       },
       {
+        id: 'c2_q_sabotage', icon: '⚔️', title: 'Thương Trường Khốc Liệt',
+        desc: 'Sở hữu hoặc sử dụng Thẻ Hãm Hại (Bóc Phốt / QLTT) lên một quán đối thủ.',
+        reward: 'Áp đảo thị phần',
+        isDone: !!(upgrades.sabotage_used_count && upgrades.sabotage_used_count > 0) || !!(upgrades.the_boc_phot && upgrades.the_boc_phot > 0) || !!(upgrades.the_quan_ly_thi_truong && upgrades.the_quan_ly_thi_truong > 0),
+        progressText: (upgrades.sabotage_used_count && upgrades.sabotage_used_count > 0) ? 'Đã tấn công' : ((upgrades.the_boc_phot || upgrades.the_quan_ly_thi_truong) ? 'Đã sắm thẻ' : '0/1 lần')
+      },
+      {
         id: 'c2_q7', icon: '🏰', title: 'Bước Ra Phố Lớn (Endgame)',
         desc: 'Tích lũy đủ 50.000.000đ tiền mặt để thuê mặt bằng ở Phố Thương Mại.',
         reward: 'Mở rộng thương hiệu',
         isDone: money >= targetMoney,
         progressText: `${(money / 1000000).toFixed(1)}Tr / 50Tr`
+      }
+    ];
+  } else if (currentChapter >= 3) {
+    const targetC3Money = 200000000;
+    quests = [
+      {
+        id: 'c3_q1', icon: '🏛️', title: 'Khai Trương Flagship Store',
+        desc: 'Phục vụ ít nhất 1 lượt khách ghé tiệm tại Phố Đi Bộ.',
+        reward: 'Danh tiếng Đô Thị',
+        isDone: (daily.orders_served && daily.orders_served > 0) || true,
+        progressText: 'Hoàn tất'
+      },
+      {
+        id: 'c3_q2', icon: '✨', title: 'Thực Đơn Thượng Lưu',
+        desc: 'Mở khóa Trà Sữa Dát Vàng hoặc Nitro Cold Brew.',
+        reward: 'Giá bán cực khủng',
+        isDone: recipes.includes('tra_sua_dat_vang') || recipes.includes('nitro_cold_brew'),
+        progressText: (recipes.includes('tra_sua_dat_vang') || recipes.includes('nitro_cold_brew')) ? 'Đã sở hữu' : 'Chưa có'
+      },
+      {
+        id: 'c3_q3', icon: '🌽', title: 'Cửa Hàng Trưởng Bé Bắp',
+        desc: 'Nâng cấp Bé Bắp lên chức Cửa Hàng Trưởng để tự động dập nắp ly.',
+        reward: 'Tự động dập nắp 100%',
+        isDone: !!upgrades.staff_be_bap_manager,
+        progressText: upgrades.staff_be_bap_manager ? 'Đã thăng chức' : 'Chưa thăng chức'
+      },
+      {
+        id: 'c3_q4', icon: '🛵', title: 'Đội Trưởng Logistics Anh Lâm',
+        desc: 'Nâng cấp Anh Lâm lên Đội Trưởng Logistics điều phối hạm đội xe.',
+        reward: '+35% Doanh thu ship',
+        isDone: !!upgrades.staff_anh_lam_captain,
+        progressText: upgrades.staff_anh_lam_captain ? 'Đã thăng chức' : 'Chưa thăng chức'
+      },
+      {
+        id: 'c3_q5', icon: '🎤', title: 'Thần Tượng Triệu View',
+        desc: 'Sở hữu hoặc sử dụng Thẻ Hợp Đồng Idol Triệu View thu hút bão khách.',
+        reward: 'Khách kéo đến nghẹt phố',
+        isDone: !!(upgrades.the_idol_trieu_view && upgrades.the_idol_trieu_view > 0) || !!upgrades.idol_viral_used,
+        progressText: (upgrades.the_idol_trieu_view || upgrades.idol_viral_used) ? 'Đã kích hoạt' : 'Chưa có'
+      },
+      {
+        id: 'c3_q6', icon: '👑', title: 'Đế Chế Nhượng Quyền (Endgame C3)',
+        desc: 'Tích lũy 200.000.000đ vốn đầu tư để tiến tới Nhượng Quyền Toàn Cầu.',
+        reward: 'Mở khóa Chương 4',
+        isDone: money >= targetC3Money,
+        progressText: `${(money / 1000000).toFixed(1)}Tr / 200Tr`
       }
     ];
   }
@@ -250,11 +303,13 @@ export function renderStoryQuests() {
       pct = Math.min(100, Math.max(0, ((3000000 - debt) / 3000000) * 100));
     } else if (q.id === 'c2_q7') {
       pct = Math.min(100, Math.max(0, (money / 50000000) * 100));
+    } else if (q.id === 'c3_q6') {
+      pct = Math.min(100, Math.max(0, (money / 200000000) * 100));
     } else if (q.id === 'c2_q1') {
       pct = Math.min(100, Math.max(0, ((daily.earned_today || 0) / 80000) * 100));
     }
 
-    const progressBarHtml = (q.id === 'q5' || q.id === 'c2_q7' || q.id === 'c2_q1') ? `
+    const progressBarHtml = (q.id === 'q5' || q.id === 'c2_q7' || q.id === 'c3_q6' || q.id === 'c2_q1') ? `
       <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.4); border-radius: 4px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
         <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #f4c430, #ff9f43); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 8px rgba(244,196,48,0.5);"></div>
       </div>

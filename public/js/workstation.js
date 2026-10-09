@@ -81,6 +81,26 @@ class BaristaWorkstation {
     this.initCupContents();
   }
 
+  isGoldLeafRecipe() {
+    return this.currentRecipe === 'tra_sua_dat_vang' ||
+      (this.tea === 'den' && this.toppings.includes('tranchau_den') && this.toppings.includes('tranchau_duongden'));
+  }
+
+  isNitroRecipe() {
+    return this.currentRecipe === 'nitro_cold_brew' ||
+      (this.tea === 'olong_nuong' && this.toppings.includes('suong_sao') && this.toppings.includes('tranchau_den'));
+  }
+
+  isLotusRecipe() {
+    return this.currentRecipe === 'tra_sen_tay_ho' ||
+      (this.tea === 'lai' && this.toppings.includes('dao_mieng') && this.toppings.includes('sa_tuoi'));
+  }
+
+  isBruleeRecipe() {
+    return this.currentRecipe === 'kem_kho_banh_bong' ||
+      (this.tea === 'thai_xanh' && this.toppings.includes('thach_la_dua') && this.toppings.includes('tranchau_duongden'));
+  }
+
   initCupContents() {
     // Generate ice cubes based on ice level
     this.iceCubes = [];
@@ -112,6 +132,35 @@ class BaristaWorkstation {
         type: this.toppings[Math.floor(i / 9)] || 'tranchau_den',
         bobOffset: Math.random() * Math.PI * 2
       });
+    }
+
+    // Generate floating 24K gold flakes for Trà Sữa Dát Vàng
+    this.goldFlakes = [];
+    if (this.isGoldLeafRecipe()) {
+      for (let i = 0; i < 9; i++) {
+        this.goldFlakes.push({
+          x: (Math.random() - 0.5) * 34,
+          y: (Math.random() - 0.5) * 36,
+          size: 2.2 + Math.random() * 3.2,
+          rot: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.04,
+          sparklePhase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    // Generate nitro micro-bubbles for Nitro Cold Brew
+    this.nitroBubbles = [];
+    if (this.isNitroRecipe()) {
+      for (let i = 0; i < 22; i++) {
+        this.nitroBubbles.push({
+          x: (Math.random() - 0.5) * 38,
+          y: Math.random() * 50 - 25,
+          speed: 0.35 + Math.random() * 0.75,
+          size: 0.8 + Math.random() * 1.5,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
     }
   }
 
@@ -691,6 +740,63 @@ class BaristaWorkstation {
       ctx.fill();
     }
 
+    // Special Effect: 24K Gold Flakes swirling in Shaker Window
+    if (this.goldFlakes && this.goldFlakes.length > 0) {
+      this.goldFlakes.forEach((gf, idx) => {
+        let gx, gy;
+        if (isSwirling) {
+          const a = this.tick * 0.2 + idx * 0.9;
+          const d = 6 + (idx % 3) * 6;
+          gx = cx + Math.cos(a) * d;
+          gy = cy + 4 + Math.sin(a) * (d * 0.7);
+        } else {
+          gx = cx + gf.x * 0.7;
+          gy = cy + gf.y * 0.6 + Math.sin(this.tick * 0.05 + gf.sparklePhase) * 2;
+        }
+        ctx.save();
+        ctx.translate(gx, gy);
+        ctx.rotate(gf.rot + this.tick * gf.rotSpeed);
+        // Rich 24K Gold Foil Flake
+        const gGrad = ctx.createLinearGradient(-gf.size, -gf.size, gf.size, gf.size);
+        gGrad.addColorStop(0, '#fff799');
+        gGrad.addColorStop(0.4, '#ffd700');
+        gGrad.addColorStop(0.8, '#d4af37');
+        gGrad.addColorStop(1, '#b8860b');
+        ctx.fillStyle = gGrad;
+        ctx.fillRect(-gf.size * 0.5, -gf.size * 0.5, gf.size, gf.size * 0.8);
+
+        // Specular gold sparkle star
+        const sparkle = Math.sin(this.tick * 0.15 + gf.sparklePhase);
+        if (sparkle > 0.6) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-0.8, -2.5, 1.6, 5);
+          ctx.fillRect(-2.5, -0.8, 5, 1.6);
+        }
+        ctx.restore();
+      });
+    }
+
+    // Special Effect: Nitro Cold Brew micro-bubbles swirling in Shaker Window
+    if (this.nitroBubbles && this.nitroBubbles.length > 0) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      this.nitroBubbles.forEach((nb, idx) => {
+        let nx, ny;
+        if (isSwirling) {
+          const a = -this.tick * 0.25 + idx * 0.5;
+          const d = 4 + (idx % 4) * 5;
+          nx = cx + Math.cos(a) * d;
+          ny = cy + 2 + Math.sin(a) * (d * 0.8);
+        } else {
+          nx = cx + nb.x * 0.7;
+          const yOff = ((this.tick * nb.speed + idx * 4) % 36);
+          ny = cy + r - 8 - yOff;
+        }
+        ctx.beginPath();
+        ctx.arc(nx, ny, nb.size * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
     // Glass Porthole Specular Crescent Glare
     const glareGrad = ctx.createLinearGradient(cx - r * 0.8, cy - r * 0.8, cx + r * 0.5, cy + r * 0.5);
     glareGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
@@ -969,6 +1075,22 @@ class BaristaWorkstation {
       ctx.fillStyle = teaGrad;
       ctx.fillRect(cupX - topR - 2, liquidTop, (topR + 2) * 2, liquidH + 10);
 
+      // Fresh Milk tiger brown sugar syrup streaks along cup wall
+      if (this.tea === 'sua_tuoi') {
+        ctx.fillStyle = '#6e2c00';
+        ctx.beginPath();
+        ctx.moveTo(cupX - botR + 2, cupY);
+        ctx.quadraticCurveTo(cupX - botR + 5, cupY - liquidH * 0.6, cupX - topR * 0.7, liquidTop + 4);
+        ctx.quadraticCurveTo(cupX - botR + 7, cupY - liquidH * 0.4, cupX - botR + 6, cupY);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(cupX + botR - 2, cupY);
+        ctx.quadraticCurveTo(cupX + botR - 5, cupY - liquidH * 0.55, cupX + topR * 0.65, liquidTop + 6);
+        ctx.quadraticCurveTo(cupX + botR - 7, cupY - liquidH * 0.35, cupX + botR - 5, cupY);
+        ctx.fill();
+      }
+
       // Meniscus ellipse
       const menW = botR + (topR - botR) * fillRatio;
       ctx.fillStyle = tCol.cream;
@@ -976,19 +1098,170 @@ class BaristaWorkstation {
       ctx.ellipse(cupX, liquidTop, menW, 3.5, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Boba pearls in cup
-      const pearlCount = Math.min(14, this.toppings.length * 6);
-      for (let i = 0; i < pearlCount; i++) {
-        const px = cupX + ((i * 7 + 3) % (botR * 1.5)) - botR * 0.75;
-        const py = cupY - 3 - Math.floor(i / 4) * 5;
-        ctx.fillStyle = '#140c14';
+      // Diverse Artisanal Toppings in Takeaway Cup
+      if (this.toppings && this.toppings.length > 0) {
+        const totalItems = Math.min(16, this.toppings.length * 6);
+        for (let i = 0; i < totalItems; i++) {
+          const tType = this.toppings[i % this.toppings.length];
+          const px = cupX + ((i * 7 + 4) % Math.max(1, botR * 1.6)) - botR * 0.8;
+          const py = cupY - 4 - Math.floor(i / 4) * 5;
+
+          if (tType === 'thach_la_dua') {
+            // Pandan Jelly: Translucent emerald jade cube
+            ctx.fillStyle = 'rgba(46, 204, 113, 0.92)';
+            ctx.fillRect(px - 3.5, py - 3.5, 7, 7);
+            ctx.strokeStyle = '#a8e6cf';
+            ctx.lineWidth = 0.6;
+            ctx.strokeRect(px - 3.5, py - 3.5, 7, 7);
+          } else if (tType === 'dao_mieng') {
+            // Peach slice crescent
+            ctx.fillStyle = '#f39c12';
+            ctx.beginPath();
+            ctx.ellipse(px, py, 5.5, 3.2, 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#f1c40f';
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          } else if (tType === 'cam_vang') {
+            // Citrus orange slice
+            ctx.fillStyle = '#ff9f43';
+            ctx.beginPath();
+            ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#feca57';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          } else if (tType === 'sa_tuoi') {
+            // Fresh lemongrass sliver
+            ctx.fillStyle = '#a8e6cf';
+            ctx.fillRect(px - 4, py - 1.5, 8, 3.2);
+            ctx.strokeStyle = '#1dd1a1';
+            ctx.lineWidth = 0.6;
+            ctx.strokeRect(px - 4, py - 1.5, 8, 3.2);
+          } else if (tType === 'suong_sao') {
+            // Grass jelly: Glossy onyx cube
+            ctx.fillStyle = '#111111';
+            ctx.fillRect(px - 4, py - 3.5, 8, 7);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fillRect(px - 3, py - 2.5, 3, 1);
+          } else if (tType === 'tranchau_duongden') {
+            // Tiger brown sugar boba pearl
+            ctx.fillStyle = '#2b1307';
+            ctx.beginPath();
+            ctx.arc(px, py, 2.9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#d35400';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(px - 0.9, py - 0.9, 0.8, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            // Classic black tapioca pearl
+            ctx.fillStyle = '#140c14';
+            ctx.beginPath();
+            ctx.arc(px, py, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(px - 0.8, py - 0.8, 0.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      // Special Drink FX: Trà Sữa Dát Vàng (24K Gold Flakes & Shimmering Glints)
+      if (this.isGoldLeafRecipe()) {
+        const goldCount = 8;
+        for (let g = 0; g < goldCount; g++) {
+          const gx = cupX - botR * 0.7 + ((g * 9 + 5) % Math.max(1, botR * 1.5));
+          const gy = liquidTop + 4 + (g % 4) * 8;
+          ctx.save();
+          ctx.translate(gx, gy);
+          ctx.rotate(this.tick * 0.02 + g);
+          const gGrad = ctx.createLinearGradient(-2, -2, 2, 2);
+          gGrad.addColorStop(0, '#fff799');
+          gGrad.addColorStop(0.5, '#ffd700');
+          gGrad.addColorStop(1, '#b8860b');
+          ctx.fillStyle = gGrad;
+          ctx.fillRect(-1.8, -1.8, 3.6, 2.8);
+
+          // Specular golden star sparkle
+          const spk = Math.sin(this.tick * 0.12 + g * 1.2);
+          if (spk > 0.6) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-0.5, -2.5, 1, 5);
+            ctx.fillRect(-2.5, -0.5, 5, 1);
+          }
+          ctx.restore();
+        }
+      }
+
+      // Special Drink FX: Nitro Cold Brew (Velvety Crema Head & Cascading Micro-bubbles)
+      if (this.isNitroRecipe()) {
+        // Velvet nitro microfoam head
+        ctx.fillStyle = '#fdf6e2';
         ctx.beginPath();
-        ctx.arc(px, py, 2.8, 0, Math.PI * 2);
+        ctx.ellipse(cupX, liquidTop + 2, menW - 0.5, 4.2, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#faebd7';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        // Downward cascading micro-bubble streams (reverse cascade)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+        for (let nb = 0; nb < 14; nb++) {
+          const nx = cupX - menW * 0.7 + (nb * 5) % (menW * 1.4);
+          const ny = liquidTop + 6 + ((this.tick * 0.6 + nb * 7) % Math.max(1, liquidH * 0.7));
+          ctx.beginPath();
+          ctx.arc(nx, ny, 0.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Special Drink FX: Trà Sen Tây Hồ (Floating Pink Lotus Petal)
+      if (this.isLotusRecipe()) {
+        const lx = cupX - 3;
+        const ly = liquidTop + 1.5;
+        ctx.save();
+        ctx.translate(lx, ly);
+        ctx.rotate(-0.2 + Math.sin(this.tick * 0.04) * 0.1);
+        ctx.fillStyle = '#ff79c6';
         ctx.beginPath();
-        ctx.arc(px - 0.8, py - 0.8, 0.8, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, 5, 2.5, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.fillStyle = '#ffb8b8';
+        ctx.beginPath();
+        ctx.ellipse(1, 0, 3, 1.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Special Drink FX: Trà Sữa Kem Khò Bánh Bỏng (Torched Brulee Crust & Crispy Rice)
+      if (this.isBruleeRecipe()) {
+        // Thick cheese foam crown
+        ctx.fillStyle = '#fffbe7';
+        ctx.beginPath();
+        ctx.ellipse(cupX, liquidTop + 2, menW - 0.5, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Caramelized torched brulee scorch spots
+        ctx.fillStyle = '#873600';
+        ctx.beginPath();
+        ctx.ellipse(cupX - 4, liquidTop + 1.5, 3.2, 1.4, 0.2, 0, Math.PI * 2);
+        ctx.ellipse(cupX + 4, liquidTop + 2.5, 2.8, 1.2, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#d35400';
+        ctx.beginPath();
+        ctx.ellipse(cupX, liquidTop + 2, 2, 0.9, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Crispy golden cereal pops
+        ctx.fillStyle = '#f39c12';
+        [-6, -1, 5].forEach((popX, idx) => {
+          ctx.fillRect(cupX + popX, liquidTop + (idx % 2), 1.8, 1.8);
+        });
       }
 
       // Ice cubes in cup
@@ -1908,6 +2181,20 @@ class BaristaWorkstation {
           ctx.beginPath();
           ctx.arc(pX, pY, 2.5, 0, Math.PI * 2);
           ctx.fill();
+        }
+      }
+
+      // 24K Gold flakes cascading down the pouring stream
+      if (this.isGoldLeafRecipe()) {
+        ctx.fillStyle = '#ffd700';
+        for (let g = 0; g < 4; g++) {
+          const goldP = ((p * 4.2 + g * 0.25) % 1.0);
+          if (goldP > 0.05 && goldP < 0.95) {
+            const t = goldP;
+            const gX = (1 - t) * (1 - t) * spoutX + 2 * (1 - t) * t * (spoutX + 20) + t * t * cupX;
+            const gY = (1 - t) * (1 - t) * spoutY + 2 * (1 - t) * t * ((spoutY + cupTopY) * 0.5) + t * t * (cupTopY + 2);
+            ctx.fillRect(gX - 1, gY - 1, 2.2, 2.2);
+          }
         }
       }
 
