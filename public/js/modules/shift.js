@@ -17,6 +17,7 @@ export function openEndShiftModal() {
   if (!shiftContent || !state.storeState) return;
 
   // Tạm dừng game khi mở bảng Kết ca
+  state.isGamePaused = true;
   if (state.nextOrderTimeout) clearTimeout(state.nextOrderTimeout);
 
   const save = state.storeState.save || {};
@@ -44,7 +45,7 @@ export function openEndShiftModal() {
       </div>
 
       <div style="background: rgba(80, 250, 123, 0.12); border: 1px dashed #50fa7b; border-radius: 8px; padding: 8px; font-size: 0.88rem; color: #50fa7b; text-align: center; margin-bottom: 10px; line-height: 1.4;">
-        ⏸️ <b>Game đang tạm dừng:</b> Sau khi xác nhận kết ca, nhân vật sẽ nghỉ ngơi thư giãn <b>2 phút</b> sau một ngày làm việc mệt mỏi!
+        🌅 <b>Sẵn sàng sang ca mới:</b> Sau khi xác nhận kết ca, tiệm sẽ quyết toán doanh thu và lập tức bắt đầu ngày mới lúc <b>7h00 sáng</b>!
       </div>
 
       <div class="receipt-section">
@@ -136,10 +137,12 @@ export function openEndShiftModal() {
           if (window.sound) window.sound.fail();
           showToast('❌ ' + (res.message || 'Không thể kết ca'));
           btnConfirm.disabled = false;
+          btnConfirm.innerText = `🌅 XÁC NHẬN KẾT CA ➔ SANG NGÀY ${day + 1}`;
         }
       } catch (err) {
         console.error('End shift error:', err);
         btnConfirm.disabled = false;
+        btnConfirm.innerText = `🌅 XÁC NHẬN KẾT CA ➔ SANG NGÀY ${day + 1}`;
       }
     });
   }

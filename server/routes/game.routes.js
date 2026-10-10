@@ -55,6 +55,12 @@ router.post('/shoo-thief', authStore, handle('Shoo thief', req => gameService.sh
 router.post('/invite-tiktoker', authStore, handle('Invite tiktoker', req => gameService.inviteTiktoker(req.store.id)));
 router.post('/buy-ingredients', authStore, handle('Buy ingredients', req => gameService.buyIngredients(req.store.id, req.body.items)));
 router.post('/advance-day', authStore, handle('Advance day', req => gameService.endShift(req.store.id)));
+router.post('/end-shift', authStore, handle('End shift', req => gameService.endShift(req.store.id)));
+router.post('/unlock-chapter-3', authStore, handle('Unlock Chapter 3', req => gameService.unlockChapter3(req.store.id)));
+router.post('/negotiate', authStore, handle('Negotiate order', req => gameService.negotiateOrder(req.store.id, req.body.orderId, !!req.body.accept)));
+router.post('/custom-prices', authStore, handle('Custom prices', req => gameService.setCustomPrices(req.store.id, req.body.customPrices)));
+router.post('/use-sabotage', authStore, handle('Use sabotage card', req => gameService.useSabotageCard(req.store.id, req.body.cardId, req.body.targetStoreCode)));
+router.post('/use-support-card', authStore, handle('Use support card', req => gameService.useSupportCard(req.store.id, req.body.cardId)));
 router.post('/skip-rest', authStore, handle('Skip rest', req => gameService.skipRest(req.store.id)));
 
 // Daily Quests Routes
