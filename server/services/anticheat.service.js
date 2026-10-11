@@ -268,7 +268,17 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     dineInBonus = Math.round(dineInBonus * 1.50);
   }
 
-  const payout = order.price + collabBonus + staffBonus + vehicleBonus + dineInBonus + organicBonus + auctionBonus;
+  let rawPayout = order.price + collabBonus + staffBonus + vehicleBonus + dineInBonus + organicBonus + auctionBonus;
+  
+  // Safety cap per single order to prevent inflation / multiplier overflow bugs
+  const CHAPTER_ORDER_CAPS = {
+    1: 150000,   // Chương 1 tối đa 150.000đ / ly
+    2: 350000,   // Chương 2 tối đa 350.000đ / ly
+    3: 650000,   // Chương 3 tối đa 650.000đ / ly
+    4: 1200000   // Chương 4+ tối đa 1.200.000đ / ly
+  };
+  const maxAllowedPayout = CHAPTER_ORDER_CAPS[save.chapter] || 150000;
+  const payout = Math.min(rawPayout, maxAllowedPayout);
   const isOverloadedNow = false;
 
   // 5. Check customer archetype effects (Tú TikToker review & Buff decrements)

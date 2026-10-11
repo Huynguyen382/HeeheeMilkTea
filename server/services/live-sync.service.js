@@ -156,10 +156,33 @@ function pullEvents(storeId, sinceTimestamp = 0) {
   return results;
 }
 
+/**
+ * Check if a store has an active open SSE connection
+ */
+function isStoreSSEConnected(storeId) {
+  const clients = sseClients.get(Number(storeId));
+  return !!(clients && clients.size > 0);
+}
+
+/**
+ * Get all store IDs currently connected via SSE
+ */
+function getActiveSSEStoreIds() {
+  const sids = [];
+  for (const [sid, clients] of sseClients.entries()) {
+    if (clients && clients.size > 0) {
+      sids.push(sid);
+    }
+  }
+  return sids;
+}
+
 module.exports = {
   registerSSE,
   pushToStore,
   broadcast,
-  pullEvents
+  pullEvents,
+  isStoreSSEConnected,
+  getActiveSSEStoreIds
 };
 

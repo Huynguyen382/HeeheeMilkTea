@@ -48,6 +48,11 @@
           <span class="icon">📊</span>
           <span>Tổng Quan</span>
         </li>
+        <li class="nav-item" data-tab="tab-online">
+          <span class="icon">🟢</span>
+          <span>Đang Online</span>
+          <span class="nav-badge" id="badge-online-count" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;">0</span>
+        </li>
         <li class="nav-item" data-tab="tab-stores">
           <span class="icon">🏪</span>
           <span>Quản Lý Người Chơi</span>
@@ -128,6 +133,15 @@
         <section id="tab-dashboard" class="tab-pane active">
           <!-- STATS CARDS -->
           <div class="stats-grid">
+            <div class="stat-card" style="cursor: pointer; border-left: 4px solid #10b981;" onclick="AdminApp.switchTab('tab-online')" title="Bấm để xem danh sách người chơi đang online">
+              <div class="stat-header">
+                <span class="stat-title">Đang Online</span>
+                <span class="stat-icon">🟢</span>
+              </div>
+              <div class="stat-value" id="kpi-online-stores" style="color: #10b981;">0</div>
+              <div class="stat-desc" id="kpi-online-desc">0 tài khoản đang kết nối</div>
+            </div>
+
             <div class="stat-card">
               <div class="stat-header">
                 <span class="stat-title">Tổng Quán Trà Sữa</span>
@@ -261,6 +275,47 @@
         </section>
 
         <!-- ============================================== -->
+        <!-- TAB ONLINE: REAL-TIME ONLINE PLAYERS -->
+        <!-- ============================================== -->
+        <section id="tab-online" class="tab-pane" style="display: none;">
+          <div class="admin-card">
+            <div class="card-header">
+              <h2>🟢 Danh Sách Người Chơi Đang Online (Thời Gian Thực)</h2>
+              <div class="card-actions">
+                <span id="online-last-updated" style="font-size: 0.82rem; color: var(--text-muted); margin-right: 8px;">Tự động cập nhật mỗi 5s</span>
+                <button class="btn btn-secondary btn-sm" onclick="AdminApp.loadOnlineStores(false)">
+                  🔄 Làm Mới Ngay
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Tên Tiệm / Tài Khoản</th>
+                      <th>Mã Quán</th>
+                      <th>Kênh Kết Nối</th>
+                      <th>Hoạt Động Gần Nhất</th>
+                      <th>Chương / Ngày</th>
+                      <th>Tiền Vốn (đ)</th>
+                      <th>Nợ (đ)</th>
+                      <th>Đơn Đang Chờ</th>
+                      <th>Trạng Thái</th>
+                      <th style="text-align: right;">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="online-stores-tbody">
+                    <tr><td colspan="11" style="text-align: center; padding: 24px; color: var(--text-muted);">Đang quét người chơi online...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
         <!-- TAB 2: STORES & PLAYERS MANAGEMENT -->
         <!-- ============================================== -->
         <section id="tab-stores" class="tab-pane" style="display: none;">
@@ -274,6 +329,7 @@
                 </div>
                 <select id="stores-filter-select" class="input-control" style="width: 150px;">
                   <option value="all">Tất cả quán</option>
+                  <option value="online">🟢 Đang Online</option>
                   <option value="jailed">Đang bị phạt tù</option>
                   <option value="active_orders">Có đơn hàng</option>
                   <option value="chapter_1">Chương 1</option>

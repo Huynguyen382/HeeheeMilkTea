@@ -8,6 +8,7 @@ const AdminApp = (() => {
   const state = {
     token: localStorage.getItem('heehee_admin_token') || '',
     stores: [],
+    onlineStores: [],
     orders: [],
     logs: [],
     events: [],
@@ -57,6 +58,7 @@ const AdminApp = (() => {
     const headers = {
       'Content-Type': 'application/json',
       'x-admin-key': state.token,
+      'Authorization': `Bearer ${state.token}`,
       ...(options.headers || {})
     };
 
@@ -122,12 +124,20 @@ const AdminApp = (() => {
     }
   }
 
-  // Auto Refresh Every 15s
+  // Auto Refresh Every 15s (and 5s for online monitor)
   function startAutoRefresh() {
     if (state.refreshInterval) clearInterval(state.refreshInterval);
     state.refreshInterval = setInterval(() => {
       loadAllData(true);
     }, 15000);
+
+    if (state.onlineRefreshInterval) clearInterval(state.onlineRefreshInterval);
+    state.onlineRefreshInterval = setInterval(() => {
+      const onlineTab = document.getElementById('tab-online');
+      if (onlineTab && onlineTab.classList.contains('active')) {
+        loadOnlineStores(true);
+      }
+    }, 5000);
   }
 
   // Load All System Data
@@ -135,6 +145,7 @@ const AdminApp = (() => {
     try {
       await Promise.all([
         loadSystemOverview(),
+        loadOnlineStores(true),
         loadStores(),
         loadOrders(),
         loadLogs(),
@@ -154,6 +165,15 @@ const AdminApp = (() => {
     try {
       const data = await apiRequest('/api/admin/system/overview');
       document.getElementById('kpi-total-stores').textContent = data.totalStores;
+      if (document.getElementById('kpi-online-stores')) {
+        document.getElementById('kpi-online-stores').textContent = data.onlineStores || 0;
+      }
+      if (document.getElementById('kpi-online-desc')) {
+        document.getElementById('kpi-online-desc').textContent = `${data.onlineStores || 0} tài khoản đang kết nối`;
+      }
+      if (document.getElementById('badge-online-count')) {
+        document.getElementById('badge-online-count').textContent = data.onlineStores || 0;
+      }
       document.getElementById('kpi-total-money').textContent = formatMoney(data.totalMoney);
       document.getElementById('kpi-total-debt').textContent = formatMoney(data.totalDebt);
       document.getElementById('kpi-active-orders').textContent = data.activeOrders;
@@ -197,6 +217,7 @@ const AdminApp = (() => {
 
       // Filter
       let list = [...state.stores];
+      if (filter === 'online') list = list.filter(s => s.is_online === true);
       if (filter === 'jailed') list = list.filter(s => s.is_jailed === 1);
       if (filter === 'active_orders') list = list.filter(s => s.active_orders_count > 0);
       if (filter === 'chapter_1') list = list.filter(s => (s.chapter || 1) === 1);
@@ -254,11 +275,18 @@ const AdminApp = (() => {
 
     tbody.innerHTML = stores.map(s => {
       const isJailed = s.is_jailed === 1;
+      const isOnline = s.is_online === true;
+      const idleText = (s.idle_seconds !== null && s.idle_seconds !== undefined) 
+        ? (s.idle_seconds < 10 ? 'Vừa xong' : `${s.idle_seconds}s trước`) 
+        : '';
+
       const statusBadge = isJailed 
         ? `<span class="badge badge-danger">🔒 Bị Tù</span>` 
         : (s.rest_until_ts > Date.now() 
             ? `<span class="badge badge-warning">💤 Kiệt Sức</span>` 
-            : `<span class="badge badge-success">🟢 Bình Thường</span>`);
+            : (isOnline
+                ? `<span class="badge badge-success" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;">🟢 Online ${idleText ? `(${idleText})` : ''}</span>`
+                : `<span class="badge badge-secondary" style="background: rgba(100, 116, 139, 0.15); color: #94a3b8;">⚪ Offline</span>`));
 
       const orderBadge = s.active_orders_count > 0 
         ? `<span class="badge badge-warning">${s.active_orders_count} đơn</span>`
@@ -331,6 +359,98 @@ const AdminApp = (() => {
         </tr>
       `).join('');
     }
+  }
+
+  // 2b. ONLINE STORES LIST & REAL-TIME MONITOR
+  async function loadOnlineStores(silent = false) {
+    try {
+      const data = await apiRequest('/api/admin/online');
+      const onlineList = data.stores || [];
+      state.onlineStores = onlineList;
+
+      const onlineCount = onlineList.length;
+      if (document.getElementById('badge-online-count')) {
+        document.getElementById('badge-online-count').textContent = onlineCount;
+      }
+      if (document.getElementById('kpi-online-stores')) {
+        document.getElementById('kpi-online-stores').textContent = onlineCount;
+      }
+      if (document.getElementById('kpi-online-desc')) {
+        document.getElementById('kpi-online-desc').textContent = `${onlineCount} tài khoản đang kết nối`;
+      }
+      const updatedEl = document.getElementById('online-last-updated');
+      if (updatedEl) {
+        updatedEl.textContent = `Cập nhật: ${new Date().toLocaleTimeString('vi-VN')} (${onlineCount} online)`;
+      }
+
+      renderOnlineStoresTable(onlineList);
+      if (!silent) {
+        showToast(`Đã làm mới danh sách: ${onlineCount} người chơi đang online!`, 'info');
+      }
+    } catch (err) {
+      console.error('Error loading online stores:', err);
+      if (!silent) showToast(err.message, 'error');
+    }
+  }
+
+  function renderOnlineStoresTable(stores) {
+    const tbody = document.getElementById('online-stores-tbody');
+    if (!tbody) return;
+
+    if (!stores.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="11" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+            <div style="font-size: 2rem; margin-bottom: 8px;">💤</div>
+            <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-main);">Hiện tại không có người chơi nào online</div>
+            <small style="color: var(--text-muted);">Khi người chơi mở game và tương tác, thông tin quán sẽ tự động hiển thị tại đây.</small>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = stores.map(s => {
+      const idleText = (s.idle_seconds !== null && s.idle_seconds !== undefined) 
+        ? (s.idle_seconds < 10 ? '⚡ Vừa xong' : `${s.idle_seconds}s trước`) 
+        : '⚡ Đang online';
+
+      const connBadge = (s.connection_type === 'sse')
+        ? `<span class="badge badge-success" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;" title="Kết nối trực tiếp qua SSE Stream">⚡ SSE Stream</span>`
+        : `<span class="badge badge-warning" style="background: rgba(251, 191, 36, 0.18); color: #fbbf24; border: 1px solid #fbbf24;" title="Kết nối qua HTTP Heartbeat Polling">💓 Heartbeat</span>`;
+
+      const orderBadge = s.active_orders_count > 0 
+        ? `<span class="badge badge-warning">${s.active_orders_count} đơn</span>`
+        : `<span style="color: var(--text-muted);">0</span>`;
+
+      return `
+        <tr>
+          <td><strong>#${s.id}</strong></td>
+          <td>
+            <div style="font-weight: 600; color: #50fa7b;">🧋 ${escapeHtml(s.store_name)}</div>
+            <small style="color: var(--text-muted);">User: ${escapeHtml(s.username || 'Chơi nhanh')}</small>
+          </td>
+          <td><code>${s.store_code}</code></td>
+          <td>${connBadge}</td>
+          <td><span style="color: #38bdf8; font-weight: 600;">${idleText}</span></td>
+          <td>Chương ${s.chapter || 1} • Ngày ${s.day_in_game || 1}</td>
+          <td style="color: #34d399; font-weight: 600;">${formatMoney(s.money)}</td>
+          <td style="color: #f87171;">${formatMoney(s.debt_remaining)}</td>
+          <td>${orderBadge}</td>
+          <td><span class="badge badge-success" style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 700;">🟢 Online</span></td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 6px;">
+              <button class="btn btn-primary btn-xs" onclick="AdminApp.openStoreEditor(${s.id})">
+                🛠️ Quản Trị
+              </button>
+              <button class="btn btn-secondary btn-xs" onclick="AdminApp.quickActionWithStore(${s.id}, 'add_money', 10000000)" title="+10tr Tiền">
+                +10Tr
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   // 3. ORDERS MANAGEMENT
@@ -893,6 +1013,43 @@ const AdminApp = (() => {
       .replace(/'/g, '&#039;');
   }
 
+  // Switch Tab Helper
+  function switchTab(tabId) {
+    document.querySelectorAll('.nav-menu .nav-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.tab === tabId);
+    });
+
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+      pane.style.display = 'none';
+      pane.classList.remove('active');
+    });
+
+    const activePane = document.getElementById(tabId);
+    if (activePane) {
+      activePane.style.display = 'block';
+      activePane.classList.add('active');
+    }
+
+    // Update Title
+    const titleMap = {
+      'tab-dashboard': '📊 Tổng Quan Hệ Thống',
+      'tab-online': '🟢 Người Chơi Đang Online Thời Gian Thực',
+      'tab-stores': '🏪 Quản Lý Người Chơi & Cửa Hàng',
+      'tab-orders': '📋 Đơn Hàng Đang Hoạt Động',
+      'tab-events': '🎪 Quản Lý Sự Kiện & Lễ Hội Trong Game',
+      'tab-npcs': '🎭 Danh Mục 55 Khách Hàng NPC',
+      'tab-bulk-inv': '📦 Bơm Kho Nguyên Liệu Hàng Loạt',
+      'tab-logs': '🛡️ Nhật Ký & Chống Hack (Audit Logs)',
+      'tab-system': '⚙️ Công Cụ Hệ Thống & Máy Chủ'
+    };
+    const titleEl = document.getElementById('page-title-display');
+    if (titleEl) titleEl.textContent = titleMap[tabId] || 'Trang Quản Trị';
+
+    if (tabId === 'tab-online') {
+      loadOnlineStores(true);
+    }
+  }
+
   // Setup UI Event Listeners
   function setupEventListeners() {
     // Admin Login Form
@@ -936,36 +1093,10 @@ const AdminApp = (() => {
       loadAllData(false);
     });
 
-    // Navigation Tabs
+    // Navigation Tabs Click Handlers
     document.querySelectorAll('.nav-menu .nav-item').forEach(item => {
       item.addEventListener('click', () => {
-        document.querySelectorAll('.nav-menu .nav-item').forEach(el => el.classList.remove('active'));
-        item.classList.add('active');
-
-        const tabId = item.dataset.tab;
-        document.querySelectorAll('.tab-pane').forEach(pane => {
-          pane.style.display = 'none';
-          pane.classList.remove('active');
-        });
-
-        const activePane = document.getElementById(tabId);
-        if (activePane) {
-          activePane.style.display = 'block';
-          activePane.classList.add('active');
-        }
-
-        // Update Title
-        const titleMap = {
-          'tab-dashboard': '📊 Tổng Quan Hệ Thống',
-          'tab-stores': '🏪 Quản Lý Người Chơi & Cửa Hàng',
-          'tab-orders': '📋 Đơn Hàng Đang Hoạt Động',
-          'tab-events': '🎪 Quản Lý Sự Kiện & Lễ Hội Trong Game',
-          'tab-npcs': '🎭 Danh Mục 55 Khách Hàng NPC',
-          'tab-bulk-inv': '📦 Bơm Kho Nguyên Liệu Hàng Loạt',
-          'tab-logs': '🛡️ Nhật Ký & Chống Hack (Audit Logs)',
-          'tab-system': '⚙️ Công Cụ Hệ Thống & Máy Chủ'
-        };
-        document.getElementById('page-title-display').textContent = titleMap[tabId] || 'Trang Quản Trị';
+        switchTab(item.dataset.tab);
       });
     });
 
@@ -1335,7 +1466,9 @@ const AdminApp = (() => {
     spawnSpecificNPC,
     toggleWeatherScopeUI,
     applySelectedWeather,
-    forceTriggerStorm
+    forceTriggerStorm,
+    switchTab,
+    loadOnlineStores
   };
 })();
 

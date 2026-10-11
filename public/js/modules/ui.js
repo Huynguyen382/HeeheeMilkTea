@@ -906,6 +906,54 @@ export function initUIControls() {
       }
     }
   }, 1000);
+
+  // Enable mouse wheel & click-drag scrolling for .hud-stats-group toolbar
+  const statsGroup = document.querySelector('.hud-stats-group');
+  if (statsGroup) {
+    // Wheel scroll horizontally
+    statsGroup.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        statsGroup.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // Drag-to-scroll support for desktop mouse
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let hasDragged = false;
+
+    statsGroup.addEventListener('mousedown', (e) => {
+      isDown = true;
+      hasDragged = false;
+      startX = e.pageX - statsGroup.offsetLeft;
+      scrollLeft = statsGroup.scrollLeft;
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDown = false;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      const x = e.pageX - statsGroup.offsetLeft;
+      const walk = (x - startX) * 1.5; // Drag speed multiplier
+      if (Math.abs(walk) > 4) {
+        hasDragged = true;
+      }
+      statsGroup.scrollLeft = scrollLeft - walk;
+    });
+
+    // Prevent accidental button clicks when user was dragging to scroll
+    statsGroup.addEventListener('click', (e) => {
+      if (hasDragged) {
+        e.preventDefault();
+        e.stopPropagation();
+        hasDragged = false;
+      }
+    }, true);
+  }
 }
 
 

@@ -49,6 +49,15 @@ function isStoreOnline(storeId) {
   return !!(last && (Date.now() - last < 60000));
 }
 
+function getStoreHeartbeatTime(storeId) {
+  if (!storeId) return null;
+  return storeHeartbeats.get(Number(storeId)) || null;
+}
+
+function getAllHeartbeats() {
+  return new Map(storeHeartbeats);
+}
+
 // Get full Collab Dashboard data (cached for 15s to protect free tier DB)
 async function getCollabData(storeId) {
   recordStoreHeartbeat(storeId);
@@ -342,5 +351,7 @@ module.exports = {
   declineCollab,
   cancelCollab,
   recordStoreHeartbeat,
-  isStoreOnline
+  isStoreOnline,
+  getStoreHeartbeatTime,
+  getAllHeartbeats
 };

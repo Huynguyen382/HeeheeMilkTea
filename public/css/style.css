@@ -66,6 +66,8 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  width: 100%;
 }
 
 .hud-brand-group {
@@ -73,6 +75,7 @@ body {
   align-items: center;
   gap: 6px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .store-title {
@@ -106,13 +109,31 @@ body {
   border-radius: 4px;
   font-size: 0.8rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .hud-stats-group {
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 2px 2px;
+  cursor: grab;
+  user-select: none;
+}
+
+.hud-stats-group:active {
+  cursor: grabbing;
+}
+
+.hud-stats-group::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }
 
 .hud-stat-pill {
@@ -123,6 +144,7 @@ body {
   background: #150912;
   border: 1px solid #42253a;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .hud-stat-pill.pill-money {
@@ -148,6 +170,8 @@ body {
   position: relative;
   transition: all 0.15s ease;
   font-family: inherit;
+  flex-shrink: 0;
+  margin-left: 2px;
 }
 
 .btn-hud-menu:hover {
@@ -1619,11 +1643,15 @@ button,
   }
 
   .hud-stats-group {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
   }
 
   .hud-stat-pill {

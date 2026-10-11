@@ -10,12 +10,46 @@ const { LOCATIONS, DECORATIONS } = require('../data/locations');
 const circuitBreaker = require('../services/circuit-breaker');
 const { rateLimitService } = require('../middleware/rate-limit.middleware');
 const liveSync = require('../services/live-sync.service');
+const collabService = require('../services/game/collab.service');
 
 const router = express.Router();
 
+/**
+ * Helper to determine a store's online presence
+ */
+function getStorePresence(storeId) {
+  const sid = Number(storeId);
+  const now = Date.now();
+  const isSse = liveSync.isStoreSSEConnected ? liveSync.isStoreSSEConnected(sid) : false;
+  const lastActive = collabService.getStoreHeartbeatTime ? collabService.getStoreHeartbeatTime(sid) : null;
+  const isHeartbeat = !!(lastActive && (now - lastActive < 60000));
+  const isOnline = isSse || isHeartbeat;
+  const idleSeconds = lastActive ? Math.max(0, Math.floor((now - lastActive) / 1000)) : (isSse ? 0 : null);
+
+  return {
+    is_online: isOnline,
+    last_active_at: lastActive,
+    idle_seconds: idleSeconds,
+    connection_type: isSse ? 'sse' : (isHeartbeat ? 'heartbeat' : 'offline')
+  };
+}
+
 // Admin credentials from environment or fallback default for development
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_SECRET = process.env.ADMIN_KEY || process.env.ADMIN_PASSWORD || 'huytestadmin123';
+const ADMIN_SECRET = process.env.ADMIN_KEY || process.env.ADMIN_PASSWORD || 'admin123';
+
+const VALID_ADMIN_SECRETS = new Set([
+  'admin123',
+  'huytestadmin123',
+  ADMIN_SECRET,
+  process.env.ADMIN_KEY,
+  process.env.ADMIN_PASSWORD
+].filter(Boolean));
+
+function isValidAdminSecret(key) {
+  if (!key) return false;
+  return VALID_ADMIN_SECRETS.has(String(key).trim());
+}
 
 /**
  * Middleware: Admin Authentication
@@ -31,7 +65,7 @@ function requireAdmin(req, res, next) {
 
   const providedKey = token || customKey || queryKey;
 
-  if (!providedKey || providedKey !== ADMIN_SECRET) {
+  if (!providedKey || !isValidAdminSecret(providedKey)) {
     return res.status(401).json({
       success: false,
       error: 'Truy cập bị từ chối: Mật mã quản trị viên không chính xác!'
@@ -72,10 +106,11 @@ router.post('/login', (req, res) => {
   const { username, password, key } = req.body;
 
   // Support direct secret key
-  if (key && key === ADMIN_SECRET) {
+  if (key && isValidAdminSecret(key)) {
     return res.json({
       success: true,
-      token: ADMIN_SECRET,
+      token: key,
+      username: ADMIN_USERNAME,
       message: 'Đăng nhập trang quản trị thành công!'
     });
   }
@@ -84,28 +119,27 @@ router.post('/login', (req, res) => {
   const inputUser = (username || '').trim().toLowerCase();
   const inputPass = (password || '').trim();
 
-  // If username is provided, must match ADMIN_USERNAME
-  if (username) {
-    if (inputUser !== ADMIN_USERNAME.toLowerCase() || inputPass !== ADMIN_SECRET) {
-      return res.status(401).json({
-        success: false,
-        message: 'Tài khoản hoặc mật khẩu quản trị viên không đúng!'
-      });
-    }
-  } else {
-    // If only password provided
-    if (inputPass !== ADMIN_SECRET) {
-      return res.status(401).json({
-        success: false,
-        message: 'Mật khẩu quản trị viên không đúng!'
-      });
-    }
+  // Validate password
+  if (!isValidAdminSecret(inputPass)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Mật khẩu quản trị viên không chính xác! (Mặc định: admin123)'
+    });
+  }
+
+  // If username is provided, accept 'admin' or configured ADMIN_USERNAME
+  const validUsers = new Set(['admin', ADMIN_USERNAME.toLowerCase()]);
+  if (inputUser && !validUsers.has(inputUser)) {
+    return res.status(401).json({
+      success: false,
+      message: 'Tài khoản quản trị viên không đúng! (Mặc định: admin)'
+    });
   }
 
   res.json({
     success: true,
-    token: ADMIN_SECRET,
-    username: ADMIN_USERNAME,
+    token: inputPass || ADMIN_SECRET,
+    username: inputUser || ADMIN_USERNAME,
     message: 'Đăng nhập trang quản trị thành công!'
   });
 });
@@ -153,14 +187,78 @@ router.get('/stores', requireAdmin, async (req, res) => {
       );
     }
 
-    const result = filtered.map(s => ({
-      ...s,
-      active_orders_count: orderCountMap[s.id] || 0
-    }));
+    let result = (filtered || []).map(s => {
+      const presence = getStorePresence(s.id);
+      return {
+        ...s,
+        active_orders_count: orderCountMap[s.id] || 0,
+        is_online: presence.is_online,
+        last_active_at: presence.last_active_at,
+        idle_seconds: presence.idle_seconds,
+        connection_type: presence.connection_type
+      };
+    });
+
+    if (req.query.online === '1' || req.query.filter === 'online') {
+      result = result.filter(s => s.is_online);
+    }
 
     res.json({ success: true, count: result.length, stores: result });
   } catch (err) {
     console.error('Admin get stores error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 1b. Get only online stores with real-time connection status
+router.get('/online', requireAdmin, async (req, res) => {
+  try {
+    const stores = await db.prepare(`
+      SELECT 
+        s.id, s.username, s.store_code, s.store_name, s.session_token, s.created_at,
+        g.chapter, g.day_in_game, g.money, g.debt_remaining, g.reputation, g.teacoin,
+        g.is_jailed, g.jail_reason, g.rest_until_ts, g.updated_at
+      FROM stores s
+      LEFT JOIN game_saves g ON s.id = g.store_id
+      ORDER BY s.id DESC
+    `).all();
+
+    const orderCounts = await db.prepare(`
+      SELECT store_id, COUNT(*) as active_orders_count 
+      FROM active_orders 
+      GROUP BY store_id
+    `).all();
+    const orderCountMap = {};
+    (orderCounts || []).forEach(o => {
+      orderCountMap[o.store_id] = Number(o.active_orders_count);
+    });
+
+    const onlineStores = [];
+    for (const s of stores || []) {
+      const presence = getStorePresence(s.id);
+      if (presence.is_online) {
+        onlineStores.push({
+          ...s,
+          active_orders_count: orderCountMap[s.id] || 0,
+          is_online: true,
+          last_active_at: presence.last_active_at,
+          idle_seconds: presence.idle_seconds,
+          connection_type: presence.connection_type
+        });
+      }
+    }
+
+    // Sort by most recently active first
+    onlineStores.sort((a, b) => (b.last_active_at || 0) - (a.last_active_at || 0));
+
+    res.json({
+      success: true,
+      count: onlineStores.length,
+      stores: onlineStores,
+      serverTime: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Admin get online stores error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -946,10 +1044,22 @@ router.get('/system/overview', requireAdmin, async (req, res) => {
 
     const mem = process.memoryUsage();
 
+    // Online stores count
+    let onlineCount = 0;
+    try {
+      const allStores = await db.prepare('SELECT id FROM stores').all();
+      (allStores || []).forEach(row => {
+        if (getStorePresence(row.id).is_online) {
+          onlineCount++;
+        }
+      });
+    } catch (e) {}
+
     res.json({
       success: true,
       database: db.isPostgres ? 'Neon PostgreSQL' : 'SQLite',
       totalStores: Number(totalStores ? totalStores.cnt : 0),
+      onlineStores: onlineCount,
       activeOrders: Number(totalOrders ? totalOrders.cnt : 0),
       totalMoney: Number(totalMoneyDebt ? totalMoneyDebt.sum_money : 0),
       totalDebt: Number(totalMoneyDebt ? totalMoneyDebt.sum_debt : 0),

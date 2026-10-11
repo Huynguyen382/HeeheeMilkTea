@@ -76,13 +76,14 @@
           <span>☕ Quán Cà Phê</span>
           <span class="nav-menu-badge" id="hud-coffee-badge" style="display: none !important; top: -3px; right: -3px;"></span>
         </button>
-        <!-- Menu toggle button in header -->
-        <button id="btn-menu-header" class="btn-hud-menu" title="Mở Bảng Điều Khiển & Cài Đặt Quán">
-          <span class="hud-menu-icon">☰</span>
-          <span class="hud-menu-text">Menu</span>
-          <span class="hud-menu-badge" id="hud-menu-badge" style="display: none;"></span>
-        </button>
       </div>
+
+      <!-- Menu toggle button in header (Pinned outside scrollable stats pills) -->
+      <button id="btn-menu-header" class="btn-hud-menu" title="Mở Bảng Điều Khiển & Cài Đặt Quán">
+        <span class="hud-menu-icon">☰</span>
+        <span class="hud-menu-text">Menu</span>
+        <span class="hud-menu-badge" id="hud-menu-badge" style="display: none;"></span>
+      </button>
     </div>
 
     <!-- Secondary HUD Line: Compact revenue & Time/Patrol status -->
@@ -90,8 +91,8 @@
       <div class="hud-sub-left">
         <span class="hud-sub-label">💰 Doanh thu:</span>
         <b id="cap-earned" style="color: #50fa7b;">0đ</b>
-        <span id="hud-debt-wrap" class="hud-debt-wrap" style="color: #ff5555; margin-left: 6px; font-size: 0.88rem;">
-          (Nợ: <span class="stat-val-debt" id="stat-debt">3.000.000đ</span>)
+        <span id="hud-debt-wrap" class="hud-debt-wrap" style="color: #ff5555; margin-left: 8px; font-size: 0.85rem; background: rgba(255, 85, 85, 0.12); border: 1px solid rgba(255, 85, 85, 0.35); padding: 1px 6px; border-radius: 4px;">
+          ⚠️ Còn nợ: <span class="stat-val-debt" id="stat-debt" style="font-weight: bold;">3.000.000đ</span>
         </span>
       </div>
       <div class="hud-sub-right">
