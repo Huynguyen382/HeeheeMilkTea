@@ -19,14 +19,29 @@ let sseSource = null;
 let heartbeatInterval = null;
 let lastSyncTimestamp = Date.now();
 let isConnecting = false;
+const processedEventIds = new Set();
 
 /**
  * Handle incoming live event payload
  * @param {string} eventType 
  * @param {object} data 
+ * @param {string} [eventId]
  */
-export function handleLiveEvent(eventType, data) {
+export function handleLiveEvent(eventType, data, eventId) {
   if (!data) return;
+
+  const dedupId = eventId || data._eventId;
+  if (dedupId) {
+    if (processedEventIds.has(dedupId)) return;
+    processedEventIds.add(dedupId);
+    if (processedEventIds.size > 200) {
+      const first = processedEventIds.values().next().value;
+      processedEventIds.delete(first);
+    }
+  }
+  if (data._timestamp && data._timestamp > lastSyncTimestamp) {
+    lastSyncTimestamp = data._timestamp;
+  }
 
   console.log(`[LiveSync] Received event: ${eventType}`, data);
 
@@ -62,6 +77,9 @@ export function handleLiveEvent(eventType, data) {
       if (weather) {
         if (!state.storeState) state.storeState = {};
         state.storeState.weather = weather;
+        if (state.storeState.save && state.storeState.save.active_buffs) {
+          state.storeState.save.active_buffs.weather = weather;
+        }
         updateWeatherUI(weather);
 
         if (weather.isStorm || weather.id === 'stormy') {
@@ -223,7 +241,17 @@ async function pollHeartbeat() {
       }
       if (Array.isArray(res.events) && res.events.length > 0) {
         for (const evt of res.events) {
-          handleLiveEvent(evt.type, evt.payload);
+          handleLiveEvent(evt.type, evt.payload, evt.id);
+        }
+      }
+      // Authoritative weather state check in case an SSE/event was missed
+      if (res.weather && res.weather.id) {
+        const curWeather = state.storeState?.weather;
+        if (!curWeather || curWeather.id !== res.weather.id) {
+          handleLiveEvent('weather_changed', {
+            weather: res.weather,
+            message: `🌤️ Thời tiết đã chuyển sang: ${res.weather.icon} ${res.weather.name}!`
+          });
         }
       }
     }

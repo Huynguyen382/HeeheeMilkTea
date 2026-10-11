@@ -5,6 +5,7 @@
 
 import { state } from './state.js';
 import { showToast } from './toast.js';
+import { syncRoomWeather } from './room.js';
 
 let elWeatherBadge = null;
 let elBuffWeather = null;
@@ -91,17 +92,24 @@ export function updateWeatherUI(weather) {
     weather = { id: 'sunny', name: 'Nắng Vàng', icon: '☀️' };
   }
 
+  if (state.storeState) {
+    state.storeState.weather = weather;
+    if (state.storeState.save && state.storeState.save.active_buffs) {
+      state.storeState.save.active_buffs.weather = weather;
+    }
+  }
+
   // Sync street canvas
   if (state.canvas && typeof state.canvas.setWeather === 'function') {
     state.canvas.setWeather(weather);
   }
 
   // Sync Room Window with live weather
-  import('./room.js').then(m => {
-    if (m && typeof m.syncRoomWeather === 'function') {
-      m.syncRoomWeather(weather);
+  try {
+    if (typeof syncRoomWeather === 'function') {
+      syncRoomWeather(weather);
     }
-  }).catch(() => {});
+  } catch (e) {}
 
   // Update HUD badge
   if (!elWeatherBadge) {

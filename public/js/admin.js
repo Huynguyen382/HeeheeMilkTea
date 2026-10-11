@@ -216,15 +216,30 @@ const AdminApp = (() => {
     const eventStoreSelect = document.getElementById('event-target-store-select');
     const weatherStoreSelect = document.getElementById('weather-store-select');
 
+    const prevBulk = bulkSelect ? bulkSelect.value : '';
+    const prevSpawn = spawnSelect ? spawnSelect.value : '';
+    const prevWeather = weatherStoreSelect ? weatherStoreSelect.value : '';
+    const prevEvent = eventStoreSelect ? eventStoreSelect.value : 'all';
+
     const optionsHtml = '<option value="">-- Chọn cửa hàng --</option>' + 
       stores.map(s => `<option value="${s.id}">[#${s.id}] ${s.store_name} (${s.store_code})</option>`).join('');
 
-    if (bulkSelect) bulkSelect.innerHTML = optionsHtml;
-    if (spawnSelect) spawnSelect.innerHTML = optionsHtml;
-    if (weatherStoreSelect) weatherStoreSelect.innerHTML = optionsHtml;
+    if (bulkSelect) {
+      bulkSelect.innerHTML = optionsHtml;
+      if (prevBulk) bulkSelect.value = prevBulk;
+    }
+    if (spawnSelect) {
+      spawnSelect.innerHTML = optionsHtml;
+      if (prevSpawn) spawnSelect.value = prevSpawn;
+    }
+    if (weatherStoreSelect) {
+      weatherStoreSelect.innerHTML = optionsHtml;
+      if (prevWeather) weatherStoreSelect.value = prevWeather;
+    }
     if (eventStoreSelect) {
       eventStoreSelect.innerHTML = '<option value="all">📢 Toàn Bộ Máy Chủ (Tất cả quán cùng diễn ra)</option>' +
         stores.map(s => `<option value="${s.id}">[#${s.id}] ${s.store_name} (${s.store_code})</option>`).join('');
+      if (prevEvent) eventStoreSelect.value = prevEvent;
     }
   }
 
@@ -1271,15 +1286,23 @@ const AdminApp = (() => {
     const stormyRadio = document.querySelector('input[name="admin-weather-type"][value="stormy"]');
     if (stormyRadio) stormyRadio.checked = true;
 
+    const scope = document.getElementById('weather-target-scope')?.value || 'broadcast';
+    const storeId = document.getElementById('weather-store-select')?.value;
+
+    if (scope === 'single' && !storeId) {
+      return showToast('Vui lòng chọn một cửa hàng cụ thể hoặc đổi phạm vi sang Toàn Bộ Máy Chủ!', 'error');
+    }
+
     try {
       const res = await apiRequest('/api/admin/weather/change', {
         method: 'POST',
         body: JSON.stringify({
           weatherId: 'stormy',
-          broadcast: true
+          storeId: scope === 'single' ? Number(storeId) : undefined,
+          broadcast: scope !== 'single'
         })
       });
-      showToast('⚡ ' + (res.message || 'Đã kích hoạt giông bão sấm sét trên toàn bộ hệ thống!'), 'success');
+      showToast('⚡ ' + (res.message || 'Đã kích hoạt giông bão sấm sét thành công!'), 'success');
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -1316,6 +1339,11 @@ const AdminApp = (() => {
   };
 })();
 
+if (typeof window !== 'undefined') {
+  window.AdminApp = AdminApp;
+}
+
 // Bootstrap
 document.addEventListener('DOMContentLoaded', AdminApp.init);
+
 

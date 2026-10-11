@@ -120,10 +120,15 @@ router.get('/live-stream', authStore, (req, res) => {
   liveSync.registerSSE(req.store.id, res);
 });
 
-router.post('/heartbeat', authStore, (req, res) => {
-  const since = Number(req.body.since || 0);
-  const events = liveSync.pullEvents(req.store.id, since);
-  res.json({ success: true, timestamp: Date.now(), events });
+router.post('/heartbeat', authStore, async (req, res) => {
+  try {
+    const since = Number(req.body.since || 0);
+    const events = liveSync.pullEvents(req.store.id, since);
+    const weather = await gameService.getCurrentWeather(req.store.id);
+    res.json({ success: true, timestamp: Date.now(), events, weather });
+  } catch (err) {
+    res.json({ success: true, timestamp: Date.now(), events: [] });
+  }
 });
 
 module.exports = router;

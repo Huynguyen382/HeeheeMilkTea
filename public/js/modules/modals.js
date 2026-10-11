@@ -5,6 +5,7 @@ import { updateUI } from './ui.js';
 import { openStoryModal } from './story.js';
 import { scheduleNextOrder } from './order-manager.js';
 import { openEndShiftModal } from './shift.js';
+import { visitFriendRoom } from './room.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -496,9 +497,7 @@ export function initModals() {
       if (btnVisitFrRoom) {
         const code = btnVisitFrRoom.getAttribute('data-code');
         if (modalCollab) modalCollab.style.display = 'none';
-        import('./room.js').then(roomMod => {
-          roomMod.visitFriendRoom(code);
-        });
+        visitFriendRoom(code);
         return;
       }
 

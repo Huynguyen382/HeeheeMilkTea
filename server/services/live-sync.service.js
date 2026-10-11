@@ -57,17 +57,20 @@ function registerSSE(storeId, res) {
  */
 function pushToStore(storeId, type, payload = {}) {
   const sid = Number(storeId);
+  const ts = Date.now();
+  const evtId = 'evt_' + ts + '_' + Math.random().toString(36).substring(2, 7);
+  const enrichedPayload = { ...payload, _eventId: evtId, _timestamp: ts };
   const eventData = {
-    id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    id: evtId,
     type,
-    payload,
-    timestamp: Date.now()
+    payload: enrichedPayload,
+    timestamp: ts
   };
 
   // 1. Deliver to active SSE streams if available
   const clients = sseClients.get(sid);
   if (clients && clients.size > 0) {
-    const sseMessage = `event: ${type}\ndata: ${JSON.stringify(payload)}\n\n`;
+    const sseMessage = `event: ${type}\ndata: ${JSON.stringify(enrichedPayload)}\n\n`;
     for (const res of clients) {
       try {
         res.write(sseMessage);
@@ -95,15 +98,18 @@ function pushToStore(storeId, type, payload = {}) {
  * @param {object} payload
  */
 function broadcast(type, payload = {}) {
+  const ts = Date.now();
+  const evtId = 'global_' + ts + '_' + Math.random().toString(36).substring(2, 7);
+  const enrichedPayload = { ...payload, _eventId: evtId, _timestamp: ts };
   const eventData = {
-    id: 'global_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    id: evtId,
     type,
-    payload,
-    timestamp: Date.now()
+    payload: enrichedPayload,
+    timestamp: ts
   };
 
   // 1. Send to all active SSE clients
-  const sseMessage = `event: ${type}\ndata: ${JSON.stringify(payload)}\n\n`;
+  const sseMessage = `event: ${type}\ndata: ${JSON.stringify(enrichedPayload)}\n\n`;
   for (const [sid, clients] of sseClients.entries()) {
     for (const res of clients) {
       try {
