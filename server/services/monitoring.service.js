@@ -140,7 +140,8 @@ class MonitoringService {
   trackRequest(endpoint, method, statusCode, responseTime) {
     this.metrics.requests.total++;
     
-    if (statusCode >= 200 && statusCode < 400) {
+    // Only count 5xx as server failures; 4xx are normal client/validation rejections
+    if (statusCode < 500) {
       this.metrics.requests.successful++;
     } else {
       this.metrics.requests.failed++;
@@ -157,7 +158,7 @@ class MonitoringService {
     endpointStats.count++;
     endpointStats.totalTime += responseTime;
     
-    if (statusCode >= 400) {
+    if (statusCode >= 500) {
       endpointStats.errors++;
     }
     

@@ -9,7 +9,7 @@ const handle = (label, fn) => async (req, res) => {
     const result = await fn(req);
     res.json(result);
   } catch (err) {
-    console.error(`${label} error:`, err);
+    console.warn(`[Staff] ${label}: ${err.message}`);
     res.status(400).json({ error: err.message });
   }
 };
