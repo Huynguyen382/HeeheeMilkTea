@@ -319,13 +319,15 @@ async function triggerEventForStore(storeId, eventId, customRates = null) {
 
   invalidateStoreCache(storeId);
 
+  const forecastMsg = `📺 Dự báo khu phố: ${event.icon} ${event.name} — ${event.desc}`;
+
   return {
     success: true,
     event: toPublicEvent(event),
     adminEvent: event,
     expiresAt,
-    playerMessage: `📢 Sự kiện diễn ra: ${event.name}! ${event.desc}`,
-    message: `Đã kích hoạt sự kiện [${event.name}] cho tiệm #${storeId} trong ${durationSec} giây!`
+    playerMessage: forecastMsg,
+    message: forecastMsg
   };
 }
 
@@ -349,13 +351,15 @@ async function broadcastEvent(eventId, customRates = null) {
     } catch (e) {}
   }
 
+  const forecastMsg = `📺 Dự báo khu phố: ${event.icon} ${event.name} — ${event.desc}`;
+
   return {
     success: true,
     event: toPublicEvent(event),
     adminEvent: event,
     affectedCount: stores ? stores.length : 0,
-    playerMessage: `📢 Sự kiện toàn phố: ${event.name}! ${event.desc}`,
-    message: `Đã phát sóng sự kiện [${event.name}] tới toàn bộ ${stores ? stores.length : 0} tiệm trên máy chủ!`
+    playerMessage: forecastMsg,
+    message: forecastMsg
   };
 }
 

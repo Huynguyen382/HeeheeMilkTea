@@ -68,7 +68,7 @@ export function handleLiveEvent(eventType, data, eventId) {
         updateUI();
 
         if (window.sound && window.sound.bell) window.sound.bell();
-        showToast(data.message || `📢 Sự kiện mới: ${evt.name}!`, 5000);
+        showToast(data.message || `📺 Dự báo khu phố: ${evt.icon || '📢'} ${evt.name}!`, 5000);
       }
       break;
     }
@@ -92,7 +92,7 @@ export function handleLiveEvent(eventType, data, eventId) {
           }
         }
 
-        showToast(data.message || `🌤️ Thời tiết đã đổi thành: [${weather.icon} ${weather.name}]!`, 4000);
+        showToast(data.message || `📺 Dự báo thời tiết: Bầu trời đang chuyển sang ${weather.icon} ${weather.name}!`, 4500);
       }
       break;
     }

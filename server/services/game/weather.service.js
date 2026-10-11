@@ -232,11 +232,23 @@ function resolveEffectiveWeather(activeBuffs) {
   return base;
 }
 
+function getWeatherForecastMessage(weatherId) {
+  const w = WEATHER_TYPES[weatherId] || WEATHER_TYPES.sunny;
+  const forecasts = {
+    sunny: `📺 Dự báo thời tiết: Bầu trời chuyển sang ${w.icon} ${w.name} — Trời quang mây tạnh, nắng ấm chan hòa khắp phố phường!`,
+    rainy: `📺 Dự báo thời tiết: Khu vực đón đợt ${w.icon} ${w.name} — Trời đổ mưa rào mát lạnh, đường phố lất phất mưa bay!`,
+    stormy: `📺 Dự báo thời tiết: Cảnh báo ${w.icon} ${w.name} — Mây đen kéo đến kèm mưa lớn và sấm sét rền vang!`,
+    cloudy: `📺 Dự báo thời tiết: Bầu trời chuyển sang ${w.icon} ${w.name} — Mây nhẹ che nắng, không khí dịu mát dễ chịu!`,
+    windy: `📺 Dự báo thời tiết: Đón đợt ${w.icon} ${w.name} — Từng cơn gió mát thổi qua hàng cây, lá bay xào xạc!`
+  };
+  return forecasts[w.id] || `📺 Dự báo thời tiết: Khu vực chuyển sang ${w.icon} ${w.name} — ${w.desc}`;
+}
+
 /**
  * Set weather for a specific store (via Admin or daily progression)
  * Supports optional customRates: { customerBuffPercent, priceBuffPercent, patienceBuffPercent, shipperBuffPercent }
  */
-async function setWeatherForStore(storeId, weatherId, customRates = null) {
+async function setWeatherForStore(storeId, weatherId, customRates = null, skipPersist = false) {
   const weather = WEATHER_TYPES[weatherId];
   if (!weather) {
     throw new Error(`Loại thời tiết [${weatherId}] không hợp lệ! Hỗ trợ: sunny, rainy, stormy, cloudy, windy`);
@@ -245,7 +257,9 @@ async function setWeatherForStore(storeId, weatherId, customRates = null) {
   // If Admin provided customRates, also update WEATHER_TYPES[weatherId] so it stays consistent
   let customOverrides = null;
   if (customRates && typeof customRates === 'object') {
-    applyWeatherRateOverrides({ [weatherId]: customRates }, true);
+    if (!skipPersist) {
+      applyWeatherRateOverrides({ [weatherId]: customRates }, true);
+    }
     customOverrides = {
       customerBonus: WEATHER_TYPES[weatherId].customerBonus,
       tipBonus: WEATHER_TYPES[weatherId].tipBonus,
@@ -290,11 +304,14 @@ async function setWeatherForStore(storeId, weatherId, customRates = null) {
 
   invalidateStoreCache(storeId);
 
+  const forecastMsg = getWeatherForecastMessage(weatherId);
+
   return {
     success: true,
     weather: toPublicWeather(WEATHER_TYPES[weatherId]),
     adminWeather: WEATHER_TYPES[weatherId],
-    message: `Thời tiết tại tiệm đã chuyển sang: ${weather.icon} ${weather.name}!`
+    playerMessage: forecastMsg,
+    message: forecastMsg
   };
 }
 
@@ -314,16 +331,19 @@ async function setGlobalWeather(weatherId, customRates = null) {
   const stores = await db.prepare('SELECT id FROM stores').all();
   for (const s of (stores || [])) {
     try {
-      await setWeatherForStore(s.id, weatherId, customRates);
+      await setWeatherForStore(s.id, weatherId, customRates, true);
     } catch (e) {}
   }
+
+  const forecastMsg = getWeatherForecastMessage(weatherId);
 
   return {
     success: true,
     weather: toPublicWeather(WEATHER_TYPES[weatherId]),
     adminWeather: WEATHER_TYPES[weatherId],
     affectedStores: stores ? stores.length : 0,
-    message: `Đã áp dụng thời tiết [${weather.icon} ${weather.name}] trên toàn bộ hệ thống!`
+    playerMessage: forecastMsg,
+    message: forecastMsg
   };
 }
 
@@ -333,6 +353,7 @@ module.exports = {
   applyWeatherRateOverrides,
   resetWeatherRatesToDefault,
   toPublicWeather,
+  getWeatherForecastMessage,
   resolveEffectiveWeather,
   getRandomWeather,
   getCurrentWeather,
