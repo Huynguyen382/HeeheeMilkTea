@@ -1,4 +1,8 @@
 // Main Game Application Controller (Modular Orchestrator)
+import './audio.js';
+import './characters.js';
+import './workstation.js';
+import './api.js';
 import { state } from './modules/state.js';
 import { GameCanvas } from './canvas.js';
 import './modules/npc-appearances.js';

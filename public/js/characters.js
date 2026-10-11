@@ -3,12 +3,24 @@
  * Faithfully matches ModelNPC.html with full proportional height & signature details for all 50 characters
  */
 (function (root, factory) {
+  var exports = factory();
+  if (typeof window !== 'undefined') {
+    window.CHARACTERS = exports.CHARACTERS;
+    window.CUSTOMERS_LIST = exports.CUSTOMERS_LIST;
+    window.getCharacter = exports.getCharacter;
+    window.getCharacterHeight = exports.getCharacterHeight;
+    window.pRect = exports.pRect;
+    window.pDot = exports.pDot;
+    window.drawBobaCup = exports.drawBobaCup;
+    window.drawNPCCharacter = exports.drawNPCCharacter;
+    window.drawOwnerBarista = exports.drawOwnerBarista;
+    window.drawOwnerForearms = exports.drawOwnerForearms;
+  }
   if (typeof define === 'function' && define.amd) {
-    define([], factory);
+    define([], function () { return exports; });
   } else if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
-  } else {
-    var exports = factory();
+    module.exports = exports;
+  } else if (root) {
     root.CHARACTERS = exports.CHARACTERS;
     root.CUSTOMERS_LIST = exports.CUSTOMERS_LIST;
     root.getCharacter = exports.getCharacter;
@@ -19,14 +31,6 @@
     root.drawNPCCharacter = exports.drawNPCCharacter;
     root.drawOwnerBarista = exports.drawOwnerBarista;
     root.drawOwnerForearms = exports.drawOwnerForearms;
-    if (typeof window !== 'undefined') {
-      window.drawNPCCharacter = exports.drawNPCCharacter;
-      window.drawOwnerBarista = exports.drawOwnerBarista;
-      window.drawOwnerForearms = exports.drawOwnerForearms;
-      window.CHARACTERS = exports.CHARACTERS;
-      window.CUSTOMERS_LIST = exports.CUSTOMERS_LIST;
-      window.getCharacter = exports.getCharacter;
-    }
   }
 })(typeof self !== 'undefined' ? self : this, function () {
 

@@ -7,16 +7,12 @@
   <title>🧋 Tiệm Trà Sữa HeeHee – Khởi Nghiệp Trà Sữa Pixel</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/room.css">
-  <link rel="stylesheet" href="css/farm.css">
-  <link rel="stylesheet" href="css/franchise.css">
-  <link rel="stylesheet" href="css/staff.css">
+  <link rel="stylesheet" href="dist/game.min.css">
   <script>
     if ('caches' in window) {
       caches.keys().then(keys => {
         keys.forEach(k => {
-          if (k !== 'heehee-boba-v6') caches.delete(k);
+          if (k !== 'heehee-boba-v10') caches.delete(k);
         });
       });
     }
@@ -2101,11 +2097,6 @@
   <div id="toast"></div>
 </div>
 
-<script src="js/audio.js"></script>
-<script src="js/characters.js"></script>
-<script type="module" src="js/canvas.js"></script>
-<script src="js/workstation.js"></script>
-<script src="js/api.js"></script>
-<script type="module" src="js/app.js"></script>
+<script src="dist/game.min.js"></script>
 </body>
 </html>

@@ -20,6 +20,7 @@ const {
 } = require('./services/monitoring.service');
 
 const resourceGovernor = require('./scripts/resource-governor');
+const { buildFrontendBundles } = require('./scripts/build');
 const circuitBreaker = require('./services/circuit-breaker');
 const dbWrapper = require('./services/db-wrapper');
 
@@ -35,6 +36,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Block direct browser/DevTools access to raw unminified source folders (/js/*, /css/*) and source maps
+app.use((req, res, next) => {
+  if (req.path.startsWith('/js/') || req.path.startsWith('/css/') || req.path.endsWith('.map')) {
+    return res.status(404).end();
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Admin Webpage Route
@@ -299,6 +309,7 @@ function setupAutoPing() {
 
 (async () => {
   try {
+    await buildFrontendBundles();
     await db.init();
     
     // Initialize circuit breaker

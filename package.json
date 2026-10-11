@@ -4,6 +4,7 @@
   "description": "Game Tiệm Trà Sữa HeeHee Pixel Art",
   "main": "server/server.js",
   "scripts": {
+    "build": "node server/scripts/build.js",
     "start": "node server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:circuit-breaker": "node server/scripts/test-circuit-breaker.js",
@@ -25,6 +26,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "esbuild": "^0.28.2",
     "express": "^5.2.1",
     "pg": "^8.23.1"
   }

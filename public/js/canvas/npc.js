@@ -2,8 +2,9 @@
 
 export const npcMethods = {
   getArchetypeByName(name) {
-    if (typeof getCharacter === 'function') {
-      const char = getCharacter(name);
+    const fnGetChar = (typeof getCharacter === 'function') ? getCharacter : (typeof window !== 'undefined' ? window.getCharacter : null);
+    if (typeof fnGetChar === 'function') {
+      const char = fnGetChar(name);
       return char ? char.id : 2;
     }
     if (!name) return 0;
@@ -541,8 +542,9 @@ export const npcMethods = {
     if (npc.prop === 'boba' || isFront) {
       this.drawHand(ctx, baseX + 7, torsoTop + 9, skin, 'grip');
       this.drawHand(ctx, baseX + 13, torsoTop + 9, skin, 'grip');
-      if (typeof drawBobaCup === 'function') {
-        drawBobaCup(ctx, baseX + 8, torsoTop + 7, '#ffedd5', '#b45309', '#f43f5e', true);
+      const fnDrawCup = (typeof drawBobaCup === 'function') ? drawBobaCup : (typeof window !== 'undefined' ? window.drawBobaCup : null);
+      if (typeof fnDrawCup === 'function') {
+        fnDrawCup(ctx, baseX + 8, torsoTop + 7, '#ffedd5', '#b45309', '#f43f5e', true);
       } else {
         this.drawPixel(ctx, baseX + 9, torsoTop + 8, 5, 7, '#ffedd5');
         this.drawPixel(ctx, baseX + 10, torsoTop + 9, 3, 5, '#b45309');
@@ -661,14 +663,16 @@ export const npcMethods = {
 
   // 50 RETRO PIXEL ART CHARACTERS SYSTEM
   drawCustomer(ctx, x, y, type, isFront = true, quote = '', customerName = '') {
-    const char = (typeof getCharacter === 'function') ? (getCharacter(customerName) || getCharacter(type)) : null;
+    const fnGetChar = (typeof getCharacter === 'function') ? getCharacter : (typeof window !== 'undefined' ? window.getCharacter : null);
+    const fnGetHeight = (typeof getCharacterHeight === 'function') ? getCharacterHeight : (typeof window !== 'undefined' ? window.getCharacterHeight : null);
+    const char = (typeof fnGetChar === 'function') ? (fnGetChar(customerName) || fnGetChar(type)) : null;
     const isMoving = isFront ? (x < this.targetCustomerX) : false;
     const idleBob = Math.round(Math.sin(this.tick * 0.16) * 1.2);
     const walkBob = (this.customerState === 'waiting' && isMoving)
       ? Math.round(Math.sin(this.tick * 0.45) * 2)
       : idleBob;
 
-    const height = (char && char.height) ? char.height : ((typeof getCharacterHeight === 'function') ? getCharacterHeight(char) : 54);
+    const height = (char && char.height) ? char.height : ((typeof fnGetHeight === 'function') ? fnGetHeight(char) : 54);
     const baseX = Math.round(x) - 1;
     const baseY = Math.round(148 - height + walkBob);
     const sway = isMoving
