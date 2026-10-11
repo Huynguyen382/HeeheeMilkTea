@@ -33,8 +33,8 @@ const RECIPES = {
     chapter: 1,
     basePrice: 25000,
     cost: 18000,
-    unlockCost: 120000,
-    upgradeId: 'recipe_hong_tra_tac',
+    unlockCost: 0,
+    upgradeId: null,
     tea: 'den',
     toppings: [],
     desc: '🍵 Cốt trà: [Trà Đen Đậm] • Trà đen giải khát thanh mát, vị tắc chua thanh & xí muội mằn mặn'
@@ -59,8 +59,8 @@ const RECIPES = {
     chapter: 1,
     basePrice: 35000,
     cost: 26000,
-    unlockCost: 250000,
-    upgradeId: 'recipe_tra_thai_xanh',
+    unlockCost: 0,
+    upgradeId: null,
     tea: 'thai_xanh',
     toppings: ['thach_la_dua'],
     desc: '🌿 Cốt trà: [Thái Xanh] • Màu xanh mát mắt, hương hoa lài thơm mát nồng nàn cùng thạch lá dứa'
@@ -85,8 +85,8 @@ const RECIPES = {
     chapter: 2,
     basePrice: 42000,
     cost: 32000,
-    unlockCost: 500000,
-    upgradeId: 'recipe_sua_tuoi_duong_den',
+    unlockCost: 0,
+    upgradeId: null,
     tea: 'sua_tuoi',
     toppings: ['tranchau_duongden'],
     desc: '🥛 Cốt trà: [Sữa Tươi] • Sữa tươi thanh trùng cùng trân châu nấu đường đen dẻo quánh hot trend'
@@ -111,8 +111,8 @@ const RECIPES = {
     chapter: 2,
     basePrice: 48000,
     cost: 42000,
-    unlockCost: 800000,
-    upgradeId: 'recipe_tra_dao_cam_sa',
+    unlockCost: 0,
+    upgradeId: null,
     tea: 'lai',
     toppings: ['dao_mieng', 'cam_vang', 'sa_tuoi'],
     desc: '🌸 Cốt trà: [Lục Trà Lài] • Bắt buộc đủ 3 món: Đào Miếng + Cam Vàng + Sả Tươi thơm nức mũi'
@@ -150,8 +150,8 @@ const RECIPES = {
     chapter: 3,
     basePrice: 45000,
     cost: 35000,
-    unlockCost: 1500000,
-    upgradeId: 'recipe_tra_olong_nuong',
+    unlockCost: 0,
+    upgradeId: null,
     tea: 'olong_nuong',
     toppings: ['suong_sao'],
     desc: '🔥 Cốt trà: [Ô Long Nướng] • Vị khói sao cháy mộc mạc thượng hạng hòa quyện thạch sương sáo mềm mướt'
@@ -289,9 +289,14 @@ const SHELF_TOPPINGS = [
 // 5 Canonical Tea Bases
 const TEA_BASES = ['den', 'thai_xanh', 'sua_tuoi', 'lai', 'olong_nuong'];
 
-// Chỉ mở sẵn món khởi đầu 'tra_sua_truyen_thong'; tất cả các món khác phải bỏ tiền mua công thức
+// 6 Canonical Starter Recipes (mở sẵn cho người chơi ngay từ đầu)
 const CORE_RECIPES = [
-  'tra_sua_truyen_thong'
+  'tra_sua_truyen_thong',
+  'hong_tra_tac',
+  'tra_thai_xanh',
+  'sua_tuoi_duong_den',
+  'tra_dao_cam_sa',
+  'tra_olong_nuong'
 ];
 
 // Helper xác định danh sách công thức người chơi thực sự đã mở khóa (dựa trên upgrades đã mua bằng tiền)
@@ -304,9 +309,9 @@ function resolveUnlockedRecipes(save) {
   } catch (e) {
     upgrades = {};
   }
-  const unlocked = ['tra_sua_truyen_thong'];
+  const unlocked = [...CORE_RECIPES];
   for (const key of Object.keys(RECIPES)) {
-    if (key === 'tra_sua_truyen_thong') continue;
+    if (CORE_RECIPES.includes(key)) continue;
     if (upgrades[`recipe_${key}`]) {
       unlocked.push(key);
     }
@@ -340,14 +345,18 @@ function generateCustomerToppings(cust, recipe) {
     toppingCount = probabilityDistributions.getToppingCount(fastRandom, 'normal');
   }
 
-  if (toppingCount === 0) return [];
+  // Luôn đảm bảo NPC order từ 1 đến 3 loại topping (tối thiểu 1 topping, có thể nhiều loại)
+  toppingCount = Math.max(1, Math.min(3, toppingCount || 1));
 
-  const baseTopping = recipe.toppings && recipe.toppings.length > 0 ? recipe.toppings[0] : null;
   const chosen = [];
 
-  // Giữ lại topping đặc trưng của món nếu có trên kệ
-  if (baseTopping && SHELF_TOPPINGS.includes(baseTopping)) {
-    chosen.push(baseTopping);
+  // Giữ lại các topping đặc trưng của món nếu có trên kệ (tối đa theo toppingCount)
+  if (recipe && Array.isArray(recipe.toppings)) {
+    for (const t of recipe.toppings) {
+      if (SHELF_TOPPINGS.includes(t) && !chosen.includes(t) && chosen.length < toppingCount) {
+        chosen.push(t);
+      }
+    }
   }
 
   // Chọn thêm ngẫu nhiên các loại topping khác không trùng lặp
@@ -364,6 +373,11 @@ function generateCustomerToppings(cust, recipe) {
     for (let i = 0; i < Math.min(neededCount, shuffled.length); i++) {
       chosen.push(shuffled[i]);
     }
+  }
+
+  // Đảm bảo an toàn tuyệt đối: luôn có tối thiểu 1 topping
+  if (chosen.length === 0 && SHELF_TOPPINGS.length > 0) {
+    chosen.push(SHELF_TOPPINGS[fastRandom.int(0, SHELF_TOPPINGS.length - 1)]);
   }
 
   return chosen;
@@ -557,26 +571,12 @@ const UPGRADES = {
   },
 
   // HỆ THỐNG CÔNG THỨC MÓN MỚI (MỞ RỘNG MENU - NGƯỜI DÙNG BỎ TIỀN MUA CÔNG THỨC)
-  recipe_hong_tra_tac: {
-    name: '📜 Công Thức: Hồng Trà Tắc Xí Muội',
-    cost: 120000,
-    type: 'recipe',
-    recipeId: 'hong_tra_tac',
-    desc: 'Mở khóa món Hồng Trà Tắc Xí Muội vào Menu quán! Giá bán niêm yết: 25.000đ/ly.'
-  },
   recipe_luc_tra_lai_suong_sao: {
     name: '📜 Công Thức: Lục Trà Lài Sương Sáo Hạt Chia',
     cost: 180000,
     type: 'recipe',
     recipeId: 'luc_tra_lai_suong_sao',
     desc: 'Mở khóa món Lục Trà Lài Sương Sáo Hạt Chia vào Menu quán! Giá bán niêm yết: 30.000đ/ly.'
-  },
-  recipe_tra_thai_xanh: {
-    name: '📜 Công Thức: Trà Sữa Thái Xanh',
-    cost: 250000,
-    type: 'recipe',
-    recipeId: 'tra_thai_xanh',
-    desc: 'Mở khóa món Trà Sữa Thái Xanh vào Menu quán! Giá bán niêm yết: 35.000đ/ly.'
   },
   recipe_sua_tuoi_tran_chau_hoang_kim: {
     name: '📜 Công Thức: Sữa Tươi Trân Châu Lá Dứa',
@@ -585,26 +585,12 @@ const UPGRADES = {
     recipeId: 'sua_tuoi_tran_chau_hoang_kim',
     desc: 'Mở khóa món Sữa Tươi Trân Châu Lá Dứa vào Menu quán! Giá bán niêm yết: 38.000đ/ly.'
   },
-  recipe_sua_tuoi_duong_den: {
-    name: '📜 Công Thức: Sữa Tươi Trân Châu Đường Đen',
-    cost: 500000,
-    type: 'recipe',
-    recipeId: 'sua_tuoi_duong_den',
-    desc: 'Mở khóa món Sữa Tươi Đường Đen hot trend vào Menu quán! Giá bán niêm yết: 42.000đ/ly.'
-  },
   recipe_hong_tra_cam_que_mat_ong: {
     name: '📜 Công Thức: Hồng Trà Cam Vàng Sả Tươi',
     cost: 650000,
     type: 'recipe',
     recipeId: 'hong_tra_cam_que_mat_ong',
     desc: 'Mở khóa món Hồng Trà Cam Vàng Sả Tươi vào Menu quán! Giá bán niêm yết: 44.000đ/ly.'
-  },
-  recipe_tra_dao_cam_sa: {
-    name: '📜 Công Thức: Trà Đào Cam Sả',
-    cost: 800000,
-    type: 'recipe',
-    recipeId: 'tra_dao_cam_sa',
-    desc: 'Mở khóa món Trà Đào Cam Sả giải nhiệt vào Menu quán! Giá bán niêm yết: 48.000đ/ly.'
   },
   recipe_tra_thai_xanh_kem_pho_mai: {
     name: '📜 Công Thức: Trà Thái Xanh Sương Sáo Kem Cheese',
@@ -619,13 +605,6 @@ const UPGRADES = {
     type: 'recipe',
     recipeId: 'olong_sua_tran_chau_duong_den',
     desc: 'Mở khóa món Ô Long Sữa Nướng Đường Đen vào Menu quán! Giá bán niêm yết: 52.000đ/ly.'
-  },
-  recipe_tra_olong_nuong: {
-    name: '📜 Công Thức: Trà Ô Long Nướng Sương Sáo',
-    cost: 1500000,
-    type: 'recipe',
-    recipeId: 'tra_olong_nuong',
-    desc: 'Mở khóa món Trà Ô Long Nướng Thượng Hạng vào Menu quán! Giá bán niêm yết: 45.000đ/ly.'
   },
   recipe_nitro_cold_brew: {
     name: '📜 Công Thức: Trà Nitro Lạnh Sủi Bọt',

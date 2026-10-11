@@ -164,11 +164,14 @@ try {
  */
 function toPublicWeather(weatherObj) {
   if (!weatherObj) return toPublicWeather(WEATHER_TYPES.sunny);
+  const wId = weatherObj.id || 'sunny';
   return {
     id: weatherObj.id,
     name: weatherObj.name,
     icon: weatherObj.icon,
     desc: weatherObj.desc,
+    message: getWeatherForecastMessage(wId),
+    forecast: getWeatherForecastMessage(wId),
     isStorm: !!weatherObj.isStorm,
     lightning: !!weatherObj.lightning,
     skyTheme: weatherObj.skyTheme || weatherObj.id,

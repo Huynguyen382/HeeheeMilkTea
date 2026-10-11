@@ -57,8 +57,16 @@ export function openPricingModal() {
   const allKeys = Object.keys(recipesDb);
   if (allKeys.length === 0) allKeys.push('tra_sua_truyen_thong');
 
+  const CORE_STARTER_KEYS = [
+    'tra_sua_truyen_thong',
+    'hong_tra_tac',
+    'tra_thai_xanh',
+    'sua_tuoi_duong_den',
+    'tra_dao_cam_sa',
+    'tra_olong_nuong'
+  ];
   const isRecipeUnlocked = (key) => {
-    if (key === 'tra_sua_truyen_thong') return true;
+    if (CORE_STARTER_KEYS.includes(key)) return true;
     return !!(upgrades[`recipe_${key}`] || rawUnlocked.includes(key));
   };
 

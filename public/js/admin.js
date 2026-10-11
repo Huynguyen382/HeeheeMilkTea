@@ -2001,7 +2001,7 @@ const AdminApp = (() => {
           customRates
         })
       });
-      showToast(res.message, 'success');
+      showToast(res.message || res.playerMessage || 'Đã áp dụng thời tiết thành công!', 'success');
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -2041,7 +2041,7 @@ const AdminApp = (() => {
           customRates
         })
       });
-      showToast(res.message, 'success');
+      showToast(res.message || res.playerMessage || 'Đã áp dụng thời tiết thành công!', 'success');
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -2086,7 +2086,7 @@ const AdminApp = (() => {
           customRates
         })
       });
-      showToast(res.message, 'success');
+      showToast(res.message || res.playerMessage || 'Đã áp dụng thời tiết thành công!', 'success');
     } catch (err) {
       showToast(err.message, 'error');
     }

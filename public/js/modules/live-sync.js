@@ -270,7 +270,7 @@ async function pollHeartbeat() {
         if (!curWeather || curWeather.id !== res.weather.id) {
           handleLiveEvent('weather_changed', {
             weather: res.weather,
-            message: `🌤️ Thời tiết đã chuyển sang: ${res.weather.icon} ${res.weather.name}!`
+            message: res.weather.message || res.weather.forecast || res.message || `📺 Dự báo thời tiết: Bầu trời chuyển sang ${res.weather.icon} ${res.weather.name}!`
           });
         }
       }

@@ -139,12 +139,12 @@ class ProbabilityDistributions {
                 normal: [0.35, 0.35, 0.20, 0.10, 0]
             },
             
-            // Topping count distributions by customer type
+            // Topping count distributions by customer type (tối thiểu 1 topping, có thể 1 hoặc nhiều loại topping)
             toppingCount: {
-                elder: [0.4, 0.6, 0, 0], // 0, 1, 2, 3 toppings
-                tiktoker: [0, 0, 0.45, 0.55],
-                gymmer: [0.3, 0.5, 0.2, 0],
-                normal: [0.12, 0.43, 0.35, 0.10]
+                elder: [0, 0.70, 0.30, 0], // 0: 0%, 1: 70%, 2: 30%, 3: 0%
+                tiktoker: [0, 0, 0.45, 0.55], // 0: 0%, 1: 0%, 2: 45%, 3: 55%
+                gymmer: [0, 0.65, 0.35, 0], // 0: 0%, 1: 65%, 2: 35%, 3: 0%
+                normal: [0, 0.50, 0.38, 0.12] // 0: 0%, 1: 50%, 2: 38%, 3: 12%
             },
             
             // Sugar preferences
@@ -168,18 +168,18 @@ class ProbabilityDistributions {
 
     getToppingCount(rng, customerType) {
         let dist;
-        if (customerType === 5) dist = this.distributions.toppingCount.elder;
+        if (customerType === 5 || customerType === 'elder') dist = this.distributions.toppingCount.elder;
         else if (customerType === 'tiktoker') dist = this.distributions.toppingCount.tiktoker;
-        else if (customerType === 6) dist = this.distributions.toppingCount.gymmer;
+        else if (customerType === 6 || customerType === 'gymmer' || customerType === 'gymer') dist = this.distributions.toppingCount.gymmer;
         else dist = this.distributions.toppingCount.normal;
 
         const r = rng.next();
         let cumulative = 0;
         for (let i = 0; i < dist.length; i++) {
             cumulative += dist[i];
-            if (r <= cumulative) return i;
+            if (r <= cumulative) return Math.max(1, i);
         }
-        return 0;
+        return 1;
     }
 
     getRandomSugar(rng) {
