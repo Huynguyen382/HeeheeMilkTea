@@ -23,6 +23,7 @@ import { initFarmModule } from './modules/farm.js';
 import { initFranchiseModule } from './modules/franchise.js';
 import { initStaffModule } from './modules/staff.js';
 import { initLiveSync } from './modules/live-sync.js';
+import { initCoffeeModule } from './modules/coffee.js';
 
 let isBootstrapped = false;
 
@@ -59,6 +60,7 @@ async function bootstrapApp() {
   initFranchiseModule();
   initStaffModule();
   initLiveSync();
+  initCoffeeModule();
 
   // 3. Launch Store Authentication & Session Flow
   await initStore();

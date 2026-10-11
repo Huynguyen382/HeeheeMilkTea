@@ -153,6 +153,33 @@ const db = {
             is_active INTEGER DEFAULT 1,
             created_at BIGINT NOT NULL
           );
+
+          CREATE TABLE IF NOT EXISTS boss_events (
+            id TEXT PRIMARY KEY,
+            event_date TEXT NOT NULL,
+            day_of_week INTEGER NOT NULL,
+            start_time BIGINT NOT NULL,
+            end_time BIGINT NOT NULL,
+            boss_type TEXT DEFAULT 'hung_ram_monster',
+            max_hp BIGINT NOT NULL,
+            current_hp BIGINT NOT NULL,
+            is_defeated INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS boss_damage_logs (
+            id SERIAL PRIMARY KEY,
+            event_id TEXT REFERENCES boss_events(id) ON DELETE CASCADE,
+            store_id INTEGER REFERENCES stores(id) ON DELETE CASCADE,
+            player_name TEXT NOT NULL,
+            total_damage BIGINT DEFAULT 0,
+            pearls_shot INTEGER DEFAULT 0,
+            crit_hits INTEGER DEFAULT 0,
+            rank_position INTEGER DEFAULT 0,
+            reward_claimed INTEGER DEFAULT 0,
+            updated_at TEXT NOT NULL,
+            UNIQUE(event_id, store_id)
+          );
          `);
          await client.query(`
            ALTER TABLE active_orders ADD COLUMN IF NOT EXISTS original_price INTEGER;
@@ -167,6 +194,13 @@ const db = {
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS farm_data TEXT DEFAULT '{}';
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS franchises TEXT DEFAULT '[]';
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS auction_items TEXT DEFAULT '[]';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS coffee_buffs TEXT DEFAULT '{}';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS coffee_daily_cups INTEGER DEFAULT 0;
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS coffee_daily_date TEXT DEFAULT '';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS boss_pearl_inventory TEXT DEFAULT '{"pearl_basic":50,"pearl_flame":20,"pearl_golden":10,"pearl_frost":5,"pearl_cosmic":1}';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS boss_food_buffs TEXT DEFAULT '{}';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS boss_titles TEXT DEFAULT '[]';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS cart_skin TEXT DEFAULT '';
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS orders_served BIGINT DEFAULT 0;
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_orders BIGINT DEFAULT 0;
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_earned BIGINT DEFAULT 0;
@@ -181,6 +215,7 @@ const db = {
            CREATE INDEX IF NOT EXISTS idx_collabs_stores ON collabs(host_store_id, friend_store_id, status);
            CREATE INDEX IF NOT EXISTS idx_daily_stats_store_date ON daily_stats(store_id, real_date);
            CREATE INDEX IF NOT EXISTS idx_friends_stores ON friends(user_store_id, friend_store_id);
+           CREATE INDEX IF NOT EXISTS idx_boss_damage_event ON boss_damage_logs(event_id, total_damage);
          `);
          console.log('Neon PostgreSQL schema initialized successfully with optimized indexes.');
       } finally {
@@ -224,6 +259,13 @@ const db = {
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN farm_data TEXT DEFAULT '{}';"); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN franchises TEXT DEFAULT '[]';"); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN auction_items TEXT DEFAULT '[]';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN coffee_buffs TEXT DEFAULT '{}';"); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN coffee_daily_cups INTEGER DEFAULT 0;'); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN coffee_daily_date TEXT DEFAULT '';"); } catch (e) {}
+      try { sqliteDb.exec(`ALTER TABLE game_saves ADD COLUMN boss_pearl_inventory TEXT DEFAULT '{"pearl_basic":50,"pearl_flame":20,"pearl_golden":10,"pearl_frost":5,"pearl_cosmic":1}';`); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN boss_food_buffs TEXT DEFAULT '{}';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN boss_titles TEXT DEFAULT '[]';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN cart_skin TEXT DEFAULT '';"); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN negotiation TEXT;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN orders_served INTEGER DEFAULT 0;'); } catch (e) {}
@@ -340,6 +382,35 @@ const db = {
           accumulated_cups INTEGER DEFAULT 0,
           is_active INTEGER DEFAULT 1,
           created_at INTEGER NOT NULL,
+          FOREIGN KEY(store_id) REFERENCES stores(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS boss_events (
+          id TEXT PRIMARY KEY,
+          event_date TEXT NOT NULL,
+          day_of_week INTEGER NOT NULL,
+          start_time INTEGER NOT NULL,
+          end_time INTEGER NOT NULL,
+          boss_type TEXT DEFAULT 'hung_ram_monster',
+          max_hp INTEGER NOT NULL,
+          current_hp INTEGER NOT NULL,
+          is_defeated INTEGER DEFAULT 0,
+          created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS boss_damage_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_id TEXT NOT NULL,
+          store_id INTEGER NOT NULL,
+          player_name TEXT NOT NULL,
+          total_damage INTEGER DEFAULT 0,
+          pearls_shot INTEGER DEFAULT 0,
+          crit_hits INTEGER DEFAULT 0,
+          rank_position INTEGER DEFAULT 0,
+          reward_claimed INTEGER DEFAULT 0,
+          updated_at TEXT NOT NULL,
+          UNIQUE(event_id, store_id),
+          FOREIGN KEY(event_id) REFERENCES boss_events(id) ON DELETE CASCADE,
           FOREIGN KEY(store_id) REFERENCES stores(id) ON DELETE CASCADE
         );
       `);

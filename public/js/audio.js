@@ -117,6 +117,36 @@ const BGM_TRACKS = [
       { step: 27, melody: 392.00 }, // G4
       { step: 29, bass: 116.54, melody: 311.13 }  // Bb2, Eb4
     ]
+  },
+  {
+    id: 'dai_chien_hung_ram',
+    name: 'Đại Chiến Hưng Răm',
+    icon: '🐙',
+    style: 'Chiptune Boss Battle 8-Bit',
+    tempo: 160, // fast, energetic boss battle
+    filterCutoff: 1200,
+    steps: [
+      // Measure 1: Dm
+      { step: 0, bass: 146.83, pad: [293.66, 349.23, 440.00], melody: 587.33 },
+      { step: 2, melody: 698.46 },
+      { step: 4, bass: 146.83, melody: 880.00 },
+      { step: 6, melody: 698.46 },
+      // Measure 2: Bb
+      { step: 8, bass: 116.54, pad: [233.08, 293.66, 349.23], melody: 783.99 },
+      { step: 10, melody: 698.46 },
+      { step: 12, bass: 116.54, melody: 587.33 },
+      { step: 14, melody: 466.16 },
+      // Measure 3: C
+      { step: 16, bass: 130.81, pad: [261.63, 329.63, 392.00], melody: 523.25 },
+      { step: 18, melody: 659.25 },
+      { step: 20, bass: 130.81, melody: 783.99 },
+      { step: 22, melody: 659.25 },
+      // Measure 4: A7
+      { step: 24, bass: 110.00, pad: [277.18, 329.63, 440.00], melody: 880.00 },
+      { step: 26, melody: 830.61 },
+      { step: 28, bass: 110.00, melody: 783.99 },
+      { step: 30, melody: 698.46 }
+    ]
   }
 ];
 
@@ -641,6 +671,130 @@ class SoundManager {
     } catch (e) {}
   }
 
+  // --- COFFEE & WORLD BOSS SFX ---
+  bossPew(type = 'basic') {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type === 'cosmic' ? 'sawtooth' : type === 'flame' ? 'square' : 'triangle';
+      const startFreq = type === 'cosmic' ? 880 : type === 'golden' ? 740 : 520;
+      const endFreq = type === 'cosmic' ? 220 : 180;
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.12);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    } catch (e) {}
+  }
+
+  bossHit() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } catch (e) {}
+  }
+
+  bossCrit() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      [880, 1174, 1760].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+        gain.gain.setValueAtTime(0.12, now + idx * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.04);
+        osc.stop(now + idx * 0.04 + 0.2);
+      });
+    } catch (e) {}
+  }
+
+  bossCosmic() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.linearRampToValueAtTime(70, now + 0.4);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    } catch (e) {}
+  }
+
+  coffeeDrink() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + i * 0.08);
+        gain.gain.setValueAtTime(0.12, now + i * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + i * 0.08);
+        osc.stop(now + i * 0.08 + 0.35);
+      });
+    } catch (e) {}
+  }
+
+  bossWarning() {
+    this.siren();
+  }
+
+  bossVictory() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+        gain.gain.setValueAtTime(0.18, now + idx * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.1);
+        osc.stop(now + idx * 0.1 + 0.4);
+      });
+    } catch (e) {}
+  }
+
   // --- BACKGROUND MUSIC CONTROLLER ---
   // Cycles through tracks: Track 0 -> Track 1 -> Track 2 -> Track 3 -> Mute -> Track 0
   cycleBGM() {
@@ -749,6 +903,23 @@ class SoundManager {
         }
       }
     }, stepInterval);
+  }
+
+  playBossBGM() {
+    this.savedTrackIdx = this.currentTrackIdx;
+    const bossTrackIdx = BGM_TRACKS.findIndex(t => t.id === 'dai_chien_hung_ram');
+    if (bossTrackIdx !== -1) {
+      this.currentTrackIdx = bossTrackIdx;
+      this.bgmEnabled = true;
+      this.startBGM();
+    }
+  }
+
+  restorePreviousBGM() {
+    if (this.savedTrackIdx !== undefined && this.savedTrackIdx !== -1) {
+      this.currentTrackIdx = this.savedTrackIdx;
+      this.startBGM();
+    }
   }
 }
 

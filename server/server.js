@@ -1,3 +1,5 @@
+const http = require('http');
+const { Server } = require('socket.io');
 const express = require('express');
 const path = require('path');
 const db = require('./models/db');
@@ -23,6 +25,7 @@ const resourceGovernor = require('./scripts/resource-governor');
 const { buildFrontendBundles } = require('./scripts/build');
 const circuitBreaker = require('./services/circuit-breaker');
 const dbWrapper = require('./services/db-wrapper');
+const { initCoffeeSocketGateway } = require('./services/game/coffee-socket.gateway');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -31,8 +34,13 @@ const gameRoutes = require('./routes/game.routes');
 const anticheatRoutes = require('./routes/anticheat.routes');
 const adminRoutes = require('./routes/admin.routes');
 const staffRoutes = require('./routes/staff.routes');
+const coffeeRoutes = require('./routes/coffee.routes');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*' }
+});
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
@@ -72,6 +80,8 @@ app.use('/api/store', storeRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/game/staff', staffRoutes);
+app.use('/api/coffee', coffeeRoutes);
+app.use('/api/game/coffee', coffeeRoutes);
 app.use('/api/anticheat', anticheatRoutes);
 app.use('/api/admin', adminRoutes);
 
@@ -325,10 +335,15 @@ function setupAutoPing() {
     // Initialize database wrapper
     dbWrapper.initializeDbWrapper(db);
     
-    app.listen(PORT, () => {
+    // Initialize Coffee Lounge & World Boss Socket.IO Gateway
+    initCoffeeSocketGateway(io);
+
+    server.listen(PORT, () => {
       console.log(`===============================================`);
       console.log(`  TIỆM TRÀ SỮA HEEHEE SERVER IS RUNNING!       `);
       console.log(`  URL: http://localhost:${PORT}                `);
+      console.log(`  Multiplayer Coffee Lounge: Socket.IO Active  `);
+      console.log(`  World Boss Hưng Răm (#52): Engine Ready      `);
       console.log(`  Database Mode: ${db.isPostgres ? 'Neon PostgreSQL' : 'Local SQLite'} `);
       console.log(`  Real Date Enforced: ${anticheat.getRealDate()} `);
       console.log(`  Rate Limiting: Enabled (Max ${rateLimitService.config.maxConcurrentUsers} concurrent users)`);

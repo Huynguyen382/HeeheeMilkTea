@@ -81,6 +81,12 @@ class GameCanvas {
     this.activeCollabs = Array.isArray(collabs) ? collabs.slice(0, 3) : [];
   }
 
+  setStoreName(name) {
+    if (typeof name === 'string' && name.trim()) {
+      this.storeName = name.trim();
+    }
+  }
+
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
@@ -104,6 +110,7 @@ class GameCanvas {
     this.hasAmulet = false;
     this.talismanCount = 0;
     this.activeCollabs = [];
+    this.storeName = null;
     this.isInvisible = false;
     this.invisibilityRemaining = 0;
     this.lastAmuletClickTime = 0;
@@ -417,13 +424,16 @@ class GameCanvas {
     ms.active = true;
     ms.state = 'approaching';
     ms.x = this.width + 25;
-    ms.targetX = 230;
-    ms.walkX = 230;
-    ms.speed = 2.3;
+    const save = window.state?.storeState?.save;
+    const buffs = save?.active_buffs || {};
+    const coffeeBuffs = save?.coffee_buffs || {};
+    const isFast = (buffs.buff_chien_than_toc_do && buffs.buff_chien_than_toc_do.expiresAt > Date.now()) ||
+                   (coffeeBuffs.buff_chien_than_toc_do && coffeeBuffs.buff_chien_than_toc_do.expiresAt > Date.now());
+    ms.speed = isFast ? 4.6 : 2.3;
     ms.timer = 0;
     ms.orderId = orderId;
     ms.hasDrink = false;
-    ms.bubble = '🛵 Có đơn ship hỏa tốc!';
+    ms.bubble = isFast ? '⚡ Wave Chiến Hỏa Tốc x2!' : '🛵 Có đơn ship hỏa tốc!';
   }
 
   onShipperOrderServed(orderId = null) {
@@ -584,6 +594,13 @@ class GameCanvas {
           this.spawnMotorbikeShipper();
         }
       } else {
+        const save = window.state?.storeState?.save;
+        const buffs = save?.active_buffs || {};
+        const coffeeBuffs = save?.coffee_buffs || {};
+        const isFast = (buffs.buff_chien_than_toc_do && buffs.buff_chien_than_toc_do.expiresAt > Date.now()) ||
+                       (coffeeBuffs.buff_chien_than_toc_do && coffeeBuffs.buff_chien_than_toc_do.expiresAt > Date.now());
+        const walkSpeed = isFast ? 2.2 : 1.1;
+
         if (ms.state === 'approaching') {
           ms.x -= ms.speed;
           if (ms.x <= ms.targetX) {
@@ -593,11 +610,11 @@ class GameCanvas {
             ms.bubble = '📦 Lấy đơn giao hàng nhé!';
           }
         } else if (ms.state === 'walking_to_counter') {
-          ms.walkX -= 1.1;
+          ms.walkX -= walkSpeed;
           if (ms.walkX <= 185) {
             ms.walkX = 185;
             ms.state = 'waiting_for_drink';
-            ms.bubble = '📦 Cho em lấy đơn ship hỏa tốc!';
+            ms.bubble = isFast ? '⚡ Ship hỏa tốc x2 đây!' : '📦 Cho em lấy đơn ship hỏa tốc!';
             if (typeof this.onShipperArrived === 'function') {
               this.onShipperArrived();
             }
@@ -615,11 +632,11 @@ class GameCanvas {
           }
         } else if (ms.state === 'carrying_drink') {
           // Walking back from counter (185) to parked motorbike (ms.x) holding drink
-          ms.walkX += 1.2;
+          ms.walkX += (isFast ? 2.4 : 1.2);
           if (ms.walkX >= ms.x) {
             ms.walkX = ms.x;
             ms.state = 'stowing_drink';
-            ms.timer = 45; // ~0.75s to stow into insulated box
+            ms.timer = isFast ? 22 : 45; // Faster stowing if fast!
             ms.bubble = '📦 Cất vào thùng giữ nhiệt!';
             for (let i = 0; i < 6; i++) {
               this.particles.push({

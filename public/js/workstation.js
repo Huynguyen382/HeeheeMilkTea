@@ -348,6 +348,16 @@ class BaristaWorkstation {
       else if (this.handAction === 'pour_cup') step = 0.020;
       else if (this.handAction === 'seal_cup') step = 0.022;
 
+      // Buff Tỉnh Táo Xuyên Ca (Cà Phê Phin): +35% Tốc độ phục vụ & dập nắp ly
+      const save = window.state?.storeState?.save;
+      const buffs = save?.active_buffs || {};
+      const coffeeBuffs = save?.coffee_buffs || {};
+      const hasTinhTao = (buffs.buff_tinh_tao && buffs.buff_tinh_tao.expiresAt > Date.now()) ||
+                         (coffeeBuffs.buff_tinh_tao && coffeeBuffs.buff_tinh_tao.expiresAt > Date.now());
+      if (hasTinhTao) {
+        step *= 1.35;
+      }
+
       this.handProgress += step;
       if (this.handProgress >= 1.0) {
         if (this.handAction === 'pour_cup') {

@@ -28,7 +28,8 @@ async function buildFrontendBundles() {
     '@import "../css/room.css";',
     '@import "../css/farm.css";',
     '@import "../css/franchise.css";',
-    '@import "../css/staff.css";'
+    '@import "../css/staff.css";',
+    '@import "../css/coffee.css";'
   ].join('\n');
 
   await esbuild.build({

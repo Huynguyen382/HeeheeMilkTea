@@ -72,6 +72,10 @@
           <span id="btn-staff-label">Nhân Viên</span>
           <span class="nav-menu-badge" id="hud-staff-badge" style="display: none; top: -3px; right: -3px;"></span>
         </button>
+        <button id="btn-coffee-header" class="hud-stat-pill pill-coffee" style="display: none !important; background: rgba(217, 119, 6, 0.18); border: 1.5px solid #d97706; color: #fbbf24; cursor: pointer; align-items: center; gap: 4px; font-weight: bold; position: relative;" title="Quán Cà Phê Multiplayer (20 Baristas) & Đại Chiến Boss Hưng Răm (#52)">
+          <span>☕ Quán Cà Phê</span>
+          <span class="nav-menu-badge" id="hud-coffee-badge" style="display: none !important; top: -3px; right: -3px;"></span>
+        </button>
         <!-- Menu toggle button in header -->
         <button id="btn-menu-header" class="btn-hud-menu" title="Mở Bảng Điều Khiển & Cài Đặt Quán">
           <span class="hud-menu-icon">☰</span>
@@ -423,6 +427,13 @@
       <div class="menu-group">
         <div class="menu-group-title">📣 NHIỆM VỤ, TIẾP THỊ & BẠN BÈ</div>
         <div class="menu-action-grid">
+          <button class="menu-item-btn" id="btn-open-coffee-menu" style="display: none !important; border-color: #d97706;">
+            <span class="m-icon">☕</span>
+            <div class="m-info">
+              <span class="m-title" style="color: #fbbf24;">Quán Cà Phê & Boss Hưng Răm</span>
+              <span class="m-desc">Lounge 20 Baristas, 6 cà phê buff & săn Boss #52</span>
+            </div>
+          </button>
           <button class="menu-item-btn" id="nav-daily-quests" style="border-color: #00cec9; position: relative;">
             <span class="m-icon">📋</span>
             <div class="m-info">
@@ -2093,10 +2104,170 @@
     </div>
   </div>
 
+  <!-- MODAL: KHÔNG GIAN CÀ PHÊ MULTIPLAYER & ĐẠI CHIẾN BOSS HƯNG RĂM (#52) -->
+  <div class="modal-overlay" id="modal-coffee-lounge" style="z-index: 100005;">
+    <div class="coffee-lounge-container">
+      <!-- TOP HUD -->
+      <div class="coffee-hud-top">
+        <div class="coffee-hud-left">
+          <div class="coffee-room-badge" id="coffee-room-badge">
+            ☕ <b>Lounge-01</b> (1/20 Baristas)
+          </div>
+          <div class="coffee-boss-timer-badge" id="coffee-boss-timer">
+            ⏰ Boss: 20h00 T4 & CN
+          </div>
+        </div>
+        <div class="coffee-hud-right">
+          <button class="btn-coffee-hud" id="btn-open-coffee-drinks">
+            <span>☕ Uống Cà Phê</span>
+          </button>
+          <button class="btn-coffee-hud boss-btn" id="btn-open-coffee-ammo">
+            <span>🧋 Kho Đạn</span>
+          </button>
+          <button class="btn-coffee-hud boss-btn" id="btn-open-coffee-food">
+            <span>🥐 Tiếp Sức</span>
+          </button>
+          <button class="btn-coffee-hud boss-btn" id="btn-open-coffee-leaderboard">
+            <span>🏆 BXH Live</span>
+          </button>
+          <button class="btn-coffee-hud" id="btn-coffee-test-boss" style="border-color: #ec4899; color: #f472b6;" title="Kích hoạt Boss ngay lập tức để trải nghiệm săn quái">
+            <span>⚡ Triệu Hồi Boss Ngay</span>
+          </button>
+          <button class="btn-coffee-hud close-btn" id="close-coffee-lounge" title="Thoát Lounge">
+            <span>✕ Thoát</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- BOSS HP BAR (CENTER TOP) -->
+      <div class="coffee-boss-hp-wrapper" id="coffee-boss-hp-wrapper">
+        <div class="coffee-boss-hp-header">
+          <span>🐙 Quái Vật Bạch Tuộc Hưng Răm (#52)</span>
+          <span class="coffee-boss-phase-pill" id="coffee-boss-phase-pill">Phase 1: Quẩy Xúc Tu</span>
+        </div>
+        <div class="coffee-boss-hp-bar">
+          <div class="coffee-boss-hp-fill" id="coffee-boss-hp-fill" style="width: 100%;"></div>
+          <div class="coffee-boss-hp-text" id="coffee-boss-hp-text">100% (4.000.000 / 4.000.000 HP)</div>
+        </div>
+      </div>
+
+      <!-- LIVE LEADERBOARD COMPACT OVERLAY -->
+      <div class="coffee-leaderboard-box" id="coffee-leaderboard-box">
+        <div class="coffee-leaderboard-title">
+          <span>🏆 BXH SÁT THƯƠNG LIVE</span>
+        </div>
+        <div id="coffee-leaderboard-list"></div>
+      </div>
+
+      <!-- CANVAS STAGE -->
+      <div class="coffee-stage-wrapper">
+        <canvas id="coffee-stage-canvas" width="960" height="540"></canvas>
+      </div>
+
+      <!-- BOTTOM HUD CONTROLS -->
+      <div class="coffee-hud-bottom">
+        <!-- AMMO SELECTOR BAR -->
+        <div class="coffee-ammo-bar">
+          <div class="ammo-item-slot active" data-ammo-type="pearl_basic" title="Trân Châu Đen (120-180 DMG)">
+            <span class="ammo-slot-icon">⚫</span>
+            <span class="ammo-slot-name">Đen</span>
+            <span class="ammo-slot-qty" id="ammo-qty-pearl_basic">x50</span>
+          </div>
+          <div class="ammo-item-slot" data-ammo-type="pearl_flame" title="Trân Châu Đường Đen Lửa (350-450 DMG + Cháy)">
+            <span class="ammo-slot-icon">🔥</span>
+            <span class="ammo-slot-name">Đường Đen</span>
+            <span class="ammo-slot-qty" id="ammo-qty-pearl_flame">x20</span>
+          </div>
+          <div class="ammo-item-slot" data-ammo-type="pearl_golden" title="Trân Châu Hoàng Kim (650-900 DMG + 45% Crit)">
+            <span class="ammo-slot-icon">✨</span>
+            <span class="ammo-slot-name">Hoàng Kim</span>
+            <span class="ammo-slot-qty" id="ammo-qty-pearl_golden">x10</span>
+          </div>
+          <div class="ammo-item-slot" data-ammo-type="pearl_frost" title="Trân Châu Băng (400 DMG + Làm chậm / Đóng băng)">
+            <span class="ammo-slot-icon">❄️</span>
+            <span class="ammo-slot-name">Băng Tuyết</span>
+            <span class="ammo-slot-qty" id="ammo-qty-pearl_frost">x5</span>
+          </div>
+          <div class="ammo-item-slot" data-ammo-type="pearl_cosmic" title="Trân Châu Nổ Vũ Trụ (2200-3000 DMG, Xuyên Giáp!)">
+            <span class="ammo-slot-icon">🌌</span>
+            <span class="ammo-slot-name">Vũ Trụ</span>
+            <span class="ammo-slot-qty" id="ammo-qty-pearl_cosmic">x1</span>
+          </div>
+        </div>
+
+        <!-- CHAT & EMOTES BAR -->
+        <div class="coffee-chat-bar">
+          <input type="text" class="coffee-chat-input" id="coffee-chat-input" placeholder="Tán gẫu cùng Baristas..." maxlength="60">
+          <button class="btn-coffee-send" id="btn-coffee-send-chat">Gửi</button>
+          <button class="btn-coffee-emote" data-emote="wave" title="Vẫy tay">👋</button>
+          <button class="btn-coffee-emote" data-emote="cheers" title="Nâng ly">☕</button>
+          <button class="btn-coffee-emote" data-emote="dance" title="Nhảy múa">💃</button>
+          <button class="btn-coffee-emote" data-emote="heart" title="Thả tim">❤️</button>
+        </div>
+      </div>
+
+      <!-- SUBMODAL: DRINKS -->
+      <div class="coffee-submodal" id="submodal-coffee-drinks">
+        <div class="coffee-submodal-content">
+          <div class="coffee-submodal-header">
+            <div class="coffee-submodal-title">☕ MENU CÀ PHÊ THỦ CÔNG (TỐI ĐA 3 LY/NGÀY)</div>
+            <button class="coffee-submodal-close">&times;</button>
+          </div>
+          <div class="coffee-grid-items" id="coffee-drinks-grid"></div>
+        </div>
+      </div>
+
+      <!-- SUBMODAL: AMMO -->
+      <div class="coffee-submodal" id="submodal-coffee-ammo">
+        <div class="coffee-submodal-content">
+          <div class="coffee-submodal-header">
+            <div class="coffee-submodal-title">🧋 KHO ĐẠN TRÂN CHÂU CHIẾN ĐẤU</div>
+            <button class="coffee-submodal-close">&times;</button>
+          </div>
+          <div class="coffee-grid-items" id="coffee-ammo-grid"></div>
+        </div>
+      </div>
+
+      <!-- SUBMODAL: FOOD -->
+      <div class="coffee-submodal" id="submodal-coffee-food">
+        <div class="coffee-submodal-content">
+          <div class="coffee-submodal-header">
+            <div class="coffee-submodal-title">🥐 BẾP NƯỚNG TIẾP SỨC CHIẾN ĐẤU</div>
+            <button class="coffee-submodal-close">&times;</button>
+          </div>
+          <div class="coffee-grid-items" id="coffee-food-grid"></div>
+        </div>
+      </div>
+
+      <!-- SUBMODAL: LEADERBOARD -->
+      <div class="coffee-submodal" id="submodal-coffee-leaderboard">
+        <div class="coffee-submodal-content">
+          <div class="coffee-submodal-header">
+            <div class="coffee-submodal-title">🏆 BẢNG XẾP HẠNG SÁT THƯƠNG CHI TIẾT</div>
+            <button class="coffee-submodal-close">&times;</button>
+          </div>
+          <div id="coffee-leaderboard-full-list"></div>
+        </div>
+      </div>
+
+      <!-- SUBMODAL: REWARDS -->
+      <div class="coffee-submodal" id="submodal-coffee-rewards">
+        <div class="coffee-submodal-content">
+          <div class="coffee-submodal-header">
+            <div class="coffee-submodal-title">🎖️ KẾT QUẢ ĐẠI CHIẾN BOSS HƯNG RĂM</div>
+            <button class="coffee-submodal-close">&times;</button>
+          </div>
+          <div id="coffee-rewards-body"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- FLOATING TOAST NOTIFICATION -->
   <div id="toast"></div>
 </div>
 
+<script src="/socket.io/socket.io.js"></script>
 <script src="dist/game.min.js"></script>
 </body>
 </html>

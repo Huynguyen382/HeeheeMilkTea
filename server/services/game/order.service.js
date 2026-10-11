@@ -180,6 +180,11 @@ async function generateOrder(storeId, options = {}) {
       waveSize = Math.floor(Math.random() * 3) + 10; // 10 - 12 đơn
     }
   }
+
+  // Vận May Đại Cát Buff: 50% tỉ lệ nổ "Đơn Hàng Doanh Nghiệp x10 Ly"
+  if (activeBuffs.buff_van_may_dai_cat && activeBuffs.buff_van_may_dai_cat.expiresAt > Date.now() && Math.random() < 0.50) {
+    waveSize = 10;
+  }
   waveSize = Math.min(14, Math.max(1, waveSize));
 
   const sugars = ['0%', '30%', '50%', '70%', '100%'];
@@ -214,6 +219,14 @@ async function generateOrder(storeId, options = {}) {
       const shipperCust = CUSTOMERS.find(c => c.isShipper);
       if (shipperCust && Math.random() < 0.45) {
         cust = shipperCust;
+      }
+    }
+
+    // Hút Khách Gen Z Buff (Bạc Xỉu Ba Tầng): Tăng +40% tỉ lệ xuất hiện Học Sinh & Sinh Viên tip thêm tiền
+    if (activeBuffs.buff_hut_khach_genz && activeBuffs.buff_hut_khach_genz.expiresAt > Date.now() && Math.random() < 0.40) {
+      const studentCusts = CUSTOMERS.filter(c => c.type === 1 || c.type === 2 || c.type === 4);
+      if (studentCusts.length > 0) {
+        cust = studentCusts[Math.floor(Math.random() * studentCusts.length)];
       }
     }
 
@@ -343,6 +356,11 @@ async function generateOrder(storeId, options = {}) {
     } else {
       // Luôn đảm bảo giá trà sữa tối thiểu 25.000đ khi không bị phạt
       price = Math.max(25000, price);
+    }
+
+    // Mặn Mà Doanh Thu Buff (Cà Phê Muối Cố Đô): Mọi ly trà sữa bán ra được cộng thêm +25% giá tiền trong 60 phút
+    if (activeBuffs.buff_man_ma_doanh_thu && activeBuffs.buff_man_ma_doanh_thu.expiresAt > Date.now()) {
+      price = Math.floor(price * 1.25);
     }
 
     // Đàm phán & Mặc cả: Khi đặt giá quá cao các NPC có thể mặc cả
@@ -639,7 +657,16 @@ async function recordOrderFailure(storeId, orderId, isTiktoker = false) {
     message = '😱 Tú (TikToker) bực mình bỏ đi và đăng clip bóc phốt phục vụ chậm! Đánh giá bị trừ -0.35⭐ và quán bị flop vắng khách!';
   }
 
-  const newRep = Math.max(1.0, Number((save.reputation - repPenalty).toFixed(2)));
+  // Hào Quang 5 Sao Buff (Cà Phê Trứng Khò Phố Cổ): Danh tiếng quán được khóa cứng ở mức tối đa 5.0⭐
+  if (activeBuffs.buff_hao_quang_5sao && activeBuffs.buff_hao_quang_5sao.expiresAt > Date.now()) {
+    repPenalty = 0;
+    message += ' (✨ Nhưng Hào Quang 5 Sao đã khóa cứng bảo vệ danh tiếng 5.0⭐ của bạn!)';
+  }
+
+  let newRep = Math.max(1.0, Number((save.reputation - repPenalty).toFixed(2)));
+  if (activeBuffs.buff_hao_quang_5sao && activeBuffs.buff_hao_quang_5sao.expiresAt > Date.now()) {
+    newRep = 5.0;
+  }
   const updatedSave = {
     store_id: storeId,
     chapter: save.chapter,

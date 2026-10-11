@@ -1,6 +1,19 @@
 // HeeHee Stall & Multi-Stall Collab Renderer for GameCanvas
 
 export const cartMethods = {
+  isCosmicCartSkin() {
+    const save = window.state?.storeState?.save;
+    if (!save) return false;
+    if (save.cart_skin === 'cosmic_coffee_cart') return true;
+    try {
+      const titles = typeof save.boss_titles === 'string' ? JSON.parse(save.boss_titles || '[]') : (save.boss_titles || []);
+      if (Array.isArray(titles) && titles.some(t => t && t.includes('Chiến Thần Đập Răm'))) {
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  },
+
   drawCart(ctx) {
     this.drawCartBack(ctx);
     this.drawCartFront(ctx);
@@ -10,9 +23,10 @@ export const cartMethods = {
   drawCartBack(ctx) {
     const cx = 35;
     const cy = 92;
+    const isCosmic = this.isCosmicCartSkin();
 
     // 1. Rear Awning Support Pillars (Brushed Gunmetal & Brass)
-    ctx.fillStyle = '#4b4b5a';
+    ctx.fillStyle = isCosmic ? '#3b1d54' : '#4b4b5a';
     ctx.fillRect(cx + 8, cy - 35, 3, 53);
     ctx.fillRect(cx + 133, cy - 35, 3, 53);
 
@@ -23,31 +37,31 @@ export const cartMethods = {
     const shelfH = 44;
 
     // Dark oak backboard with horizontal wood slat grooves
-    ctx.fillStyle = '#2c160a';
+    ctx.fillStyle = isCosmic ? '#170926' : '#2c160a';
     ctx.beginPath();
     ctx.roundRect(shelfX, shelfY, shelfW, shelfH, 3);
     ctx.fill();
 
     // Wood slat grooves
-    ctx.fillStyle = '#1e0e06';
+    ctx.fillStyle = isCosmic ? '#0e041a' : '#1e0e06';
     for (let sy = shelfY + 9; sy < shelfY + shelfH; sy += 9) {
       ctx.fillRect(shelfX, sy, shelfW, 1);
     }
 
     // Upper Shelf (y = cy - 13 = 79)
-    ctx.fillStyle = '#5c2d13';
+    ctx.fillStyle = isCosmic ? '#3b1754' : '#5c2d13';
     ctx.fillRect(shelfX + 4, cy - 13, shelfW - 8, 3);
-    ctx.fillStyle = '#8a431c';
+    ctx.fillStyle = isCosmic ? '#6b21a8' : '#8a431c';
     ctx.fillRect(shelfX + 4, cy - 14, shelfW - 8, 1); // shelf highlight
 
     // Lower Shelf (y = cy + 4 = 96)
-    ctx.fillStyle = '#5c2d13';
+    ctx.fillStyle = isCosmic ? '#3b1754' : '#5c2d13';
     ctx.fillRect(shelfX + 4, cy + 3, shelfW - 8, 3);
-    ctx.fillStyle = '#8a431c';
+    ctx.fillStyle = isCosmic ? '#6b21a8' : '#8a431c';
     ctx.fillRect(shelfX + 4, cy + 2, shelfW - 8, 1);
 
-    // Brass shelf brackets
-    ctx.fillStyle = '#f4c430';
+    // Brass / Neon shelf brackets
+    ctx.fillStyle = isCosmic ? '#c084fc' : '#f4c430';
     ctx.fillRect(shelfX + 6, cy - 10, 2, 4);
     ctx.fillRect(shelfX + shelfW - 8, cy - 10, 2, 4);
     ctx.fillRect(shelfX + 6, cy + 6, 2, 4);
@@ -101,14 +115,14 @@ export const cartMethods = {
     ctx.beginPath();
     ctx.roundRect(shelfX + 94, cy - 23, 32, 10, 1.5);
     ctx.fill();
-    ctx.strokeStyle = '#8a431c';
+    ctx.strokeStyle = isCosmic ? '#a855f7' : '#8a431c';
     ctx.lineWidth = 1;
     ctx.strokeRect(shelfX + 94, cy - 23, 32, 10);
     ctx.fillStyle = '#f1f2f6';
     ctx.font = 'bold 5px sans-serif';
-    ctx.fillText('MENU HEEHEE 🧋', shelfX + 96, cy - 17);
-    ctx.fillStyle = '#feca57';
-    ctx.fillText('ĐỒNG GIÁ 25k ⭐', shelfX + 96, cy - 14);
+    ctx.fillText(isCosmic ? 'MENU VŨ TRỤ 🌌' : 'MENU HEEHEE 🧋', shelfX + 96, cy - 17);
+    ctx.fillStyle = isCosmic ? '#38bdf8' : '#feca57';
+    ctx.fillText(isCosmic ? 'COSMIC TEA ⭐' : 'ĐỒNG GIÁ 25k ⭐', shelfX + 96, cy - 14);
 
     // --- LOWER SHELF ITEMS: CUP STACKS & SUCCULENT ---
     // Stacks of paper cups
@@ -117,7 +131,7 @@ export const cartMethods = {
       ctx.beginPath();
       ctx.roundRect(shelfX + 8 + c * 8, cy - 7, 6, 10, 1);
       ctx.fill();
-      ctx.fillStyle = '#ff7675';
+      ctx.fillStyle = isCosmic ? '#c084fc' : '#ff7675';
       ctx.fillRect(shelfX + 9 + c * 8, cy - 3, 4, 3);
     }
 
@@ -131,7 +145,7 @@ export const cartMethods = {
     ctx.arc(shelfX + 120, cy - 6, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // Vintage Edison Pendant Bulb hanging from ceiling above Hyhy
+    // Vintage Edison / Cosmic Pendant Bulb hanging from ceiling above Hyhy
     const lampX = cx + 64;
     const lampY = cy - 26;
     ctx.strokeStyle = '#2d3436';
@@ -140,17 +154,23 @@ export const cartMethods = {
     ctx.moveTo(lampX, cy - 40);
     ctx.lineTo(lampX, lampY);
     ctx.stroke();
-    ctx.fillStyle = '#f4c430';
+    ctx.fillStyle = isCosmic ? '#a855f7' : '#f4c430';
     ctx.fillRect(lampX - 2, lampY, 4, 3);
-    ctx.fillStyle = 'rgba(255, 235, 160, 0.95)';
+    ctx.fillStyle = isCosmic ? 'rgba(232, 121, 249, 0.95)' : 'rgba(255, 235, 160, 0.95)';
     ctx.beginPath();
     ctx.arc(lampX, lampY + 5, 3.5, 0, Math.PI * 2);
     ctx.fill();
-    // Warm radial ambient light glow cone
+    // Radial ambient light glow cone
     const warmPendantGlow = ctx.createRadialGradient(lampX, lampY + 5, 2, lampX, lampY + 16, 42);
-    warmPendantGlow.addColorStop(0, 'rgba(255, 215, 0, 0.38)');
-    warmPendantGlow.addColorStop(0.6, 'rgba(255, 175, 50, 0.14)');
-    warmPendantGlow.addColorStop(1, 'rgba(255, 175, 50, 0)');
+    if (isCosmic) {
+      warmPendantGlow.addColorStop(0, 'rgba(168, 85, 247, 0.45)');
+      warmPendantGlow.addColorStop(0.6, 'rgba(56, 189, 248, 0.18)');
+      warmPendantGlow.addColorStop(1, 'rgba(56, 189, 248, 0)');
+    } else {
+      warmPendantGlow.addColorStop(0, 'rgba(255, 215, 0, 0.38)');
+      warmPendantGlow.addColorStop(0.6, 'rgba(255, 175, 50, 0.14)');
+      warmPendantGlow.addColorStop(1, 'rgba(255, 175, 50, 0)');
+    }
     ctx.fillStyle = warmPendantGlow;
     ctx.beginPath();
     ctx.arc(lampX, lampY + 16, 42, 0, Math.PI * 2);
@@ -279,8 +299,11 @@ export const cartMethods = {
     ctx.fillRect(cx + 136, cy + 13, 6, 4);
 
     // 7. Fabric Striped Awning Roof with Scalloped Edge & Dynamic Wind Wave
+    const isCosmic = this.isCosmicCartSkin();
     const awningY = cy - 42;
-    const stripeColors = ['#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a'];
+    const stripeColors = isCosmic
+      ? ['#581c87', '#38bdf8', '#9333ea', '#c084fc', '#4c1d95', '#38bdf8', '#9333ea', '#c084fc', '#581c87']
+      : ['#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a'];
     const sw = 18;
     for (let i = 0; i < stripeColors.length; i++) {
       ctx.fillStyle = stripeColors[i];
@@ -295,18 +318,20 @@ export const cartMethods = {
     }
 
     // Awning shadow underneath
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillStyle = isCosmic ? 'rgba(76, 29, 149, 0.35)' : 'rgba(0, 0, 0, 0.25)';
     ctx.fillRect(cx - 8, awningY + 17, 162, 3);
 
     // Warm twinkling fairy lights on awning edge
-    const fairyColors = ['#ff7675', '#ffeaa7', '#55efc4', '#a29bfe', '#fd79a8'];
+    const fairyColors = isCosmic
+      ? ['#c084fc', '#38bdf8', '#f472b6', '#a855f7', '#67e8f9']
+      : ['#ff7675', '#ffeaa7', '#55efc4', '#a29bfe', '#fd79a8'];
     for (let f = 0; f < 8; f++) {
       const fx = cx - 2 + f * 20;
       const fy = awningY + 18 + Math.sin(this.tick * 0.05 + f * 0.35) * 1.5;
       const glow = (Math.sin(this.tick * 0.1 + f) + 1) * 0.3 + 0.4;
       ctx.fillStyle = fairyColors[f % fairyColors.length];
       ctx.fillRect(fx + 4, fy, 2.5, 2.5);
-      ctx.fillStyle = `rgba(255, 235, 160, ${glow * 0.25})`;
+      ctx.fillStyle = isCosmic ? `rgba(216, 180, 254, ${glow * 0.35})` : `rgba(255, 235, 160, ${glow * 0.25})`;
       ctx.beginPath();
       ctx.arc(fx + 5, fy + 1, 4, 0, Math.PI * 2);
       ctx.fill();
@@ -316,7 +341,7 @@ export const cartMethods = {
     const catX = cx + 85;
     const catY = awningY - 4;
     const catBreathe = Math.sin(this.tick * 0.08) * 1;
-    ctx.fillStyle = '#e67e22'; // Orange tabby body
+    ctx.fillStyle = isCosmic ? '#9333ea' : '#e67e22'; // Cosmic purple or Orange tabby body
     ctx.beginPath();
     ctx.ellipse(catX, catY + catBreathe, 7, 4, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -329,54 +354,99 @@ export const cartMethods = {
     ctx.fillRect(catX - 7, catY - 1 + catBreathe, 2, 1);
     // Tail twitch
     const catTail = Math.sin(this.tick * 0.12) * 2;
-    ctx.fillStyle = '#e67e22';
+    ctx.fillStyle = isCosmic ? '#c084fc' : '#e67e22';
     ctx.fillRect(catX + 6, catY + catTail, 4, 2);
 
-    // 8. Glowing Neon Store Plaque "TRÀ SỮA HEEHEE" (Tự động căn giữa, bo góc và chống tràn viền)
+    // 8. BĂNG RÔN QUẢNG CÁO TRƯỚC QUẦY: HIỆU ỨNG CHẠY CHỮ TÊN TIỆM (STORE_NAME)
     const neonPulse = (Math.sin(this.tick * 0.1) + 1) * 0.15 + 0.85;
     const plaqueX = cx + 16;
     const plaqueY = cy + 27;
     const plaqueW = 112;
     const plaqueH = 17;
 
-    // Plaque body with dark lacquer finish
-    ctx.fillStyle = '#1e0c18';
+    // Plaque body with dark lacquer / LED panel finish
+    ctx.fillStyle = isCosmic ? '#0a0314' : '#140711';
     ctx.beginPath();
-    ctx.roundRect(plaqueX, plaqueY, plaqueW, plaqueH, 3.5);
+    if (ctx.roundRect) {
+      ctx.roundRect(plaqueX, plaqueY, plaqueW, plaqueH, 3.5);
+    } else {
+      ctx.rect(plaqueX, plaqueY, plaqueW, plaqueH);
+    }
     ctx.fill();
 
-    // Glowing Neon Golden Border
-    ctx.strokeStyle = `rgba(244, 196, 48, ${neonPulse})`;
+    // Subtle LED Matrix Background Grid Pattern (Lưới điểm ảnh LED nền bảng điện tử)
+    ctx.fillStyle = isCosmic ? 'rgba(168, 85, 247, 0.08)' : 'rgba(244, 196, 48, 0.06)';
+    for (let lx = plaqueX + 4; lx < plaqueX + plaqueW - 4; lx += 4) {
+      for (let ly = plaqueY + 3; ly < plaqueY + plaqueH - 3; ly += 3) {
+        ctx.fillRect(lx, ly, 1.5, 1);
+      }
+    }
+
+    // Glowing Neon Golden/Purple Border
+    ctx.strokeStyle = isCosmic ? `rgba(168, 85, 247, ${neonPulse})` : `rgba(244, 196, 48, ${neonPulse})`;
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Brass corner rivets
-    ctx.fillStyle = '#f39c12';
+    // Corner rivets (Đinh tán viền)
+    ctx.fillStyle = isCosmic ? '#c084fc' : '#f39c12';
     ctx.fillRect(plaqueX + 2, plaqueY + 2, 2, 2);
     ctx.fillRect(plaqueX + plaqueW - 4, plaqueY + 2, 2, 2);
     ctx.fillRect(plaqueX + 2, plaqueY + plaqueH - 4, 2, 2);
     ctx.fillRect(plaqueX + plaqueW - 4, plaqueY + plaqueH - 4, 2, 2);
 
-    // Neon glowing text centered perfectly inside plaque
+    // Inner marquee clipping viewport
+    const innerX = plaqueX + 4;
+    const innerY = plaqueY + 2;
+    const innerW = plaqueW - 8;
+    const innerH = plaqueH - 4;
+    const centerY = plaqueY + plaqueH / 2 + 0.5;
+
+    // Lấy tên tiệm người dùng đặt tại cột store_name
+    const rawStoreName = (this.storeName || window.state?.storeState?.store_name || window.state?.storeState?.save?.store_name || 'Tiệm Trà Sữa HeeHee').trim();
+    const bannerSegment = `🧋 ${rawStoreName.toUpperCase()}   ★   CHÀO MỪNG QUÝ KHÁCH   ★   `;
+
     ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const curScene = (typeof this.getEffectiveScene === 'function') ? this.getEffectiveScene() : (this.sceneSetting || 'town');
-    const staffName = (this.activeStaff && !this.activeStaff.expired) ? this.activeStaff.name : null;
-    const signText = staffName
-      ? `🧑‍🍳 ${staffName.toUpperCase()} TRỰC QUẦY`
-      : ((this.chapter >= 4 || curScene === 'franchise') ? '👑 HEEHEE GLOBAL 👑' : (curScene === 'moc_chau' ? '🌱 HEEHEE MỘC CHÂU' : ((this.chapter >= 3 || curScene === 'walking_street') ? '★ HEEHEE FLAGSHIP ★' : '🧋 TRÀ SỮA HEEHEE')));
-    let fontSize = 9.5;
-    ctx.font = `bold ${fontSize}px sans-serif`;
-    while (ctx.measureText(signText).width > plaqueW - 14 && fontSize > 6) {
-      fontSize -= 0.5;
-      ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(innerX, innerY, innerW, innerH, 2);
+    } else {
+      ctx.rect(innerX, innerY, innerW, innerH);
     }
-    // Subtle neon glow
-    ctx.shadowColor = 'rgba(244, 196, 48, 0.6)';
-    ctx.shadowBlur = 4 * neonPulse;
-    ctx.fillStyle = '#f4c430';
-    ctx.fillText(signText, plaqueX + plaqueW / 2, plaqueY + plaqueH / 2 + 0.5);
+    ctx.clip();
+
+    ctx.font = 'bold 8.5px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const segWidth = Math.max(20, ctx.measureText(bannerSegment).width);
+    const scrollSpeed = 0.65; // Tốc độ chạy chữ mượt mà như băng rôn điện tử
+    const scrollOffset = (this.tick * scrollSpeed) % segWidth;
+
+    // Hiệu ứng chữ Neon phát sáng
+    ctx.shadowColor = isCosmic ? 'rgba(192, 132, 252, 0.95)' : 'rgba(251, 191, 36, 0.85)';
+    ctx.shadowBlur = (isCosmic ? 5 : 4) * neonPulse;
+    ctx.fillStyle = isCosmic ? '#f0abfc' : '#fbbf24';
+
+    // Lặp chuỗi băng rôn qua khung hiển thị
+    let drawX = innerX - scrollOffset;
+    while (drawX < innerX + innerW + segWidth) {
+      ctx.fillText(bannerSegment, drawX, centerY);
+      drawX += segWidth;
+    }
+
+    // Hiệu ứng mờ viền hai đầu (Vignette) giúp chữ trôi vào/ra mềm mại
+    const edgeGradLeft = ctx.createLinearGradient(innerX, centerY, innerX + 6, centerY);
+    edgeGradLeft.addColorStop(0, isCosmic ? 'rgba(10, 3, 20, 0.92)' : 'rgba(20, 7, 17, 0.92)');
+    edgeGradLeft.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = edgeGradLeft;
+    ctx.fillRect(innerX, innerY, 6, innerH);
+
+    const edgeGradRight = ctx.createLinearGradient(innerX + innerW - 6, centerY, innerX + innerW, centerY);
+    edgeGradRight.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    edgeGradRight.addColorStop(1, isCosmic ? 'rgba(10, 3, 20, 0.92)' : 'rgba(20, 7, 17, 0.92)');
+    ctx.fillStyle = edgeGradRight;
+    ctx.fillRect(innerX + innerW - 6, innerY, 6, innerH);
+
     ctx.restore();
 
     // 9. EQUIPMENT ON THE COUNTER:
@@ -758,6 +828,45 @@ export const cartMethods = {
   },
 
   drawWheel(ctx, x, y) {
+    const isCosmic = this.isCosmicCartSkin();
+    if (isCosmic) {
+      const pulse = (Math.sin(this.tick * 0.1) + 1) * 0.2 + 0.8;
+      ctx.fillStyle = '#0f051d';
+      ctx.beginPath();
+      ctx.arc(x, y, 11, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cosmic Neon Purple Rim
+      ctx.fillStyle = `rgba(168, 85, 247, ${pulse})`;
+      ctx.beginPath();
+      ctx.arc(x, y, 9, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#1e1035';
+      ctx.beginPath();
+      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cyan Stardust Center Cap
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 4 Starlight Spokes
+      ctx.strokeStyle = 'rgba(232, 121, 249, 0.85)';
+      ctx.lineWidth = 1;
+      const rot = (this.tick || 0) * 0.04;
+      for (let s = 0; s < 4; s++) {
+        const ang = rot + (s * Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(ang) * 6.5, y + Math.sin(ang) * 6.5);
+        ctx.stroke();
+      }
+      return;
+    }
+
     ctx.fillStyle = '#111';
     ctx.beginPath();
     ctx.arc(x, y, 11, 0, Math.PI * 2);
@@ -1010,12 +1119,16 @@ export const cartMethods = {
     ctx.arc(catX - 5, catY - 1 + catBreathe, 3, 0, Math.PI * 2);
     ctx.fill();
 
-    // 10. Neon Sign Plaque with Partner's Custom Store Name
+    // 10. Neon Sign Plaque with Partner's Custom Store Name (Marquee Banner)
     const isOnline = !!(partner.is_online || partner.online);
     const plaqueX = cx + 15, plaqueY = cy + 27, plaqueW = 108, plaqueH = 17;
     ctx.fillStyle = '#1e0c18';
     ctx.beginPath();
-    ctx.roundRect(plaqueX, plaqueY, plaqueW, plaqueH, 3.5);
+    if (ctx.roundRect) {
+      ctx.roundRect(plaqueX, plaqueY, plaqueW, plaqueH, 3.5);
+    } else {
+      ctx.rect(plaqueX, plaqueY, plaqueW, plaqueH);
+    }
     ctx.fill();
 
     const neonPulse = (Math.sin(this.tick * 0.1 + index * 1.5) + 1) * 0.15 + 0.85;
@@ -1029,20 +1142,40 @@ export const cartMethods = {
     ctx.fillRect(plaqueX + 2, plaqueY + plaqueH - 4, 2, 2);
     ctx.fillRect(plaqueX + plaqueW - 4, plaqueY + plaqueH - 4, 2, 2);
 
-    const partnerTitle = '🧋 ' + (partner.partner_name || partner.store_name || `QUÁN #${index + 1}`).toUpperCase();
+    const partnerStoreName = (partner.partner_name || partner.store_name || `QUÁN #${index + 1}`).trim().toUpperCase();
+    const partnerBanner = `🧋 ${partnerStoreName}   ★   CHÀO MỪNG BẠN   ★   `;
+
+    const pInnerX = plaqueX + 4;
+    const pInnerY = plaqueY + 2;
+    const pInnerW = plaqueW - 8;
+    const pInnerH = plaqueH - 4;
+    const pCenterY = plaqueY + plaqueH / 2 + 0.5;
+
     ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    let fSize = 9.0;
-    ctx.font = `bold ${fSize}px sans-serif`;
-    while (ctx.measureText(partnerTitle).width > plaqueW - 14 && fSize > 6.0) {
-      fSize -= 0.5;
-      ctx.font = `bold ${fSize}px sans-serif`;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(pInnerX, pInnerY, pInnerW, pInnerH, 2);
+    } else {
+      ctx.rect(pInnerX, pInnerY, pInnerW, pInnerH);
     }
+    ctx.clip();
+
+    ctx.font = 'bold 8.5px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const pSegWidth = Math.max(20, ctx.measureText(partnerBanner).width);
+    const pOffset = (this.tick * 0.65 + index * 35) % pSegWidth;
+
     ctx.shadowColor = theme.neonGlow;
     ctx.shadowBlur = 4 * neonPulse;
     ctx.fillStyle = theme.neonText;
-    ctx.fillText(partnerTitle, plaqueX + plaqueW / 2, plaqueY + plaqueH / 2 + 0.5);
+
+    let pDrawX = pInnerX - pOffset;
+    while (pDrawX < pInnerX + pInnerW + pSegWidth) {
+      ctx.fillText(partnerBanner, pDrawX, pCenterY);
+      pDrawX += pSegWidth;
+    }
     ctx.restore();
 
     // Online / Offline Status Pill Badge on stall roof

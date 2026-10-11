@@ -107,6 +107,32 @@ export function updateBuffsUI(buffs) {
     }
   }
 
+  // Check active coffee buffs
+  const now = Date.now();
+  const coffeePillIds = [
+    'buff_tinh_tao', 'buff_hut_khach_genz', 'buff_man_ma_doanh_thu',
+    'buff_chien_than_toc_do', 'buff_hao_quang_5sao', 'buff_van_may_dai_cat'
+  ];
+  coffeePillIds.forEach(id => {
+    let pillEl = document.getElementById(`pill-${id}`);
+    const b = buffs[id];
+    if (b && b.expiresAt > now) {
+      if (!pillEl) {
+        pillEl = document.createElement('span');
+        pillEl.id = `pill-${id}`;
+        pillEl.style.cssText = 'background: rgba(217, 119, 6, 0.25); border: 1.5px solid #d97706; color: #fef08a; border-radius: 4px; padding: 2px 7px; font-weight: bold; cursor: pointer;';
+        bar.appendChild(pillEl);
+      }
+      const minsLeft = Math.ceil((b.expiresAt - now) / 60000);
+      pillEl.style.display = 'inline-block';
+      pillEl.innerHTML = `${b.icon || '☕'} <b>${b.name}</b> (${minsLeft}p)`;
+      pillEl.title = b.desc;
+      hasAny = true;
+    } else if (pillEl) {
+      pillEl.style.display = 'none';
+    }
+  });
+
   // Check active weather buff
   const bWeather = document.getElementById('buff-weather');
   if (bWeather && bWeather.style.display !== 'none') {
@@ -151,6 +177,9 @@ export function updateUI() {
 
   if (elStoreName) {
     elStoreName.innerHTML = `<span class="header-icon">🧋</span> <span class="store-name-text">${state.storeState.store_name}</span>`;
+  }
+  if (state.canvas && typeof state.canvas.setStoreName === 'function' && state.storeState.store_name) {
+    state.canvas.setStoreName(state.storeState.store_name);
   }
   if (elStoreCode) elStoreCode.innerText = state.storeState.store_code;
   if (elUserBadge) elUserBadge.innerText = '👤 ' + (state.storeState.username || 'HeeHee');
