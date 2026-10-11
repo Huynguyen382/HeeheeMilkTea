@@ -156,7 +156,7 @@ export function renderOrderTicket() {
 
   const orderToppingNames = (state.currentOrder.toppings && state.currentOrder.toppings.length > 0)
     ? state.currentOrder.toppings.map(t => TOPPING_LABELS[t] || t).join(' + ')
-    : 'Không lấy topping';
+    : 'Không topping';
 
   const teaGuide = RECIPE_TEA_MAP[state.currentOrder.recipeId] || {
     teaId: state.currentOrder.tea || 'den',
@@ -169,38 +169,35 @@ export function renderOrderTicket() {
     ? window.getCharacter(state.currentOrder.customerName || state.currentOrder.customerType)
     : null;
   const roleBadge = charObj && charObj.role
-    ? `<span style="font-size: 0.72rem; background: #3b2d54; color: #f4c430; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: bold; border: 1px solid #f4c43055; letter-spacing: 0.5px;">${charObj.role}</span>`
+    ? `<span style="font-size: 0.68rem; background: #3b2d54; color: #f4c430; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: bold; border: 1px solid #f4c43055;">${charObj.role}</span>`
     : '';
   const isShipperOrder = !!(state.currentOrder.isShipper || state.currentOrder.orderId === state.canvas?.motorbikeShipper?.orderId);
   const shipperBadge = isShipperOrder
-    ? `<span style="font-size: 0.72rem; background: #14532d; color: #86efac; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: bold; border: 1px solid #22c55e; letter-spacing: 0.5px;">🛵 ĐƠN GIAO HÀNG HỎA TỐC</span>`
+    ? `<span style="font-size: 0.68rem; background: #14532d; color: #86efac; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: bold; border: 1px solid #22c55e;">🛵 HỎA TỐC</span>`
     : '';
   const orderBoxStyle = isShipperOrder
-    ? 'border: 2px solid #22c55e; box-shadow: 0 0 12px rgba(34, 197, 94, 0.35);'
+    ? 'border: 1.5px solid #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);'
     : '';
 
   elOrderSection.innerHTML = `
     <div class="order-box" style="${orderBoxStyle}">
-      <div class="order-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-        <span>👤 <b>${state.currentOrder.customerName}</b>${roleBadge}${shipperBadge}</span>
-        <span style="color: #2e8b57; font-weight: bold;">+${state.currentOrder.price.toLocaleString('vi-VN')}đ</span>
+      <div class="order-header" style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+        <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 <b>${state.currentOrder.customerName}</b>${roleBadge}${shipperBadge}</span>
+        <span style="color: #2e8b57; font-weight: bold; flex-shrink: 0;">+${state.currentOrder.price.toLocaleString('vi-VN')}đ</span>
       </div>
-      <div style="font-style: italic; color: #ffffff; font-weight: 500; font-size: 0.95rem; margin: 3px 0 6px 0; background: #1c0e1a; border: 1px solid #57334d; border-left: 3px solid var(--gold); padding: 5px 8px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+      <div id="order-dialogue" style="font-style: italic; color: #f1fa8c; font-size: 0.78rem; margin: 1px 0; background: #1c0e1a; border-left: 2.5px solid var(--gold); padding: 1px 6px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${(state.currentOrder.quote || '').replace(/"/g, '&quot;')}">
         💬 "${state.currentOrder.quote || 'Pha chế ngon giùm mình nhé!'}"
       </div>
-      <div style="font-weight: bold; font-size: 1.15rem; color: #8b4513;">
-        🍹 ${state.currentOrder.recipeName}
-      </div>
-      <div style="background: rgba(80, 250, 123, 0.12); border: 1px dashed #50fa7b; border-radius: 6px; padding: 4px 8px; margin: 4px 0 6px 0; font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between;">
-        <span style="color: #ffb86c; font-weight: bold;">🍵 Cốt Trà Cần Chọn:</span>
-        <span style="background: #1c0e1a; border: 1px solid #50fa7b; padding: 2px 7px; border-radius: 4px; font-weight: bold; color: #50fa7b;">
-          ${teaGuide.icon} ${teaGuide.teaName}
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap;">
+        <span style="font-weight: bold; font-size: 0.94rem; color: #8b4513;">🍹 ${state.currentOrder.recipeName}</span>
+        <span style="background: #1c0e1a; border: 1px solid #50fa7b; padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; font-weight: bold; color: #50fa7b;">
+          ${teaGuide.icon} Cốt: ${teaGuide.teaName}
         </span>
       </div>
       <div class="order-specs">
         <span class="spec-badge">Đường: <b>${state.currentOrder.sugar}</b></span>
         <span class="spec-badge">Đá: <b>${state.currentOrder.ice}</b></span>
-        <span class="spec-badge" style="grid-column: 1 / -1; text-align: left;">Topping: <b>${orderToppingNames}</b></span>
+        <span class="spec-badge">Topping: <b>${orderToppingNames}</b></span>
       </div>
       <div class="patience-timer-bg">
         <div id="order-timer-fill" class="patience-timer-fill"></div>

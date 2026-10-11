@@ -762,74 +762,58 @@ export const npcMethods = {
       }
     }
 
-    // Emotion & Typewriter Speech Bubble (Only for Front Waiting Customer)
+    // Emotion & Compact Speech Bubble (Only for Front Waiting Customer)
     const activeQuote = quote || this.customerQuote;
     if (isFront && this.customerState === 'waiting' && x >= 175 && !this.isDrinking) {
-      const bubbleBob = Math.sin(this.tick * 0.15) * 2;
+      const bubbleBob = Math.sin(this.tick * 0.15) * 1.5;
       const bx = x + 10;
-      const by = baseY - 12 + bubbleBob;
+      const by = baseY - 9 + bubbleBob;
 
       if (this.bubbleType === 'dialogue' && activeQuote) {
-        // Retro Pixel Comic Dialogue Bubble with Dark Contrast Frame & Crisp White Text
-        const textWidth = Math.min(145, ctx.measureText(activeQuote).width + 18);
-        const bw = Math.max(96, textWidth);
-        const bh = 24;
-        const boxX = Math.min(this.width - bw - 5, Math.max(5, bx - bw / 2 + 5));
-        const boxY = by - 14;
+        ctx.font = 'bold 7px sans-serif';
+        const shortText = activeQuote.length > 26 ? activeQuote.slice(0, 25) + '…' : activeQuote;
+        const textWidth = Math.min(110, Math.ceil(ctx.measureText(shortText).width) + 10);
+        const bw = Math.max(64, textWidth);
+        const bh = 13;
+        const boxX = Math.min(this.width - bw - 4, Math.max(4, Math.round(bx - bw / 2 + 4)));
+        const boxY = Math.max(4, by - 7);
 
-        // Drop shadow
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-        ctx.fillRect(boxX + 2, boxY + 2, bw, bh);
-
-        // Dark sleek dialogue box for maximum text readability
-        ctx.fillStyle = 'rgba(22, 12, 24, 0.95)';
+        ctx.fillStyle = 'rgba(22, 12, 24, 0.86)';
         ctx.fillRect(boxX, boxY, bw, bh);
-        ctx.strokeStyle = '#f4c430'; // Gold border
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#f4c430';
+        ctx.lineWidth = 1;
         ctx.strokeRect(boxX, boxY, bw, bh);
 
-        // Tail pointing down to customer
-        ctx.fillStyle = 'rgba(22, 12, 24, 0.95)';
+        // Compact tail pointing down to customer
+        ctx.fillStyle = 'rgba(22, 12, 24, 0.86)';
         ctx.beginPath();
-        ctx.moveTo(bx - 3, boxY + bh);
-        ctx.lineTo(bx + 1, boxY + bh + 6);
-        ctx.lineTo(bx + 5, boxY + bh);
+        ctx.moveTo(bx - 2, boxY + bh);
+        ctx.lineTo(bx + 1, boxY + bh + 4);
+        ctx.lineTo(bx + 4, boxY + bh);
         ctx.fill();
-        ctx.strokeStyle = '#f4c430';
-        ctx.beginPath();
-        ctx.moveTo(bx - 3, boxY + bh);
-        ctx.lineTo(bx + 1, boxY + bh + 6);
-        ctx.lineTo(bx + 5, boxY + bh);
-        ctx.stroke();
 
-        // Crisp White Text for Highest Readability
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 9.5px "Courier New", monospace, sans-serif';
-        ctx.fillText(activeQuote.slice(0, 22), boxX + 6, boxY + 10.5);
-        if (activeQuote.length > 22) {
-          ctx.fillText(activeQuote.slice(22, 44), boxX + 6, boxY + 19.5);
-        }
+        ctx.fillText(shortText, boxX + 5, boxY + 9);
       } else {
-        // Classic Round Bubble
-        ctx.fillStyle = '#fff';
+        // Compact Round Bubble
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
         ctx.beginPath();
-        ctx.arc(bx, by, 12, 0, Math.PI * 2);
+        ctx.arc(bx, by, 9, 0, Math.PI * 2);
         ctx.fill();
 
-        // Tail
         ctx.beginPath();
-        ctx.moveTo(bx - 3, by + 10);
-        ctx.lineTo(bx - 1, by + 18);
-        ctx.lineTo(bx + 4, by + 9);
+        ctx.moveTo(bx - 2, by + 8);
+        ctx.lineTo(bx - 1, by + 13);
+        ctx.lineTo(bx + 3, by + 7);
         ctx.fill();
 
-        ctx.font = '13px monospace';
+        ctx.font = '10px monospace';
         if (this.bubbleType === 'boba') {
-          ctx.fillText('🧋', bx - 7, by + 4);
+          ctx.fillText('🧋', bx - 5, by + 3.5);
         } else if (this.bubbleType === 'heart') {
-          ctx.fillText('💖', bx - 7, by + 4);
+          ctx.fillText('💖', bx - 5, by + 3.5);
         } else if (this.bubbleType === 'angry') {
-          ctx.fillText('💢', bx - 7, by + 4);
+          ctx.fillText('💢', bx - 5, by + 3.5);
         }
       }
     }

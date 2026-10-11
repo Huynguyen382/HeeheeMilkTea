@@ -1093,43 +1093,45 @@ export const eventMethods = {
         pR(cupX + 2, cupY - 3, 1, 3, '#FACC15');
       }
 
-      // Bong bóng thoại chuẩn Pixel Art phía trên đầu Anh Lâm
+      // Bong bóng thoại gọn gàng phía trên đầu Anh Lâm
       if (ms.bubble) {
-        ctx.font = 'bold 7.5px "Courier New", monospace, sans-serif';
-        const tw = Math.ceil(ctx.measureText(ms.bubble).width);
-        const bw = Math.max(84, tw + 12);
-        const bh = 15;
+        ctx.font = 'bold 6.5px sans-serif';
+        const shortBubble = ms.bubble.length > 28 ? ms.bubble.slice(0, 27) + '…' : ms.bubble;
+        const tw = Math.ceil(ctx.measureText(shortBubble).width);
+        const bw = Math.max(60, Math.min(115, tw + 8));
+        const bh = 12;
         const bx = Math.min(this.width - bw - 6, Math.max(6, Math.round(baseX + 11 - bw / 2)));
-        const by = Math.max(12, baseY - 18);
+        const by = Math.max(10, baseY - 14);
 
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
         ctx.fillRect(bx, by, bw, bh);
         ctx.strokeStyle = '#22c55e';
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 1;
         ctx.strokeRect(bx, by, bw, bh);
 
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(ms.bubble, bx + 6, by + 10.5);
+        ctx.fillText(shortBubble, bx + 4, by + 8.5);
       }
     }
 
-    // Bong bóng thoại khi đang chạy xe
+    // Bong bóng thoại gọn khi đang chạy xe
     if (isRiding && ms.bubble) {
-      ctx.font = 'bold 7.5px "Courier New", monospace, sans-serif';
-      const tw = Math.ceil(ctx.measureText(ms.bubble).width);
-      const bw = Math.max(80, tw + 12);
-      const bh = 15;
+      ctx.font = 'bold 6.5px sans-serif';
+      const shortBubble = ms.bubble.length > 26 ? ms.bubble.slice(0, 25) + '…' : ms.bubble;
+      const tw = Math.ceil(ctx.measureText(shortBubble).width);
+      const bw = Math.max(58, Math.min(110, tw + 8));
+      const bh = 12;
       const bx = Math.min(this.width - bw - 6, Math.max(6, Math.round(mx + 10 - bw / 2)));
-      const by = my - 46;
+      const by = my - 43;
 
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
       ctx.fillRect(bx, by, bw, bh);
       ctx.strokeStyle = '#22c55e';
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1;
       ctx.strokeRect(bx, by, bw, bh);
 
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(ms.bubble, bx + 6, by + 10.5);
+      ctx.fillText(shortBubble, bx + 4, by + 8.5);
     }
 
     ctx.restore();
