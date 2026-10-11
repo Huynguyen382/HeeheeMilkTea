@@ -1,10 +1,10 @@
 /**
  * Dynamic Weather Client Controller
  * Updates Weather HUD badge, syncs canvas weather, and displays weather forecast modal
+ * Note: Exact buff/debuff percentages are intentionally hidden from players.
  */
 
 import { state } from './state.js';
-import { showToast } from './toast.js';
 import { syncRoomWeather } from './room.js';
 
 let elWeatherBadge = null;
@@ -73,23 +73,23 @@ export function updateWeatherUI(weather) {
 
     if (weather.id === 'stormy') {
       elWeatherBadge.classList.add('weather-badge-stormy', 'stormy');
-      elWeatherBadge.title = '⛈️ Giông Bão Sấm Sét - Khách gọi ship hỏa tốc cực mạnh (+60%), tip +25%!';
+      elWeatherBadge.title = '⛈️ Giông Bão Sấm Sét - Thời tiết khắc nghiệt tác động tới đơn Shipper và tâm lý khách hàng!';
     } else if (weather.id === 'rainy') {
       elWeatherBadge.classList.add('weather-badge-rainy');
-      elWeatherBadge.title = '🌧️ Mưa Rào - Khách trú mưa kiên nhẫn chờ đợi (+40%)!';
+      elWeatherBadge.title = '🌧️ Mưa Rào - Khách ghé trú mưa và thay đổi thời gian chờ đợi!';
     } else if (weather.id === 'cloudy') {
       elWeatherBadge.classList.add('weather-badge-cloudy');
-      elWeatherBadge.title = '⛅ Trời Râm - Thời tiết mát dịu, khách ghé đều (+10%)!';
+      elWeatherBadge.title = '⛅ Trời Râm - Thời tiết mát dịu tác động tới lượng khách dạo phố!';
     } else if (weather.id === 'windy') {
       elWeatherBadge.classList.add('weather-badge-windy');
-      elWeatherBadge.title = '🍃 Gió Mùa - Gió vi vu hoa lá rơi bay, mua mang đi (+15%)!';
+      elWeatherBadge.title = '🍃 Gió Mùa - Gió vi vu hoa lá rơi bay, khách thích mua mang đi!';
     } else {
       elWeatherBadge.classList.add('weather-badge-sunny');
-      elWeatherBadge.title = '☀️ Nắng Vàng Rực Rỡ - Khách dạo phố đông đúc (+25%)!';
+      elWeatherBadge.title = '☀️ Nắng Vàng Rực Rỡ - Thời tiết nắng đẹp tác động tới lượng khách ghé quầy!';
     }
   }
 
-  // Update Active Buffs Bar Weather Pill
+  // Update Active Buffs Bar Weather Pill (no exact percentages shown)
   if (!elBuffWeather) {
     elBuffWeather = document.getElementById('buff-weather');
   }
@@ -101,19 +101,19 @@ export function updateWeatherUI(weather) {
     let buffStyle = '';
 
     if (weather.id === 'stormy') {
-      buffSummary = '⛈️ Giông Bão (+60% Ship, +25% Tip)';
+      buffSummary = '⛈️ Giông Bão (Biến Động Đơn Ship & Tip)';
       buffStyle = 'background: rgba(162, 155, 254, 0.25); border: 1.5px solid #a29bfe; color: #e056fd;';
     } else if (weather.id === 'rainy') {
-      buffSummary = '🌧️ Mưa Rào (+40% Kiên Nhẫn)';
+      buffSummary = '🌧️ Mưa Rào (Hiệu Ứng Trú Mưa)';
       buffStyle = 'background: rgba(52, 152, 219, 0.22); border: 1.5px solid #3498db; color: #74b9ff;';
     } else if (weather.id === 'cloudy') {
-      buffSummary = '⛅ Trời Râm (+10% Khách, +15% Kiên Nhẫn)';
+      buffSummary = '⛅ Trời Râm (Khách Dạo Phố Thư Thả)';
       buffStyle = 'background: rgba(149, 165, 166, 0.22); border: 1.5px solid #a4b0be; color: #dfe6e9;';
     } else if (weather.id === 'windy') {
-      buffSummary = '🍃 Gió Mùa (+15% Mang Đi, +10% Tip)';
+      buffSummary = '🍃 Gió Mùa (Khách Mua Mang Đi)';
       buffStyle = 'background: rgba(46, 204, 113, 0.22); border: 1.5px solid #2ecc71; color: #55efc4;';
     } else {
-      buffSummary = '☀️ Nắng Vàng (+25% Khách Dạo Phố)';
+      buffSummary = '☀️ Nắng Vàng (Khách Dạo Phố)';
       buffStyle = 'background: rgba(241, 196, 15, 0.22); border: 1.5px solid #f1c40f; color: #fdcb6e;';
     }
 
@@ -124,7 +124,7 @@ export function updateWeatherUI(weather) {
 }
 
 /**
- * Open Weather forecast popup modal
+ * Open Weather forecast popup modal (qualitative descriptions only, hiding exact rates)
  */
 export function openWeatherModal() {
   if (!modalWeatherInfo) modalWeatherInfo = document.getElementById('modal-weather-info');
@@ -134,7 +134,7 @@ export function openWeatherModal() {
     id: 'sunny',
     name: 'Nắng Vàng Rực Rỡ',
     icon: '☀️',
-    desc: 'Trời quang đãng nắng ấm chan hòa. Khách đi dạo phố nhiều, lượng khách ghé quầy tăng +25%!'
+    desc: 'Trời quang đãng nắng ấm chan hòa. Khách đi dạo phố ghé quầy nhộn nhịp hơn thường ngày!'
   };
 
   const elIcon = document.getElementById('weather-modal-icon');
@@ -151,37 +151,37 @@ export function openWeatherModal() {
     let effectsHtml = '';
     if (weather.id === 'stormy') {
       effectsHtml = `
-        <li style="color: #a29bfe;">⚡ <b>Sấm Sét Rền Vang:</b> Chớp lóe sáng toàn màn hình & rung giật giông bão sinh động.</li>
-        <li style="color: #50fa7b;">🛵 <b>Đơn Ship Xe Máy Bùng Nổ:</b> Tần suất shipper xuất hiện nhận đơn tăng +60%!</li>
-        <li style="color: #f1c40f;">💰 <b>Tiền Tip Tăng Vọt:</b> Khách hàng thương shipper & quầy thưởng tip hào phóng hơn +25%!</li>
+        <li style="color: #a29bfe;">⚡ <b>Sấm Sét Rền Vang:</b> Chớp lóe sáng toàn màn hình & giông bão trên phố.</li>
+        <li style="color: #50fa7b;">🛵 <b>Biến Động Đơn Giao Hàng:</b> Tần suất khách đi bộ và đơn Shipper thay đổi theo giông bão.</li>
+        <li style="color: #f1c40f;">💰 <b>Biến Động Tiền Tip & Giá Trị Đơn:</b> Mức chi tiêu của khách chịu ảnh hưởng trực tiếp từ thời tiết.</li>
       `;
       if (btnTestLightning) btnTestLightning.style.display = 'block';
     } else if (weather.id === 'rainy') {
       effectsHtml = `
         <li style="color: #74b9ff;">🌧️ <b>Mưa Rào Tí Tách:</b> Màn mưa xiên sợi rơi rào rào, mặt đường ướt bóng phản chiếu ánh đèn.</li>
-        <li style="color: #50fa7b;">⏱️ <b>Khách Trú Mưa Kiên Nhẫn:</b> Khách chờ đợi pha chế lâu hơn +40%!</li>
-        <li style="color: #00cec9;">🛵 <b>Gọi Ship Đều Đặn:</b> Nhu cầu đặt xe máy giao tận nhà tăng đều.</li>
+        <li style="color: #50fa7b;">⏱️ <b>Hiệu Ứng Trú Mưa:</b> Tâm lý và thời gian kiên nhẫn chờ đợi của khách tại quầy thay đổi.</li>
+        <li style="color: #00cec9;">🛵 <b>Đơn Đặt Giao Hàng:</b> Nhu cầu đặt xe máy giao tận nhà biến động theo cơn mưa.</li>
       `;
       if (btnTestLightning) btnTestLightning.style.display = 'none';
     } else if (weather.id === 'cloudy') {
       effectsHtml = `
         <li style="color: #a4b0be;">⛅ <b>Trời Râm Mát Dịu:</b> Tầng mây xám bạc dịu mát, lớp sương mỏng là đà trôi ngang tầm mắt.</li>
-        <li style="color: #55efc4;">👥 <b>Lượng Khách Ghé Đều:</b> Khách hàng dạo phố ghé tiệm ổn định (+10%).</li>
-        <li style="color: #fdcb6e;">⏱️ <b>Khách Kiên Nhẫn Tốt:</b> Khách thong thả nhâm nhi chờ đợi đồ uống (+15%).</li>
+        <li style="color: #55efc4;">👥 <b>Lượng Khách Dạo Phố:</b> Lưu lượng khách hàng ghé tiệm điều chỉnh theo tiết trời mát mẻ.</li>
+        <li style="color: #fdcb6e;">⏱️ <b>Tâm Lý Thư Thả:</b> Thời gian khách đứng chờ pha chế chịu tác động từ thời tiết.</li>
       `;
       if (btnTestLightning) btnTestLightning.style.display = 'none';
     } else if (weather.id === 'windy') {
       effectsHtml = `
         <li style="color: #55efc4;">🍃 <b>Gió Mùa Vi Vu:</b> Từng đợt gió xoáy và cánh hoa / lá vàng chao lượn trên đường phố.</li>
-        <li style="color: #74b9ff;">🥤 <b>Khách Mua Mang Đi:</b> Nhu cầu đặt đồ uống take-away tiện lợi tăng (+15%).</li>
-        <li style="color: #fdcb6e;">💰 <b>Tiền Tip Thưởng Thêm:</b> Khách vui vẻ thưởng tip thêm (+10%).</li>
+        <li style="color: #74b9ff;">🥤 <b>Xu Hướng Mua Mang Đi:</b> Lưu lượng khách ghé mua đồ uống take-away biến động.</li>
+        <li style="color: #fdcb6e;">💰 <b>Tâm Trạng Khách Hàng:</b> Tiền thưởng thêm và độ kiên nhẫn thay đổi theo tiết trời.</li>
       `;
       if (btnTestLightning) btnTestLightning.style.display = 'none';
     } else {
       effectsHtml = `
         <li style="color: #f1c40f;">☀️ <b>Nắng Đẹp Rực Rỡ:</b> Tia sáng God Rays xiên qua kẽ lá & hạt bụi nắng vàng lơ lửng.</li>
-        <li style="color: #50fa7b;">👥 <b>Khách Dạo Phố Tấp Nập:</b> Khách ghé quầy vỉa hè tăng mạnh +25%!</li>
-        <li style="color: #55efc4;">🥤 <b>Nước Mát Bán Chạy:</b> Đơn hàng giải khát mát lạnh nhiều đá được ưu tiên.</li>
+        <li style="color: #50fa7b;">👥 <b>Khách Dạo Phố:</b> Lưu lượng khách ghé quầy vỉa hè và nhu cầu giải khát thay đổi theo nắng ấm.</li>
+        <li style="color: #55efc4;">🥤 <b>Đồ Uống Giải Nhiệt:</b> Mức chi tiêu và tiền tip chịu ảnh hưởng từ thời tiết hiện tại.</li>
       `;
       if (btnTestLightning) btnTestLightning.style.display = 'none';
     }

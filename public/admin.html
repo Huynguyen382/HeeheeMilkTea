@@ -411,15 +411,21 @@
         <section id="tab-events" class="tab-pane" style="display: none;">
           <div class="admin-card">
             <div class="card-header">
-              <h2>🎪 Quản Lý Sự Kiện & Lễ Hội Trong Game (Live Events)</h2>
+              <h2>🎪 Quản Lý Sự Kiện & Điều Chỉnh Tỷ Lệ Buff / Debuff</h2>
               <div class="card-actions">
-                <span style="font-size: 13px; color: var(--text-muted);">Tác động tức thì tới gameplay thời gian thực</span>
+                <button type="button" class="btn btn-info btn-xs" onclick="AdminApp.resetEventRatesDefault()">
+                  🔄 Khôi Phục Tỷ Lệ Mặc Định
+                </button>
               </div>
             </div>
             <div class="card-body">
               <div style="background: rgba(255, 255, 255, 0.02); padding: 16px; border-radius: 8px; border: 1px solid var(--admin-border); margin-bottom: 24px;">
-                <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--admin-primary);">⚡ Bộ Kích Hoạt Sự Kiện Nhanh:</h3>
-                <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; align-items: flex-end;">
+                <h3 style="font-size: 15px; margin-bottom: 6px; color: var(--admin-primary);">⚡ Kích Hoạt Sự Kiện & Tùy Chỉnh Tỷ Lệ Buff / Debuff:</h3>
+                <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px;">
+                  💡 Nhập <b>số dương</b> (VD: <code>+30</code>) để <b>Buff</b> tăng chỉ số, hoặc <b>số âm</b> (VD: <code>-25</code>) để <b>Debuff</b> giảm chỉ số. <strong style="color: #fbbf24;">Lưu ý: Người chơi chỉ thấy tên sự kiện và mô tả bối cảnh, hoàn toàn không nhìn thấy con số tỷ lệ % cụ thể!</strong>
+                </p>
+
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
                   <div class="form-group">
                     <label>Chọn Phạm Vi Kích Hoạt:</label>
                     <select id="event-target-store-select" class="input-control">
@@ -427,27 +433,61 @@
                     </select>
                   </div>
                   <div class="form-group">
-                    <label>Chọn Sự Kiện Cần Kích Hoạt:</label>
-                    <select id="event-select-trigger" class="input-control">
-                      <option value="hoi_cho_am_thuc">🎪 Hội Chợ Ẩm Thực Phố Đêm (90s - Doanh thu x2, Khách đông gấp 2.5)</option>
-                      <option value="mua_rao_mua_he">🌧️ Cơn Mưa Rào Mùa Hè (120s - Trú mưa, Kiên nhẫn +50%)</option>
-                      <option value="kiem_tra_vsattp">📋 Thanh Tra An Toàn Thực Phẩm (45s - Thưởng 500 TeaCoin & +0.3⭐ uy tín)</option>
-                      <option value="tiktok_viral_surge">📱 Cơn Sốt TikTok Triệu View Bùng Nổ (90s - Tip x3, Topping ngập tràn)</option>
-                      <option value="nang_nong_40_do">☀️ Nắng Nóng Đột Ngột 40°C (90s - Giá bán +20%, Đắt hàng giải khát)</option>
+                    <label>Chọn Sự Kiện Cần Kích Hoạt / Chỉnh Sửa:</label>
+                    <select id="event-select-trigger" class="input-control" onchange="AdminApp.syncSelectedEventRatesInput()">
+                      <option value="hoi_cho_am_thuc">🎪 Hội Chợ Ẩm Thực Phố Đêm</option>
+                      <option value="mua_rao_mua_he">🌧️ Cơn Mưa Rào Mùa Hè</option>
+                      <option value="kiem_tra_vsattp">📋 Đợt Kiểm Tra Vệ Sinh Đột Xuất</option>
+                      <option value="tiktok_viral_surge">📱 Cơn Sốt Review Mạng Xã Hội</option>
+                      <option value="nang_nong_40_do">☀️ Đợt Nắng Nóng Đỉnh Điểm</option>
+                      <option value="cup_dien_khu_pho">⚡ Sự Cố Điện Lưới Khu Phố (Debuff)</option>
+                      <option value="cam_duong_gio_cao_diem">🚧 Phân Luồng Giao Thông Tuyến Phố (Debuff)</option>
                     </select>
                   </div>
-                  <div>
-                    <button class="btn btn-primary" onclick="AdminApp.triggerSelectedEvent()" style="padding: 10px 20px;">
-                      🚀 Kích Hoạt Sự Kiện Ngay
-                    </button>
+                </div>
+
+                <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                  <div class="form-group">
+                    <label>👥 Tỷ lệ Lượng Khách (%):</label>
+                    <input type="number" id="event-rate-customer" class="input-control" value="50" min="-90" max="500" step="5">
+                    <small style="color: var(--text-muted); font-size: 11px;">Dương (+) tăng khách, Âm (-) giảm khách</small>
                   </div>
+                  <div class="form-group">
+                    <label>💰 Tỷ lệ Giá Bán / Tip (%):</label>
+                    <input type="number" id="event-rate-price" class="input-control" value="25" min="-90" max="500" step="5">
+                    <small style="color: var(--text-muted); font-size: 11px;">Cộng/trừ % dựa trên giá cốc cơ bản</small>
+                  </div>
+                  <div class="form-group">
+                    <label>⏱️ Tỷ lệ Kiên Nhẫn Chờ (%):</label>
+                    <input type="number" id="event-rate-patience" class="input-control" value="15" min="-90" max="500" step="5">
+                    <small style="color: var(--text-muted); font-size: 11px;">Cộng/trừ % trên 40s chờ cơ bản</small>
+                  </div>
+                  <div class="form-group">
+                    <label>⏳ Thời Lượng Sự Kiện (Giây):</label>
+                    <input type="number" id="event-rate-duration" class="input-control" value="120" min="10" max="7200" step="10">
+                    <small style="color: var(--text-muted); font-size: 11px;">Thời gian duy trì hiệu ứng</small>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button class="btn btn-primary" onclick="AdminApp.triggerSelectedEvent()" style="padding: 10px 20px;">
+                    🚀 Kích Hoạt Sự Kiện Với Tỷ Lệ Này
+                  </button>
+                  <button class="btn btn-secondary" onclick="AdminApp.saveSingleEventRatesFromTop()" style="padding: 10px 18px;">
+                    💾 Lưu Tỷ Lệ Cho Sự Kiện Đang Chọn
+                  </button>
                 </div>
               </div>
 
               <!-- EVENTS CARDS GRID -->
-              <h3 style="font-size: 15px; margin-bottom: 14px;">📋 Chi Tiết 5 Sự Kiện Mới Trong Game:</h3>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;" id="events-cards-grid">
-                <!-- Dynamically populated or rendered -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                <h3 style="font-size: 15px; margin: 0;">📋 Bảng Cấu Hình Tỷ Lệ Buff / Debuff Các Sự Kiện (Ẩn Số % Với Người Chơi):</h3>
+                <button class="btn btn-success btn-sm" onclick="AdminApp.saveAllEventCardsRates()">
+                  💾 Lưu Tất Cả Tỷ Lệ Sự Kiện
+                </button>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px;" id="events-cards-grid">
+                <!-- Dynamically populated by AdminApp.renderEventsGrid -->
               </div>
             </div>
           </div>
@@ -459,20 +499,20 @@
         <section id="tab-weather" class="tab-pane" style="display: none;">
           <div class="admin-card">
             <div class="card-header">
-              <h2>⛈️ Điều Khiển Thời Tiết & Giông Bão Sấm Sét</h2>
+              <h2>⛈️ Điều Khiển Thời Tiết & Tỷ Lệ Buff / Debuff Thời Tiết</h2>
               <div class="card-actions">
-                <span style="font-size: 13px; color: var(--text-muted);">
-                  Tác động trực tiếp lên cảnh trời, lượng khách & sấm sét
-                </span>
+                <button type="button" class="btn btn-info btn-xs" onclick="AdminApp.resetWeatherRatesDefault()">
+                  🔄 Khôi Phục Tỷ Lệ Mặc Định
+                </button>
               </div>
             </div>
             <div class="card-body">
               <div style="background: rgba(162, 155, 254, 0.08); border: 1.5px solid #a29bfe; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
                 <h3 style="font-size: 15px; color: #a29bfe; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                  <span>⚡ Can Thiệp Thời Tiết Real-time:</span>
+                  <span>⚡ Can Thiệp Thời Tiết & Nhập Tỷ Lệ Buff / Debuff Real-time:</span>
                 </h3>
                 <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                  Thời tiết trong game tự động thay đổi ngẫu nhiên mỗi khi người chơi kết ca (sang ngày mới). Quản trị viên có thể ép buộc kích hoạt bất kỳ hình thái thời tiết nào cho 1 tiệm hoặc phát sóng toàn server ngay tại đây!
+                  Chọn kiểu thời tiết và nhập tỷ lệ Buff (+) hoặc Debuff (-) theo ý muốn. <strong style="color: #fbbf24;">Người chơi chỉ thấy hiệu ứng thời tiết trên bầu trời và mô tả chữ, không hiện rõ con số tỷ lệ %!</strong>
                 </p>
 
                 <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
@@ -495,50 +535,74 @@
                   <label>Chọn Kiểu Thời Tiết:</label>
                   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;" id="weather-radio-grid">
                     <label style="background: rgba(255,255,255,0.05); border: 1.5px solid #f1c40f; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                      <input type="radio" name="admin-weather-type" value="sunny" checked>
+                      <input type="radio" name="admin-weather-type" value="sunny" checked onchange="AdminApp.syncSelectedWeatherRatesInput()">
                       <div>
                         <div style="font-weight: bold; color: #f1c40f;">☀️ Nắng Vàng</div>
-                        <div style="font-size: 11px; color: var(--text-muted);">Khách dạo phố +25%</div>
+                        <div style="font-size: 11px; color: var(--text-muted);" id="weather-radio-summary-sunny">Tùy chỉnh Buff/Debuff</div>
                       </div>
                     </label>
 
                     <label style="background: rgba(255,255,255,0.05); border: 1.5px solid #74b9ff; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                      <input type="radio" name="admin-weather-type" value="rainy">
+                      <input type="radio" name="admin-weather-type" value="rainy" onchange="AdminApp.syncSelectedWeatherRatesInput()">
                       <div>
                         <div style="font-weight: bold; color: #74b9ff;">🌧️ Mưa Rào</div>
-                        <div style="font-size: 11px; color: var(--text-muted);">Khách kiên nhẫn +40%</div>
+                        <div style="font-size: 11px; color: var(--text-muted);" id="weather-radio-summary-rainy">Tùy chỉnh Buff/Debuff</div>
                       </div>
                     </label>
 
                     <label style="background: rgba(162, 155, 254, 0.15); border: 1.5px solid #a29bfe; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                      <input type="radio" name="admin-weather-type" value="stormy">
+                      <input type="radio" name="admin-weather-type" value="stormy" onchange="AdminApp.syncSelectedWeatherRatesInput()">
                       <div>
                         <div style="font-weight: bold; color: #a29bfe;">⛈️ Giông Bão Sấm Sét</div>
-                        <div style="font-size: 11px; color: #fdcb6e;">⚡ Chớp lóe & Ship +60%</div>
+                        <div style="font-size: 11px; color: #fdcb6e;" id="weather-radio-summary-stormy">Tùy chỉnh Buff/Debuff</div>
                       </div>
                     </label>
 
                     <label style="background: rgba(255,255,255,0.05); border: 1.5px solid #a4b0be; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                      <input type="radio" name="admin-weather-type" value="cloudy">
+                      <input type="radio" name="admin-weather-type" value="cloudy" onchange="AdminApp.syncSelectedWeatherRatesInput()">
                       <div>
                         <div style="font-weight: bold; color: #dfe6e9;">⛅ Nhiều Mây</div>
-                        <div style="font-size: 11px; color: var(--text-muted);">Râm mát ổn định</div>
+                        <div style="font-size: 11px; color: var(--text-muted);" id="weather-radio-summary-cloudy">Tùy chỉnh Buff/Debuff</div>
                       </div>
                     </label>
 
                     <label style="background: rgba(255,255,255,0.05); border: 1.5px solid #55efc4; border-radius: 6px; padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                      <input type="radio" name="admin-weather-type" value="windy">
+                      <input type="radio" name="admin-weather-type" value="windy" onchange="AdminApp.syncSelectedWeatherRatesInput()">
                       <div>
                         <div style="font-weight: bold; color: #55efc4;">🍃 Gió Mùa</div>
-                        <div style="font-size: 11px; color: var(--text-muted);">Lá hoa bay nhanh</div>
+                        <div style="font-size: 11px; color: var(--text-muted);" id="weather-radio-summary-windy">Tùy chỉnh Buff/Debuff</div>
                       </div>
                     </label>
                   </div>
                 </div>
 
+                <!-- CUSTOM BUFF/DEBUFF RATES INPUTS FOR SELECTED WEATHER -->
+                <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                  <div class="form-group">
+                    <label>👥 Buff/Debuff Lượng Khách (%):</label>
+                    <input type="number" id="weather-rate-customer" class="input-control" value="25" min="-90" max="500" step="5">
+                    <small style="color: var(--text-muted); font-size: 11px;">Dương (+) tăng khách, Âm (-) giảm khách</small>
+                  </div>
+                  <div class="form-group">
+                    <label>💰 Buff/Debuff Giá Bán / Tip (%):</label>
+                    <input type="number" id="weather-rate-price" class="input-control" value="10" min="-90" max="500" step="5">
+                    <small style="color: var(--text-muted); font-size: 11px;">Cộng/trừ % dựa trên giá cốc cơ bản</small>
+                  </div>
+                  <div class="form-group">
+                    <label>⏱️ Buff/Debuff Kiên Nhẫn (%):</label>
+                    <input type="number" id="weather-rate-patience" class="input-control" value="0" min="-90" max="500" step="5">
+                    <small style="color: var(--text-muted); font-size: 11px;">Cộng/trừ % trên 40s chờ cơ bản</small>
+                  </div>
+                  <div class="form-group">
+                    <label>🛵 Tỷ lệ Đơn Shipper (%):</label>
+                    <input type="number" id="weather-rate-shipper" class="input-control" value="20" min="0" max="100" step="5">
+                    <small style="color: var(--text-muted); font-size: 11px;">Xác suất xuất hiện đơn Shipper</small>
+                  </div>
+                </div>
+
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                   <button class="btn btn-primary" onclick="AdminApp.applySelectedWeather()" style="padding: 10px 22px;">
-                    🌦️ Áp Dụng Thời Tiết Ngay
+                    🌦️ Áp Dụng Thời Tiết & Tỷ Lệ Ngay
                   </button>
                   <button class="btn btn-danger" onclick="AdminApp.forceTriggerStorm()" style="padding: 10px 22px; background: linear-gradient(135deg, #a29bfe, #6c5ce7); border: none;">
                     ⚡ Kích Hoạt Giông Bão & Sấm Sét Khẩn Cấp!
@@ -546,36 +610,15 @@
                 </div>
               </div>
 
-              <!-- WEATHER CARDS EXPLANATION -->
-              <h3 style="font-size: 15px; margin-bottom: 14px;">📖 Tác Động Cơ Chế Của Các Kiểu Thời Tiết:</h3>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
-                <div style="background: var(--admin-card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px;">
-                  <div style="font-size: 24px; margin-bottom: 4px;">☀️ Nắng Vàng Rực Rỡ</div>
-                  <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-                    Trời trong xanh mây trắng. Khách dạo phố đông đúc ghé quán (+25%), các món trà hoa thanh nhiệt, giải khát nhiều đá bán rất chạy.
-                  </div>
-                </div>
-
-                <div style="background: var(--admin-card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px;">
-                  <div style="font-size: 24px; margin-bottom: 4px;">🌧️ Mưa Rào Mát Rượi</div>
-                  <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-                    Mưa tí tách rải rác trên vỉa hè. Khách tạt vào trú mưa kiên nhẫn hơn (+40%), thích gọi thêm các loại topping ấm nóng hoặc trà sữa béo ngậy.
-                  </div>
-                </div>
-
-                <div style="background: rgba(162, 155, 254, 0.08); border: 1.5px solid #a29bfe; border-radius: 8px; padding: 14px;">
-                  <div style="font-size: 24px; margin-bottom: 4px; color: #a29bfe;">⛈️ Giông Bão Sấm Sét</div>
-                  <div style="font-size: 12px; color: #dfe6e9; line-height: 1.5;">
-                    Mây đen sà thấp, mưa rào xối xả kèm sấm sét giật chớp lóe sáng chân thực. Khách ngại ra đường nhưng số lượng đơn ship xe máy hỏa tốc bùng nổ (+60%) và tiền tip shipper tăng +25%!
-                  </div>
-                </div>
-
-                <div style="background: var(--admin-card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px;">
-                  <div style="font-size: 24px; margin-bottom: 4px;">⛅ Trời Râm & 🍃 Gió Mùa</div>
-                  <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-                    Thời tiết dịu dàng, lá cây và cánh hoa bay lượn nhẹ nhàng. Lượng khách ghé mua mang đi tăng đều đặn.
-                  </div>
-                </div>
+              <!-- WEATHER RATES TABLE / CARDS -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                <h3 style="font-size: 15px; margin: 0;">📖 Bảng Cấu Hình Tỷ Lệ Buff / Debuff Cho Tất Cả 5 Kiểu Thời Tiết:</h3>
+                <button class="btn btn-success btn-sm" onclick="AdminApp.saveAllWeatherCardsRates()">
+                  💾 Lưu Tất Cả Tỷ Lệ Thời Tiết
+                </button>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;" id="admin-weather-rates-grid">
+                <!-- Dynamically populated by AdminApp.renderWeatherRatesGrid -->
               </div>
             </div>
           </div>

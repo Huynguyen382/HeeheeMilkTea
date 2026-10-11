@@ -172,8 +172,12 @@ export function renderOrderTicket() {
     ? `<span style="font-size: 0.68rem; background: #3b2d54; color: #f4c430; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: bold; border: 1px solid #f4c43055;">${charObj.role}</span>`
     : '';
   const isShipperOrder = !!(state.currentOrder.isShipper || state.currentOrder.orderId === state.canvas?.motorbikeShipper?.orderId);
+  const ms = state.canvas?.motorbikeShipper;
+  const shipperTotal = state.currentOrder.shipperBatchTotal || (ms && ms.totalCount) || 1;
+  const shipperIdx = state.currentOrder.shipperBatchIndex || Math.min(shipperTotal, ((ms && ms.servedCount) || 0) + 1);
+  const shipperBadgeText = shipperTotal > 1 ? `🛵 HỎA TỐC (${shipperIdx}/${shipperTotal} ĐƠN)` : '🛵 HỎA TỐC';
   const shipperBadge = isShipperOrder
-    ? `<span style="font-size: 0.68rem; background: #14532d; color: #86efac; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: bold; border: 1px solid #22c55e;">🛵 HỎA TỐC</span>`
+    ? `<span style="font-size: 0.68rem; background: #14532d; color: #86efac; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: bold; border: 1px solid #22c55e;">${shipperBadgeText}</span>`
     : '';
   const orderBoxStyle = isShipperOrder
     ? 'border: 1.5px solid #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);'
@@ -564,12 +568,27 @@ export function initWorkflow() {
           const isShipperOrder = !!(currentOrderObj && (currentOrderObj.isShipper || currentOrderObj.orderId === state.canvas?.motorbikeShipper?.orderId));
           const isAutoStaffActive = !!(state.activeStaff && !state.activeStaff.expired);
 
+          state.orderQueue.shift();
+          if (state.canvas && state.canvas.advanceQueue) {
+            state.canvas.advanceQueue();
+          }
+
           if (isShipperOrder) {
+            const remainingShipperOrders = state.orderQueue.filter(o => o.isShipper).length;
             if (state.canvas && state.canvas.onShipperOrderServed) {
-              state.canvas.onShipperOrderServed(currentOrderObj.orderId);
+              state.canvas.onShipperOrderServed(currentOrderObj.orderId, remainingShipperOrders);
             }
             if (!isAutoStaffActive) {
-              showToast(`📦 Đã giao đơn Shipper! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 1800);
+              const ms = state.canvas?.motorbikeShipper;
+              const totalCount = ms?.totalCount || 1;
+              const servedCount = ms?.servedCount || 1;
+              if (remainingShipperOrders > 0) {
+                showToast(`📦 Đã giao đơn ${servedCount}/${totalCount} cho Shipper (còn ${remainingShipperOrders} đơn)! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 1900);
+              } else if (totalCount > 1) {
+                showToast(`🛵 Đã giao đủ ${servedCount}/${totalCount} đơn — Shipper đi giao hàng! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 2200);
+              } else {
+                showToast(`📦 Đã giao đơn — Shipper đi giao hàng! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 1800);
+              }
             }
           } else if (!isAutoStaffActive) {
             showToast(`🎉 Giao thành công! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 1800);
@@ -591,10 +610,6 @@ export function initWorkflow() {
           state.storeState = await window.API.getState();
           updateUI();
 
-          state.orderQueue.shift();
-          if (state.canvas && state.canvas.advanceQueue) {
-            state.canvas.advanceQueue();
-          }
           state.currentOrder = null;
           state.isShaken = false;
           state.isPoured = false;

@@ -196,6 +196,9 @@ class GameCanvas {
       speed: 2.3,
       timer: 0,
       orderId: null,
+      totalCount: 0,
+      servedCount: 0,
+      needsOrderFetch: false,
       hasDrink: false,
       bubble: '🛵 Ship hỏa tốc!'
     };
@@ -318,12 +321,22 @@ class GameCanvas {
     const maxCustomers = Math.min(14, orders.length);
     const currentOrders = orders.slice(0, maxCustomers);
 
+    const shipperOrdersInQueue = currentOrders.filter(o => o.isShipper);
+    if (shipperOrdersInQueue.length > 0) {
+      if (!this.motorbikeShipper.active || this.motorbikeShipper.state === 'departing' || this.motorbikeShipper.state === 'departing_empty') {
+        this.spawnMotorbikeShipper(shipperOrdersInQueue[0].orderId, shipperOrdersInQueue.length);
+      } else {
+        const ms = this.motorbikeShipper;
+        if (!ms.orderId) ms.orderId = shipperOrdersInQueue[0].orderId;
+        ms.totalCount = Math.max(ms.totalCount || 0, (ms.servedCount || 0) + shipperOrdersInQueue.length);
+        ms.needsOrderFetch = false;
+      }
+    }
+
     let accumulatedX = 185;
+    let shipperSlotOccupied = false;
     this.queue = currentOrders.map((order, idx) => {
       const isShipper = !!order.isShipper;
-      if (isShipper && !this.motorbikeShipper.active) {
-        this.spawnMotorbikeShipper(order.orderId);
-      }
 
       const startX = idx === 0 
         ? (this.customerX > 0 && this.customerX < 200 ? this.customerX : -35) 
@@ -344,8 +357,13 @@ class GameCanvas {
         spacing += 18;
       }
 
-      const currentTargetX = accumulatedX;
-      accumulatedX += spacing;
+      const currentTargetX = isShipper ? 185 : accumulatedX;
+      if (!isShipper) {
+        accumulatedX += spacing;
+      } else if (!shipperSlotOccupied) {
+        shipperSlotOccupied = true;
+        accumulatedX += spacing;
+      }
 
       // Even in front row (Y=108), odd in back row (Y=104) for crowded queue
       const targetY = (currentOrders.length > 5 && idx > 0) ? (idx % 2 === 0 ? 108 : 104) : 108;
@@ -399,8 +417,19 @@ class GameCanvas {
         this.leavingCustomers.push(leavingCust);
       }
 
+      let visualIdx = 0;
+      let shipperCounted = false;
       this.queue.forEach((cust, idx) => {
-        cust.targetX = 185 + (idx * 38);
+        if (cust.isShipper) {
+          cust.targetX = 185;
+          if (!shipperCounted) {
+            shipperCounted = true;
+            visualIdx++;
+          }
+        } else {
+          cust.targetX = 185 + (visualIdx * 38);
+          visualIdx++;
+        }
         if (idx === 0) {
           this.customerType = cust.customerType;
           this.customerQuote = cust.quote;
@@ -414,16 +443,21 @@ class GameCanvas {
     }
   }
 
-  spawnMotorbikeShipper(orderId = null) {
+  spawnMotorbikeShipper(orderId = null, totalCount = 0) {
     if (!this.motorbikeShipper) return;
     const ms = this.motorbikeShipper;
-    if (ms.active) {
+    if (ms.active && ms.state !== 'departing' && ms.state !== 'departing_empty') {
       if (orderId && !ms.orderId) ms.orderId = orderId;
+      if (totalCount > 0) {
+        ms.totalCount = Math.max(ms.totalCount || 0, (ms.servedCount || 0) + totalCount);
+      }
+      if (orderId) ms.needsOrderFetch = false;
       return;
     }
     ms.active = true;
     ms.state = 'approaching';
     ms.x = this.width + 25;
+    ms.walkX = ms.x;
     const save = window.state?.storeState?.save;
     const buffs = save?.active_buffs || {};
     const coffeeBuffs = save?.coffee_buffs || {};
@@ -432,31 +466,95 @@ class GameCanvas {
     ms.speed = isFast ? 4.6 : 2.3;
     ms.timer = 0;
     ms.orderId = orderId;
+    ms.totalCount = totalCount > 0 ? totalCount : (orderId ? 1 : 0);
+    ms.servedCount = 0;
+    ms.needsOrderFetch = !orderId;
     ms.hasDrink = false;
-    ms.bubble = isFast ? '⚡ Wave Chiến Hỏa Tốc x2!' : '🛵 Có đơn ship hỏa tốc!';
+    ms.bubble = isFast
+      ? '⚡ Wave Chiến Hỏa Tốc x2!'
+      : (ms.totalCount > 1 ? `🛵 Nhận đơn ${ms.totalCount} ly hỏa tốc!` : '🛵 Có đơn ship hỏa tốc!');
   }
 
-  onShipperOrderServed(orderId = null) {
-    if (!this.motorbikeShipper || !this.motorbikeShipper.active) return;
+  onShipperOrderServed(orderId = null, remainingShipperOrders = null) {
+    if (!this.motorbikeShipper) return;
     const ms = this.motorbikeShipper;
+    if (!ms.active) {
+      this.spawnMotorbikeShipper(orderId);
+    }
+
+    ms.servedCount = (ms.servedCount || 0) + 1;
+    const remaining = typeof remainingShipperOrders === 'number'
+      ? remainingShipperOrders
+      : (this.queue || []).filter(q => q.isShipper && q.orderId !== orderId).length;
+    ms.totalCount = Math.max(ms.totalCount || 1, ms.servedCount + remaining);
+
+    if (remaining > 0) {
+      // Vẫn còn đơn trong đợt ship: Shipper đứng tại quầy giữ các đơn đã làm xong, chờ nhận đủ hết đơn mới đi giao!
+      ms.hasDrink = true;
+      if (ms.state !== 'approaching' && ms.state !== 'walking_to_counter') {
+        ms.state = 'waiting_for_drink';
+        ms.walkX = 185;
+      }
+      ms.bubble = `📦 Đã nhận ${ms.servedCount}/${ms.totalCount} đơn! Còn ${remaining} đơn nữa!`;
+      this.floatingTexts.push({
+        text: `📦 ĐÃ GIAO ${ms.servedCount}/${ms.totalCount} ĐƠN!`,
+        x: Math.max(150, (ms.walkX || 185) - 14),
+        y: 95,
+        alpha: 1.0,
+        color: '#50fa7b'
+      });
+      return;
+    }
+
+    // Đã giao hết toàn bộ đơn trong đợt ship -> Shipper mang hàng ra xe và bắt đầu đi giao!
+    if (ms.state === 'approaching') {
+      ms.x = ms.targetX;
+      ms.walkX = 185;
+    }
     ms.state = 'carrying_drink';
     ms.hasDrink = true;
-    ms.bubble = '🥤 Đã nhận đồ, đi giao ngay!';
+    ms.bubble = ms.totalCount > 1
+      ? `🥤 Đủ ${ms.servedCount}/${ms.totalCount} đơn rồi, đi giao ngay!`
+      : '🥤 Đã nhận đồ, đi giao ngay!';
     this.floatingTexts.push({
-      text: '📦 ĐÃ LẤY HÀNG!',
-      x: Math.max(160, ms.walkX - 10),
+      text: ms.totalCount > 1 ? `🛵 ĐỦ ${ms.servedCount} ĐƠN! ĐI GIAO!` : '📦 ĐÃ LẤY HÀNG!',
+      x: Math.max(150, (ms.walkX || 185) - 14),
       y: 95,
       alpha: 1.0,
       color: '#50fa7b'
     });
   }
 
-  onShipperOrderFailed(orderId = null) {
+  onShipperOrderFailed(orderId = null, remainingShipperOrders = null) {
     if (!this.motorbikeShipper || !this.motorbikeShipper.active) return;
     const ms = this.motorbikeShipper;
-    ms.state = 'departing_empty';
-    ms.hasDrink = false;
-    ms.bubble = '❌ Khách đợi lâu quá hủy đơn rồi!';
+
+    const remaining = typeof remainingShipperOrders === 'number'
+      ? remainingShipperOrders
+      : (this.queue || []).filter(q => q.isShipper && q.orderId !== orderId).length;
+
+    if (remaining > 0) {
+      if (ms.state !== 'approaching' && ms.state !== 'walking_to_counter') {
+        ms.state = 'waiting_for_drink';
+        ms.walkX = 185;
+      }
+      ms.bubble = `⏳ Trễ 1 đơn rồi, làm nhanh ${remaining} đơn còn lại nha!`;
+      return;
+    }
+
+    if (ms.servedCount && ms.servedCount > 0) {
+      if (ms.state === 'approaching') {
+        ms.x = ms.targetX;
+        ms.walkX = 185;
+      }
+      ms.state = 'carrying_drink';
+      ms.hasDrink = true;
+      ms.bubble = `🛵 Em mang ${ms.servedCount} đơn đã xong đi giao luôn nhé!`;
+    } else {
+      ms.state = 'departing_empty';
+      ms.hasDrink = false;
+      ms.bubble = '❌ Khách đợi lâu quá hủy đơn rồi!';
+    }
   }
 
   update() {
@@ -614,21 +712,46 @@ class GameCanvas {
           if (ms.walkX <= 185) {
             ms.walkX = 185;
             ms.state = 'waiting_for_drink';
-            ms.bubble = isFast ? '⚡ Ship hỏa tốc x2 đây!' : '📦 Cho em lấy đơn ship hỏa tốc!';
-            if (typeof this.onShipperArrived === 'function') {
-              this.onShipperArrived();
+            const existingShipperOrders = (this.queue || []).filter(q => q.isShipper);
+            if (existingShipperOrders.length > 0 && !ms.needsOrderFetch) {
+              ms.totalCount = Math.max(ms.totalCount || 0, (ms.servedCount || 0) + existingShipperOrders.length);
+              ms.bubble = ms.totalCount > 1
+                ? `🛵 Anh Lâm: Đơn app ${ms.totalCount} ly hỏa tốc nha quán!`
+                : (isFast ? '⚡ Ship hỏa tốc x2 đây!' : '📦 Cho em lấy đơn ship hỏa tốc!');
+            } else if (typeof this.onShipperArrived === 'function') {
+              ms.needsOrderFetch = false;
+              ms.bubble = isFast ? '⚡ Ship hỏa tốc x2 đây!' : '📦 Cho em lấy đơn ship hỏa tốc!';
+              Promise.resolve(this.onShipperArrived()).then(firstOrder => {
+                const hasShipperInQueue = (this.queue || []).some(q => q.isShipper);
+                if (!firstOrder && !hasShipperInQueue && ms.active && ms.state === 'waiting_for_drink') {
+                  ms.state = 'departing_empty';
+                  ms.bubble = '🛵 Quán đang đông quá, em nhận cuốc khác nhé!';
+                }
+              });
             }
           }
         } else if (ms.state === 'waiting_for_drink') {
-          // Stands patiently at the counter waiting for the drink to be prepared & served
+          // Stands patiently at the counter waiting for all drinks in the batch to be prepared & served
           if (this.tick % 240 === 0) {
-            const waitQuotes = [
-              '☕ Quán làm nhanh nha, khách app giục quá!',
-              '📦 Đang đợi quán làm trà sữa giao đi...',
-              '🛵 Đơn hỏa tốc ráng làm chuẩn vị giùm em nha!',
-              '✨ Trà thơm quá, xong sớm em phóng vèo đi giao!'
-            ];
-            ms.bubble = waitQuotes[Math.floor(Math.random() * waitQuotes.length)];
+            const total = ms.totalCount || 1;
+            const served = ms.servedCount || 0;
+            const remaining = Math.max(0, total - served);
+            if (total > 1 && served > 0 && remaining > 0) {
+              const multiQuotes = [
+                `📦 Đã nhận ${served}/${total} đơn, đợi ${remaining} đơn nữa em đi giao!`,
+                `🛵 Đủ ${total} đơn là em phóng xe đi giao hàng liền nha!`,
+                `☕ Còn ${remaining} ly nữa là hoàn tất đơn ship tổng!`
+              ];
+              ms.bubble = multiQuotes[Math.floor(Math.random() * multiQuotes.length)];
+            } else {
+              const waitQuotes = [
+                '☕ Quán làm nhanh nha, khách app giục quá!',
+                '📦 Đang đợi quán làm đủ đơn để đi giao...',
+                '🛵 Đơn hỏa tốc ráng làm chuẩn vị giùm em nha!',
+                '✨ Trà thơm quá, xong đủ đơn em phóng vèo đi giao!'
+              ];
+              ms.bubble = waitQuotes[Math.floor(Math.random() * waitQuotes.length)];
+            }
           }
         } else if (ms.state === 'carrying_drink') {
           // Walking back from counter (185) to parked motorbike (ms.x) holding drink
@@ -637,7 +760,9 @@ class GameCanvas {
             ms.walkX = ms.x;
             ms.state = 'stowing_drink';
             ms.timer = isFast ? 22 : 45; // Faster stowing if fast!
-            ms.bubble = '📦 Cất vào thùng giữ nhiệt!';
+            ms.bubble = ms.servedCount > 1
+              ? `📦 Cất ${ms.servedCount} đơn vào thùng giữ nhiệt!`
+              : '📦 Cất vào thùng giữ nhiệt!';
             for (let i = 0; i < 6; i++) {
               this.particles.push({
                 x: ms.x - 5 + (Math.random() * 8 - 4),
@@ -656,7 +781,9 @@ class GameCanvas {
           if (ms.timer <= 0) {
             ms.hasDrink = false;
             ms.state = 'departing';
-            ms.bubble = '💨 Chúc quán đắt hàng, em đi giao đây!';
+            ms.bubble = ms.servedCount > 1
+              ? `💨 Đủ ${ms.servedCount} đơn, em đi giao hàng đây!`
+              : '💨 Chúc quán đắt hàng, em đi giao đây!';
           }
         } else if (ms.state === 'departing_empty') {
           // Walking back without drink after cancellation/timeout
@@ -685,6 +812,9 @@ class GameCanvas {
             ms.active = false;
             ms.state = 'idle';
             ms.orderId = null;
+            ms.totalCount = 0;
+            ms.servedCount = 0;
+            ms.needsOrderFetch = false;
             ms.hasDrink = false;
             this.shipperSpawnTimer = 2200 + Math.random() * 2200;
           }

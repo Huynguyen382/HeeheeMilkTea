@@ -1161,7 +1161,7 @@ router.post('/system/reset-circuit-breaker', requireAdmin, (req, res) => {
 // EVENTS & NPC MANAGEMENT ENDPOINTS
 // -------------------------------------------------------------
 
-// 1. Get all events
+// 1. Get all events with current & default buff/debuff rates
 router.get('/events', requireAdmin, (req, res) => {
   res.json({
     success: true,
@@ -1169,33 +1169,76 @@ router.get('/events', requireAdmin, (req, res) => {
   });
 });
 
-// 2. Trigger an event (single store or broadcast)
+// 1b. Update buff/debuff rates for events
+router.put('/events/rates', requireAdmin, async (req, res) => {
+  try {
+    const { rates } = req.body;
+    if (!rates || typeof rates !== 'object') {
+      return res.status(400).json({ success: false, error: 'Dữ liệu tỉ lệ buff/debuff sự kiện không hợp lệ!' });
+    }
+
+    const { applyEventRateOverrides, getEventsList } = require('../services/game/event.service');
+    applyEventRateOverrides(rates, true);
+
+    if (gameCache.storeState) gameCache.storeState.clear();
+    await recordAuditLog(null, 'ADMIN_UPDATE_EVENT_RATES', rates);
+
+    res.json({
+      success: true,
+      message: 'Đã lưu cấu hình tỉ lệ Buff/Debuff sự kiện thành công!',
+      events: getEventsList()
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 1c. Reset event buff/debuff rates to default
+router.post('/events/rates/reset', requireAdmin, async (req, res) => {
+  try {
+    const { resetEventRatesToDefault, getEventsList } = require('../services/game/event.service');
+    resetEventRatesToDefault();
+
+    if (gameCache.storeState) gameCache.storeState.clear();
+    await recordAuditLog(null, 'ADMIN_RESET_EVENT_RATES', {});
+
+    res.json({
+      success: true,
+      message: 'Đã khôi phục tỉ lệ Buff/Debuff sự kiện về mặc định!',
+      events: getEventsList()
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 2. Trigger an event (single store or broadcast) with optional customRates
 router.post('/events/trigger', requireAdmin, async (req, res) => {
   try {
-    const { storeId, eventId } = req.body;
+    const { storeId, eventId, customRates } = req.body;
     if (!eventId) return res.status(400).json({ success: false, error: 'Thiếu eventId!' });
 
     if (storeId === 'all') {
-      const result = await gameService.broadcastEvent(eventId);
-      await recordAuditLog(null, 'ADMIN_BROADCAST_EVENT', { eventId, affected: result.affectedCount });
+      const result = await gameService.broadcastEvent(eventId, customRates);
+      await recordAuditLog(null, 'ADMIN_BROADCAST_EVENT', { eventId, customRates, affected: result.affectedCount });
 
-      // Realtime push to all clients
+      // Realtime push to all clients (playerMessage hides exact percentages)
       liveSync.broadcast('event_triggered', {
         event: result.event,
-        message: result.message
+        message: result.playerMessage || result.message
       });
 
       return res.json(result);
     } else {
       if (!storeId) return res.status(400).json({ success: false, error: 'Thiếu storeId!' });
-      const result = await gameService.triggerEventForStore(Number(storeId), eventId);
-      await recordAuditLog(Number(storeId), 'ADMIN_TRIGGER_EVENT', { eventId });
+      const result = await gameService.triggerEventForStore(Number(storeId), eventId, customRates);
+      await recordAuditLog(Number(storeId), 'ADMIN_TRIGGER_EVENT', { eventId, customRates });
 
-      // Realtime push to target store client
+      // Realtime push to target store client (playerMessage hides exact percentages)
       liveSync.pushToStore(Number(storeId), 'event_triggered', {
         event: result.event,
         expiresAt: result.expiresAt,
-        message: result.message
+        message: result.playerMessage || result.message
       });
 
       return res.json(result);
@@ -1262,28 +1305,81 @@ router.post('/npcs/spawn', requireAdmin, async (req, res) => {
   }
 });
 
-// 5. Get weather types & current weather status
+// 5. Get weather types & current buff/debuff rates
 router.get('/weather', requireAdmin, async (req, res) => {
   try {
-    const { WEATHER_TYPES } = require('../services/game/weather.service');
+    const { WEATHER_TYPES, DEFAULT_WEATHER_TYPES } = require('../services/game/weather.service');
+    const list = Object.values(WEATHER_TYPES).map(w => ({
+      ...w,
+      defaultRates: DEFAULT_WEATHER_TYPES[w.id] || w
+    }));
     res.json({
       success: true,
-      weatherTypes: Object.values(WEATHER_TYPES)
+      weatherTypes: list
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// 6. Force set weather for a store or broadcast to all stores
+// 5b. Update weather buff/debuff rates
+router.put('/weather/rates', requireAdmin, async (req, res) => {
+  try {
+    const { rates } = req.body;
+    if (!rates || typeof rates !== 'object') {
+      return res.status(400).json({ success: false, error: 'Dữ liệu tỉ lệ buff/debuff thời tiết không hợp lệ!' });
+    }
+
+    const { WEATHER_TYPES, DEFAULT_WEATHER_TYPES, applyWeatherRateOverrides } = require('../services/game/weather.service');
+    applyWeatherRateOverrides(rates, true);
+
+    if (gameCache.storeState) gameCache.storeState.clear();
+    await recordAuditLog(null, 'ADMIN_UPDATE_WEATHER_RATES', rates);
+
+    res.json({
+      success: true,
+      message: 'Đã lưu cấu hình tỉ lệ Buff/Debuff thời tiết thành công!',
+      weatherTypes: Object.values(WEATHER_TYPES).map(w => ({
+        ...w,
+        defaultRates: DEFAULT_WEATHER_TYPES[w.id] || w
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 5c. Reset weather buff/debuff rates to default
+router.post('/weather/rates/reset', requireAdmin, async (req, res) => {
+  try {
+    const { WEATHER_TYPES, DEFAULT_WEATHER_TYPES, resetWeatherRatesToDefault } = require('../services/game/weather.service');
+    resetWeatherRatesToDefault();
+
+    if (gameCache.storeState) gameCache.storeState.clear();
+    await recordAuditLog(null, 'ADMIN_RESET_WEATHER_RATES', {});
+
+    res.json({
+      success: true,
+      message: 'Đã khôi phục tỉ lệ Buff/Debuff thời tiết về mặc định!',
+      weatherTypes: Object.values(WEATHER_TYPES).map(w => ({
+        ...w,
+        defaultRates: DEFAULT_WEATHER_TYPES[w.id] || w
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 6. Force set weather for a store or broadcast to all stores (supports customRates)
 router.post('/weather/change', requireAdmin, async (req, res) => {
   try {
-    const { weatherId, storeId, broadcast } = req.body;
+    const { weatherId, storeId, broadcast, customRates } = req.body;
     if (!weatherId) return res.status(400).json({ success: false, error: 'Thiếu weatherId!' });
 
     if (broadcast) {
-      const result = await gameService.setGlobalWeather(weatherId);
-      await recordAuditLog(null, 'ADMIN_BROADCAST_WEATHER', { weatherId });
+      const result = await gameService.setGlobalWeather(weatherId, customRates);
+      await recordAuditLog(null, 'ADMIN_BROADCAST_WEATHER', { weatherId, customRates });
 
       // Realtime push to all connected player clients
       liveSync.broadcast('weather_changed', {
@@ -1294,8 +1390,8 @@ router.post('/weather/change', requireAdmin, async (req, res) => {
       return res.json(result);
     } else {
       if (!storeId) return res.status(400).json({ success: false, error: 'Thiếu storeId hoặc broadcast flag!' });
-      const result = await gameService.setWeatherForStore(Number(storeId), weatherId);
-      await recordAuditLog(Number(storeId), 'ADMIN_SET_WEATHER', { weatherId });
+      const result = await gameService.setWeatherForStore(Number(storeId), weatherId, customRates);
+      await recordAuditLog(Number(storeId), 'ADMIN_SET_WEATHER', { weatherId, customRates });
 
       // Realtime push to target store client
       liveSync.pushToStore(Number(storeId), 'weather_changed', {

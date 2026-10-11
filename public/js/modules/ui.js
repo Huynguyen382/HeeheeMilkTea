@@ -53,7 +53,7 @@ export function updateBuffsUI(buffs) {
 
   if (buffs.patience_boost && buffs.patience_boost > 0) {
     bPatience.style.display = 'inline-block';
-    bPatience.innerText = `⏱️ Khách Kiên Nhẫn +40% (${buffs.patience_boost} đơn)`;
+    bPatience.innerText = `⏱️ Khách Kiên Nhẫn (${buffs.patience_boost} đơn)`;
     hasAny = true;
   } else {
     bPatience.style.display = 'none';
@@ -61,7 +61,7 @@ export function updateBuffsUI(buffs) {
 
   if (buffs.tip_bonus && buffs.tip_bonus > 0) {
     bTip.style.display = 'inline-block';
-    bTip.innerText = `💰 Tip Thưởng +10% (${buffs.tip_bonus} đơn)`;
+    bTip.innerText = `💰 Khách Hào Phóng Tip (${buffs.tip_bonus} đơn)`;
     hasAny = true;
   } else {
     bTip.style.display = 'none';
@@ -84,9 +84,9 @@ export function updateBuffsUI(buffs) {
       const sab = buffs.sabotage;
       bSabotage.style.display = 'inline-block';
       if (sab.type === 'market_inspection') {
-        bSabotage.innerHTML = `👮 <b>Quản Lý Thị Trường Niêm Phong</b> (${sab.waves} đợt: -60% Khách, -40% Tiền)`;
+        bSabotage.innerHTML = `👮 <b>Quản Lý Thị Trường Niêm Phong</b> (${sab.waves} đợt)`;
       } else {
-        bSabotage.innerHTML = `📉 <b>Bị Bóc Phốt Mạng Xã Hội</b> (${sab.waves} đợt: -50% Khách, -30% Tiền)`;
+        bSabotage.innerHTML = `📉 <b>Bị Bóc Phốt Mạng Xã Hội</b> (${sab.waves} đợt)`;
       }
       hasAny = true;
     } else {
@@ -94,13 +94,14 @@ export function updateBuffsUI(buffs) {
     }
   }
 
-  // Check live event buff
+  // Check live event buff (only show name & countdown, never exact buff/debuff %)
   const bEvent = document.getElementById('buff-live-event');
   if (bEvent) {
     if (buffs.current_event && buffs.current_event.expires_at > Date.now()) {
       const secLeft = Math.max(0, Math.ceil((buffs.current_event.expires_at - Date.now()) / 1000));
       bEvent.style.display = 'inline-block';
       bEvent.innerHTML = `${buffs.current_event.icon || '🎪'} <b>${buffs.current_event.name}</b> (${secLeft}s)`;
+      bEvent.title = buffs.current_event.desc || 'Sự kiện đang diễn ra tại khu phố';
       hasAny = true;
     } else {
       bEvent.style.display = 'none';

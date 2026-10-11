@@ -168,6 +168,13 @@ async function getStoreState(storeId) {
             nextCost: 25000
           };
         }
+        if (buffs.weather && buffs.weather.customOverrides) {
+          delete buffs.weather.customOverrides;
+        }
+        if (buffs.current_event) {
+          delete buffs.current_event.customEffects;
+          delete buffs.current_event.effects;
+        }
         return buffs;
       })(),
       inventory: { ...DEFAULT_INVENTORY, ...JSON.parse(save.inventory || '{}') },
@@ -181,11 +188,11 @@ async function getStoreState(storeId) {
     daily_stats: daily,
     weather: (() => {
       const buffs = JSON.parse(save.active_buffs || '{}');
-      const { WEATHER_TYPES } = require('./weather.service');
+      const { WEATHER_TYPES, toPublicWeather } = require('./weather.service');
       if (buffs.weather && WEATHER_TYPES[buffs.weather.id]) {
-        return WEATHER_TYPES[buffs.weather.id];
+        return toPublicWeather(WEATHER_TYPES[buffs.weather.id]);
       }
-      return WEATHER_TYPES.sunny;
+      return toPublicWeather(WEATHER_TYPES.sunny);
     })(),
     recipes_db: staticData.recipes_db,
     customers_db: staticData.customers_db,

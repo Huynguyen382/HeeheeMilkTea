@@ -150,6 +150,7 @@ const AdminApp = (() => {
         loadOrders(),
         loadLogs(),
         loadEvents(),
+        loadWeather(),
         loadNPCs(),
         loadIngredientPrices()
       ]);
@@ -556,37 +557,93 @@ const AdminApp = (() => {
     }).join('');
   }
 
-  // 4b. EVENTS SYSTEM
+  // 4b. EVENTS SYSTEM & BUFF/DEBUFF RATES
   async function loadEvents() {
     try {
       const data = await apiRequest('/api/admin/events');
       state.events = data.events || [];
+      syncSelectedEventRatesInput();
       renderEventsGrid(state.events);
     } catch (err) {
       console.error('Error loading events:', err);
     }
   }
 
+  function syncSelectedEventRatesInput() {
+    const eventId = document.getElementById('event-select-trigger')?.value;
+    if (!eventId || !Array.isArray(state.events)) return;
+    const ev = state.events.find(e => e.id === eventId);
+    if (!ev) return;
+
+    const eff = ev.effects || {};
+    const elCust = document.getElementById('event-rate-customer');
+    const elPrice = document.getElementById('event-rate-price');
+    const elPat = document.getElementById('event-rate-patience');
+    const elDur = document.getElementById('event-rate-duration');
+
+    if (elCust) elCust.value = eff.customerBuffPercent !== undefined ? eff.customerBuffPercent : 0;
+    if (elPrice) elPrice.value = eff.priceBuffPercent !== undefined ? eff.priceBuffPercent : 0;
+    if (elPat) elPat.value = eff.patienceBuffPercent !== undefined ? eff.patienceBuffPercent : 0;
+    if (elDur) elDur.value = ev.durationSec || 90;
+  }
+
+  function formatRateBadge(val) {
+    const num = Number(val) || 0;
+    if (num > 0) return `<span style="color: #34d399; font-weight: 700;">+${num}% (Buff)</span>`;
+    if (num < 0) return `<span style="color: #f87171; font-weight: 700;">${num}% (Debuff)</span>`;
+    return `<span style="color: var(--text-muted);">0%</span>`;
+  }
+
   function renderEventsGrid(events) {
     const grid = document.getElementById('events-cards-grid');
     if (!grid) return;
 
-    grid.innerHTML = events.map(ev => `
-      <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--admin-border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
-        <div>
-          <div style="font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-            <span>${ev.icon}</span> <span>${escapeHtml(ev.name)}</span>
+    grid.innerHTML = events.map(ev => {
+      const eff = ev.effects || {};
+      const custPct = eff.customerBuffPercent ?? 0;
+      const pricePct = eff.priceBuffPercent ?? 0;
+      const patPct = eff.patienceBuffPercent ?? 0;
+      const durSec = ev.durationSec || 90;
+
+      return `
+        <div class="admin-event-rate-card" data-event-id="${ev.id}" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--admin-border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span>${ev.icon}</span> <span>${escapeHtml(ev.name)}</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.45; margin-bottom: 10px;">
+              ${escapeHtml(ev.desc)}
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: rgba(0,0,0,0.25); padding: 10px; border-radius: 6px;">
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">👥 Lượng Khách (%)</label>
+                <input type="number" class="input-control ev-card-cust" data-id="${ev.id}" value="${custPct}" min="-90" max="500" step="5" style="padding: 5px 8px; font-size: 13px;">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">💰 Giá Bán / Tip (%)</label>
+                <input type="number" class="input-control ev-card-price" data-id="${ev.id}" value="${pricePct}" min="-90" max="500" step="5" style="padding: 5px 8px; font-size: 13px;">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">⏱️ Kiên Nhẫn (%)</label>
+                <input type="number" class="input-control ev-card-patience" data-id="${ev.id}" value="${patPct}" min="-90" max="500" step="5" style="padding: 5px 8px; font-size: 13px;">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">⏳ Thời Lượng (giây)</label>
+                <input type="number" class="input-control ev-card-duration" data-id="${ev.id}" value="${durSec}" min="10" max="7200" step="10" style="padding: 5px 8px; font-size: 13px;">
+              </div>
+            </div>
           </div>
-          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">${escapeHtml(ev.desc)}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 11px; color: var(--text-muted);">
+              Khách: ${formatRateBadge(custPct)} • Giá: ${formatRateBadge(pricePct)}
+            </span>
+            <button class="btn btn-warning btn-xs" onclick="AdminApp.triggerEventQuick('${ev.id}')">
+              ⚡ Kích Hoạt Với Tỷ Lệ Này
+            </button>
+          </div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
-          <span style="font-size: 11px; color: #fbbf24; font-weight: 600;">⏱️ Thời lượng: ${ev.durationSec}s</span>
-          <button class="btn btn-warning btn-xs" onclick="AdminApp.triggerEventQuick('${ev.id}')">
-            ⚡ Kích Hoạt Nhanh
-          </button>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   async function triggerSelectedEvent() {
@@ -594,12 +651,20 @@ const AdminApp = (() => {
     const eventId = document.getElementById('event-select-trigger')?.value;
     if (!eventId) return;
 
+    const customRates = {
+      customerBuffPercent: Number(document.getElementById('event-rate-customer')?.value || 0),
+      priceBuffPercent: Number(document.getElementById('event-rate-price')?.value || 0),
+      patienceBuffPercent: Number(document.getElementById('event-rate-patience')?.value || 0),
+      durationSec: Number(document.getElementById('event-rate-duration')?.value || 90)
+    };
+
     try {
       const res = await apiRequest('/api/admin/events/trigger', {
         method: 'POST',
-        body: JSON.stringify({ storeId, eventId })
+        body: JSON.stringify({ storeId, eventId, customRates })
       });
       showToast(res.message, 'success');
+      loadEvents();
       loadAllData(true);
     } catch (err) {
       showToast(err.message, 'error');
@@ -608,13 +673,95 @@ const AdminApp = (() => {
 
   async function triggerEventQuick(eventId) {
     const storeId = document.getElementById('event-target-store-select')?.value || 'all';
+    const card = document.querySelector(`.admin-event-rate-card[data-event-id="${eventId}"]`);
+    let customRates = null;
+    if (card) {
+      customRates = {
+        customerBuffPercent: Number(card.querySelector('.ev-card-cust')?.value || 0),
+        priceBuffPercent: Number(card.querySelector('.ev-card-price')?.value || 0),
+        patienceBuffPercent: Number(card.querySelector('.ev-card-patience')?.value || 0),
+        durationSec: Number(card.querySelector('.ev-card-duration')?.value || 90)
+      };
+    }
+
     try {
       const res = await apiRequest('/api/admin/events/trigger', {
         method: 'POST',
-        body: JSON.stringify({ storeId, eventId })
+        body: JSON.stringify({ storeId, eventId, customRates })
       });
       showToast(res.message, 'success');
+      loadEvents();
       loadAllData(true);
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function saveSingleEventRatesFromTop() {
+    const eventId = document.getElementById('event-select-trigger')?.value;
+    if (!eventId) return;
+    const rates = {
+      [eventId]: {
+        customerBuffPercent: Number(document.getElementById('event-rate-customer')?.value || 0),
+        priceBuffPercent: Number(document.getElementById('event-rate-price')?.value || 0),
+        patienceBuffPercent: Number(document.getElementById('event-rate-patience')?.value || 0),
+        durationSec: Number(document.getElementById('event-rate-duration')?.value || 90)
+      }
+    };
+    try {
+      const res = await apiRequest('/api/admin/events/rates', {
+        method: 'PUT',
+        body: JSON.stringify({ rates })
+      });
+      showToast(res.message || 'Đã lưu tỷ lệ sự kiện!', 'success');
+      if (res.events) {
+        state.events = res.events;
+        renderEventsGrid(state.events);
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function saveAllEventCardsRates() {
+    const rates = {};
+    document.querySelectorAll('.admin-event-rate-card').forEach(card => {
+      const evId = card.dataset.eventId;
+      if (!evId) return;
+      rates[evId] = {
+        customerBuffPercent: Number(card.querySelector('.ev-card-cust')?.value || 0),
+        priceBuffPercent: Number(card.querySelector('.ev-card-price')?.value || 0),
+        patienceBuffPercent: Number(card.querySelector('.ev-card-patience')?.value || 0),
+        durationSec: Number(card.querySelector('.ev-card-duration')?.value || 90)
+      };
+    });
+
+    try {
+      const res = await apiRequest('/api/admin/events/rates', {
+        method: 'PUT',
+        body: JSON.stringify({ rates })
+      });
+      showToast(res.message || 'Đã lưu tất cả tỷ lệ Buff/Debuff sự kiện!', 'success');
+      if (res.events) {
+        state.events = res.events;
+        syncSelectedEventRatesInput();
+        renderEventsGrid(state.events);
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function resetEventRatesDefault() {
+    if (!confirm('Bạn có muốn khôi phục tỷ lệ Buff/Debuff của toàn bộ sự kiện về mặc định không?')) return;
+    try {
+      const res = await apiRequest('/api/admin/events/rates/reset', { method: 'POST' });
+      showToast(res.message || 'Đã khôi phục tỷ lệ sự kiện về mặc định!', 'success');
+      if (res.events) {
+        state.events = res.events;
+        syncSelectedEventRatesInput();
+        renderEventsGrid(state.events);
+      }
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -1054,6 +1201,10 @@ const AdminApp = (() => {
       loadOnlineStores(true);
     } else if (tabId === 'tab-bulk-inv') {
       loadIngredientPrices();
+    } else if (tabId === 'tab-events') {
+      loadEvents();
+    } else if (tabId === 'tab-weather') {
+      loadWeather();
     }
   }
 
@@ -1472,7 +1623,139 @@ const AdminApp = (() => {
     }
   }
 
-  // --- WEATHER MANAGEMENT ---
+  // --- WEATHER MANAGEMENT & BUFF/DEBUFF RATES ---
+  async function loadWeather() {
+    try {
+      const data = await apiRequest('/api/admin/weather');
+      if (data && Array.isArray(data.weatherTypes)) {
+        state.weatherTypes = data.weatherTypes;
+        syncSelectedWeatherRatesInput();
+        renderWeatherRatesGrid(state.weatherTypes);
+      }
+    } catch (err) {
+      console.error('Error loading weather rates:', err);
+    }
+  }
+
+  function syncSelectedWeatherRatesInput() {
+    if (!Array.isArray(state.weatherTypes)) return;
+
+    // Update radio labels with current rates summary
+    state.weatherTypes.forEach(w => {
+      const sumEl = document.getElementById(`weather-radio-summary-${w.id}`);
+      if (sumEl) {
+        const cPct = Math.round((Number(w.customerBonus) || 0) * 100);
+        const pPct = Math.round((Number(w.tipBonus) || 0) * 100);
+        sumEl.innerText = `Khách ${cPct >= 0 ? '+' : ''}${cPct}% • Giá ${pPct >= 0 ? '+' : ''}${pPct}%`;
+      }
+    });
+
+    const radio = document.querySelector('input[name="admin-weather-type"]:checked');
+    const weatherId = radio ? radio.value : 'sunny';
+    const w = state.weatherTypes.find(item => item.id === weatherId);
+    if (!w) return;
+
+    const elCust = document.getElementById('weather-rate-customer');
+    const elPrice = document.getElementById('weather-rate-price');
+    const elPat = document.getElementById('weather-rate-patience');
+    const elShip = document.getElementById('weather-rate-shipper');
+
+    if (elCust) elCust.value = Math.round((Number(w.customerBonus) || 0) * 100);
+    if (elPrice) elPrice.value = Math.round((Number(w.tipBonus) || 0) * 100);
+    if (elPat) elPat.value = Math.round((Number(w.patienceBonus) || 0) * 100);
+    if (elShip) elShip.value = Math.round((Number(w.shipperBonus ?? w.shipperRate) || 0) * 100);
+  }
+
+  function renderWeatherRatesGrid(weatherTypes) {
+    const grid = document.getElementById('admin-weather-rates-grid');
+    if (!grid) return;
+
+    grid.innerHTML = weatherTypes.map(w => {
+      const custPct = Math.round((Number(w.customerBonus) || 0) * 100);
+      const pricePct = Math.round((Number(w.tipBonus) || 0) * 100);
+      const patPct = Math.round((Number(w.patienceBonus) || 0) * 100);
+      const shipPct = Math.round((Number(w.shipperBonus ?? w.shipperRate) || 0) * 100);
+
+      return `
+        <div class="admin-weather-rate-card" data-weather-id="${w.id}" style="background: var(--admin-card-bg); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
+          <div>
+            <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">${w.icon} ${escapeHtml(w.name)}</div>
+            <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.45; margin-bottom: 10px;">
+              ${escapeHtml(w.desc)}
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: rgba(0,0,0,0.25); padding: 10px; border-radius: 6px;">
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">👥 Lượng Khách (%)</label>
+                <input type="number" class="input-control w-card-cust" value="${custPct}" min="-90" max="500" step="5" style="padding: 5px 8px; font-size: 13px;">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">💰 Giá Bán / Tip (%)</label>
+                <input type="number" class="input-control w-card-price" value="${pricePct}" min="-90" max="500" step="5" style="padding: 5px 8px; font-size: 13px;">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">⏱️ Kiên Nhẫn (%)</label>
+                <input type="number" class="input-control w-card-patience" value="${patPct}" min="-90" max="500" step="5" style="padding: 5px 8px; font-size: 13px;">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11px;">🛵 Đơn Shipper (%)</label>
+                <input type="number" class="input-control w-card-shipper" value="${shipPct}" min="0" max="100" step="5" style="padding: 5px 8px; font-size: 13px;">
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+            <span style="font-size: 11px; color: var(--text-muted);">
+              Khách: ${formatRateBadge(custPct)} • Giá: ${formatRateBadge(pricePct)}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function saveAllWeatherCardsRates() {
+    const rates = {};
+    document.querySelectorAll('.admin-weather-rate-card').forEach(card => {
+      const wId = card.dataset.weatherId;
+      if (!wId) return;
+      rates[wId] = {
+        customerBuffPercent: Number(card.querySelector('.w-card-cust')?.value || 0),
+        priceBuffPercent: Number(card.querySelector('.w-card-price')?.value || 0),
+        patienceBuffPercent: Number(card.querySelector('.w-card-patience')?.value || 0),
+        shipperBuffPercent: Number(card.querySelector('.w-card-shipper')?.value || 0)
+      };
+    });
+
+    try {
+      const res = await apiRequest('/api/admin/weather/rates', {
+        method: 'PUT',
+        body: JSON.stringify({ rates })
+      });
+      showToast(res.message || 'Đã lưu tất cả tỷ lệ Buff/Debuff thời tiết!', 'success');
+      if (res.weatherTypes) {
+        state.weatherTypes = res.weatherTypes;
+        syncSelectedWeatherRatesInput();
+        renderWeatherRatesGrid(state.weatherTypes);
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function resetWeatherRatesDefault() {
+    if (!confirm('Bạn có muốn khôi phục tỷ lệ Buff/Debuff của toàn bộ thời tiết về mặc định không?')) return;
+    try {
+      const res = await apiRequest('/api/admin/weather/rates/reset', { method: 'POST' });
+      showToast(res.message || 'Đã khôi phục tỷ lệ thời tiết về mặc định!', 'success');
+      if (res.weatherTypes) {
+        state.weatherTypes = res.weatherTypes;
+        syncSelectedWeatherRatesInput();
+        renderWeatherRatesGrid(state.weatherTypes);
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
   function toggleWeatherScopeUI() {
     const scope = document.getElementById('weather-target-scope')?.value;
     const group = document.getElementById('weather-store-select-group');
@@ -1491,16 +1774,25 @@ const AdminApp = (() => {
       return showToast('Vui lòng chọn một cửa hàng cụ thể!', 'error');
     }
 
+    const customRates = {
+      customerBuffPercent: Number(document.getElementById('weather-rate-customer')?.value || 0),
+      priceBuffPercent: Number(document.getElementById('weather-rate-price')?.value || 0),
+      patienceBuffPercent: Number(document.getElementById('weather-rate-patience')?.value || 0),
+      shipperBuffPercent: Number(document.getElementById('weather-rate-shipper')?.value || 0)
+    };
+
     try {
       const res = await apiRequest('/api/admin/weather/change', {
         method: 'POST',
         body: JSON.stringify({
           weatherId,
           storeId: scope === 'single' ? Number(storeId) : undefined,
-          broadcast: scope === 'broadcast'
+          broadcast: scope === 'broadcast',
+          customRates
         })
       });
-      showToast(res.message || 'Đã áp dụng thời tiết thành công!', 'success');
+      showToast(res.message || 'Đã áp dụng thời tiết & tỷ lệ Buff/Debuff thành công!', 'success');
+      loadWeather();
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -1508,7 +1800,10 @@ const AdminApp = (() => {
 
   async function forceTriggerStorm() {
     const stormyRadio = document.querySelector('input[name="admin-weather-type"][value="stormy"]');
-    if (stormyRadio) stormyRadio.checked = true;
+    if (stormyRadio) {
+      stormyRadio.checked = true;
+      syncSelectedWeatherRatesInput();
+    }
 
     const scope = document.getElementById('weather-target-scope')?.value || 'broadcast';
     const storeId = document.getElementById('weather-store-select')?.value;
@@ -1517,16 +1812,25 @@ const AdminApp = (() => {
       return showToast('Vui lòng chọn một cửa hàng cụ thể hoặc đổi phạm vi sang Toàn Bộ Máy Chủ!', 'error');
     }
 
+    const customRates = {
+      customerBuffPercent: Number(document.getElementById('weather-rate-customer')?.value ?? -15),
+      priceBuffPercent: Number(document.getElementById('weather-rate-price')?.value ?? 25),
+      patienceBuffPercent: Number(document.getElementById('weather-rate-patience')?.value ?? 20),
+      shipperBuffPercent: Number(document.getElementById('weather-rate-shipper')?.value ?? 60)
+    };
+
     try {
       const res = await apiRequest('/api/admin/weather/change', {
         method: 'POST',
         body: JSON.stringify({
           weatherId: 'stormy',
           storeId: scope === 'single' ? Number(storeId) : undefined,
-          broadcast: scope !== 'single'
+          broadcast: scope !== 'single',
+          customRates
         })
       });
       showToast('⚡ ' + (res.message || 'Đã kích hoạt giông bão sấm sét thành công!'), 'success');
+      loadWeather();
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -1556,10 +1860,17 @@ const AdminApp = (() => {
     fillEditorInv,
     triggerSelectedEvent,
     triggerEventQuick,
+    syncSelectedEventRatesInput,
+    saveSingleEventRatesFromTop,
+    saveAllEventCardsRates,
+    resetEventRatesDefault,
     spawnSpecificNPC,
     toggleWeatherScopeUI,
     applySelectedWeather,
     forceTriggerStorm,
+    syncSelectedWeatherRatesInput,
+    saveAllWeatherCardsRates,
+    resetWeatherRatesDefault,
     switchTab,
     loadOnlineStores,
     loadIngredientPrices,
@@ -1574,5 +1885,6 @@ if (typeof window !== 'undefined') {
 
 // Bootstrap
 document.addEventListener('DOMContentLoaded', AdminApp.init);
+
 
 

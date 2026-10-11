@@ -54,9 +54,20 @@ export async function scheduleNextOrder(delay = 4000) {
       const pendingQueue = state.orderQueue.filter(o => o.orderId !== (state.currentOrder && state.currentOrder.orderId));
       state.orderQueue = [...pendingQueue, ...res.order.orders].slice(0, 14);
 
-      const shipperOrder = res.order.orders.find(o => o.isShipper);
-      if (shipperOrder && state.canvas && !state.canvas.motorbikeShipper?.active) {
-        state.canvas.spawnMotorbikeShipper(shipperOrder.orderId);
+      const shipperOrders = state.orderQueue.filter(o => o.isShipper);
+      if (shipperOrders.length > 0 && state.canvas) {
+        const alreadyServed = state.canvas.motorbikeShipper?.active ? (state.canvas.motorbikeShipper.servedCount || 0) : 0;
+        const batchTotal = alreadyServed + shipperOrders.length;
+        shipperOrders.forEach((o, idx) => {
+          o.shipperBatchIndex = alreadyServed + idx + 1;
+          o.shipperBatchTotal = batchTotal;
+        });
+        if (!state.canvas.motorbikeShipper?.active) {
+          state.canvas.spawnMotorbikeShipper(shipperOrders[0].orderId, shipperOrders.length);
+        } else {
+          state.canvas.motorbikeShipper.totalCount = batchTotal;
+          state.canvas.motorbikeShipper.needsOrderFetch = false;
+        }
       }
 
       if (state.canvas && state.canvas.setCustomerQueue) {
@@ -142,8 +153,14 @@ export async function handleOrderTimeout() {
   const isTiktoker = failedCust ? !!failedCust.isTiktoker : false;
   const isShipperOrder = !!(failedCust && (failedCust.isShipper || failedCust.orderId === state.canvas?.motorbikeShipper?.orderId));
 
+  state.orderQueue.shift();
+  if (state.canvas && state.canvas.advanceQueue) {
+    state.canvas.advanceQueue();
+  }
+
+  const remainingShipperOrders = state.orderQueue.filter(o => o.isShipper).length;
   if (isShipperOrder && state.canvas && state.canvas.onShipperOrderFailed) {
-    state.canvas.onShipperOrderFailed(failedCust.orderId);
+    state.canvas.onShipperOrderFailed(failedCust.orderId, remainingShipperOrders);
   }
 
   showToast(`❌ Khách hàng [${failedCust ? failedCust.customerName : 'Khách'}] sốt ruột bỏ đi vì đợi quá lâu!`);
@@ -157,10 +174,6 @@ export async function handleOrderTimeout() {
     }
   }
 
-  state.orderQueue.shift();
-  if (state.canvas && state.canvas.advanceQueue) {
-    state.canvas.advanceQueue();
-  }
   state.currentOrder = null;
   state.isShaken = false;
   state.isPoured = false;
@@ -201,25 +214,11 @@ export async function handleShipperOrderArrival() {
     if (newOrders.length === 0) return null;
 
     newOrders.forEach(o => { o.isShipper = true; });
-    const count = newOrders.length;
-
-    if (state.canvas && state.canvas.motorbikeShipper) {
-      state.canvas.motorbikeShipper.orderId = newOrders[0].orderId;
-      state.canvas.motorbikeShipper.totalCount = count;
-      state.canvas.motorbikeShipper.servedCount = 0;
-      state.canvas.motorbikeShipper.bubble = count > 1 
-        ? `🛵 Anh Lâm: Đơn app ${count} ly hỏa tốc nha quán!` 
-        : `🛵 Anh Lâm: Cho anh lấy đơn ship hỏa tốc!`;
-    }
 
     if (window.sound) window.sound.bell();
 
     if (!state.currentOrder) {
       state.orderQueue = [...newOrders, ...state.orderQueue].slice(0, 14);
-      if (state.canvas && state.canvas.setCustomerQueue) {
-        state.canvas.setCustomerQueue(state.orderQueue);
-      }
-      startNextOrderInQueue();
     } else {
       const currentId = state.currentOrder.orderId;
       const currIdx = state.orderQueue.findIndex(o => o.orderId === currentId);
@@ -229,13 +228,39 @@ export async function handleShipperOrderArrival() {
         state.orderQueue.push(...newOrders);
       }
       state.orderQueue = state.orderQueue.slice(0, 14);
-      if (state.canvas && state.canvas.setCustomerQueue) {
-        state.canvas.setCustomerQueue(state.orderQueue);
+    }
+
+    const shipperOrdersInQueue = state.orderQueue.filter(o => o.isShipper);
+    const count = shipperOrdersInQueue.length;
+    shipperOrdersInQueue.forEach((o, idx) => {
+      o.shipperBatchIndex = idx + 1;
+      o.shipperBatchTotal = count;
+      if (o.quote && count > 1) {
+        o.quote = o.quote.replace(/\[Ly \d+\/\d+\]/, `[Ly ${idx + 1}/${count}]`);
       }
+    });
+
+    if (state.canvas && state.canvas.motorbikeShipper && count > 0) {
+      state.canvas.motorbikeShipper.orderId = shipperOrdersInQueue[0].orderId;
+      state.canvas.motorbikeShipper.totalCount = count;
+      state.canvas.motorbikeShipper.servedCount = 0;
+      state.canvas.motorbikeShipper.needsOrderFetch = false;
+      state.canvas.motorbikeShipper.bubble = count > 1 
+        ? `🛵 Anh Lâm: Đơn app ${count} ly hỏa tốc nha quán!` 
+        : `🛵 Anh Lâm: Cho anh lấy đơn ship hỏa tốc!`;
+    }
+
+    if (state.canvas && state.canvas.setCustomerQueue) {
+      state.canvas.setCustomerQueue(state.orderQueue);
+    }
+
+    if (!state.currentOrder) {
+      startNextOrderInQueue();
+    } else {
       updateUI();
     }
 
-    return newOrders[0];
+    return shipperOrdersInQueue[0] || null;
   } catch (err) {
     console.error('Failed to handle shipper order arrival:', err);
     return null;

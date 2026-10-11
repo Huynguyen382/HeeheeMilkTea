@@ -49,9 +49,10 @@ async function generateOrder(storeId, options = {}) {
 
   const daily = await anticheat.getOrCreateDailyStats(storeId, save.chapter);
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
-  const { WEATHER_TYPES } = require('./weather.service');
-  const weatherId = activeBuffs.weather ? activeBuffs.weather.id : 'sunny';
-  const currentWeather = WEATHER_TYPES[weatherId] || WEATHER_TYPES.sunny;
+  const { resolveEffectiveWeather } = require('./weather.service');
+  const { resolveEffectiveEvent } = require('./event.service');
+  const currentWeather = resolveEffectiveWeather(activeBuffs);
+  const currentEvent = resolveEffectiveEvent(activeBuffs);
 
   // Check Proactive TikToker Invitation
   let isInvitedTiktoker = false;
@@ -160,11 +161,19 @@ async function generateOrder(storeId, options = {}) {
     waveSize = Math.min(15, Math.floor(waveSize * 1.3));
   }
 
-  // Weather effect on customer foot traffic (e.g. Sunny +25% foot traffic, Stormy -15% walking traffic)
-  if (currentWeather.customerBonus > 0 && Math.random() < currentWeather.customerBonus) {
-    waveSize = Math.min(14, waveSize + 1);
-  } else if (currentWeather.customerBonus < 0 && Math.random() < Math.abs(currentWeather.customerBonus)) {
-    waveSize = Math.max(1, waveSize - 1);
+  // Áp dụng tỉ lệ Buff / Debuff lượng khách từ Thời tiết & Sự kiện (do Admin cấu hình)
+  const weatherCustRate = Number(currentWeather.customerBonus || 0);
+  const eventCustRate = currentEvent ? (Number(currentEvent.customerBuffPercent || 0) / 100) : 0;
+  const totalCustRate = weatherCustRate + eventCustRate;
+  if (totalCustRate !== 0) {
+    const exactDelta = waveSize * totalCustRate;
+    const intDelta = Math.trunc(exactDelta);
+    const fracDelta = Math.abs(exactDelta - intDelta);
+    let extra = intDelta;
+    if (Math.random() < fracDelta) {
+      extra += (exactDelta >= 0 ? 1 : -1);
+    }
+    waveSize = Math.min(15, Math.max(1, waveSize + extra));
   }
 
   if (options.isShipper) {
@@ -297,14 +306,17 @@ async function generateOrder(storeId, options = {}) {
     const basePatienceMs = 40000;
     let patienceBonusMs = 0;
     if (currentWeather.patienceBonus) {
-      patienceBonusMs += Math.round(basePatienceMs * currentWeather.patienceBonus); // e.g. Rainy +40% (+16s)
+      patienceBonusMs += Math.round(basePatienceMs * Number(currentWeather.patienceBonus));
+    }
+    if (currentEvent && currentEvent.patienceBuffPercent) {
+      patienceBonusMs += Math.round(basePatienceMs * (Number(currentEvent.patienceBuffPercent) / 100));
     }
     if (activeBuffs.patience_boost && activeBuffs.patience_boost > 0) {
-      patienceBonusMs += Math.round(basePatienceMs * 0.50); // +50% patience (+20s)
+      patienceBonusMs += Math.round(basePatienceMs * 0.50);
     }
     const upgrades = JSON.parse(save.upgrades || '{}');
     if (upgrades.active_pet === 'capybara' && !upgrades.is_pet_stolen) {
-      patienceBonusMs += Math.round(basePatienceMs * 0.50); // Capybara +50% patience (+20s)
+      patienceBonusMs += Math.round(basePatienceMs * 0.50);
     }
     const patienceMs = Math.max(10000, basePatienceMs + patienceBonusMs);
     // The client only starts a customer's countdown when it reaches the front of the queue,
@@ -330,21 +342,24 @@ async function generateOrder(storeId, options = {}) {
     }
     const baseCupPrice = Math.min(chapterBaseCap, Math.max(25000, rawBasePrice));
 
-    // Các buff cộng thêm dựa trên giá cơ bản (baseCupPrice) thay vì nhân chồng cấp số nhân
+    // Các buff/debuff cộng/trừ dựa trên giá cơ bản (baseCupPrice)
     let orderBuffBonus = 0;
     if (cust.tipMult && cust.tipMult > 1) {
       orderBuffBonus += Math.round(baseCupPrice * (cust.tipMult - 1));
     }
     if (currentWeather.tipBonus) {
-      orderBuffBonus += Math.round(baseCupPrice * currentWeather.tipBonus); // e.g. Stormy +25%, Sunny +10%
+      orderBuffBonus += Math.round(baseCupPrice * Number(currentWeather.tipBonus));
+    }
+    if (currentEvent && currentEvent.priceBuffPercent) {
+      orderBuffBonus += Math.round(baseCupPrice * (Number(currentEvent.priceBuffPercent) / 100));
     }
     if (activeBuffs.tip_bonus && activeBuffs.tip_bonus > 0) {
-      orderBuffBonus += Math.round(baseCupPrice * 0.10); // +10% money
+      orderBuffBonus += Math.round(baseCupPrice * 0.10);
     }
     if (upgrades.active_pet === 'corgi' && !upgrades.is_pet_stolen) {
-      orderBuffBonus += Math.round(baseCupPrice * 0.20); // Corgi +20% tip
+      orderBuffBonus += Math.round(baseCupPrice * 0.20);
     } else if (upgrades.active_pet === 'meo_tam_the' && !upgrades.is_pet_stolen) {
-      orderBuffBonus += Math.round(baseCupPrice * 0.15); // Mèo Tam Thể +15% revenue
+      orderBuffBonus += Math.round(baseCupPrice * 0.15);
     }
 
     // Thuộc tính bất động sản: cộng thêm dựa trên giá cơ bản
@@ -356,7 +371,7 @@ async function generateOrder(storeId, options = {}) {
     }
 
     if (activeBuffs.dinh_chinh_buff && !activeBuffs.sabotage) {
-      orderBuffBonus += Math.round(baseCupPrice * 0.30); // Hiệu ứng minh bạch & tin tưởng (+30% giá cơ bản)
+      orderBuffBonus += Math.round(baseCupPrice * 0.30);
     }
 
     // Mặn Mà Doanh Thu Buff (Cà Phê Muối Cố Đô): +25% dựa trên giá cơ bản
@@ -369,9 +384,9 @@ async function generateOrder(storeId, options = {}) {
     // Tác động của Thẻ Hãm Hại tới doanh thu (Bóc phốt giảm 30%, Quản lý thị trường giảm 40%)
     if (activeBuffs.sabotage) {
       const revenuePenalty = activeBuffs.sabotage.type === 'market_inspection' ? 0.60 : 0.70;
-      price = Math.max(15000, Math.floor(price * revenuePenalty));
+      price = Math.max(10000, Math.floor(price * revenuePenalty));
     } else {
-      price = Math.max(25000, price);
+      price = Math.max(10000, price);
     }
 
     // Đàm phán & Mặc cả: Khi đặt giá quá cao các NPC có thể mặc cả
@@ -590,7 +605,7 @@ async function handleSnackDecision(storeId, accept) {
         accepted: true,
         outcome: 'good',
         buffType: 'patience_boost',
-        message: '😋 Món ăn vặt thơm ngon giòn rụm! Tinh thần HeeHee phấn chấn vui vẻ, khách hàng thấy thương nên kiên nhẫn chờ lâu hơn +40%!'
+        message: '😋 Món ăn vặt thơm ngon giòn rụm! Tinh thần HeeHee phấn chấn vui vẻ, khách hàng thấy thương nên kiên nhẫn chờ lâu hơn!'
       };
     } else {
       activeBuffs.tip_bonus = 6;
@@ -602,7 +617,7 @@ async function handleSnackDecision(storeId, accept) {
         accepted: true,
         outcome: 'good',
         buffType: 'tip_bonus',
-        message: '✨ Ăn vặt tràn đầy năng lượng, pha chế siêu tốc! Khách uống tấm tắc khen ngợi, tip thêm +10% doanh thu mỗi ly!'
+        message: '✨ Ăn vặt tràn đầy năng lượng, pha chế siêu tốc! Khách uống tấm tắc khen ngợi, tip thêm doanh thu mỗi ly!'
       };
     }
   } else {
