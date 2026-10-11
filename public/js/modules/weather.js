@@ -30,55 +30,6 @@ export function initWeatherModule() {
       modalWeatherInfo.style.display = 'none';
     });
   }
-
-  // Button test lightning strike inside modal
-  const btnTestLightning = document.getElementById('btn-test-lightning');
-  if (btnTestLightning) {
-    btnTestLightning.addEventListener('click', () => {
-      if (state.canvas && typeof state.canvas.triggerLightning === 'function') {
-        state.canvas.triggerLightning();
-        showToast('⚡ Sấm sét giông bão giật chớp lóe sáng rền vang!', 2500);
-      }
-    });
-  }
-
-  // Quick Weather preview switchers inside modal
-  const testBtns = document.querySelectorAll('.btn-weather-pill');
-  testBtns.forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const wId = btn.getAttribute('data-weather');
-      if (!wId) return;
-
-      try {
-        if (window.API && typeof window.API.changeWeather === 'function') {
-          const res = await window.API.changeWeather(wId);
-          if (res && res.weather) {
-            updateWeatherUI(res.weather);
-            openWeatherModal(); // Refresh modal content
-            showToast(`🌤️ Đã đổi thời tiết sang: ${res.weather.icon} ${res.weather.name}!`, 3000);
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn('API changeWeather error, using local fallback:', e);
-      }
-
-      // Local fallback preview
-      const previewMap = {
-        sunny: { id: 'sunny', name: 'Nắng Vàng Rực Rỡ', icon: '☀️', desc: 'Trời quang đãng nắng ấm chan hòa. Khách dạo phố đông đúc ghé quầy +25%!' },
-        rainy: { id: 'rainy', name: 'Mưa Rào Tí Tách', icon: '🌧️', desc: 'Mưa rơi tí tách, mặt đường ướt bóng đèn. Khách kiên nhẫn +40%!' },
-        stormy: { id: 'stormy', name: 'Giông Bão Sấm Sét', icon: '⛈️', desc: 'Sấm sét giật chớp lóe sáng rền vang! Đơn ship xe máy bùng nổ +60%, tip +25%!' },
-        cloudy: { id: 'cloudy', name: 'Trời Râm Mát Mẻ', icon: '⛅', desc: 'Tầng mây xám bạc che mát dịu phố phường, sương mù là đà trôi ngang tầm mắt.' },
-        windy: { id: 'windy', name: 'Gió Mùa Vi Vu', icon: '🍃', desc: 'Gió mát thổi qua hàng cây, cánh hoa rơi lượn bay. Khách mua mang đi +15%!' }
-      };
-      const wObj = previewMap[wId] || previewMap.sunny;
-      if (!state.storeState) state.storeState = {};
-      state.storeState.weather = wObj;
-      updateWeatherUI(wObj);
-      openWeatherModal();
-      showToast(`🌤️ Đã áp dụng hiệu ứng: ${wObj.icon} ${wObj.name}!`, 3000);
-    });
-  });
 }
 
 /**

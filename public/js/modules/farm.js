@@ -68,6 +68,12 @@ export function initFarmModule() {
  * Mở modal Nông Trại Mộc Châu
  */
 export async function openFarmModal() {
+  const currentChapter = Number(state.storeState?.save?.chapter || 1);
+  if (currentChapter < 3) {
+    showToast('🔒 Nông Trại Chè Mộc Châu chỉ mở khóa khi bạn đạt Chương 3!', 3200);
+    return;
+  }
+
   const modal = document.getElementById('modal-farm');
   if (!modal) return;
 

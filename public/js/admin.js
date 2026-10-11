@@ -150,7 +150,8 @@ const AdminApp = (() => {
         loadOrders(),
         loadLogs(),
         loadEvents(),
-        loadNPCs()
+        loadNPCs(),
+        loadIngredientPrices()
       ]);
       if (!silent) {
         showToast('Dữ liệu đã được làm mới!', 'info');
@@ -831,13 +832,17 @@ const AdminApp = (() => {
     }
 
     if (pricesGrid) {
+      const storeChap = Number(state.currentDetail?.save?.chapter) || 1;
+      const chapCaps = { 1: 50000, 2: 60000, 3: 70000, 4: 80000 };
+      const maxCap = chapCaps[storeChap] || 80000;
+
       pricesGrid.innerHTML = recipeIds.map(rid => {
         const item = recipesDb[rid] || { name: rid, basePrice: 20000 };
-        const priceVal = customPrices[rid] || item.basePrice || 20000;
+        const priceVal = Math.min(customPrices[rid] || item.basePrice || 20000, maxCap);
         return `
           <div class="form-group">
-            <label>${item.name} (Gốc: ${formatMoney(item.basePrice)})</label>
-            <input type="number" class="input-control edit-custom-price-input" data-id="${rid}" value="${priceVal}" min="0">
+            <label>${item.name} (Gốc: ${formatMoney(item.basePrice)} • Tối đa C${storeChap}: ${formatMoney(maxCap)})</label>
+            <input type="number" class="input-control edit-custom-price-input" data-id="${rid}" value="${priceVal}" min="0" max="${maxCap}" step="1000">
           </div>
         `;
       }).join('');
@@ -1038,7 +1043,7 @@ const AdminApp = (() => {
       'tab-orders': '📋 Đơn Hàng Đang Hoạt Động',
       'tab-events': '🎪 Quản Lý Sự Kiện & Lễ Hội Trong Game',
       'tab-npcs': '🎭 Danh Mục 55 Khách Hàng NPC',
-      'tab-bulk-inv': '📦 Bơm Kho Nguyên Liệu Hàng Loạt',
+      'tab-bulk-inv': '📦 Quản Lý Kho & Điều Chỉnh Giá Nguyên Liệu',
       'tab-logs': '🛡️ Nhật Ký & Chống Hack (Audit Logs)',
       'tab-system': '⚙️ Công Cụ Hệ Thống & Máy Chủ'
     };
@@ -1047,6 +1052,8 @@ const AdminApp = (() => {
 
     if (tabId === 'tab-online') {
       loadOnlineStores(true);
+    } else if (tabId === 'tab-bulk-inv') {
+      loadIngredientPrices();
     }
   }
 
@@ -1334,6 +1341,32 @@ const AdminApp = (() => {
       }
     });
 
+    // Form: Wholesale Ingredient Prices
+    document.getElementById('ingredient-prices-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prices = {};
+      document.querySelectorAll('.admin-ing-price-input').forEach(input => {
+        const id = input.dataset.id;
+        const val = parseInt(input.value, 10);
+        if (id && !isNaN(val) && val >= 500) {
+          prices[id] = val;
+        }
+      });
+
+      try {
+        const res = await apiRequest('/api/admin/ingredients/prices', {
+          method: 'PUT',
+          body: JSON.stringify({ prices })
+        });
+        showToast(res.message || 'Đã cập nhật giá nguyên liệu thành công!', 'success');
+        if (res.ingredients) {
+          renderIngredientPricesGrid(res.ingredients);
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
     // Form: Create Store
     document.getElementById('form-create-store')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1377,6 +1410,66 @@ const AdminApp = (() => {
         showToast(err.message, 'error');
       }
     });
+  }
+
+  // --- WHOLESALE INGREDIENT PRICES MANAGEMENT ---
+  async function loadIngredientPrices() {
+    try {
+      const data = await apiRequest('/api/admin/ingredients/prices');
+      if (data && Array.isArray(data.ingredients)) {
+        state.ingredientPricesData = data.ingredients;
+        renderIngredientPricesGrid(data.ingredients);
+      }
+    } catch (err) {
+      console.error('Error loading ingredient prices:', err);
+    }
+  }
+
+  function renderIngredientPricesGrid(ingredients) {
+    const grid = document.getElementById('admin-ingredient-prices-grid');
+    if (!grid) return;
+
+    grid.innerHTML = ingredients.map(item => {
+      const defPrice = item.defaultPrice || item.price;
+      const isModified = Number(item.price) !== Number(defPrice);
+      return `
+        <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid ${isModified ? '#fbbf24' : 'var(--admin-border)'};">
+          <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span>${item.icon || '📦'} <strong>${escapeHtml(item.name)}</strong></span>
+            <span style="font-size: 11px; color: var(--text-muted);">/${escapeHtml(item.unit || 'phần')}</span>
+          </label>
+          <div style="font-size: 11px; color: ${isModified ? '#fbbf24' : 'var(--text-muted)'}; margin-bottom: 6px;">
+            Mặc định: ${formatMoney(defPrice)} ${isModified ? '• <b>Đã chỉnh</b>' : ''}
+          </div>
+          <input type="number" class="input-control admin-ing-price-input" data-id="${item.id}" data-default="${defPrice}" value="${item.price}" min="500" step="500" required>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function adjustAllIngredientPrices(percent) {
+    const mult = 1 + (Number(percent) / 100);
+    document.querySelectorAll('.admin-ing-price-input').forEach(input => {
+      const cur = parseInt(input.value, 10) || 1000;
+      const next = Math.max(500, Math.round((cur * mult) / 500) * 500);
+      input.value = next;
+    });
+    showToast(`Đã điều chỉnh tạm thời ${percent > 0 ? '+' : ''}${percent}% trên ô nhập! Nhấn [Lưu Bảng Giá] để áp dụng.`, 'info');
+  }
+
+  async function resetIngredientPricesDefault() {
+    if (!confirm('Bạn có muốn khôi phục toàn bộ giá nguyên liệu Chợ Đầu Mối về mức mặc định chuẩn của hệ thống không?')) return;
+    try {
+      const res = await apiRequest('/api/admin/ingredients/prices/reset', {
+        method: 'POST'
+      });
+      showToast(res.message || 'Đã khôi phục giá nguyên liệu mặc định!', 'success');
+      if (res.ingredients) {
+        renderIngredientPricesGrid(res.ingredients);
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   // --- WEATHER MANAGEMENT ---
@@ -1468,7 +1561,10 @@ const AdminApp = (() => {
     applySelectedWeather,
     forceTriggerStorm,
     switchTab,
-    loadOnlineStores
+    loadOnlineStores,
+    loadIngredientPrices,
+    adjustAllIngredientPrices,
+    resetIngredientPricesDefault
   };
 })();
 

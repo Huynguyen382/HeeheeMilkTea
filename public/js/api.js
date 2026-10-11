@@ -241,10 +241,6 @@ const API = {
     return await this.request('/game/weather');
   },
 
-  async changeWeather(weatherId) {
-    return await this.request('/game/weather/change', 'POST', { weatherId });
-  },
-
   // Room & Cozy Home
   async getRoom() {
     return await this.request('/game/room');

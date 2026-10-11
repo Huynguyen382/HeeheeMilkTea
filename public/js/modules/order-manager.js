@@ -99,12 +99,10 @@ export function startNextOrderInQueue() {
   updateUI();
   checkThiefEncounter();
 
-  // Patience countdown with dynamic tolerance & grace extensions
-  let duration = state.currentOrder.patienceMs || 45000;
+  // Patience countdown (base 40s + patience buffs)
+  let duration = state.currentOrder.patienceMs || 40000;
   const interval = 100;
   let elapsed = 0;
-  let graceCount = 0;
-  const MAX_GRACE = 2; // Up to 2 extensions
 
   if (state.orderTimerInterval) clearInterval(state.orderTimerInterval);
   state.orderTimerInterval = setInterval(() => {
@@ -131,43 +129,6 @@ export function startNextOrderInQueue() {
     }
 
     if (elapsed >= duration) {
-      // Kiểm tra xem người chơi đã bắt đầu pha chế chưa
-      const isBrewing = state.isShaken || state.isPoured || state.isSealed;
-
-      // Trường hợp 1: Đang tích cực pha chế (đã lắc/rót/dập nắp)
-      if (isBrewing) {
-        if (graceCount < MAX_GRACE) {
-          graceCount++;
-          elapsed = Math.floor(duration * 0.4); // Hồi lại 60% thanh thời gian
-          return;
-        } else {
-          // Đã gia hạn 2 lần, giữ lại 20% thanh thời gian cho đến khi giao ly
-          elapsed = Math.floor(duration * 0.8);
-          return;
-        }
-      }
-
-      // Trường hợp 2: Chưa bắt đầu pha chế
-      if (graceCount < 1) {
-        graceCount++;
-        const willWait = Math.random() < 0.80; // 80% kiên nhẫn chờ
-        if (willWait) {
-          elapsed = Math.floor(duration * 0.45); // Hồi lại 55% thời gian
-          const waitQuotes = [
-            `"Chị HeeHee cứ từ từ làm nha, em đợi thêm xíu được mà! 🥰"`,
-            `"Quán đông quá hả em? Không sao, anh chờ được, làm ngon giùm anh! 🍵"`,
-            `"HeeHee ráng lên nha! Thấy bạn cẩn thận vậy mình càng háo hức uống thử! ✨"`,
-            `"Bác đứng ngắm phố phường hóng mát, cháu cứ pha thong thả cho chuẩn vị nghen! 🍃"`,
-            `"Tụi em đang đứng check-in chụp hình quán đẹp quá nè, chị cứ làm từ từ nha! 📸"`
-          ];
-          const quote = waitQuotes[Math.floor(Math.random() * waitQuotes.length)];
-          const elQuote = document.getElementById('order-dialogue');
-          if (elQuote) elQuote.innerText = quote;
-          return;
-        }
-      }
-
-      // Khách thực sự vội mới bỏ đi
       clearInterval(state.orderTimerInterval);
       handleOrderTimeout();
     }

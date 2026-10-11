@@ -4,8 +4,13 @@ const db = require('../models/db');
 const anticheat = require('../services/anticheat.service');
 const gameService = require('../services/game.service');
 const { invalidateStoreCache, gameCache } = require('../services/game/cache.helper');
-const { RECIPES, UPGRADES, CORE_RECIPES } = require('../services/game/constants');
-const { INGREDIENTS } = require('../data/ingredients');
+const { RECIPES, UPGRADES, CORE_RECIPES, CHAPTER_CUP_PRICE_CAPS } = require('../services/game/constants');
+const {
+  INGREDIENTS,
+  DEFAULT_INGREDIENT_PRICES,
+  applyIngredientPriceOverrides,
+  resetIngredientPricesToDefault
+} = require('../data/ingredients');
 const { LOCATIONS, DECORATIONS } = require('../data/locations');
 const circuitBreaker = require('../services/circuit-breaker');
 const { rateLimitService } = require('../middleware/rate-limit.middleware');
@@ -506,17 +511,27 @@ router.put('/stores/:id/custom-prices', requireAdmin, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Dữ liệu giá bán không hợp lệ!' });
     }
 
+    const save = await db.prepare('SELECT chapter FROM game_saves WHERE store_id = ?').get(storeId);
+    const chapterCap = CHAPTER_CUP_PRICE_CAPS[save ? save.chapter : 1] || 80000;
+    const sanitizedPrices = {};
+    for (const [rId, val] of Object.entries(customPrices)) {
+      const p = Number(val);
+      if (!isNaN(p) && p > 0) {
+        sanitizedPrices[rId] = Math.min(Math.round(p), chapterCap);
+      }
+    }
+
     const now = new Date().toISOString();
     await db.prepare(`
       UPDATE game_saves 
       SET custom_prices = ?, updated_at = ?
       WHERE store_id = ?
-    `).run(JSON.stringify(customPrices), now, storeId);
+    `).run(JSON.stringify(sanitizedPrices), now, storeId);
 
     invalidateStoreCache(storeId);
-    await recordAuditLog(storeId, 'ADMIN_UPDATE_CUSTOM_PRICES', customPrices);
+    await recordAuditLog(storeId, 'ADMIN_UPDATE_CUSTOM_PRICES', sanitizedPrices);
 
-    res.json({ success: true, message: 'Đã cập nhật giá bán tùy chỉnh!', customPrices });
+    res.json({ success: true, message: `Đã cập nhật giá bán tùy chỉnh (Giới hạn Chương ${save ? save.chapter : 1}: tối đa ${chapterCap.toLocaleString('vi-VN')}đ/ly)!`, customPrices: sanitizedPrices });
   } catch (err) {
     console.error('Admin update custom prices error:', err);
     res.status(500).json({ success: false, error: err.message });
@@ -1305,6 +1320,92 @@ router.get('/room/decorations', requireAdmin, (req, res) => {
       items: Object.values(ROOM_DECORATIONS)
     });
   } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// WHOLESALE INGREDIENT PRICES MANAGEMENT ENDPOINTS
+// -------------------------------------------------------------
+
+// 1. Get all ingredients with current & default prices
+router.get('/ingredients/prices', requireAdmin, (req, res) => {
+  try {
+    res.json({
+      success: true,
+      ingredients: INGREDIENTS.map(item => ({
+        ...item,
+        defaultPrice: DEFAULT_INGREDIENT_PRICES[item.id] || item.price
+      })),
+      defaultPrices: DEFAULT_INGREDIENT_PRICES,
+      chapterCupCaps: CHAPTER_CUP_PRICE_CAPS
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 2. Update wholesale ingredient prices globally
+router.put('/ingredients/prices', requireAdmin, async (req, res) => {
+  try {
+    const { prices } = req.body;
+    if (!prices || typeof prices !== 'object') {
+      return res.status(400).json({ success: false, error: 'Dữ liệu bảng giá nguyên liệu không hợp lệ!' });
+    }
+
+    const updatedList = applyIngredientPriceOverrides(prices, true);
+
+    // Clear server caches so all stores immediately get the new ingredient prices
+    if (gameCache.storeState) gameCache.storeState.clear();
+    if (gameCache.staticData) gameCache.staticData.clear();
+
+    await recordAuditLog(null, 'ADMIN_UPDATE_INGREDIENT_PRICES', prices);
+
+    // Broadcast live sync event so connected players see updated Chợ Đầu Mối prices immediately
+    liveSync.broadcast('ingredients_updated', {
+      ingredients: updatedList,
+      message: '🏪 Quản trị viên vừa cập nhật bảng giá nguyên liệu tại Chợ Đầu Mối!'
+    });
+
+    res.json({
+      success: true,
+      message: 'Đã cập nhật bảng giá nguyên liệu toàn máy chủ thành công!',
+      ingredients: updatedList.map(item => ({
+        ...item,
+        defaultPrice: DEFAULT_INGREDIENT_PRICES[item.id] || item.price
+      }))
+    });
+  } catch (err) {
+    console.error('Admin update ingredient prices error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 3. Reset wholesale ingredient prices to default
+router.post('/ingredients/prices/reset', requireAdmin, async (req, res) => {
+  try {
+    const updatedList = resetIngredientPricesToDefault();
+
+    if (gameCache.storeState) gameCache.storeState.clear();
+    if (gameCache.staticData) gameCache.staticData.clear();
+
+    await recordAuditLog(null, 'ADMIN_RESET_INGREDIENT_PRICES', {});
+
+    liveSync.broadcast('ingredients_updated', {
+      ingredients: updatedList,
+      message: '🏪 Giá nguyên liệu tại Chợ Đầu Mối đã được khôi phục về mức mặc định!'
+    });
+
+    res.json({
+      success: true,
+      message: 'Đã khôi phục giá nguyên liệu về mức mặc định!',
+      ingredients: updatedList.map(item => ({
+        ...item,
+        defaultPrice: DEFAULT_INGREDIENT_PRICES[item.id] || item.price
+      }))
+    });
+  } catch (err) {
+    console.error('Admin reset ingredient prices error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

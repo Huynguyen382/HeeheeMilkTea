@@ -130,7 +130,8 @@ export async function checkStaffOnLoad() {
  * Đồng bộ dữ liệu nhân viên vào state và canvas để vẽ sprite trên đường phố & quầy pha chế
  */
 function syncStaffToStateAndCanvas(activeStaff) {
-  state.activeStaff = activeStaff && !activeStaff.expired ? {
+  const currentChapter = Number(state.storeState?.save?.chapter || staffState?.currentChapter || 1);
+  state.activeStaff = (currentChapter >= 3 && activeStaff && !activeStaff.expired) ? {
     ...activeStaff,
     autoBrewEnabled
   } : null;
@@ -191,6 +192,7 @@ async function ensureIngredientsForAutoBrew(teaKey, toppings) {
 async function runOnlineAutoBrewTick() {
   if (autoBrewBusy) return;
   if (!autoBrewEnabled) return;
+  if (Number(state.storeState?.save?.chapter || 1) < 3) return;
   if (!state.activeStaff || state.activeStaff.expired) return;
   if (state.isGamePaused) return;
 
@@ -321,35 +323,36 @@ export function updateStaffHUD(data) {
   const buffStaffTime = document.getElementById('buff-staff-time');
   const buffStaffMoney = document.getElementById('buff-staff-money');
 
+  const menuBtnStaff = document.getElementById('menu-btn-staff');
+  const sectionStaffDelegation = document.getElementById('section-staff-delegation');
   const menuTitle = document.getElementById('menu-staff-title');
   const menuDesc = document.getElementById('menu-staff-desc');
 
   if (!data) return;
 
-  // 1. Kiểm tra trạng thái khóa (Chương 1 & 2)
+  // 1. Kiểm tra trạng thái khóa (Chương 1 & 2): Ẩn hoàn toàn nút thuê NPC cho đến khi tới Chương 3
   if (!data.isUnlocked) {
-    if (btnStaffIcon) btnStaffIcon.innerText = '🔒';
-    if (btnStaffLabel) btnStaffLabel.innerText = 'Tuyển Dụng (Khóa)';
-    if (btnStaffHeader) {
-      btnStaffHeader.style.opacity = '0.75';
-      btnStaffHeader.title = 'Khóa: Cần hoàn thành Chương 2 và mở Cửa Hàng Flagship Phố Đi Bộ (Chương 3)';
-    }
-    if (menuTitle) menuTitle.innerText = '🔒 Tuyển Dụng (Khóa)';
-    if (menuDesc) menuDesc.innerText = 'Cần hoàn thành Chương 2 để mở khóa!';
+    if (btnStaffHeader) btnStaffHeader.style.display = 'none';
+    if (menuBtnStaff) menuBtnStaff.style.display = 'none';
+    if (sectionStaffDelegation) sectionStaffDelegation.style.display = 'none';
     if (buffActiveStaff) buffActiveStaff.style.display = 'none';
     if (hudBadge) hudBadge.style.display = 'none';
     return;
   }
 
-  // 2. Trạng thái đã mở khóa
+  // 2. Trạng thái đã mở khóa (Chương 3+)
+  const hourlyRate = Number(data.hourlyRate || 10);
+  if (btnStaffHeader) {
+    btnStaffHeader.style.display = 'flex';
+    btnStaffHeader.style.opacity = '1';
+    btnStaffHeader.title = `Thuê Nhân Viên Trực Quầy & Doanh Thu Offline (${hourlyRate} TC/h)`;
+  }
+  if (menuBtnStaff) menuBtnStaff.style.display = 'flex';
+  if (sectionStaffDelegation) sectionStaffDelegation.style.display = 'block';
   if (btnStaffIcon) btnStaffIcon.innerText = '🧑‍🍳';
   if (btnStaffLabel) btnStaffLabel.innerText = 'Nhân Viên';
-  if (btnStaffHeader) {
-    btnStaffHeader.style.opacity = '1';
-    btnStaffHeader.title = 'Thuê Nhân Viên Trực Quầy & Doanh Thu Offline (5 TC/h)';
-  }
   if (menuTitle) menuTitle.innerText = '🧑‍🍳 Thuê Nhân Viên Trực Quầy';
-  if (menuDesc) menuDesc.innerText = 'Pha chế tự động & Doanh thu offline (5 TC/h)';
+  if (menuDesc) menuDesc.innerText = `Pha chế tự động & Doanh thu offline (${hourlyRate} TC/h)`;
 
   // 3. Hiển thị ca đang trực hoặc tiền chờ nhận
   if (data.activeStaff) {
@@ -403,6 +406,10 @@ export async function openStaffModal() {
     window.staffState = res;
     updateStaffHUD(res);
     syncStaffToStateAndCanvas(res.activeStaff);
+    if (!res.isUnlocked) {
+      showToast('🔒 Tính năng thuê NPC chỉ mở khi bạn đạt Chương 3!', 3200);
+      return;
+    }
     renderStaffModalContent(res);
     showModalEl(modalStaff);
   } catch (err) {
@@ -417,6 +424,8 @@ function renderStaffModalContent(data) {
   const container = document.getElementById('staff-modal-body');
   if (!container) return;
 
+  const hourlyRate = Number(data.hourlyRate || 10);
+
   // TRƯỜNG HỢP 1: BỊ KHÓA TIẾN TRÌNH (CHƯƠNG 1 & 2)
   if (!data.isUnlocked) {
     const curMoney = data.currentMoney || 0;
@@ -425,15 +434,14 @@ function renderStaffModalContent(data) {
 
     container.innerHTML = `
       <div class="staff-locked-container">
-        <div class="staff-locked-badge">🔒 TÍNH NĂNG CHƯA KHẢ DỤNG</div>
-        <div class="staff-locked-title">Yêu Cầu Hoàn Thành Chương 2</div>
+        <div class="staff-locked-badge">🔒 MỞ KHÓA Ở CHƯƠNG 3</div>
+        <div class="staff-locked-title">Yêu Cầu Mở Khóa Chương 3</div>
         <div class="staff-locked-desc">
-          HeeHee hiện đang tự tay lập nghiệp tại Cổng Parabol Bách Khoa.<br>
-          Sau khi tích lũy đủ <b>50.000.000đ</b> mở <b>Cửa Hàng Flagship Phố Đi Bộ (Chương 3)</b>, quy mô tiệm mở rộng sẽ chính thức kích hoạt hệ thống tuyển dụng nhân sự!
+          Người chơi cần mở khóa <b>Chương 3 (Cửa Hàng Flagship Phố Đi Bộ)</b> mới có thể thuê NPC làm việc và trực quầy tự động!
         </div>
         <div class="staff-progress-box">
           <div class="staff-progress-label">
-            <span>Tiến độ tích lũy mở Flagship:</span>
+            <span>Tiến độ tích lũy mở Chương 3:</span>
             <span>${curMoney.toLocaleString('vi-VN')}đ / ${goalMoney.toLocaleString('vi-VN')}đ (${pct}%)</span>
           </div>
           <div class="staff-progress-bar-bg">
@@ -456,7 +464,7 @@ function renderStaffModalContent(data) {
             <div class="candidate-trait">✨ <b>${c.trait}:</b> ${c.desc}</div>
             <div class="candidate-quote">"${c.quote}"</div>
             <div class="candidate-footer">
-              <span class="candidate-rate">🔒 5 TeaCoin/giờ</span>
+              <span class="candidate-rate">🔒 ${hourlyRate} TeaCoin/giờ</span>
               <button class="btn-hire-select" disabled>Chưa Mở</button>
             </div>
           </div>
@@ -477,7 +485,7 @@ function renderStaffModalContent(data) {
             <div class="staff-avatar-circle">${s.avatar}</div>
             <div class="staff-active-meta">
               <h4>${s.name} <span style="font-size: 0.75rem; background: #2ecc71; color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold;">ĐANG TRỰC QUẦY</span></h4>
-              <span>${s.role} • 5 TeaCoin/giờ</span>
+              <span>${s.role} • ${hourlyRate} TeaCoin/giờ</span>
             </div>
           </div>
           <div style="text-align: right;">
@@ -531,7 +539,7 @@ function renderStaffModalContent(data) {
     ${activeShiftHtml}
 
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px;">
-      <h3 style="margin: 0; color: #ffeaa7;">🧑‍🍳 Danh Sách Ứng Viên Barista (5 TeaCoin/giờ)</h3>
+      <h3 style="margin: 0; color: #ffeaa7;">🧑‍🍳 Danh Sách Ứng Viên Barista (${hourlyRate} TeaCoin/giờ)</h3>
       <div style="font-weight: bold; color: #00cec9;">Số dư: 🍵 <span id="staff-modal-teacoin">${currentTeaCoin}</span> TeaCoin</div>
     </div>
 
@@ -539,10 +547,10 @@ function renderStaffModalContent(data) {
     <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
       <div style="font-size: 0.82rem; color: #dfe6e9; margin-bottom: 6px;">Chọn thời lượng ca làm việc:</div>
       <div class="duration-selector-row">
-        <div class="duration-pill ${selectedHours === 1 ? 'active' : ''}" data-hours="1">1 Giờ (5 TC)</div>
-        <div class="duration-pill ${selectedHours === 3 ? 'active' : ''}" data-hours="3">3 Giờ (15 TC)</div>
-        <div class="duration-pill ${selectedHours === 8 ? 'active' : ''}" data-hours="8">8 Giờ (40 TC)</div>
-        <div class="duration-pill ${selectedHours === 24 ? 'active' : ''}" data-hours="24">24 Giờ (120 TC)</div>
+        <div class="duration-pill ${selectedHours === 1 ? 'active' : ''}" data-hours="1">1 Giờ (${1 * hourlyRate} TC)</div>
+        <div class="duration-pill ${selectedHours === 3 ? 'active' : ''}" data-hours="3">3 Giờ (${3 * hourlyRate} TC)</div>
+        <div class="duration-pill ${selectedHours === 8 ? 'active' : ''}" data-hours="8">8 Giờ (${8 * hourlyRate} TC)</div>
+        <div class="duration-pill ${selectedHours === 24 ? 'active' : ''}" data-hours="24">24 Giờ (${24 * hourlyRate} TC)</div>
       </div>
       <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #dfe6e9; cursor: pointer; margin-top: 6px;">
         <input type="checkbox" id="chk-auto-renew" style="accent-color: #6c5ce7; width: 16px; height: 16px;">
@@ -563,9 +571,9 @@ function renderStaffModalContent(data) {
           <div class="candidate-trait">✨ <b>${c.trait}:</b> ${c.desc}</div>
           <div class="candidate-quote">"${c.quote}"</div>
           <div class="candidate-footer">
-            <span class="candidate-rate">⚡ ${c.baseRate} ly/h • <span class="hire-cost-label">${selectedHours * 5} TC (${selectedHours}h)</span></span>
+            <span class="candidate-rate">⚡ ${c.baseRate} ly/h • <span class="hire-cost-label">${selectedHours * hourlyRate} TC (${selectedHours}h)</span></span>
             <button class="btn-hire-select btn-hire-action" data-npc="${c.id}">
-              ${data.activeStaff?.npcId === c.id && !data.activeStaff?.expired ? `Đang Trực (Thuê +${selectedHours}h)` : `Thuê (${selectedHours * 5} TC)`}
+              ${data.activeStaff?.npcId === c.id && !data.activeStaff?.expired ? `Đang Trực (Thuê +${selectedHours}h)` : `Thuê (${selectedHours * hourlyRate} TC)`}
             </button>
           </div>
         </div>
@@ -581,13 +589,15 @@ function renderStaffModalContent(data) {
  * Gắn listeners cho tương tác trong Staff Modal
  */
 function setupStaffModalEvents(data) {
+  const hourlyRate = Number(data.hourlyRate || 10);
+
   // Chọn số giờ -> cập nhật luôn số TeaCoin hiển thị trên các nút Thuê
   document.querySelectorAll('.duration-pill').forEach(pill => {
     pill.addEventListener('click', () => {
       document.querySelectorAll('.duration-pill').forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       selectedHours = parseInt(pill.getAttribute('data-hours'), 10) || 1;
-      const cost = selectedHours * 5;
+      const cost = selectedHours * hourlyRate;
       document.querySelectorAll('.hire-cost-label').forEach(el => {
         el.innerText = `${cost} TC (${selectedHours}h)`;
       });
@@ -633,7 +643,7 @@ function setupStaffModalEvents(data) {
       const npcId = btn.getAttribute('data-npc');
       selectedNpcId = npcId;
       const autoRenew = !!document.getElementById('chk-auto-renew')?.checked;
-      const totalCost = selectedHours * 5;
+      const totalCost = selectedHours * hourlyRate;
       const currentTeaCoin = Number(data.teacoin ?? state.storeState?.save?.teacoin ?? 0);
 
       if (currentTeaCoin < totalCost) {
@@ -709,7 +719,7 @@ function setupStaffModalEvents(data) {
         if (window.sound && typeof window.sound.fail === 'function') window.sound.fail();
         showToast('❌ Thuê thất bại: ' + err.message, 4000);
         btn.disabled = false;
-        btn.innerText = `Thuê (${selectedHours * 5} TC)`;
+        btn.innerText = `Thuê (${selectedHours * hourlyRate} TC)`;
       }
     });
   });
@@ -747,8 +757,8 @@ function setupStaffModalEvents(data) {
   if (btnExtend) {
     btnExtend.addEventListener('click', async () => {
       const currentTeaCoin = Number(data.teacoin ?? state.storeState?.save?.teacoin ?? 0);
-      if (currentTeaCoin < 5) {
-        showToast('⚠️ Cần 5 TeaCoin để gia hạn 1 giờ!', 3000);
+      if (currentTeaCoin < hourlyRate) {
+        showToast(`⚠️ Cần ${hourlyRate} TeaCoin để gia hạn 1 giờ!`, 3000);
         return;
       }
       btnExtend.disabled = true;
@@ -820,7 +830,7 @@ export function openOfflineSummaryModal(activeStaff) {
   const cups = activeStaff.accumulatedCups || 0;
   const money = (activeStaff.accumulatedMoney || 0).toLocaleString('vi-VN');
   const workedTime = activeStaff.workedTimeFormatted || `${activeStaff.hoursHired || 1} giờ 00 phút`;
-  const teacoinSpent = activeStaff.teacoinSpent || ((activeStaff.hoursHired || 1) * 5);
+  const teacoinSpent = activeStaff.teacoinSpent || ((activeStaff.hoursHired || 1) * 10);
   const repGain = (activeStaff.reputationGain || (activeStaff.npcId === 'co_mai' ? 0.2 : 0.1)).toFixed(1);
 
   const container = document.getElementById('staff-offline-summary-body');

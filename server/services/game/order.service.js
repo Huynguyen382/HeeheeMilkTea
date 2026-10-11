@@ -5,6 +5,7 @@ const { invalidateStoreCache } = require('./cache.helper');
 const { LOCATIONS } = require('../../data/locations');
 const NEGOTIATION = require('../../data/negotiation');
 const {
+  CHAPTER_CUP_PRICE_CAPS,
   RECIPES,
   CUSTOMERS,
   TEA_BASES,
@@ -202,7 +203,7 @@ async function generateOrder(storeId, options = {}) {
         type: 23,
         id: 24,
         name: 'Huy Shipper Bất Bại',
-        patience: 28000,
+        patience: 40000,
         fav: ['hong_tra_tac', 'tra_dao_cam_sa'],
         tipMult: 1.25,
         isShipper: true,
@@ -292,75 +293,85 @@ async function generateOrder(storeId, options = {}) {
 
     const orderId = 'ORD-' + crypto.randomBytes(4).toString('hex');
     
-    // Patience with active buff & Capybara pet & weather
-    // Base patience is extended x2.5 + 25s so players have ample time to brew without stress
-    let patienceMs = Math.floor(cust.patience * 2.5 + 25000);
+    // Thời gian NPC chờ cơ bản là 40 giây (40.000ms) cho mỗi đơn, chưa tính buff chờ
+    const basePatienceMs = 40000;
+    let patienceBonusMs = 0;
     if (currentWeather.patienceBonus) {
-      patienceMs = Math.floor(patienceMs * (1 + currentWeather.patienceBonus)); // e.g. Rainy +40% patience
+      patienceBonusMs += Math.round(basePatienceMs * currentWeather.patienceBonus); // e.g. Rainy +40% (+16s)
     }
     if (activeBuffs.patience_boost && activeBuffs.patience_boost > 0) {
-      patienceMs = Math.floor(patienceMs * 1.5); // +50% patience
+      patienceBonusMs += Math.round(basePatienceMs * 0.50); // +50% patience (+20s)
     }
     const upgrades = JSON.parse(save.upgrades || '{}');
     if (upgrades.active_pet === 'capybara' && !upgrades.is_pet_stolen) {
-      patienceMs = Math.floor(patienceMs * 1.5); // Capybara +50% patience
+      patienceBonusMs += Math.round(basePatienceMs * 0.50); // Capybara +50% patience (+20s)
     }
+    const patienceMs = Math.max(10000, basePatienceMs + patienceBonusMs);
     // The client only starts a customer's countdown when it reaches the front of the queue,
     // so the server deadline must include all waiting time of earlier customers in the wave.
     const expiresAt = now + patienceMs + 60000 + (i * (patienceMs + 15000));
 
-    // Custom price & Market price check
+    // Giới hạn giá cốc trà sữa cơ bản theo chương (Ch1: 50k, Ch2: 60k, Ch3: 70k, Ch4: 80k)
+    const chapterBaseCap = CHAPTER_CUP_PRICE_CAPS[save.chapter] || 80000;
     const customPrices = JSON.parse(save.custom_prices || '{}');
-    const marketBasePrice = recipe.basePrice;
+    const marketBasePrice = Math.min(recipe.basePrice, chapterBaseCap);
     const customRecipePrice = (customPrices[recipe.id] && Number(customPrices[recipe.id]) > 0)
-      ? Number(customPrices[recipe.id])
+      ? Math.min(Number(customPrices[recipe.id]), chapterBaseCap)
       : marketBasePrice;
 
-    // Price with multi-toppings, tip buff & Pet buffs
-    let price = customRecipePrice;
+    // Tính giá cơ bản của ly (bao gồm chênh lệch topping nhưng không vượt trần chương)
+    let rawBasePrice = customRecipePrice;
     const baseToppingCount = (recipe.toppings && recipe.toppings.length > 0) ? recipe.toppings.length : 0;
     const toppingDiff = orderToppings.length - baseToppingCount;
     if (toppingDiff > 0) {
-      price += toppingDiff * 7000; // Thêm topping: +7.000đ mỗi loại
+      rawBasePrice += toppingDiff * 7000; // Thêm topping: +7.000đ mỗi loại
     } else if (toppingDiff < 0) {
-      price = Math.max(25000, price + toppingDiff * 6000); // Bớt topping: giảm 6.000đ mỗi loại, không dưới 25.000đ
+      rawBasePrice = Math.max(25000, rawBasePrice + toppingDiff * 6000); // Bớt topping: giảm 6.000đ mỗi loại, không dưới 25.000đ
     }
+    const baseCupPrice = Math.min(chapterBaseCap, Math.max(25000, rawBasePrice));
 
-    if (cust.tipMult) price = Math.floor(price * cust.tipMult);
+    // Các buff cộng thêm dựa trên giá cơ bản (baseCupPrice) thay vì nhân chồng cấp số nhân
+    let orderBuffBonus = 0;
+    if (cust.tipMult && cust.tipMult > 1) {
+      orderBuffBonus += Math.round(baseCupPrice * (cust.tipMult - 1));
+    }
     if (currentWeather.tipBonus) {
-      price = Math.floor(price * (1 + currentWeather.tipBonus)); // e.g. Stormy +25% tip, Sunny +10% tip
+      orderBuffBonus += Math.round(baseCupPrice * currentWeather.tipBonus); // e.g. Stormy +25%, Sunny +10%
     }
     if (activeBuffs.tip_bonus && activeBuffs.tip_bonus > 0) {
-      price = Math.floor(price * 1.1); // +10% money
+      orderBuffBonus += Math.round(baseCupPrice * 0.10); // +10% money
     }
     if (upgrades.active_pet === 'corgi' && !upgrades.is_pet_stolen) {
-      price = Math.floor(price * 1.2); // Corgi +20% tip
+      orderBuffBonus += Math.round(baseCupPrice * 0.20); // Corgi +20% tip
     } else if (upgrades.active_pet === 'meo_tam_the' && !upgrades.is_pet_stolen) {
-      price = Math.floor(price * 1.15); // Mèo Tam Thể +15% revenue
+      orderBuffBonus += Math.round(baseCupPrice * 0.15); // Mèo Tam Thể +15% revenue
     }
 
-    // Thuộc tính bất động sản: điều chỉnh giá theo khu vực
+    // Thuộc tính bất động sản: cộng thêm dựa trên giá cơ bản
     const properties = JSON.parse(save.properties || '{}');
     const currentLocationId = properties.current_location || 'que';
     const locationConfig = LOCATIONS[currentLocationId];
-    if (locationConfig && locationConfig.priceMultiplier !== 1) {
-      price = Math.floor(price * locationConfig.priceMultiplier);
+    if (locationConfig && locationConfig.priceMultiplier && locationConfig.priceMultiplier !== 1) {
+      orderBuffBonus += Math.round(baseCupPrice * (locationConfig.priceMultiplier - 1));
     }
 
-    // Tác động của Thẻ Hãm Hại / Thẻ Hỗ Trợ tới doanh thu (Bóc phốt giảm 30%, Quản lý thị trường giảm 40%, Đính chính +30%)
+    if (activeBuffs.dinh_chinh_buff && !activeBuffs.sabotage) {
+      orderBuffBonus += Math.round(baseCupPrice * 0.30); // Hiệu ứng minh bạch & tin tưởng (+30% giá cơ bản)
+    }
+
+    // Mặn Mà Doanh Thu Buff (Cà Phê Muối Cố Đô): +25% dựa trên giá cơ bản
+    if (activeBuffs.buff_man_ma_doanh_thu && activeBuffs.buff_man_ma_doanh_thu.expiresAt > Date.now()) {
+      orderBuffBonus += Math.round(baseCupPrice * 0.25);
+    }
+
+    let price = baseCupPrice + orderBuffBonus;
+
+    // Tác động của Thẻ Hãm Hại tới doanh thu (Bóc phốt giảm 30%, Quản lý thị trường giảm 40%)
     if (activeBuffs.sabotage) {
       const revenuePenalty = activeBuffs.sabotage.type === 'market_inspection' ? 0.60 : 0.70;
       price = Math.max(15000, Math.floor(price * revenuePenalty));
-    } else if (activeBuffs.dinh_chinh_buff) {
-      price = Math.floor(price * 1.30); // Hiệu ứng minh bạch & tin tưởng
     } else {
-      // Luôn đảm bảo giá trà sữa tối thiểu 25.000đ khi không bị phạt
       price = Math.max(25000, price);
-    }
-
-    // Mặn Mà Doanh Thu Buff (Cà Phê Muối Cố Đô): Mọi ly trà sữa bán ra được cộng thêm +25% giá tiền trong 60 phút
-    if (activeBuffs.buff_man_ma_doanh_thu && activeBuffs.buff_man_ma_doanh_thu.expiresAt > Date.now()) {
-      price = Math.floor(price * 1.25);
     }
 
     // Đàm phán & Mặc cả: Khi đặt giá quá cao các NPC có thể mặc cả
@@ -884,11 +895,12 @@ async function setCustomPrices(storeId, customPrices) {
     currentPrices = {};
   }
 
+  const chapterBaseCap = CHAPTER_CUP_PRICE_CAPS[save.chapter] || 80000;
   for (const [recipeId, price] of Object.entries(customPrices)) {
     if (RECIPES[recipeId]) {
       const numPrice = Math.round(Number(price));
-      if (!isNaN(numPrice) && numPrice >= 20000 && numPrice <= 200000) {
-        currentPrices[recipeId] = numPrice;
+      if (!isNaN(numPrice) && numPrice >= 20000) {
+        currentPrices[recipeId] = Math.min(numPrice, chapterBaseCap);
       }
     }
   }

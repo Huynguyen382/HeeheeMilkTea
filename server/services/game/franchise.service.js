@@ -114,6 +114,7 @@ async function getFranchiseState(storeId) {
 async function openFranchise(storeId, franchiseId) {
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) throw new Error('Không tìm thấy dữ liệu tiệm trà sữa!');
+  if (Number(save.chapter || 1) < 4) throw new Error('🔒 Đế Chế Nhượng Quyền chỉ mở khóa khi đạt Chương 4!');
 
   const config = FRANCHISE_LOCATIONS[franchiseId];
   if (!config) throw new Error('Địa điểm chi nhánh không hợp lệ!');

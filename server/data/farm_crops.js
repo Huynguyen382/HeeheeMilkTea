@@ -11,7 +11,7 @@ const FARM_CROPS = {
     icon: '🍵',
     badge: 'Đặc Sản Núi Cao',
     color: '#824f33',
-    seedCost: 12000,
+    seedCost: 35000,
     growthSeconds: 40,
     desc: 'Búp chè Shan Tuyết cổ thụ phủ lớp lông tơ trắng muốt, ủ men ra cốt trà đen đậm đà hảo hạng.',
     produce: {
@@ -29,7 +29,7 @@ const FARM_CROPS = {
     icon: '🍃',
     badge: 'Hương Thảo Mộc',
     color: '#2fa364',
-    seedCost: 15000,
+    seedCost: 45000,
     growthSeconds: 45,
     desc: 'Lá chè xanh mơn mởn xen lẫn khóm lá dứa Mộc Châu thơm ngào ngạt, dùng cho Trà Sữa Thái Xanh.',
     produce: {
@@ -48,7 +48,7 @@ const FARM_CROPS = {
     icon: '🪷',
     badge: 'Tinh Hoa Đất Hà Thành',
     color: '#ff79c6',
-    seedCost: 18000,
+    seedCost: 52000,
     growthSeconds: 60,
     desc: 'Cánh sen hồng phớt ngát hương thanh khiết, nền tảng cho Lục Trà Lài và Trà Sen Bách Diệp Tây Hồ.',
     produce: {
@@ -66,7 +66,7 @@ const FARM_CROPS = {
     icon: '🍑',
     badge: 'Mọng Nước Tươi Giòn',
     color: '#ff9f43',
-    seedCost: 22000,
+    seedCost: 65000,
     growthSeconds: 70,
     desc: 'Đào giòn Mộc Châu má ửng hồng cùng cam vàng mọng nước và nhánh sả đồi thơm lừng.',
     produce: {
@@ -88,7 +88,7 @@ const FARM_CROPS = {
     icon: '🍯',
     badge: 'Sánh Mịn Tự Nhiên',
     color: '#5c3a21',
-    seedCost: 25000,
+    seedCost: 75000,
     growthSeconds: 80,
     desc: 'Cây mía tím ngọt đậm đà nấu mật mía đường đen và thảo dược sương sáo giải nhiệt cực mát.',
     produce: {
@@ -108,7 +108,7 @@ const FARM_CROPS = {
     icon: '🔥',
     badge: 'Vị Khói Trầm Ấm',
     color: '#d35400',
-    seedCost: 30000,
+    seedCost: 85000,
     growthSeconds: 90,
     desc: 'Búp trà Ô Long hái sớm sấy chậm trên than hồng, dùng cho Trà Ô Long Nướng & Nitro Cold Brew.',
     produce: {

@@ -77,7 +77,7 @@
         </li>
         <li class="nav-item" data-tab="tab-bulk-inv">
           <span class="icon">📦</span>
-          <span>Bơm Kho Nguyên Liệu</span>
+          <span>Kho & Giá Nguyên Liệu</span>
         </li>
         <li class="nav-item" data-tab="tab-logs">
           <span class="icon">🛡️</span>
@@ -620,9 +620,42 @@
         </section>
 
         <!-- ============================================== -->
-        <!-- TAB 4: BULK INVENTORY -->
+        <!-- TAB 4: BULK INVENTORY & INGREDIENT PRICES -->
         <!-- ============================================== -->
         <section id="tab-bulk-inv" class="tab-pane" style="display: none;">
+          <div class="admin-card" style="margin-bottom: 24px; border-left: 4px solid #fbbf24;">
+            <div class="card-header">
+              <h2>💰 Điều Chỉnh Giá Nguyên Liệu Chợ Đầu Mối (Toàn Máy Chủ)</h2>
+              <div class="card-actions" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-xs" onclick="AdminApp.adjustAllIngredientPrices(-20)">📉 Giảm 20%</button>
+                <button type="button" class="btn btn-secondary btn-xs" onclick="AdminApp.adjustAllIngredientPrices(-10)">📉 Giảm 10%</button>
+                <button type="button" class="btn btn-warning btn-xs" onclick="AdminApp.adjustAllIngredientPrices(10)">📈 Tăng +10%</button>
+                <button type="button" class="btn btn-warning btn-xs" onclick="AdminApp.adjustAllIngredientPrices(20)">📈 Tăng +20%</button>
+                <button type="button" class="btn btn-danger btn-xs" onclick="AdminApp.adjustAllIngredientPrices(50)">🔥 Tăng +50%</button>
+                <button type="button" class="btn btn-info btn-xs" onclick="AdminApp.resetIngredientPricesDefault()">🔄 Khôi Phục Giá Mặc Định</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <p style="color: var(--text-muted); margin-bottom: 14px; font-size: 13px;">
+                Điều chỉnh giá nhập từng nguyên liệu tại Chợ Đầu Mối cho toàn bộ người chơi. Thay đổi sẽ có hiệu lực ngay lập tức trên toàn server và tự động lưu bền vững.
+                <br><strong style="color: #fbbf24;">📌 Quy tắc giới hạn giá bán cốc trà sữa cơ bản theo chương:</strong> Chương 1: tối đa <b>50.000đ</b> • Chương 2: tối đa <b>60.000đ</b> • Chương 3: tối đa <b>70.000đ</b> • Chương 4: tối đa <b>80.000đ</b> (Mọi buff đều cộng thêm dựa trên giá cơ bản).
+              </p>
+              <form id="ingredient-prices-form">
+                <div id="admin-ingredient-prices-grid" class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));">
+                  <!-- Dynamically populated by AdminApp.loadIngredientPrices() -->
+                </div>
+                <div style="margin-top: 20px; display: flex; gap: 12px; align-items: center;">
+                  <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
+                    💾 Lưu Bảng Giá Nguyên Liệu Toàn Server
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="AdminApp.loadIngredientPrices()">
+                    🔄 Tải Lại Giá Hiện Tại
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
           <div class="admin-card">
             <div class="card-header">
               <h2>📦 Bơm Kho Nguyên Liệu Hàng Loạt</h2>
@@ -889,11 +922,12 @@
                 <input type="number" id="edit-stat-reputation" class="input-control" step="0.1" min="1.0" max="5.0" required>
               </div>
               <div class="form-group">
-                <label>Chương (Chapter: 1, 2, 3):</label>
+                <label>Chương (Chapter: 1, 2, 3, 4):</label>
                 <select id="edit-stat-chapter" class="input-control">
-                  <option value="1">Chương 1: Khởi Nghiệp Vỉa Hè</option>
-                  <option value="2">Chương 2: Mở Rộng Địa Bàn</option>
-                  <option value="3">Chương 3: Trùm Trà Sữa Đô Thị</option>
+                  <option value="1">Chương 1: Khởi Nghiệp Vỉa Hè (Trần cốc: 50k)</option>
+                  <option value="2">Chương 2: Mở Rộng Địa Bàn (Trần cốc: 60k)</option>
+                  <option value="3">Chương 3: Trùm Trà Sữa Đô Thị (Trần cốc: 70k)</option>
+                  <option value="4">Chương 4: Đế Chế Nhượng Quyền (Trần cốc: 80k)</option>
                 </select>
               </div>
               <div class="form-group">
@@ -1044,7 +1078,10 @@
               <!-- Dynamically populated checkboxes -->
             </div>
 
-            <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--admin-primary);">🏷️ Tùy Chỉnh Giá Bán Lẻ Quán (Custom Prices):</h4>
+            <h4 style="font-size: 14px; margin-bottom: 6px; color: var(--admin-primary);">🏷️ Tùy Chỉnh Giá Bán Lẻ Quán (Custom Prices):</h4>
+            <p style="font-size: 12px; color: #fbbf24; margin-bottom: 12px;">
+              📌 Giới hạn giá cơ bản theo chương: Chương 1 tối đa <b>50.000đ</b> • Chương 2 tối đa <b>60.000đ</b> • Chương 3 tối đa <b>70.000đ</b> • Chương 4 tối đa <b>80.000đ</b>. Mọi buff doanh thu/tip sẽ cộng thêm dựa trên giá cơ bản.
+            </p>
             <div id="editor-custom-prices-grid" class="form-grid">
               <!-- Dynamically populated inputs -->
             </div>

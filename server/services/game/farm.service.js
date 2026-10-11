@@ -117,6 +117,7 @@ async function getFarmState(storeId) {
 async function plantCrop(storeId, plotId, cropId) {
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) throw new Error('Không tìm thấy dữ liệu tiệm trà sữa!');
+  if (Number(save.chapter || 1) < 3) throw new Error('🔒 Nông Trại Chè Mộc Châu chỉ mở khóa khi đạt Chương 3!');
 
   const crop = FARM_CROPS[cropId];
   if (!crop) throw new Error('Giống cây trồng không hợp lệ!');

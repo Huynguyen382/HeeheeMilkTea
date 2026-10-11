@@ -11,6 +11,13 @@ async function buyUpgrade(storeId, upgradeId) {
   const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
   if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
 
+  if (item.chapter && Number(save.chapter || 1) < item.chapter) {
+    return {
+      success: false,
+      message: `🔒 Tính năng/vật phẩm này chỉ mở khóa khi bạn đạt Chương ${item.chapter}!`
+    };
+  }
+
   const upgrades = JSON.parse(save.upgrades || '{}');
   let recipes = JSON.parse(save.recipes || '["tra_sua_truyen_thong"]');
 

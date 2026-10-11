@@ -327,8 +327,8 @@ export function updateUI() {
     if (save.upgrades) {
       state.canvas.setActivePet(save.upgrades.active_pet || null, !!save.upgrades.is_pet_stolen);
     }
-    // Sync active NPC staff standing at counter (strictly from active TeaCoin contract)
-    if (state.activeStaff && !state.activeStaff.expired) {
+    // Sync active NPC staff standing at counter (strictly from active TeaCoin contract & Chapter 3+)
+    if (Number(save.chapter || 1) >= 3 && state.activeStaff && !state.activeStaff.expired) {
       state.canvas.activeStaff = state.activeStaff;
     } else {
       state.canvas.activeStaff = null;
@@ -512,8 +512,15 @@ export function updateUI() {
     }
   }
 
-  // Auto-refresh staff status if unlocked condition is met
-  const isStaffEligible = ((save.chapter || 1) >= 3) || ((save.chapter || 1) >= 2 && (save.money || 0) >= 50000000);
+  // Chỉ hiển thị các chức năng Kinh Doanh & Vận Hành khi người chơi mở khóa chương tương ứng
+  const currentChapter = Number(save.chapter || 1);
+  document.querySelectorAll('[data-min-chapter]').forEach(el => {
+    const minChap = Number(el.getAttribute('data-min-chapter') || 1);
+    const displayMode = el.getAttribute('data-display') || 'block';
+    el.style.display = currentChapter >= minChap ? displayMode : 'none';
+  });
+
+  const isStaffEligible = currentChapter >= 3;
   if (isStaffEligible && window.staffState && !window.staffState.isUnlocked && typeof window.checkStaffOnLoad === 'function') {
     window.checkStaffOnLoad();
   }

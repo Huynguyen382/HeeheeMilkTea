@@ -1,3 +1,8 @@
+const fs = require('fs');
+const path = require('path');
+
+const PRICE_CONFIG_PATH = path.join(__dirname, '../../data/ingredient_prices.json');
+
 // Danh mục Nguyên liệu Chợ Đầu Mối (Wholesale Milk Tea Market)
 const INGREDIENTS = [
   // --- CỐT TRÀ CHÍNH ---
@@ -6,7 +11,7 @@ const INGREDIENTS = [
     name: 'Trà Đen Tân Cương',
     category: 'tea',
     teaKey: 'den',
-    price: 5000,
+    price: 14000,
     unit: 'phần',
     packSize: 10,
     icon: '🍵',
@@ -18,7 +23,7 @@ const INGREDIENTS = [
     name: 'Trà Thái Xanh Thượng Hạng',
     category: 'tea',
     teaKey: 'thai_xanh',
-    price: 6000,
+    price: 16000,
     unit: 'phần',
     packSize: 10,
     icon: '🍃',
@@ -30,7 +35,7 @@ const INGREDIENTS = [
     name: 'Sữa Tươi Thanh Trùng',
     category: 'tea',
     teaKey: 'sua_tuoi',
-    price: 7000,
+    price: 18000,
     unit: 'phần',
     packSize: 10,
     icon: '🥛',
@@ -42,7 +47,7 @@ const INGREDIENTS = [
     name: 'Lục Trà Hoa Lài Cao Cấp',
     category: 'tea',
     teaKey: 'lai',
-    price: 6000,
+    price: 16000,
     unit: 'phần',
     packSize: 10,
     icon: '🌼',
@@ -54,7 +59,7 @@ const INGREDIENTS = [
     name: 'Trà Ô Long Nướng Sao Cháy',
     category: 'tea',
     teaKey: 'olong_nuong',
-    price: 8000,
+    price: 22000,
     unit: 'phần',
     packSize: 10,
     icon: '🍂',
@@ -67,7 +72,7 @@ const INGREDIENTS = [
     id: 'tranchau_den',
     name: 'Trân Châu Đen Dẻo',
     category: 'topping',
-    price: 3500,
+    price: 9000,
     unit: 'phần',
     packSize: 10,
     icon: '⚫',
@@ -78,7 +83,7 @@ const INGREDIENTS = [
     id: 'thach_la_dua',
     name: 'Thạch Lá Dứa Tươi',
     category: 'topping',
-    price: 3500,
+    price: 9000,
     unit: 'phần',
     packSize: 10,
     icon: '🌿',
@@ -89,7 +94,7 @@ const INGREDIENTS = [
     id: 'tranchau_duongden',
     name: 'Sốt Đường Đen Hàn Quốc',
     category: 'topping',
-    price: 5000,
+    price: 12500,
     unit: 'phần',
     packSize: 10,
     icon: '🍯',
@@ -100,7 +105,7 @@ const INGREDIENTS = [
     id: 'dao_mieng',
     name: 'Đào Ngâm Giòn Nam Phi',
     category: 'topping',
-    price: 5000,
+    price: 12500,
     unit: 'phần',
     packSize: 10,
     icon: '🍑',
@@ -111,7 +116,7 @@ const INGREDIENTS = [
     id: 'cam_vang',
     name: 'Cam Vàng Tươi Cắt Lát',
     category: 'topping',
-    price: 4000,
+    price: 10000,
     unit: 'phần',
     packSize: 10,
     icon: '🍊',
@@ -122,7 +127,7 @@ const INGREDIENTS = [
     id: 'sa_tuoi',
     name: 'Sả Tươi Đập Dập',
     category: 'topping',
-    price: 2500,
+    price: 7000,
     unit: 'phần',
     packSize: 10,
     icon: '🌱',
@@ -133,7 +138,7 @@ const INGREDIENTS = [
     id: 'suong_sao',
     name: 'Thạch Sương Sáo Thanh Mát',
     category: 'topping',
-    price: 4500,
+    price: 11000,
     unit: 'phần',
     packSize: 10,
     icon: '🍮',
@@ -146,7 +151,7 @@ const INGREDIENTS = [
     id: 'ly_nap',
     name: 'Thùng Ly & Màng Dập Nắp',
     category: 'consumable',
-    price: 2000,
+    price: 6000,
     unit: 'bộ',
     packSize: 20,
     icon: '🧋',
@@ -155,20 +160,85 @@ const INGREDIENTS = [
   }
 ];
 
+const DEFAULT_INGREDIENT_PRICES = INGREDIENTS.reduce((acc, item) => {
+  acc[item.id] = item.price;
+  return acc;
+}, {});
+
+function savePriceOverridesToDisk() {
+  try {
+    const dir = path.dirname(PRICE_CONFIG_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const currentMap = INGREDIENTS.reduce((acc, item) => {
+      acc[item.id] = item.price;
+      return acc;
+    }, {});
+    fs.writeFileSync(PRICE_CONFIG_PATH, JSON.stringify(currentMap, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('[Ingredients] Could not persist price overrides:', err.message);
+  }
+}
+
+function applyIngredientPriceOverrides(priceMap, persist = true) {
+  if (!priceMap || typeof priceMap !== 'object') return INGREDIENTS;
+  INGREDIENTS.forEach(item => {
+    if (priceMap[item.id] !== undefined) {
+      const val = Math.round(Number(priceMap[item.id]));
+      if (!isNaN(val) && val >= 500 && val <= 10000000) {
+        item.price = val;
+      }
+    }
+  });
+  if (persist) {
+    savePriceOverridesToDisk();
+  }
+  return INGREDIENTS;
+}
+
+function resetIngredientPricesToDefault() {
+  INGREDIENTS.forEach(item => {
+    if (DEFAULT_INGREDIENT_PRICES[item.id] !== undefined) {
+      item.price = DEFAULT_INGREDIENT_PRICES[item.id];
+    }
+  });
+  try {
+    if (fs.existsSync(PRICE_CONFIG_PATH)) {
+      fs.unlinkSync(PRICE_CONFIG_PATH);
+    }
+  } catch (err) {}
+  return INGREDIENTS;
+}
+
+// Auto-load saved price overrides on startup
+try {
+  if (fs.existsSync(PRICE_CONFIG_PATH)) {
+    const saved = JSON.parse(fs.readFileSync(PRICE_CONFIG_PATH, 'utf8'));
+    applyIngredientPriceOverrides(saved, false);
+  }
+} catch (err) {}
+
 const DEFAULT_INVENTORY = {
-  tra_den: 30,
-  tra_thai_xanh: 25,
-  sua_tuoi: 25,
-  tra_lai: 25,
-  tra_olong: 25,
-  tranchau_den: 30,
-  thach_la_dua: 25,
-  tranchau_duongden: 25,
-  dao_mieng: 20,
-  cam_vang: 20,
-  sa_tuoi: 20,
-  suong_sao: 20,
-  ly_nap: 60
+  tra_den: 10,
+  tra_thai_xanh: 8,
+  sua_tuoi: 8,
+  tra_lai: 8,
+  tra_olong: 8,
+  tranchau_den: 10,
+  thach_la_dua: 8,
+  tranchau_duongden: 8,
+  dao_mieng: 8,
+  cam_vang: 8,
+  sa_tuoi: 8,
+  suong_sao: 8,
+  ly_nap: 20
 };
 
-module.exports = { INGREDIENTS, DEFAULT_INVENTORY };
+module.exports = {
+  INGREDIENTS,
+  DEFAULT_INVENTORY,
+  DEFAULT_INGREDIENT_PRICES,
+  applyIngredientPriceOverrides,
+  resetIngredientPricesToDefault
+};

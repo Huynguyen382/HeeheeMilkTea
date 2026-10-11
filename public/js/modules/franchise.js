@@ -62,6 +62,12 @@ export function initFranchiseModule() {
  * Mở modal Đế Chế Nhượng Quyền
  */
 export async function openFranchiseModal() {
+  const currentChapter = Number(state.storeState?.save?.chapter || 1);
+  if (currentChapter < 4) {
+    showToast('🔒 Đế Chế Nhượng Quyền chỉ mở khóa khi bạn đạt Chương 4!', 3200);
+    return;
+  }
+
   const modal = document.getElementById('modal-franchise');
   if (!modal) return;
 

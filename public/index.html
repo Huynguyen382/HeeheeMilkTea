@@ -60,14 +60,14 @@
         <button id="btn-pricing-header" class="hud-stat-pill pill-pricing" style="background: rgba(241, 196, 15, 0.15); border: 1.5px solid #f1c40f; color: #f1c40f; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;" title="Bảng Giá Trà Sữa & Mặc Cả">
           <span>🏷️ Bảng Giá</span>
         </button>
-        <button id="btn-farm-header" class="hud-stat-pill pill-farm" style="background: rgba(46, 213, 115, 0.15); border: 1.5px solid #2ed573; color: #2ed573; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; position: relative;" title="Nông Trại Chè Mộc Châu & Xưởng Chế Biến">
+        <button id="btn-farm-header" data-min-chapter="3" data-display="flex" class="hud-stat-pill pill-farm" style="display: none; background: rgba(46, 213, 115, 0.15); border: 1.5px solid #2ed573; color: #2ed573; cursor: pointer; align-items: center; gap: 4px; font-weight: bold; position: relative;" title="Nông Trại Chè Mộc Châu & Xưởng Chế Biến (Chương 3)">
           <span>🌱 Nông Trại</span>
           <span class="nav-menu-badge" id="hud-farm-badge" style="display: none; top: -3px; right: -3px;"></span>
         </button>
-        <button id="btn-franchise-header" class="hud-stat-pill pill-franchise" style="background: rgba(253, 203, 110, 0.15); border: 1.5px solid #fdcb6e; color: #fdcb6e; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;" title="Đế Chế Nhượng Quyền & Sàn Đấu Giá Trà Quý">
+        <button id="btn-franchise-header" data-min-chapter="4" data-display="flex" class="hud-stat-pill pill-franchise" style="display: none; background: rgba(253, 203, 110, 0.15); border: 1.5px solid #fdcb6e; color: #fdcb6e; cursor: pointer; align-items: center; gap: 4px; font-weight: bold;" title="Đế Chế Nhượng Quyền & Sàn Đấu Giá Trà Quý (Chương 4)">
           <span>👑 Nhượng Quyền</span>
         </button>
-        <button id="btn-staff-header" class="hud-stat-pill pill-staff" style="background: rgba(162, 155, 254, 0.15); border: 1.5px solid #a29bfe; color: #a29bfe; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; position: relative;" title="Thuê NPC Trực Quầy & Thu Nhập Offline">
+        <button id="btn-staff-header" data-min-chapter="3" data-display="flex" class="hud-stat-pill pill-staff" style="display: none; background: rgba(162, 155, 254, 0.15); border: 1.5px solid #a29bfe; color: #a29bfe; cursor: pointer; align-items: center; gap: 4px; font-weight: bold; position: relative;" title="Thuê NPC Trực Quầy & Thu Nhập Offline (10 TC/h)">
           <span id="btn-staff-icon">🧑‍🍳</span>
           <span id="btn-staff-label">Nhân Viên</span>
           <span class="nav-menu-badge" id="hud-staff-badge" style="display: none; top: -3px; right: -3px;"></span>
@@ -379,7 +379,7 @@
               <span class="m-desc">Nhập cốt trà, topping & vật tư</span>
             </div>
           </button>
-          <button class="menu-item-btn" id="menu-btn-farm" style="border-color: #2ed573;">
+          <button class="menu-item-btn" id="menu-btn-farm" data-min-chapter="3" data-display="flex" style="display: none; border-color: #2ed573;">
             <span class="m-icon">🌱</span>
             <div class="m-info">
               <span class="m-title" style="color: #2ed573;">Nông Trại Mộc Châu</span>
@@ -393,18 +393,18 @@
               <span class="m-desc">Mua máy dập, thú cưng & món mới</span>
             </div>
           </button>
-          <button class="menu-item-btn" id="menu-btn-franchise" style="border-color: #fdcb6e;">
+          <button class="menu-item-btn" id="menu-btn-franchise" data-min-chapter="4" data-display="flex" style="display: none; border-color: #fdcb6e;">
             <span class="m-icon">👑</span>
             <div class="m-info">
               <span class="m-title" style="color: #fdcb6e;">Đế Chế Nhượng Quyền</span>
               <span class="m-desc">Mở chi nhánh toàn cầu & Đấu giá</span>
             </div>
           </button>
-          <button class="menu-item-btn" id="menu-btn-staff" style="border-color: #a29bfe;">
+          <button class="menu-item-btn" id="menu-btn-staff" data-min-chapter="3" data-display="flex" style="display: none; border-color: #a29bfe;">
             <span class="m-icon">🧑‍🍳</span>
             <div class="m-info">
               <span class="m-title" id="menu-staff-title" style="color: #a29bfe;">Nhân Viên & Thu Nhập Offline</span>
-              <span class="m-desc" id="menu-staff-desc">Thuê NPC trực quầy & tích luỹ doanh thu (5 TC/h)</span>
+              <span class="m-desc" id="menu-staff-desc">Thuê NPC trực quầy & tích luỹ doanh thu (10 TC/h)</span>
             </div>
           </button>
           <button class="menu-item-btn" id="nav-debt">
@@ -908,7 +908,7 @@
         </div>
 
         <!-- SABOTAGE CARDS SECTION (CHƯƠNG 2) -->
-        <div id="section-sabotage-cards" style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #ff5555;">
+        <div id="section-sabotage-cards" data-min-chapter="2" style="display: none; margin-top: 6px; padding-top: 6px; border-top: 2px dashed #ff5555;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <div style="font-weight: bold; color: #ff5555; font-size: 1.15rem;">⚔️ THẺ HÃM HẠI QUÁN ĐỐI THỦ (CHƯƠNG 2)</div>
             <span style="background: rgba(255,85,85,0.2); color: #ff5555; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #ff5555; font-weight: bold;">PvP Cạnh Tranh</span>
@@ -949,7 +949,7 @@
         </div>
 
         <!-- DEFENSE & SUPPORT CARDS SECTION (CHƯƠNG 2 & 3) -->
-        <div id="section-defense-cards" style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #50fa7b;">
+        <div id="section-defense-cards" data-min-chapter="2" style="display: none; margin-top: 6px; padding-top: 6px; border-top: 2px dashed #50fa7b;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <div style="font-weight: bold; color: #50fa7b; font-size: 1.15rem;">🛡️ THẺ PHÒNG THỦ &amp; KHẮC CHẾ (CARD BATTLE 2.0)</div>
             <span style="background: rgba(80,250,123,0.2); color: #50fa7b; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #50fa7b; font-weight: bold;">Khắc Chế Chiến Thuật</span>
@@ -1137,7 +1137,7 @@
           </div>
 
           <!-- Recipe 6: Trà Nitro Lạnh Sủi Bọt (Chương 3) -->
-          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #8be9fd; margin-bottom: 6px;">
+          <div data-min-chapter="3" style="display: none; background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #8be9fd; margin-bottom: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>💨 Trà Nitro Lạnh Sủi Bọt</b>
               <span style="color: #8be9fd; font-size: 0.9rem; font-weight: bold;">Giá Bán: 55.000đ/ly</span>
@@ -1150,7 +1150,7 @@
           </div>
 
           <!-- Recipe 7: Trà Sữa Dát Vàng 24K (Chương 3) -->
-          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #f1fa8c; margin-bottom: 6px;">
+          <div data-min-chapter="3" style="display: none; background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #f1fa8c; margin-bottom: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>👑 Trà Sữa Hoàng Gia Dát Vàng 24K</b>
               <span style="color: #f1fa8c; font-size: 0.9rem; font-weight: bold;">Giá Bán: 88.000đ/ly</span>
@@ -1163,7 +1163,7 @@
           </div>
 
           <!-- Recipe 8: Trà Sen Bách Diệp Tây Hồ (Chương 3) -->
-          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #55efc4; margin-bottom: 6px;">
+          <div data-min-chapter="3" style="display: none; background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #55efc4; margin-bottom: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>🪷 Trà Sen Bách Diệp Tây Hồ</b>
               <span style="color: #55efc4; font-size: 0.9rem; font-weight: bold;">Giá Bán: 68.000đ/ly</span>
@@ -1176,7 +1176,7 @@
           </div>
 
           <!-- Recipe 9: Trà Sữa Kem Khò Bánh Bỏng (Chương 3) -->
-          <div style="background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #ff7675; margin-bottom: 6px;">
+          <div data-min-chapter="3" style="display: none; background: #241424; padding: 8px; border-radius: 6px; border: 1px solid #ff7675; margin-bottom: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b>🔥 Trà Sữa Kem Khò Bánh Bỏng</b>
               <span style="color: #ff7675; font-size: 0.9rem; font-weight: bold;">Giá Bán: 62.000đ/ly</span>
@@ -1190,13 +1190,13 @@
         </div>
 
         <!-- STAFF DELEGATION SECTION (CHƯƠNG 3) -->
-        <div style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #f4c430;">
+        <div id="section-staff-delegation" data-min-chapter="3" style="display: none; margin-top: 6px; padding-top: 6px; border-top: 2px dashed #f4c430;">
           <div style="font-weight: bold; color: #f4c430; font-size: 1.15rem; margin-bottom: 4px;">👥 TUYỂN DỤNG &amp; PHÂN QUYỀN NHÂN SỰ</div>
           <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;">
-            Thuê NPC Barista trực quầy tự động bằng TeaCoin (5 TC/giờ) hoặc thăng chức quản lý cho đồng đội!
+            Thuê NPC Barista trực quầy tự động bằng TeaCoin (10 TC/giờ) hoặc thăng chức quản lý cho đồng đội!
           </div>
           <button type="button" class="btn-action-wide" id="btn-open-staff-from-upgrades" style="background: linear-gradient(135deg, #6c5ce7, #00cec9); color: #fff; font-weight: bold; margin-bottom: 10px; box-shadow: 0 0 12px rgba(0, 206, 201, 0.35);">
-            🧑‍🍳 Mở Bảng Thuê NPC Trực Quầy Tự Động (5 TeaCoin/giờ)
+            🧑‍🍳 Mở Bảng Thuê NPC Trực Quầy Tự Động (10 TeaCoin/giờ)
           </button>
 
           <!-- Staff 1: Bé Bắp -->
@@ -1225,7 +1225,7 @@
         </div>
 
         <!-- VEHICLE FLEET SECTION (HỆ THỐNG XE CỘ & VẬN TẢI) -->
-        <div style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #00cec9;">
+        <div id="section-vehicle-fleet" data-min-chapter="2" style="display: none; margin-top: 6px; padding-top: 6px; border-top: 2px dashed #00cec9;">
           <div style="font-weight: bold; color: #00cec9; font-size: 1.15rem; margin-bottom: 4px;">🛵 HỆ THỐNG XE CỘ &amp; VẬN TẢI ĐA DẠNG</div>
           <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;">
             Đầu tư phương tiện để tối ưu hóa chi phí nhập hàng, hốt bão tiền tip shipper và nâng tầm danh tiếng tiệm!
@@ -1244,7 +1244,7 @@
           </div>
 
           <!-- Vehicle 2: Bán Tải Pickup 4x4 -->
-          <div style="background: #10252b; padding: 10px; border-radius: 6px; border: 1px solid #e17055; margin-bottom: 8px;">
+          <div data-min-chapter="3" style="display: none; background: #10252b; padding: 10px; border-radius: 6px; border: 1px solid #e17055; margin-bottom: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <b style="color: #e17055;">🛻 Xe Bán Tải Pickup 4x4</b>
               <span style="color: #50fa7b; font-size: 0.78rem; font-weight: bold; background: rgba(80,250,123,0.15); padding: 2px 6px; border-radius: 4px;">Chương 3</span>
@@ -1815,24 +1815,6 @@
         </ul>
       </div>
 
-      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-        <button id="btn-test-lightning" class="btn-action-wide" style="display: none; margin: 0; background: linear-gradient(135deg, #a29bfe, #6c5ce7); color: #fff; font-weight: bold;">
-          ⚡ Kích Hoạt Sấm Sét Thử Nghiệm!
-        </button>
-      </div>
-
-      <!-- QUICK WEATHER PREVIEW SWITCHER -->
-      <div style="margin-bottom: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; border: 1px solid rgba(255,255,255,0.06);">
-        <div style="font-size: 0.8rem; font-weight: bold; color: #dfe6e9; margin-bottom: 6px; text-align: center;">🧪 TRẢI NGHIỆM ĐỔI HIỆU ỨNG THỜI TIẾT:</div>
-        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;" id="weather-test-btns">
-          <button class="btn-weather-pill" data-weather="sunny" style="background: rgba(241, 196, 15, 0.18); border: 1px solid #f1c40f; color: #f1c40f; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">☀️ Nắng</button>
-          <button class="btn-weather-pill" data-weather="rainy" style="background: rgba(52, 152, 219, 0.18); border: 1px solid #3498db; color: #74b9ff; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">🌧️ Mưa</button>
-          <button class="btn-weather-pill" data-weather="stormy" style="background: rgba(162, 155, 254, 0.2); border: 1px solid #a29bfe; color: #e056fd; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">⛈️ Bão</button>
-          <button class="btn-weather-pill" data-weather="cloudy" style="background: rgba(149, 165, 166, 0.18); border: 1px solid #a4b0be; color: #dfe6e9; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">⛅ Râm</button>
-          <button class="btn-weather-pill" data-weather="windy" style="background: rgba(46, 204, 113, 0.18); border: 1px solid #2ecc71; color: #55efc4; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">🍃 Gió</button>
-        </div>
-      </div>
-
       <div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; margin-top: 10px;">
         💡 Thời tiết thay đổi ngẫu nhiên mỗi khi Kết Ca (sang ngày mới) hoặc do Admin kích hoạt từ trang quản trị!
       </div>
@@ -2082,7 +2064,7 @@
           <span style="font-size: 1.5rem;">🧑‍🍳</span>
           <div>
             <h2 style="margin: 0; font-size: 1.15rem; color: #ffeaa7;">QUẢN LÝ NHÂN VIÊN & DOANH THU OFFLINE</h2>
-            <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #b2bec3;">Tuyển dụng NPC trực quầy (5 TeaCoin/h) và tự động nhận lợi nhuận tích luỹ</p>
+            <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #b2bec3;">Tuyển dụng NPC trực quầy (10 TeaCoin/h) và tự động nhận lợi nhuận tích luỹ</p>
           </div>
         </div>
         <button class="btn-close" id="close-staff" title="Đóng">&times;</button>

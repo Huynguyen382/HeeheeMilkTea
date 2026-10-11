@@ -95,21 +95,6 @@ router.post('/auction/bid', authStore, handle('Bid rare auction', req => gameSer
 
 // Weather System
 router.get('/weather', authStore, handle('Get weather', req => gameService.getCurrentWeather(req.store.id)));
-router.post('/weather/change', authStore, async (req, res) => {
-  try {
-    const { weatherId } = req.body;
-    if (!weatherId) return res.status(400).json({ error: 'Thiếu weatherId' });
-    const result = await gameService.setWeatherForStore(req.store.id, weatherId);
-    liveSync.pushToStore(req.store.id, 'weather_changed', {
-      weather: result.weather,
-      message: result.message
-    });
-    res.json(result);
-  } catch (err) {
-    console.error('Change weather error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // Real-time Event Stream & Polling Heartbeat
 router.get('/live-stream', authStore, (req, res) => {

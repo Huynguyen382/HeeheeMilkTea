@@ -13,6 +13,7 @@ import { state } from './state.js';
 import { updateUI, updateBuffsUI } from './ui.js';
 import { updateWeatherUI } from './weather.js';
 import { insertCustomOrderIntoQueue } from './order-manager.js';
+import { renderMarketItems } from './market.js';
 import { showToast } from './toast.js';
 
 let sseSource = null;
@@ -121,6 +122,18 @@ export function handleLiveEvent(eventType, data, eventId) {
       break;
     }
 
+    case 'ingredients_updated': {
+      if (Array.isArray(data.ingredients)) {
+        if (!state.storeState) state.storeState = {};
+        state.storeState.ingredients = data.ingredients;
+        renderMarketItems();
+        if (data.message) {
+          showToast(data.message, 4000);
+        }
+      }
+      break;
+    }
+
     case 'sabotaged': {
       // Immediate impact when another store uses a Sabotage Card against this store!
       if (!state.storeState) state.storeState = {};
@@ -203,6 +216,13 @@ export function connectSSE() {
       try {
         const data = JSON.parse(e.data);
         handleLiveEvent('state_updated', data);
+      } catch (err) {}
+    });
+
+    sseSource.addEventListener('ingredients_updated', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        handleLiveEvent('ingredients_updated', data);
       } catch (err) {}
     });
 

@@ -498,6 +498,12 @@ export function initWorkflow() {
         showToast('❌ Cốt trà này đã hết trong kho! Vui lòng vào Chợ Đầu Mối để mua thêm!', 4000);
         return;
       }
+      if ((inv['ly_nap'] !== undefined ? inv['ly_nap'] : 20) <= 0) {
+        if (window.sound) window.sound.fail();
+        elBtnServe.disabled = false;
+        showToast('❌ Kho đã hết [Thùng Ly & Màng Dập Nắp]! Vui lòng vào Chợ Đầu Mối để mua thêm!', 4000);
+        return;
+      }
       for (const t of state.selectedToppings) {
         if ((inv[t] !== undefined ? inv[t] : 0) <= 0) {
           if (window.sound) window.sound.fail();

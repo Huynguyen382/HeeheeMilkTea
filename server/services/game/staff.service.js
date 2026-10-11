@@ -11,7 +11,7 @@ const NPC_CANDIDATES = {
     role: 'Tập Sự Chăm Chỉ',
     avatar: '👧',
     baseRate: 16, // 16 ly/giờ
-    costMargin: 0.10, // Giảm cost xuống 10% (tiết kiệm 15% nguyên liệu)
+    costMargin: 0.42, // Giảm cost xuống 42% (tiết kiệm 15% nguyên liệu so với mức chuẩn)
     tipPerCup: 1200,
     trait: 'Tiết Kiệm Nguyên Liệu',
     desc: 'Giảm 15% chi phí nguyên vật liệu. Nhanh nhẹn, hay cười, thỉnh thoảng vụng về đáng yêu!',
@@ -23,7 +23,7 @@ const NPC_CANDIDATES = {
     role: 'Chiến Thần Logistics',
     avatar: '🛵',
     baseRate: 19, // 16-22 ly/giờ (trung bình 19)
-    costMargin: 0.25,
+    costMargin: 0.55,
     tipPerCup: 1500,
     deliveryBonus: 0.25, // +25% giá trị đơn hàng
     trait: 'Ưu Tiên Shipper & Giao Đi',
@@ -36,7 +36,7 @@ const NPC_CANDIDATES = {
     role: 'Nghệ Nhân Trà Cổ Truyền',
     avatar: '👵',
     baseRate: 14, // 12-16 ly/giờ
-    costMargin: 0.25,
+    costMargin: 0.55,
     tipPerCup: 1800, // Tip cao hơn (+20%)
     reputationBonus: 0.2,
     trait: 'Hương Vị Hoàn Hảo & Tăng Danh Tiếng',
@@ -49,7 +49,7 @@ const NPC_CANDIDATES = {
     role: 'Công Nghệ Tương Lai',
     avatar: '🤖',
     baseRate: 22, // 20-24 ly/giờ
-    costMargin: 0.22,
+    costMargin: 0.50,
     tipPerCup: 1100,
     trait: 'Chính Xác Tuyệt Đối 100%',
     desc: 'Năng suất tối đa, chuẩn xác từng mililít, không bao giờ làm hỏng ly!',
@@ -57,14 +57,14 @@ const NPC_CANDIDATES = {
   }
 };
 
-const HOURLY_TEACOIN_RATE = 5; // Chuẩn 5 TeaCoin/giờ
+const HOURLY_TEACOIN_RATE = 10; // Chuẩn 10 TeaCoin/giờ
 const MAX_OFFLINE_HOURS_CAP = 12; // Giới hạn trần 12h/ca
 const MAX_HOURLY_CUPS_RATE_LIMIT = 30; // Roadmap VI.3: Không bao giờ vượt quá 30 ly/giờ
-const CHAPTER_UNLOCK_REQUIRED = 3; // Mở khóa khi hoàn thành C2 (sang C3 Flagship hoặc đạt mốc 50Tr ở C2)
+const CHAPTER_UNLOCK_REQUIRED = 3; // Người dùng phải mở Chương 3 mới có thể thuê NPC làm việc
 
-function isStaffFeatureUnlocked(save, contract = null) {
+function isStaffFeatureUnlocked(save) {
   if (!save) return false;
-  return true;
+  return Number(save.chapter || 1) >= CHAPTER_UNLOCK_REQUIRED;
 }
 
 function formatWorkedDuration(ms) {
@@ -259,10 +259,10 @@ async function getStaffStatus(storeId) {
   let contract = await db.prepare('SELECT * FROM npc_staff_contracts WHERE store_id = ?').get(storeId);
   const currentChapter = Number(save.chapter || 1);
   const chapterGoalMoney = 50000000; // 50 triệu mở Chương 3
-  const isUnlocked = isStaffFeatureUnlocked(save, contract);
+  const isUnlocked = isStaffFeatureUnlocked(save);
 
-  // Nếu có hợp đồng, tiến hành chốt doanh thu offline mới nhất
-  if (contract) {
+  // Nếu đã mở Chương 3 và có hợp đồng, tiến hành chốt doanh thu offline mới nhất
+  if (isUnlocked && contract) {
     const settlement = await settleContractOffline(storeId, save, contract);
     contract = settlement.contract;
   }
@@ -270,7 +270,7 @@ async function getStaffStatus(storeId) {
   const now = Date.now();
   let activeStaff = null;
 
-  if (contract && contract.is_active && contract.expires_at > now) {
+  if (isUnlocked && contract && contract.is_active && contract.expires_at > now) {
     const cand = NPC_CANDIDATES[contract.npc_id] || NPC_CANDIDATES.be_bap;
     const remainingMs = Math.max(0, contract.expires_at - now);
     const remainingHours = Math.floor(remainingMs / (3600 * 1000));
@@ -298,7 +298,7 @@ async function getStaffStatus(storeId) {
       accumulatedCups: Number(contract.accumulated_cups || 0),
       hourlyRate: contract.hourly_rate || HOURLY_TEACOIN_RATE
     };
-  } else if (contract && Number(contract.accumulated_money || 0) > 0) {
+  } else if (isUnlocked && contract && Number(contract.accumulated_money || 0) > 0) {
     // Ca làm đã kết thúc nhưng vẫn còn tiền tích lũy chờ nhận
     const cand = NPC_CANDIDATES[contract.npc_id] || NPC_CANDIDATES.be_bap;
     const workedMs = Math.max(0, Number(contract.expires_at) - Number(contract.hired_at));

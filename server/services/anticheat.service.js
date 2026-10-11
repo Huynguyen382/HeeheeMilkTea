@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const db = require('../models/db');
-const { DEFAULT_INVENTORY } = require('../data/ingredients');
+const { INGREDIENTS, DEFAULT_INVENTORY } = require('../data/ingredients');
+const { RECIPES, CHAPTER_CUP_PRICE_CAPS } = require('./game/constants');
 
 const SECRET_KEY = process.env.HYHY_SECRET || 'hyhy_super_secret_anti_cheat_key_2026';
 
@@ -181,8 +182,19 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     return { success: false, message: 'Pha sai loại topping yêu cầu của khách! Khách càu nhàu trả lại ly.' };
   }
 
-  // 4. Daily earnings: No limit! Full price payout + Collab revenue bonus (+10% per active partner, max 3 partners = +30%)
+  // 4. Daily earnings: Buffs are added based on the base cup price (capped by chapter: Ch1=50k, Ch2=60k, Ch3=70k, Ch4=80k)
   const daily = await getOrCreateDailyStats(storeId, save.chapter);
+  const chapterBaseCap = CHAPTER_CUP_PRICE_CAPS[save.chapter] || 80000;
+  let customPrices = {};
+  try {
+    customPrices = JSON.parse(save.custom_prices || '{}');
+  } catch (e) {}
+  const recipeDef = RECIPES[order.recipe_id] || { basePrice: 25000 };
+  const rawBasePrice = customPrices[order.recipe_id]
+    ? Math.min(Number(customPrices[order.recipe_id]), recipeDef.basePrice * 2, chapterBaseCap)
+    : Math.min(recipeDef.basePrice, chapterBaseCap);
+  const baseCupPrice = Math.min(rawBasePrice, chapterBaseCap);
+
   const collabRow = await db.prepare(`
     SELECT COUNT(*) as cnt 
     FROM collabs 
@@ -191,38 +203,40 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   `).get(storeId, storeId);
   const activeCollabs = Math.min(3, collabRow ? (collabRow.cnt || 0) : 0);
   const collabBonusPercent = activeCollabs * 10;
-  const collabBonus = Math.round(order.price * (collabBonusPercent / 100));
+  const collabBonus = Math.round(baseCupPrice * (collabBonusPercent / 100));
 
-  // Thưởng nhân sự (Staff Upgrades & Active Hired NPC Contract)
+  // Thưởng nhân sự (Staff Upgrades & Active Hired NPC Contract) - tính trên giá cơ bản
   const upgrades = JSON.parse(save.upgrades || '{}');
   let staffBonus = 0;
   if (upgrades.staff_be_bap_manager) {
-    staffBonus += Math.round(order.price * 0.25); // Bé Bắp Cửa Hàng Trưởng +25% giá trị toàn bộ đơn
+    staffBonus += Math.round(baseCupPrice * 0.25); // Bé Bắp Cửa Hàng Trưởng +25% giá cơ bản
   }
   const isShipperOrder = !!(order.customer_name && (order.customer_name.includes('Lâm') || order.customer_name.includes('Shipper')));
   if (upgrades.staff_anh_lam_captain && isShipperOrder) {
-    staffBonus += Math.round(order.price * 0.35); // Anh Lâm Đội Trưởng Logistics +35% đơn shipper
+    staffBonus += Math.round(baseCupPrice * 0.35); // Anh Lâm Đội Trưởng Logistics +35% giá cơ bản
   }
 
-  // Kiểm tra hợp đồng NPC đang trực quầy (NPC_STAFF_OFFLINE_ROADMAP.md)
+  // Kiểm tra hợp đồng NPC đang trực quầy (Yêu cầu mở Chương 3 trở lên)
   let activeNpcContract = null;
-  try {
-    activeNpcContract = await db.prepare(`
-      SELECT * FROM npc_staff_contracts
-      WHERE store_id = ? AND is_active = 1 AND expires_at > ?
-      ORDER BY id DESC LIMIT 1
-    `).get(storeId, now);
-  } catch (e) {}
+  if (Number(save.chapter || 1) >= 3) {
+    try {
+      activeNpcContract = await db.prepare(`
+        SELECT * FROM npc_staff_contracts
+        WHERE store_id = ? AND is_active = 1 AND expires_at > ?
+        ORDER BY id DESC LIMIT 1
+      `).get(storeId, now);
+    } catch (e) {}
+  }
 
   if (activeNpcContract) {
     if (activeNpcContract.npc_id === 'be_bap') {
-      staffBonus += Math.round(order.price * 0.05); // Bé Bắp: Chuẩn vị trà truyền thống (+5% giá trị đơn & giảm 15% cốt liệu)
+      staffBonus += Math.round(baseCupPrice * 0.05); // Bé Bắp: Chuẩn vị trà truyền thống (+5% giá cơ bản & giảm 15% cốt liệu)
     } else if (activeNpcContract.npc_id === 'anh_lam') {
-      staffBonus += Math.round(order.price * (isShipperOrder ? 0.25 : 0.10)); // Anh Lâm: +25% đơn Shipper, +10% đơn thường
+      staffBonus += Math.round(baseCupPrice * (isShipperOrder ? 0.25 : 0.10)); // Anh Lâm: +25% đơn Shipper, +10% đơn thường
     } else if (activeNpcContract.npc_id === 'co_mai') {
-      staffBonus += Math.round(order.price * 0.20); // Cô Mai: +20% tiền Tip mỗi ly
+      staffBonus += Math.round(baseCupPrice * 0.20); // Cô Mai: +20% tiền Tip mỗi ly
     } else if (activeNpcContract.npc_id === 'bot_p800') {
-      staffBonus += Math.round(order.price * 0.15); // Bot P-800: +15% thưởng pha chế chuẩn xác 100%
+      staffBonus += Math.round(baseCupPrice * 0.15); // Bot P-800: +15% thưởng pha chế chuẩn xác 100%
     }
     // Đồng bộ mốc thời gian trực quầy online để không tính trùng lặp với doanh thu offline
     try {
@@ -230,10 +244,10 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     } catch (e) {}
   }
 
-  // Thưởng phương tiện (Vehicle Fleet)
+  // Thưởng phương tiện (Vehicle Fleet) - tính trên giá cơ bản
   let vehicleBonus = 0;
   if (upgrades.xe_dream_chien && isShipperOrder) {
-    vehicleBonus += Math.round(order.price * 0.50); // Xe Dream Chiến Tem Lửa +50% đơn shipper VIP
+    vehicleBonus += Math.round(baseCupPrice * 0.50); // Xe Dream Chiến Tem Lửa +50% giá cơ bản
   }
 
   // Khách ngồi lại bàn (Dine-in System - Chương 3)
@@ -244,11 +258,11 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
 
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
 
-  // Đồ uống Signature Organic 5⭐ từ Nông Trại Mộc Châu (+40% giá bán)
+  // Đồ uống Signature Organic 5⭐ từ Nông Trại Mộc Châu (+40% giá cơ bản)
   let organicBonus = 0;
   let isOrganic = false;
   if (activeBuffs.organic_signature > 0) {
-    organicBonus = Math.round(order.price * 0.40);
+    organicBonus = Math.round(baseCupPrice * 0.40);
     isOrganic = true;
     activeBuffs.organic_signature -= 1;
     if (activeBuffs.organic_signature <= 0) {
@@ -256,13 +270,13 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     }
   }
 
-  // Đấu giá nguyên liệu cổ thụ quý hiếm (Auction House Buffs)
+  // Đấu giá nguyên liệu cổ thụ quý hiếm (Auction House Buffs) - tính trên giá cơ bản
   let auctionBonus = 0;
   if (activeBuffs.permanent_tea_boost && (order.recipe_id.includes('tra_') || order.recipe_id.includes('hong_tra'))) {
-    auctionBonus += Math.round(order.price * 0.30);
+    auctionBonus += Math.round(baseCupPrice * 0.30);
   }
   if (activeBuffs.permanent_milk_boost && (order.recipe_id.includes('sua_') || order.recipe_id.includes('kem_kho'))) {
-    auctionBonus += Math.round(order.price * 0.45);
+    auctionBonus += Math.round(baseCupPrice * 0.45);
   }
   if (activeBuffs.permanent_tip_boost && dineInBonus > 0) {
     dineInBonus = Math.round(dineInBonus * 1.50);
@@ -315,10 +329,7 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     if (activeBuffs.patience_boost <= 0) delete activeBuffs.patience_boost;
   }
 
-  // Update Database Transaction
-  await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
-
-  // Deduct inventory ingredients used in this drink
+  // Check & deduct inventory ingredients used in this drink
   const currentInv = { ...DEFAULT_INVENTORY, ...JSON.parse(save.inventory || '{}') };
   const recipeTeaMap = {
     tra_sua_truyen_thong: 'tra_den',
@@ -335,8 +346,23 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     tra_sam_nui_seoul: 'sua_tuoi'
   };
   const teaIngId = recipeTeaMap[order.recipe_id] || 'tra_den';
-  currentInv[teaIngId] = Math.max(0, (currentInv[teaIngId] || 0) - 1);
 
+  if ((currentInv[teaIngId] || 0) <= 0) {
+    return { success: false, message: 'Cốt trà trong kho đã hết! Hãy vào Chợ Đầu Mối để nhập thêm nguyên liệu.' };
+  }
+  if ((currentInv['ly_nap'] || 0) <= 0) {
+    return { success: false, message: 'Kho đã hết Ly & Màng Dập Nắp! Hãy vào Chợ Đầu Mối để nhập thêm.' };
+  }
+  for (const topKey of orderToppings) {
+    if (currentInv[topKey] !== undefined && currentInv[topKey] <= 0) {
+      return { success: false, message: 'Topping yêu cầu trong kho đã hết! Hãy vào Chợ Đầu Mối để nhập thêm.' };
+    }
+  }
+
+  // Update Database Transaction
+  await db.prepare('DELETE FROM active_orders WHERE id = ?').run(orderId);
+
+  currentInv[teaIngId] = Math.max(0, (currentInv[teaIngId] || 0) - 1);
   orderToppings.forEach(topKey => {
     if (currentInv[topKey] !== undefined) {
       currentInv[topKey] = Math.max(0, currentInv[topKey] - 1);
@@ -344,8 +370,15 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   });
   currentInv['ly_nap'] = Math.max(0, (currentInv['ly_nap'] || 0) - 1);
 
-  // Ingredient cost estimation (Cốt trà + ly nắp ~7.000đ + topping ~3.500đ/loại)
-  const rawDrinkIngredientCost = 7000 + (orderToppings.length * 3500);
+  // Calculate real ingredient cost based on Wholesale Market prices
+  const getIngPrice = (id, fallback) => {
+    const found = INGREDIENTS.find(i => i.id === id);
+    return found ? found.price : fallback;
+  };
+  const teaCost = getIngPrice(teaIngId, 15000);
+  const cupCost = getIngPrice('ly_nap', 6000);
+  const toppingsCost = orderToppings.reduce((sum, topKey) => sum + getIngPrice(topKey, 9500), 0);
+  const rawDrinkIngredientCost = teaCost + cupCost + toppingsCost;
   const drinkIngredientCost = activeNpcContract?.npc_id === 'be_bap'
     ? Math.round(rawDrinkIngredientCost * 0.85) // Bé Bắp: Tiết kiệm 15% chi phí nguyên liệu pha chế
     : rawDrinkIngredientCost;

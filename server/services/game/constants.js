@@ -3,6 +3,14 @@ const cpuOptimizer = require('../cpu-optimizer');
 const fastRandom = cpuOptimizer.fastRandom;
 const probabilityDistributions = cpuOptimizer.probabilityDistributions;
 
+// Giới hạn giá cốc trà sữa cơ bản theo từng Chương
+const CHAPTER_CUP_PRICE_CAPS = {
+  1: 50000, // Chương 1 tối đa 50.000đ
+  2: 60000, // Chương 2 tối đa 60.000đ
+  3: 70000, // Chương 3 tối đa 70.000đ
+  4: 80000  // Chương 4 tối đa 80.000đ
+};
+
 // Drink Recipes Database
 const RECIPES = {
   tra_sua_truyen_thong: {
@@ -10,7 +18,7 @@ const RECIPES = {
     name: 'Trà Sữa Truyền Thống',
     chapter: 1,
     basePrice: 32000,
-    cost: 10500,
+    cost: 24000,
     tea: 'den',
     toppings: ['tranchau_den'],
     desc: '🍵 Cốt trà: [Trà Đen Đậm] • Cốt trà đen đậm đà hòa quyện sữa đặc béo ngậy, trân châu đen dẻo dai'
@@ -20,7 +28,7 @@ const RECIPES = {
     name: 'Hồng Trà Tắc Xí Muội',
     chapter: 1,
     basePrice: 25000,
-    cost: 7000,
+    cost: 18000,
     tea: 'den',
     toppings: [],
     desc: '🍵 Cốt trà: [Trà Đen Đậm] • Trà đen giải khát thanh mát, vị tắc chua thanh & xí muội mằn mặn'
@@ -30,7 +38,7 @@ const RECIPES = {
     name: 'Trà Sữa Thái Xanh',
     chapter: 1,
     basePrice: 35000,
-    cost: 11500,
+    cost: 26000,
     tea: 'thai_xanh',
     toppings: ['thach_la_dua'],
     desc: '🌿 Cốt trà: [Thái Xanh] • Màu xanh mát mắt, hương hoa lài thơm mát nồng nàn cùng thạch lá dứa'
@@ -40,7 +48,7 @@ const RECIPES = {
     name: 'Sữa Tươi Trân Châu Đường Đen',
     chapter: 2,
     basePrice: 42000,
-    cost: 14000,
+    cost: 32000,
     tea: 'sua_tuoi',
     toppings: ['tranchau_duongden'],
     desc: '🥛 Cốt trà: [Sữa Tươi] • Sữa tươi thanh trùng cùng trân châu nấu đường đen dẻo quánh hot trend'
@@ -50,7 +58,7 @@ const RECIPES = {
     name: 'Trà Đào Cam Sả',
     chapter: 2,
     basePrice: 48000,
-    cost: 19500,
+    cost: 42000,
     tea: 'lai',
     toppings: ['dao_mieng', 'cam_vang', 'sa_tuoi'],
     desc: '🌸 Cốt trà: [Lục Trà Lài] • Bắt buộc đủ 3 món: Đào Miếng + Cam Vàng + Sả Tươi thơm nức mũi'
@@ -60,7 +68,7 @@ const RECIPES = {
     name: 'Trà Ô Long Nướng Sương Sáo',
     chapter: 3,
     basePrice: 45000,
-    cost: 14500,
+    cost: 35000,
     tea: 'olong_nuong',
     toppings: ['suong_sao'],
     desc: '🔥 Cốt trà: [Ô Long Nướng] • Vị khói sao cháy mộc mạc thượng hạng hòa quyện thạch sương sáo mềm mướt'
@@ -70,7 +78,7 @@ const RECIPES = {
     name: 'Trà Nitro Lạnh Sủi Bọt',
     chapter: 3,
     basePrice: 55000,
-    cost: 18000,
+    cost: 42000,
     tea: 'olong_nuong',
     toppings: ['suong_sao', 'tranchau_den'],
     desc: '💨 Cốt trà: [Ô Long Nướng] • Công nghệ Nitro lạnh sủi bọt kem mịn màng mát lạnh kết hợp trân châu & sương sáo'
@@ -79,8 +87,8 @@ const RECIPES = {
     id: 'tra_sua_dat_vang',
     name: 'Trà Sữa Hoàng Gia Dát Vàng 24K',
     chapter: 3,
-    basePrice: 88000,
-    cost: 28000,
+    basePrice: 70000,
+    cost: 48000,
     tea: 'den',
     toppings: ['tranchau_den', 'tranchau_duongden'],
     desc: '👑 Cốt trà: [Trà Đen Đậm] • Trà sữa thượng hạng phủ lá vàng 24K thực phẩm lấp lánh dành cho giới thượng lưu'
@@ -89,8 +97,8 @@ const RECIPES = {
     id: 'tra_sen_tay_ho',
     name: 'Trà Sen Bách Diệp Tây Hồ',
     chapter: 3,
-    basePrice: 68000,
-    cost: 22000,
+    basePrice: 65000,
+    cost: 44000,
     tea: 'lai',
     toppings: ['dao_mieng', 'sa_tuoi'],
     desc: '🪷 Cốt trà: [Lục Trà Lài] • Tinh hoa trà sen Tây Hồ ngát hương sen sớm quyện cùng đào miếng giòn ngọt & sả thơm'
@@ -100,7 +108,7 @@ const RECIPES = {
     name: 'Trà Sữa Kem Khò Bánh Bỏng',
     chapter: 3,
     basePrice: 62000,
-    cost: 20000,
+    cost: 43500,
     tea: 'thai_xanh',
     toppings: ['thach_la_dua', 'tranchau_duongden'],
     desc: '🔥 Cốt trà: [Thái Xanh] • Lớp kem béo ngậy được khò lửa caramel thơm lừng, rắc bánh bỏng giòn tan'
@@ -109,8 +117,8 @@ const RECIPES = {
     id: 'matcha_kyoto_dat_bac',
     name: 'Matcha Uji Kyoto Dát Bạc',
     chapter: 4,
-    basePrice: 95000,
-    cost: 30000,
+    basePrice: 75000,
+    cost: 52000,
     tea: 'thai_xanh',
     toppings: ['thach_la_dua', 'tranchau_den'],
     desc: '🍵 Cốt trà: [Thái Xanh/Matcha] • Bột matcha Uji thượng hạng phủ lá bạc nguyên chất lấp lánh nhập khẩu từ cố đô Kyoto'
@@ -119,8 +127,8 @@ const RECIPES = {
     id: 'tra_sam_nui_seoul',
     name: 'Trà Sữa Sâm Núi Hoàng Gia Seoul',
     chapter: 4,
-    basePrice: 110000,
-    cost: 35000,
+    basePrice: 80000,
+    cost: 56000,
     tea: 'sua_tuoi',
     toppings: ['tranchau_duongden', 'suong_sao'],
     desc: '🇰🇷 Cốt trà: [Sữa Tươi] • Sâm núi Geumsan 6 năm tuổi bồi bổ nguyên khí kết hợp mật mía đường đen béo ngậy'
@@ -243,11 +251,7 @@ const CUSTOMERS = (CHARACTERS_DATA && CHARACTERS_DATA.length > 1)
       else if (c.cat === 'traditional') tipMult = 1.5;
       else if (c.cat === 'pro') tipMult = 1.3;
 
-      let patience = 30000;
-      if (isTiktoker) patience = 24000;
-      else if (isShipper) patience = 25000;
-      else if (c.cat === 'traditional' || c.cat === 'teacher') patience = 38000;
-      else if (isVIP) patience = 35000;
+      let patience = 40000; // 40 giây cơ bản mỗi đơn (chưa tính buff chờ)
 
       return {
         type: idx,
@@ -266,7 +270,7 @@ const CUSTOMERS = (CHARACTERS_DATA && CHARACTERS_DATA.length > 1)
   {
     type: 0,
     name: 'Bé Lan (Nữ sinh)',
-    patience: 25000,
+    patience: 40000,
     fav: ['tra_sua_truyen_thong', 'tra_thai_xanh'],
     tipMult: 1.0,
     dialogues: [
@@ -513,6 +517,7 @@ const UPGRADES = {
 };
 
 module.exports = {
+  CHAPTER_CUP_PRICE_CAPS,
   RECIPES,
   SHELF_TOPPINGS,
   TEA_BASES,
