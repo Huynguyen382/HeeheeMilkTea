@@ -11,6 +11,7 @@ const {
   TEA_BASES,
   CORE_RECIPES,
   SHIPPER_SNACKS,
+  resolveUnlockedRecipes,
   generateCustomerToppings
 } = require('./game/constants');
 
@@ -100,6 +101,7 @@ module.exports = {
   TEA_BASES,
   CORE_RECIPES,
   SHIPPER_SNACKS,
+  resolveUnlockedRecipes,
   generateCustomerToppings,
 
   // Cache & System helpers

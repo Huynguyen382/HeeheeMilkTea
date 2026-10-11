@@ -591,8 +591,14 @@ export function updateUI() {
       return;
     }
 
+    if (!btn.dataset.origLabel) {
+      btn.dataset.origLabel = btn.innerText;
+      btn.dataset.origBg = btn.style.background || '';
+      btn.dataset.origColor = btn.style.color || '';
+    }
+
     const recId = upId.startsWith('recipe_') ? upId.replace('recipe_', '') : null;
-    const isOwned = (save.upgrades && save.upgrades[upId]) || (recId && save.recipes && save.recipes.includes(recId));
+    const isOwned = Boolean((save.upgrades && save.upgrades[upId]) || (recId && save.recipes && save.recipes.includes(recId)));
 
     if (isOwned) {
       if (upId.startsWith('pet_')) {
@@ -602,12 +608,18 @@ export function updateUI() {
           btn.innerText = 'Đã Sở Hữu ✅';
         }
       } else if (upId.startsWith('recipe_')) {
-        btn.innerText = 'Đã Thêm Vào Menu ✅';
+        btn.innerText = 'Đã Mở Khóa Công Thức ✅';
         btn.style.background = '#27ae60';
+        btn.style.color = '#fff';
       } else {
         btn.innerText = 'Đã Sở Hữu ✅';
       }
       btn.disabled = true;
+    } else {
+      btn.innerText = btn.dataset.origLabel;
+      btn.style.background = btn.dataset.origBg;
+      btn.style.color = btn.dataset.origColor;
+      btn.disabled = false;
     }
   });
 

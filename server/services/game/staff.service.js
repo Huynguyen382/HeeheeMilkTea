@@ -1,6 +1,6 @@
 const db = require('../../models/db');
 const anticheat = require('../anticheat.service');
-const { RECIPES } = require('./constants');
+const { RECIPES, resolveUnlockedRecipes } = require('./constants');
 const { invalidateStoreCache } = require('./cache.helper');
 
 // --- HỆ THỐNG ỨNG VIÊN NPC BARISTA (ROADMAP SECTION II) ---
@@ -177,13 +177,7 @@ async function settleContractOffline(storeId, save = null, contract = null) {
   const newLastSettled = lastSettled + settledMs;
 
   // Giá trung bình các món đã mở khóa (Roadmap III.1.C)
-  let unlockedRecipes = [];
-  try {
-    unlockedRecipes = typeof save.recipes === 'string' ? JSON.parse(save.recipes) : (save.recipes || []);
-  } catch (e) {}
-  if (!Array.isArray(unlockedRecipes) || unlockedRecipes.length === 0) {
-    unlockedRecipes = ['tra_sua_truyen_thong'];
-  }
+  const unlockedRecipes = resolveUnlockedRecipes(save);
 
   let customPrices = {};
   try {

@@ -11,6 +11,7 @@ const {
   TEA_BASES,
   CORE_RECIPES,
   SHIPPER_SNACKS,
+  resolveUnlockedRecipes,
   generateCustomerToppings
 } = require('./constants');
 
@@ -72,13 +73,7 @@ async function generateOrder(storeId, options = {}) {
     };
   }
 
-  let unlocked = [];
-  try {
-    unlocked = JSON.parse(save.recipes || '[]');
-  } catch (e) {
-    unlocked = [];
-  }
-  const combinedRecipes = Array.from(new Set([...CORE_RECIPES, ...unlocked]));
+  const combinedRecipes = resolveUnlockedRecipes(save);
   const validKeys = combinedRecipes.filter(k => !!RECIPES[k]);
 
   // 2. Wave size calculation: up to 14 customers queueing in Chapter 2
@@ -240,8 +235,11 @@ async function generateOrder(storeId, options = {}) {
       }
     }
 
-    // 1. Cân bằng tỷ lệ các loại cốt trà của cửa hàng (Mỗi loại cốt trà ~20% cơ hội)
-    const targetTea = TEA_BASES[Math.floor(Math.random() * TEA_BASES.length)];
+    // 1. Cân bằng tỷ lệ các loại cốt trà trong những công thức cửa hàng ĐÃ MỞ KHÓA
+    const unlockedTeas = Array.from(new Set(validKeys.map(k => RECIPES[k]?.tea).filter(Boolean)));
+    const targetTea = unlockedTeas.length > 0
+      ? unlockedTeas[Math.floor(Math.random() * unlockedTeas.length)]
+      : TEA_BASES[Math.floor(Math.random() * TEA_BASES.length)];
     const teaRecipes = validKeys.filter(k => RECIPES[k] && RECIPES[k].tea === targetTea);
     const custFavsForTea = (cust.fav || []).filter(k => teaRecipes.includes(k));
 

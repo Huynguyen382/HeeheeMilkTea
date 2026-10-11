@@ -165,15 +165,8 @@ async function unlockChapter3(storeId) {
   }
 
   const newChapter = 3;
-  let recipes = [];
-  try {
-    recipes = JSON.parse(save.recipes || '["tra_sua_truyen_thong"]');
-  } catch (e) {
-    recipes = ['tra_sua_truyen_thong'];
-  }
-  if (!recipes.includes('tra_olong_nuong')) {
-    recipes.push('tra_olong_nuong');
-  }
+  const { resolveUnlockedRecipes } = require('./constants');
+  const recipes = resolveUnlockedRecipes(save);
 
   const updatedSave = {
     store_id: storeId,
@@ -242,13 +235,8 @@ async function unlockChapter4(storeId) {
     });
   }
 
-  let recipes = [];
-  try {
-    recipes = JSON.parse(save.recipes || '[]');
-  } catch (e) {
-    recipes = [];
-  }
-  if (!recipes.includes('matcha_kyoto_dat_bac')) recipes.push('matcha_kyoto_dat_bac');
+  const { resolveUnlockedRecipes } = require('./constants');
+  const recipes = resolveUnlockedRecipes(save);
 
   const updatedSave = {
     store_id: storeId,

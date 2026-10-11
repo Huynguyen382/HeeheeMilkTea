@@ -144,16 +144,8 @@ async function openFranchise(storeId, franchiseId) {
 
   const newMoney = save.money - config.cost;
 
-  // Unlock recipe if specified
-  let recipes = [];
-  try {
-    recipes = JSON.parse(save.recipes || '[]');
-  } catch (e) {
-    recipes = [];
-  }
-  if (config.unlockRecipe && !recipes.includes(config.unlockRecipe)) {
-    recipes.push(config.unlockRecipe);
-  }
+  const { resolveUnlockedRecipes } = require('./constants');
+  const recipes = resolveUnlockedRecipes(save);
 
   const updatedSave = {
     store_id: storeId,

@@ -6,7 +6,7 @@ const { invalidateStoreCache } = require('./cache.helper');
 const { LOCATIONS, DECORATIONS } = require('../../data/locations');
 const { INGREDIENTS, DEFAULT_INVENTORY } = require('../../data/ingredients');
 const NEGOTIATION = require('../../data/negotiation');
-const { RECIPES, CUSTOMERS, UPGRADES, CORE_RECIPES } = require('./constants');
+const { RECIPES, CUSTOMERS, UPGRADES, CORE_RECIPES, resolveUnlockedRecipes } = require('./constants');
 const { getOrInitDailyQuests } = require('./quest.service');
 const { getCollabData } = require('./collab.service');
 
@@ -179,7 +179,7 @@ async function getStoreState(storeId) {
       })(),
       inventory: { ...DEFAULT_INVENTORY, ...JSON.parse(save.inventory || '{}') },
       upgrades: JSON.parse(save.upgrades || '{}'),
-      recipes: Array.from(new Set([...CORE_RECIPES, ...JSON.parse(save.recipes || '[]')])),
+      recipes: resolveUnlockedRecipes(save),
       custom_prices: JSON.parse(save.custom_prices || '{}'),
       properties: JSON.parse(save.properties || '{}'),
       decorations: JSON.parse(save.decorations || '[]')
@@ -195,6 +195,7 @@ async function getStoreState(storeId) {
       return toPublicWeather(WEATHER_TYPES.sunny);
     })(),
     recipes_db: staticData.recipes_db,
+    upgrades_db: staticData.upgrades,
     customers_db: staticData.customers_db,
     locations: staticData.locations,
     ingredients: staticData.ingredients,

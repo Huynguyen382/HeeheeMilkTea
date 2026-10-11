@@ -76,15 +76,9 @@ async function generateOrderOptimized(db, storeId) {
     };
   }
 
-  // Parse recipes once
-  let unlocked = [];
-  try {
-    unlocked = jsonOptimizer.parseWithCache(save.recipes || '[]', `recipes_${storeId}`);
-  } catch (e) {
-    unlocked = [];
-  }
-  
-  const combinedRecipes = Array.from(new Set([...CORE_RECIPES, ...unlocked]));
+  // Parse unlocked recipes from upgrades
+  const { resolveUnlockedRecipes } = require('./game/constants');
+  const combinedRecipes = resolveUnlockedRecipes(save);
   const validKeys = combinedRecipes.filter(k => !!RECIPES[k]);
 
   // Pre-compute tea recipes mapping for faster lookup

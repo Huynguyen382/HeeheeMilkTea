@@ -11,14 +11,17 @@ const CHAPTER_CUP_PRICE_CAPS = {
   4: 80000  // Chương 4 tối đa 80.000đ
 };
 
-// Drink Recipes Database
+// Drink Recipes Database (Chỉ 'tra_sua_truyen_thong' mở sẵn, toàn bộ các món còn lại phải mua công thức bằng tiền)
 const RECIPES = {
   tra_sua_truyen_thong: {
     id: 'tra_sua_truyen_thong',
     name: 'Trà Sữa Truyền Thống',
+    icon: '🧋',
     chapter: 1,
     basePrice: 32000,
     cost: 24000,
+    unlockCost: 0,
+    upgradeId: null,
     tea: 'den',
     toppings: ['tranchau_den'],
     desc: '🍵 Cốt trà: [Trà Đen Đậm] • Cốt trà đen đậm đà hòa quyện sữa đặc béo ngậy, trân châu đen dẻo dai'
@@ -26,49 +29,129 @@ const RECIPES = {
   hong_tra_tac: {
     id: 'hong_tra_tac',
     name: 'Hồng Trà Tắc Xí Muội',
+    icon: '🍊',
     chapter: 1,
     basePrice: 25000,
     cost: 18000,
+    unlockCost: 120000,
+    upgradeId: 'recipe_hong_tra_tac',
     tea: 'den',
     toppings: [],
     desc: '🍵 Cốt trà: [Trà Đen Đậm] • Trà đen giải khát thanh mát, vị tắc chua thanh & xí muội mằn mặn'
   },
+  luc_tra_lai_suong_sao: {
+    id: 'luc_tra_lai_suong_sao',
+    name: 'Lục Trà Lài Sương Sáo Hạt Chia',
+    icon: '🌼',
+    chapter: 1,
+    basePrice: 30000,
+    cost: 21000,
+    unlockCost: 180000,
+    upgradeId: 'recipe_luc_tra_lai_suong_sao',
+    tea: 'lai',
+    toppings: ['suong_sao'],
+    desc: '🌸 Cốt trà: [Lục Trà Lài] • Lục trà ướp hoa lài thanh khiết ăn kèm thạch sương sáo mát lành giải nhiệt'
+  },
   tra_thai_xanh: {
     id: 'tra_thai_xanh',
     name: 'Trà Sữa Thái Xanh',
+    icon: '🌿',
     chapter: 1,
     basePrice: 35000,
     cost: 26000,
+    unlockCost: 250000,
+    upgradeId: 'recipe_tra_thai_xanh',
     tea: 'thai_xanh',
     toppings: ['thach_la_dua'],
     desc: '🌿 Cốt trà: [Thái Xanh] • Màu xanh mát mắt, hương hoa lài thơm mát nồng nàn cùng thạch lá dứa'
   },
+  sua_tuoi_tran_chau_hoang_kim: {
+    id: 'sua_tuoi_tran_chau_hoang_kim',
+    name: 'Sữa Tươi Trân Châu Lá Dứa',
+    icon: '🥛',
+    chapter: 1,
+    basePrice: 38000,
+    cost: 27000,
+    unlockCost: 320000,
+    upgradeId: 'recipe_sua_tuoi_tran_chau_hoang_kim',
+    tea: 'sua_tuoi',
+    toppings: ['tranchau_den', 'thach_la_dua'],
+    desc: '🥛 Cốt trà: [Sữa Tươi] • Sữa tươi Đà Lạt béo thanh kết hợp trân châu đen dẻo & thạch lá dứa thơm lừng'
+  },
   sua_tuoi_duong_den: {
     id: 'sua_tuoi_duong_den',
     name: 'Sữa Tươi Trân Châu Đường Đen',
+    icon: '🍯',
     chapter: 2,
     basePrice: 42000,
     cost: 32000,
+    unlockCost: 500000,
+    upgradeId: 'recipe_sua_tuoi_duong_den',
     tea: 'sua_tuoi',
     toppings: ['tranchau_duongden'],
     desc: '🥛 Cốt trà: [Sữa Tươi] • Sữa tươi thanh trùng cùng trân châu nấu đường đen dẻo quánh hot trend'
   },
+  hong_tra_cam_que_mat_ong: {
+    id: 'hong_tra_cam_que_mat_ong',
+    name: 'Hồng Trà Cam Vàng Sả Tươi',
+    icon: '🍹',
+    chapter: 2,
+    basePrice: 44000,
+    cost: 31000,
+    unlockCost: 650000,
+    upgradeId: 'recipe_hong_tra_cam_que_mat_ong',
+    tea: 'den',
+    toppings: ['cam_vang', 'sa_tuoi'],
+    desc: '🍵 Cốt trà: [Trà Đen Đậm] • Hồng trà Tân Cương quyện lát cam vàng mọng nước và sả tươi đập dập thơm nồng'
+  },
   tra_dao_cam_sa: {
     id: 'tra_dao_cam_sa',
     name: 'Trà Đào Cam Sả',
+    icon: '🍑',
     chapter: 2,
     basePrice: 48000,
     cost: 42000,
+    unlockCost: 800000,
+    upgradeId: 'recipe_tra_dao_cam_sa',
     tea: 'lai',
     toppings: ['dao_mieng', 'cam_vang', 'sa_tuoi'],
     desc: '🌸 Cốt trà: [Lục Trà Lài] • Bắt buộc đủ 3 món: Đào Miếng + Cam Vàng + Sả Tươi thơm nức mũi'
   },
+  tra_thai_xanh_kem_pho_mai: {
+    id: 'tra_thai_xanh_kem_pho_mai',
+    name: 'Trà Thái Xanh Sương Sáo Kem Cheese',
+    icon: '🧀',
+    chapter: 2,
+    basePrice: 50000,
+    cost: 35000,
+    unlockCost: 950000,
+    upgradeId: 'recipe_tra_thai_xanh_kem_pho_mai',
+    tea: 'thai_xanh',
+    toppings: ['suong_sao', 'thach_la_dua'],
+    desc: '🌿 Cốt trà: [Thái Xanh] • Trà Thái xanh đậm vị phủ kem phô mai mặn béo cùng bộ đôi thạch lá dứa & sương sáo'
+  },
+  olong_sua_tran_chau_duong_den: {
+    id: 'olong_sua_tran_chau_duong_den',
+    name: 'Ô Long Sữa Nướng Đường Đen',
+    icon: '🍂',
+    chapter: 2,
+    basePrice: 52000,
+    cost: 36000,
+    unlockCost: 1100000,
+    upgradeId: 'recipe_olong_sua_tran_chau_duong_den',
+    tea: 'olong_nuong',
+    toppings: ['tranchau_duongden', 'tranchau_den'],
+    desc: '🔥 Cốt trà: [Ô Long Nướng] • Hương trà ô long rang than củi quyện sốt đường đen Hàn Quốc và trân châu đen'
+  },
   tra_olong_nuong: {
     id: 'tra_olong_nuong',
     name: 'Trà Ô Long Nướng Sương Sáo',
+    icon: '🔥',
     chapter: 3,
     basePrice: 45000,
     cost: 35000,
+    unlockCost: 1500000,
+    upgradeId: 'recipe_tra_olong_nuong',
     tea: 'olong_nuong',
     toppings: ['suong_sao'],
     desc: '🔥 Cốt trà: [Ô Long Nướng] • Vị khói sao cháy mộc mạc thượng hạng hòa quyện thạch sương sáo mềm mướt'
@@ -76,59 +159,116 @@ const RECIPES = {
   nitro_cold_brew: {
     id: 'nitro_cold_brew',
     name: 'Trà Nitro Lạnh Sủi Bọt',
+    icon: '💨',
     chapter: 3,
     basePrice: 55000,
     cost: 42000,
+    unlockCost: 2200000,
+    upgradeId: 'recipe_nitro_cold_brew',
     tea: 'olong_nuong',
     toppings: ['suong_sao', 'tranchau_den'],
     desc: '💨 Cốt trà: [Ô Long Nướng] • Công nghệ Nitro lạnh sủi bọt kem mịn màng mát lạnh kết hợp trân châu & sương sáo'
   },
-  tra_sua_dat_vang: {
-    id: 'tra_sua_dat_vang',
-    name: 'Trà Sữa Hoàng Gia Dát Vàng 24K',
+  olong_dao_cam_phuong_hoang: {
+    id: 'olong_dao_cam_phuong_hoang',
+    name: 'Ô Long Phượng Hoàng Đào Cam',
+    icon: '🐦‍🔥',
     chapter: 3,
-    basePrice: 70000,
-    cost: 48000,
-    tea: 'den',
-    toppings: ['tranchau_den', 'tranchau_duongden'],
-    desc: '👑 Cốt trà: [Trà Đen Đậm] • Trà sữa thượng hạng phủ lá vàng 24K thực phẩm lấp lánh dành cho giới thượng lưu'
-  },
-  tra_sen_tay_ho: {
-    id: 'tra_sen_tay_ho',
-    name: 'Trà Sen Bách Diệp Tây Hồ',
-    chapter: 3,
-    basePrice: 65000,
-    cost: 44000,
-    tea: 'lai',
-    toppings: ['dao_mieng', 'sa_tuoi'],
-    desc: '🪷 Cốt trà: [Lục Trà Lài] • Tinh hoa trà sen Tây Hồ ngát hương sen sớm quyện cùng đào miếng giòn ngọt & sả thơm'
+    basePrice: 60000,
+    cost: 42000,
+    unlockCost: 2500000,
+    upgradeId: 'recipe_olong_dao_cam_phuong_hoang',
+    tea: 'olong_nuong',
+    toppings: ['dao_mieng', 'cam_vang'],
+    desc: '🔥 Cốt trà: [Ô Long Nướng] • Ô long Phượng Hoàng đơn tùng danh tiếng ủ lạnh cùng đào ngâm Nam Phi & cam vàng'
   },
   kem_kho_banh_bong: {
     id: 'kem_kho_banh_bong',
     name: 'Trà Sữa Kem Khò Bánh Bỏng',
+    icon: '🍮',
     chapter: 3,
     basePrice: 62000,
     cost: 43500,
+    unlockCost: 2800000,
+    upgradeId: 'recipe_kem_kho_banh_bong',
     tea: 'thai_xanh',
     toppings: ['thach_la_dua', 'tranchau_duongden'],
     desc: '🔥 Cốt trà: [Thái Xanh] • Lớp kem béo ngậy được khò lửa caramel thơm lừng, rắc bánh bỏng giòn tan'
   },
+  tra_sen_tay_ho: {
+    id: 'tra_sen_tay_ho',
+    name: 'Trà Sen Bách Diệp Tây Hồ',
+    icon: '🪷',
+    chapter: 3,
+    basePrice: 65000,
+    cost: 44000,
+    unlockCost: 3000000,
+    upgradeId: 'recipe_tra_sen_tay_ho',
+    tea: 'lai',
+    toppings: ['dao_mieng', 'sa_tuoi'],
+    desc: '🪷 Cốt trà: [Lục Trà Lài] • Tinh hoa trà sen Tây Hồ ngát hương sen sớm quyện cùng đào miếng giòn ngọt & sả thơm'
+  },
+  sua_tuoi_dao_tien_ung_dung: {
+    id: 'sua_tuoi_dao_tien_ung_dung',
+    name: 'Sữa Tươi Kem Đào Tiên Hồng Ngọc',
+    icon: '🌸',
+    chapter: 3,
+    basePrice: 64000,
+    cost: 44000,
+    unlockCost: 3200000,
+    upgradeId: 'recipe_sua_tuoi_dao_tien_ung_dung',
+    tea: 'sua_tuoi',
+    toppings: ['dao_mieng', 'tranchau_duongden'],
+    desc: '🥛 Cốt trà: [Sữa Tươi] • Sữa tươi thanh trùng đánh bông kem hồng ngọc ăn kèm đào miếng mọng nước & sốt đường đen'
+  },
+  tra_sua_dat_vang: {
+    id: 'tra_sua_dat_vang',
+    name: 'Trà Sữa Hoàng Gia Dát Vàng 24K',
+    icon: '👑',
+    chapter: 3,
+    basePrice: 70000,
+    cost: 48000,
+    unlockCost: 4500000,
+    upgradeId: 'recipe_tra_sua_dat_vang',
+    tea: 'den',
+    toppings: ['tranchau_den', 'tranchau_duongden'],
+    desc: '👑 Cốt trà: [Trà Đen Đậm] • Trà sữa thượng hạng phủ lá vàng 24K thực phẩm lấp lánh dành cho giới thượng lưu'
+  },
   matcha_kyoto_dat_bac: {
     id: 'matcha_kyoto_dat_bac',
     name: 'Matcha Uji Kyoto Dát Bạc',
+    icon: '🍵',
     chapter: 4,
     basePrice: 75000,
     cost: 52000,
+    unlockCost: 5500000,
+    upgradeId: 'recipe_matcha_kyoto_dat_bac',
     tea: 'thai_xanh',
     toppings: ['thach_la_dua', 'tranchau_den'],
     desc: '🍵 Cốt trà: [Thái Xanh/Matcha] • Bột matcha Uji thượng hạng phủ lá bạc nguyên chất lấp lánh nhập khẩu từ cố đô Kyoto'
   },
+  hong_tra_vuong_trieu_thap_cam: {
+    id: 'hong_tra_vuong_trieu_thap_cam',
+    name: 'Hồng Trà Vương Triều Full Topping',
+    icon: '💎',
+    chapter: 4,
+    basePrice: 78000,
+    cost: 54000,
+    unlockCost: 6500000,
+    upgradeId: 'recipe_hong_tra_vuong_trieu_thap_cam',
+    tea: 'den',
+    toppings: ['tranchau_den', 'tranchau_duongden', 'suong_sao'],
+    desc: '🍵 Cốt trà: [Trà Đen Đậm] • Tuyệt phẩm hồng trà cổ thụ ủ sữa béo ngậy kèm bộ 3 topping trân châu đen, đường đen & sương sáo'
+  },
   tra_sam_nui_seoul: {
     id: 'tra_sam_nui_seoul',
     name: 'Trà Sữa Sâm Núi Hoàng Gia Seoul',
+    icon: '🇰🇷',
     chapter: 4,
     basePrice: 80000,
     cost: 56000,
+    unlockCost: 7500000,
+    upgradeId: 'recipe_tra_sam_nui_seoul',
     tea: 'sua_tuoi',
     toppings: ['tranchau_duongden', 'suong_sao'],
     desc: '🇰🇷 Cốt trà: [Sữa Tươi] • Sâm núi Geumsan 6 năm tuổi bồi bổ nguyên khí kết hợp mật mía đường đen béo ngậy'
@@ -146,24 +286,33 @@ const SHELF_TOPPINGS = [
   'suong_sao'
 ];
 
-// 5 Canonical Tea Bases (Balanced at ~20% each)
+// 5 Canonical Tea Bases
 const TEA_BASES = ['den', 'thai_xanh', 'sua_tuoi', 'lai', 'olong_nuong'];
 
-// Core Drink Recipes covering all tea bases
+// Chỉ mở sẵn món khởi đầu 'tra_sua_truyen_thong'; tất cả các món khác phải bỏ tiền mua công thức
 const CORE_RECIPES = [
-  'tra_sua_truyen_thong',
-  'hong_tra_tac',
-  'tra_thai_xanh',
-  'sua_tuoi_duong_den',
-  'tra_dao_cam_sa',
-  'tra_olong_nuong',
-  'nitro_cold_brew',
-  'tra_sua_dat_vang',
-  'tra_sen_tay_ho',
-  'kem_kho_banh_bong',
-  'matcha_kyoto_dat_bac',
-  'tra_sam_nui_seoul'
+  'tra_sua_truyen_thong'
 ];
+
+// Helper xác định danh sách công thức người chơi thực sự đã mở khóa (dựa trên upgrades đã mua bằng tiền)
+function resolveUnlockedRecipes(save) {
+  let upgrades = {};
+  try {
+    upgrades = typeof save?.upgrades === 'string'
+      ? JSON.parse(save.upgrades || '{}')
+      : (save?.upgrades || {});
+  } catch (e) {
+    upgrades = {};
+  }
+  const unlocked = ['tra_sua_truyen_thong'];
+  for (const key of Object.keys(RECIPES)) {
+    if (key === 'tra_sua_truyen_thong') continue;
+    if (upgrades[`recipe_${key}`]) {
+      unlocked.push(key);
+    }
+  }
+  return unlocked;
+}
 
 // Helper to generate realistic multi-topping combinations for customers
 function generateCustomerToppings(cust, recipe) {
@@ -407,73 +556,139 @@ const UPGRADES = {
     desc: 'Thánh ngoại giao bình tĩnh nhất quả đất, tăng +40% thời gian kiên nhẫn chờ đợi của khách hàng!'
   },
 
-  // HỆ THỐNG CÔNG THỨC MÓN MỚI (MỞ RỘNG MENU)
+  // HỆ THỐNG CÔNG THỨC MÓN MỚI (MỞ RỘNG MENU - NGƯỜI DÙNG BỎ TIỀN MUA CÔNG THỨC)
   recipe_hong_tra_tac: {
     name: '📜 Công Thức: Hồng Trà Tắc Xí Muội',
     cost: 120000,
     type: 'recipe',
     recipeId: 'hong_tra_tac',
-    desc: 'Mở khóa món Hồng Trà Tắc Xí Muội vào Menu quán! Giá bán: 25.000đ/ly.'
+    desc: 'Mở khóa món Hồng Trà Tắc Xí Muội vào Menu quán! Giá bán niêm yết: 25.000đ/ly.'
+  },
+  recipe_luc_tra_lai_suong_sao: {
+    name: '📜 Công Thức: Lục Trà Lài Sương Sáo Hạt Chia',
+    cost: 180000,
+    type: 'recipe',
+    recipeId: 'luc_tra_lai_suong_sao',
+    desc: 'Mở khóa món Lục Trà Lài Sương Sáo Hạt Chia vào Menu quán! Giá bán niêm yết: 30.000đ/ly.'
   },
   recipe_tra_thai_xanh: {
     name: '📜 Công Thức: Trà Sữa Thái Xanh',
     cost: 250000,
     type: 'recipe',
     recipeId: 'tra_thai_xanh',
-    desc: 'Mở khóa món Trà Sữa Thái Xanh vào Menu quán! Giá bán: 35.000đ/ly.'
+    desc: 'Mở khóa món Trà Sữa Thái Xanh vào Menu quán! Giá bán niêm yết: 35.000đ/ly.'
+  },
+  recipe_sua_tuoi_tran_chau_hoang_kim: {
+    name: '📜 Công Thức: Sữa Tươi Trân Châu Lá Dứa',
+    cost: 320000,
+    type: 'recipe',
+    recipeId: 'sua_tuoi_tran_chau_hoang_kim',
+    desc: 'Mở khóa món Sữa Tươi Trân Châu Lá Dứa vào Menu quán! Giá bán niêm yết: 38.000đ/ly.'
   },
   recipe_sua_tuoi_duong_den: {
     name: '📜 Công Thức: Sữa Tươi Trân Châu Đường Đen',
     cost: 500000,
     type: 'recipe',
     recipeId: 'sua_tuoi_duong_den',
-    desc: 'Mở khóa món Sữa Tươi Đường Đen hot trend vào Menu quán! Giá bán: 42.000đ/ly.'
+    desc: 'Mở khóa món Sữa Tươi Đường Đen hot trend vào Menu quán! Giá bán niêm yết: 42.000đ/ly.'
+  },
+  recipe_hong_tra_cam_que_mat_ong: {
+    name: '📜 Công Thức: Hồng Trà Cam Vàng Sả Tươi',
+    cost: 650000,
+    type: 'recipe',
+    recipeId: 'hong_tra_cam_que_mat_ong',
+    desc: 'Mở khóa món Hồng Trà Cam Vàng Sả Tươi vào Menu quán! Giá bán niêm yết: 44.000đ/ly.'
   },
   recipe_tra_dao_cam_sa: {
     name: '📜 Công Thức: Trà Đào Cam Sả',
     cost: 800000,
     type: 'recipe',
     recipeId: 'tra_dao_cam_sa',
-    desc: 'Mở khóa món Trà Đào Cam Sả giải nhiệt vào Menu quán! Giá bán: 48.000đ/ly.'
+    desc: 'Mở khóa món Trà Đào Cam Sả giải nhiệt vào Menu quán! Giá bán niêm yết: 48.000đ/ly.'
+  },
+  recipe_tra_thai_xanh_kem_pho_mai: {
+    name: '📜 Công Thức: Trà Thái Xanh Sương Sáo Kem Cheese',
+    cost: 950000,
+    type: 'recipe',
+    recipeId: 'tra_thai_xanh_kem_pho_mai',
+    desc: 'Mở khóa món Trà Thái Xanh Sương Sáo Kem Cheese vào Menu quán! Giá bán niêm yết: 50.000đ/ly.'
+  },
+  recipe_olong_sua_tran_chau_duong_den: {
+    name: '📜 Công Thức: Ô Long Sữa Nướng Đường Đen',
+    cost: 1100000,
+    type: 'recipe',
+    recipeId: 'olong_sua_tran_chau_duong_den',
+    desc: 'Mở khóa món Ô Long Sữa Nướng Đường Đen vào Menu quán! Giá bán niêm yết: 52.000đ/ly.'
   },
   recipe_tra_olong_nuong: {
     name: '📜 Công Thức: Trà Ô Long Nướng Sương Sáo',
     cost: 1500000,
     type: 'recipe',
     recipeId: 'tra_olong_nuong',
-    desc: 'Mở khóa món Trà Ô Long Nướng Thượng Hạng vào Menu quán! Giá bán: 45.000đ/ly.'
+    desc: 'Mở khóa món Trà Ô Long Nướng Thượng Hạng vào Menu quán! Giá bán niêm yết: 45.000đ/ly.'
   },
   recipe_nitro_cold_brew: {
     name: '📜 Công Thức: Trà Nitro Lạnh Sủi Bọt',
     cost: 2200000,
     type: 'recipe',
     recipeId: 'nitro_cold_brew',
-    chapter: 3,
-    desc: 'Mở khóa món Trà Nitro Lạnh Sủi Bọt cao cấp vào Menu Flagship! Giá bán: 55.000đ/ly.'
+    desc: 'Mở khóa món Trà Nitro Lạnh Sủi Bọt cao cấp vào Menu quán! Giá bán niêm yết: 55.000đ/ly.'
   },
-  recipe_tra_sua_dat_vang: {
-    name: '📜 Công Thức: Trà Sữa Hoàng Gia Dát Vàng 24K',
-    cost: 4500000,
+  recipe_olong_dao_cam_phuong_hoang: {
+    name: '📜 Công Thức: Ô Long Phượng Hoàng Đào Cam',
+    cost: 2500000,
     type: 'recipe',
-    recipeId: 'tra_sua_dat_vang',
-    chapter: 3,
-    desc: 'Mở khóa món Trà Sữa Dát Vàng Hoàng Gia 24K vào Menu Flagship! Giá bán: 88.000đ/ly.'
-  },
-  recipe_tra_sen_tay_ho: {
-    name: '📜 Công Thức: Trà Sen Bách Diệp Tây Hồ',
-    cost: 3000000,
-    type: 'recipe',
-    recipeId: 'tra_sen_tay_ho',
-    chapter: 3,
-    desc: 'Mở khóa món Trà Sen Bách Diệp Tây Hồ tinh hoa vào Menu Flagship! Giá bán: 68.000đ/ly.'
+    recipeId: 'olong_dao_cam_phuong_hoang',
+    desc: 'Mở khóa món Ô Long Phượng Hoàng Đào Cam vào Menu quán! Giá bán niêm yết: 60.000đ/ly.'
   },
   recipe_kem_kho_banh_bong: {
     name: '📜 Công Thức: Trà Sữa Kem Khò Bánh Bỏng',
     cost: 2800000,
     type: 'recipe',
     recipeId: 'kem_kho_banh_bong',
-    chapter: 3,
-    desc: 'Mở khóa món Trà Sữa Kem Khò Bánh Bỏng siêu hot trend vào Menu Flagship! Giá bán: 62.000đ/ly.'
+    desc: 'Mở khóa món Trà Sữa Kem Khò Bánh Bỏng siêu hot trend vào Menu quán! Giá bán niêm yết: 62.000đ/ly.'
+  },
+  recipe_tra_sen_tay_ho: {
+    name: '📜 Công Thức: Trà Sen Bách Diệp Tây Hồ',
+    cost: 3000000,
+    type: 'recipe',
+    recipeId: 'tra_sen_tay_ho',
+    desc: 'Mở khóa món Trà Sen Bách Diệp Tây Hồ tinh hoa vào Menu quán! Giá bán niêm yết: 65.000đ/ly.'
+  },
+  recipe_sua_tuoi_dao_tien_ung_dung: {
+    name: '📜 Công Thức: Sữa Tươi Kem Đào Tiên Hồng Ngọc',
+    cost: 3200000,
+    type: 'recipe',
+    recipeId: 'sua_tuoi_dao_tien_ung_dung',
+    desc: 'Mở khóa món Sữa Tươi Kem Đào Tiên Hồng Ngọc vào Menu quán! Giá bán niêm yết: 64.000đ/ly.'
+  },
+  recipe_tra_sua_dat_vang: {
+    name: '📜 Công Thức: Trà Sữa Hoàng Gia Dát Vàng 24K',
+    cost: 4500000,
+    type: 'recipe',
+    recipeId: 'tra_sua_dat_vang',
+    desc: 'Mở khóa món Trà Sữa Dát Vàng Hoàng Gia 24K vào Menu quán! Giá bán niêm yết: 70.000đ/ly.'
+  },
+  recipe_matcha_kyoto_dat_bac: {
+    name: '📜 Công Thức: Matcha Uji Kyoto Dát Bạc',
+    cost: 5500000,
+    type: 'recipe',
+    recipeId: 'matcha_kyoto_dat_bac',
+    desc: 'Mở khóa món Matcha Uji Kyoto Dát Bạc vào Menu quán! Giá bán niêm yết: 75.000đ/ly.'
+  },
+  recipe_hong_tra_vuong_trieu_thap_cam: {
+    name: '📜 Công Thức: Hồng Trà Vương Triều Full Topping',
+    cost: 6500000,
+    type: 'recipe',
+    recipeId: 'hong_tra_vuong_trieu_thap_cam',
+    desc: 'Mở khóa món Hồng Trà Vương Triều Full Topping vào Menu quán! Giá bán niêm yết: 78.000đ/ly.'
+  },
+  recipe_tra_sam_nui_seoul: {
+    name: '📜 Công Thức: Trà Sữa Sâm Núi Hoàng Gia Seoul',
+    cost: 7500000,
+    type: 'recipe',
+    recipeId: 'tra_sam_nui_seoul',
+    desc: 'Mở khóa món Trà Sữa Sâm Núi Hoàng Gia Seoul vào Menu quán! Giá bán niêm yết: 80.000đ/ly.'
   },
 
   // PHÂN QUYỀN NHÂN SỰ CHƯƠNG 3 (STAFF DELEGATION)
@@ -522,6 +737,7 @@ module.exports = {
   SHELF_TOPPINGS,
   TEA_BASES,
   CORE_RECIPES,
+  resolveUnlockedRecipes,
   generateCustomerToppings,
   mapCustomerFav,
   CUSTOMERS,
