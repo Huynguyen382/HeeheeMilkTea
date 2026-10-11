@@ -69,6 +69,7 @@ const {
   payDebt,
   unlockChapter2,
   unlockChapter3,
+  unlockChapter4,
   policeFine
 } = require('./game/progression.service');
 
@@ -152,6 +153,7 @@ module.exports = {
   payDebt,
   unlockChapter2,
   unlockChapter3,
+  unlockChapter4,
   policeFine,
 
   // Upgrades, Talismans & Pets
@@ -175,5 +177,14 @@ module.exports = {
   ...require('./game/weather.service'),
 
   // Room & Decor System
-  ...require('./game/room.service')
+  ...require('./game/room.service'),
+
+  // Farm & Crafting System
+  ...require('./game/farm.service'),
+
+  // Franchise & Auction System
+  ...require('./game/franchise.service'),
+
+  // NPC Staff & Offline Revenue System
+  ...require('./game/staff.service')
 };

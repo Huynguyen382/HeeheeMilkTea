@@ -53,33 +53,59 @@ export const RoomBackground = {
   },
 
   /**
-   * Hardwood parquet floor with plank grain, seams & nail accents
+   * Herringbone Parquet Oak Floor (Sàn gỗ sồi đan xương cá với vân gỗ và đinh đồng tỉ mỉ)
    */
   drawHardwoodFloor(ctx, x, y, w, h) {
     ctx.save();
+    // Warm deep oak wood undertone
     ctx.fillStyle = '#3e2217';
     ctx.fillRect(x, y, w, h);
 
-    const rowH = 22;
-    const boardW = 95;
+    const slatW = 14;
+    const slatL = 46;
 
-    for (let py = y; py < y + h; py += rowH) {
-      // Horizontal seam shadow & highlight
-      ctx.fillStyle = '#26130b';
-      ctx.fillRect(x, py, w, 2);
-      ctx.fillStyle = '#563020';
-      ctx.fillRect(x, py + 2, w, 1);
+    // Herringbone 45-degree interlocking herringbone pattern
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
 
-      // Staggered vertical seams (brick pattern)
-      const rowIndex = Math.floor((py - y) / rowH);
-      const shift = (rowIndex % 3) * 38;
+    const oakColors = ['#5a331e', '#6d3f26', '#4e2b18', '#73442a'];
+    const seamColor = '#24120a';
 
-      for (let px = x + (shift % boardW); px < x + w; px += boardW) {
-        ctx.fillStyle = '#26130b';
-        ctx.fillRect(px, py, 2, Math.min(rowH, y + h - py));
-        // Nail dot
-        ctx.fillStyle = '#1c0f0a';
-        ctx.fillRect(px + 4, py + 4, 1.5, 1.5);
+    for (let py = y - slatL; py < y + h + slatL; py += slatW * 2) {
+      for (let px = x - slatL; px < x + w + slatL; px += slatL) {
+        // Left diagonal slat (45 deg)
+        const colIdx1 = Math.abs(Math.floor((px * 3 + py * 7) / 20)) % oakColors.length;
+        ctx.fillStyle = oakColors[colIdx1];
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + slatL / 2, py + slatL / 2);
+        ctx.lineTo(px + slatL / 2 - slatW, py + slatL / 2 + slatW);
+        ctx.lineTo(px - slatW, py + slatW);
+        ctx.closePath();
+        ctx.fill();
+
+        // 1px slat seam shadow
+        ctx.strokeStyle = seamColor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Right diagonal slat (interlocking)
+        const colIdx2 = (colIdx1 + 1) % oakColors.length;
+        ctx.fillStyle = oakColors[colIdx2];
+        ctx.beginPath();
+        ctx.moveTo(px + slatL / 2, py + slatL / 2);
+        ctx.lineTo(px + slatL, py);
+        ctx.lineTo(px + slatL + slatW, py + slatW);
+        ctx.lineTo(px + slatL / 2 + slatW, py + slatL / 2 + slatW);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Tiny bronze nail pin accents on slat corners
+        ctx.fillStyle = '#b8860b';
+        ctx.fillRect(px + 2, py + 2, 1.2, 1.2);
+        ctx.fillRect(px + slatL - 3, py + 2, 1.2, 1.2);
       }
     }
     ctx.restore();
@@ -352,47 +378,84 @@ export const RoomBackground = {
   },
 
   /**
-   * Wall mounted decor: bookshelves & framed paintings
+   * Wall mounted decor: bookshelves with Manga, mini Yixing purple clay teapot, succulents & art
    */
   drawWallDecor(ctx) {
     ctx.save();
 
-    // 1. LEFT WALL SHELVES & ART
+    // 1. LEFT WALL SHELVES & MANGA COMICS
     // Upper Shelf 1 at (112, 138)
     ctx.fillStyle = '#5d3826';
-    ctx.fillRect(112, 142, 76, 5);
+    ctx.fillRect(112, 142, 88, 5);
     ctx.fillStyle = '#3a2016';
     ctx.fillRect(118, 147, 4, 8);
-    ctx.fillRect(178, 147, 4, 8);
-    const shelf1Books = [
-      { color: '#e74c3c', x: 120, w: 5, h: 22 },
-      { color: '#3498db', x: 126, w: 6, h: 24 },
-      { color: '#2ecc71', x: 133, w: 5, h: 20 },
-      { color: '#f1c40f', x: 139, w: 6, h: 23 },
-      { color: '#9b59b6', x: 146, w: 7, h: 21 },
-      { color: '#e67e22', x: 162, w: 6, h: 18 }
+    ctx.fillRect(190, 147, 4, 8);
+
+    // Japanese Manga Comic Books with Spines (Truyện tranh Manga)
+    const mangaSpines = [
+      { color: '#e74c3c', badge: '#ffffff', x: 120, w: 5.5, h: 23 },
+      { color: '#3498db', badge: '#f1c40f', x: 126.5, w: 5.5, h: 24 },
+      { color: '#2ecc71', badge: '#ffffff', x: 133, w: 5.5, h: 22 },
+      { color: '#9b59b6', badge: '#ff7675', x: 139.5, w: 5.5, h: 24 },
+      { color: '#f39c12', badge: '#ffffff', x: 146, w: 5.5, h: 23 },
+      { color: '#1abc9c', badge: '#f1c40f', x: 152.5, w: 5.5, h: 22 }
     ];
-    for (const b of shelf1Books) {
-      ctx.fillStyle = b.color;
-      ctx.fillRect(b.x, 142 - b.h, b.w, b.h);
+    for (const m of mangaSpines) {
+      ctx.fillStyle = m.color;
+      ctx.fillRect(m.x, 142 - m.h, m.w, m.h);
+      ctx.fillStyle = m.badge;
+      ctx.fillRect(m.x + 1, 142 - m.h + 3, m.w - 2, 2.5); // Manga title label
+      ctx.fillStyle = '#2d3436';
+      ctx.fillRect(m.x + 1.5, 142 - 6, m.w - 3, 3); // Vol number badge
     }
 
-    // Shelf 2 at (238, 112)
+    // Mini Yixing Purple Clay Teapot on Shelf 1 (Ấm pha trà tử sa mini)
+    const potX = 168;
+    const potY = 135;
+    ctx.fillStyle = '#8d4024'; // Purple clay terracotta
+    ctx.beginPath();
+    ctx.ellipse(potX + 4, potY + 4, 5, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Lid button
+    ctx.fillRect(potX + 3.5, potY - 1, 1.5, 2);
+    // Spout
+    ctx.fillRect(potX - 2, potY + 2, 3, 1.5);
+    // Handle loop
+    ctx.fillRect(potX + 8, potY + 2, 2, 4);
+
+    // Shelf 2 at (238, 112) with Miniature Succulents (Dàn sen đá nhỏ xinh)
     ctx.fillStyle = '#5d3826';
     ctx.fillRect(238, 116, 78, 5);
     ctx.fillStyle = '#3a2016';
     ctx.fillRect(244, 121, 4, 8);
     ctx.fillRect(306, 121, 4, 8);
-    ctx.fillStyle = '#2ecc71';
-    ctx.fillRect(245, 94, 6, 22);
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(252, 92, 7, 24);
-    ctx.fillStyle = '#3498db';
-    ctx.fillRect(260, 96, 6, 20);
+
+    // Miniature Succulent Pot 1 (Sen đá ngọc bích)
+    const sucX = 246;
+    const sucY = 116;
+    ctx.fillStyle = '#d35400';
+    ctx.fillRect(sucX, sucY - 6, 8, 6); // Terracotta pot
+    ctx.fillStyle = '#10ac84'; // Jade succulent leaves
+    ctx.beginPath();
+    ctx.arc(sucX + 4, sucY - 8, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#55efc4';
+    ctx.fillRect(sucX + 3, sucY - 9, 2, 2);
+
+    // Miniature Succulent Pot 2 (Sen đá hồng phấn)
+    const suc2X = 260;
+    ctx.fillStyle = '#bdc3c7';
+    ctx.fillRect(suc2X, sucY - 7, 9, 7); // White ceramic pot
+    ctx.fillStyle = '#fd79a8'; // Pink rosette succulent
+    ctx.beginPath();
+    ctx.arc(suc2X + 4.5, sucY - 9, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Stacked tea book guides
     ctx.fillStyle = '#1abc9c';
-    ctx.fillRect(282, 102, 24, 7);
+    ctx.fillRect(278, 107, 24, 4);
     ctx.fillStyle = '#f39c12';
-    ctx.fillRect(284, 96, 20, 6);
+    ctx.fillRect(280, 102, 20, 5);
 
     // Landscape Pixel Art Painting at (245, 144)
     ctx.fillStyle = '#5d3826';

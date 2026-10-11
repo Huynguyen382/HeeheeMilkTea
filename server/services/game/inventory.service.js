@@ -90,10 +90,27 @@ async function endShift(storeId) {
   const grossRevenue = daily.shift_earned || daily.earned_today || 0;
   const ingredientCost = daily.shift_ingredient_cost || 0;
   const tips = daily.shift_tips || 0;
-  const totalCosts = rentCost + ingredientCost;
-  const netProfit = grossRevenue - totalCosts;
 
-  const newMoney = Math.max(0, save.money - rentCost);
+  // Lợi nhuận từ chuỗi chi nhánh nhượng quyền (Franchise Royalties Shift Bonus)
+  let franchiseShiftRevenue = 0;
+  let franchises = [];
+  try {
+    franchises = JSON.parse(save.franchises || '[]');
+  } catch (e) {}
+
+  const { FRANCHISE_LOCATIONS } = require('../../data/franchises');
+  franchises.forEach(f => {
+    const config = FRANCHISE_LOCATIONS[f.id];
+    if (config) {
+      const level = f.level || 1;
+      franchiseShiftRevenue += Math.round(config.shiftBonus * (1 + (level - 1) * 0.35));
+    }
+  });
+
+  const totalCosts = rentCost + ingredientCost;
+  const netProfit = grossRevenue + franchiseShiftRevenue - totalCosts;
+
+  const newMoney = Math.max(0, save.money - rentCost + franchiseShiftRevenue);
 
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
   activeBuffs.tiktoker_daily = {
@@ -163,9 +180,11 @@ async function endShift(storeId) {
     rentCost,
     ingredientCost,
     tips,
+    franchiseShiftRevenue,
     totalCosts,
     netProfit,
     newMoney,
+    weather: nextWeather,
     resting: false,
     restUntil: 0,
     message: `🎉 Kết ca Ngày ${save.day_in_game} thành công! Lợi nhuận ròng: ${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString('vi-VN')}đ. Đã bắt đầu Ngày ${nextDay} tươi sáng!`

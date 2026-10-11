@@ -19,6 +19,14 @@
     root.drawNPCCharacter = exports.drawNPCCharacter;
     root.drawOwnerBarista = exports.drawOwnerBarista;
     root.drawOwnerForearms = exports.drawOwnerForearms;
+    if (typeof window !== 'undefined') {
+      window.drawNPCCharacter = exports.drawNPCCharacter;
+      window.drawOwnerBarista = exports.drawOwnerBarista;
+      window.drawOwnerForearms = exports.drawOwnerForearms;
+      window.CHARACTERS = exports.CHARACTERS;
+      window.CUSTOMERS_LIST = exports.CUSTOMERS_LIST;
+      window.getCharacter = exports.getCharacter;
+    }
   }
 })(typeof self !== 'undefined' ? self : this, function () {
 
@@ -1237,33 +1245,70 @@
         pDot(ctx, baseX + 7, faceTop + 2, '#38BDF8');
         pDot(ctx, baseX + 13, faceTop + 2, '#38BDF8');
       } else {
-        // Expressive Eyes
-        if (isBlinking) {
-          pRect(ctx, baseX + 7, faceTop + 3, 3, 1, '#1E293B');
-          pRect(ctx, baseX + 12, faceTop + 3, 3, 1, '#1E293B');
+        // Expressive Anime Eyes (3-Tier Iris Gradient & Specular Catchlight ✦)
+        var blinkFrame = 0;
+        if (typeof isBlinking === 'number') {
+          blinkFrame = isBlinking;
+        } else if (isBlinking) {
+          blinkFrame = 2; // fully closed
+        }
+
+        if (blinkFrame === 2) {
+          // Closed blink with curved lashline
+          pRect(ctx, baseX + 6, faceTop + 3, 4, 1, '#1E293B');
+          pDot(ctx, baseX + 6, faceTop + 2, '#1E293B');
+          pRect(ctx, baseX + 12, faceTop + 3, 4, 1, '#1E293B');
+          pDot(ctx, baseX + 15, faceTop + 2, '#1E293B');
+        } else if (blinkFrame === 1) {
+          // Half-closed lid
+          pRect(ctx, baseX + 6, faceTop + 2, 4, 2, '#1E293B');
+          pDot(ctx, baseX + 7, faceTop + 3, '#B45309');
+          pRect(ctx, baseX + 12, faceTop + 2, 4, 2, '#1E293B');
+          pDot(ctx, baseX + 13, faceTop + 3, '#B45309');
         } else {
-          pRect(ctx, baseX + 7, faceTop + 2, 2, 2, '#1E293B');
-          pDot(ctx, baseX + 7, faceTop + 2, '#FFFFFF'); // Specular
-          pRect(ctx, baseX + 13, faceTop + 2, 2, 2, '#1E293B');
-          pDot(ctx, baseX + 13, faceTop + 2, '#FFFFFF');
+          // Open eye: Upper lashline, 3-tier iris gradient & Specular Catchlight ✦
+          pRect(ctx, baseX + 6, faceTop + 1, 4, 1, '#1E293B'); // Upper lashline
+          pRect(ctx, baseX + 7, faceTop + 2, 3, 3, '#1E293B'); // Eye socket
+          pDot(ctx, baseX + 7, faceTop + 2, '#FFFFFF'); // Specular Sparkle ✦ at 10 o'clock
+          pDot(ctx, baseX + 8, faceTop + 3, '#B45309'); // Amber mid iris
+          pDot(ctx, baseX + 8, faceTop + 4, '#FDE047'); // Gold light iris
+
+          pRect(ctx, baseX + 12, faceTop + 1, 4, 1, '#1E293B');
+          pRect(ctx, baseX + 12, faceTop + 2, 3, 3, '#1E293B');
+          pDot(ctx, baseX + 12, faceTop + 2, '#FFFFFF');
+          pDot(ctx, baseX + 13, faceTop + 3, '#B45309');
+          pDot(ctx, baseX + 13, faceTop + 4, '#FDE047');
         }
       }
 
-      // Rosy anime cheeks
-      if (isKid || style.includes('girl') || char.name.includes('Bé')) {
-        pDot(ctx, baseX + 5, faceTop + 4, '#FB7185');
-        pDot(ctx, baseX + 16, faceTop + 4, '#FB7185');
+      // Cozy Blush (Má hồng 2-tone kẻ sọc dithering mềm #FF79C6 & #FFAAA6)
+      if (isKid || style.includes('girl') || char.name.includes('Bé') || style === 'cosplay' || style === 'student_girl') {
+        pRect(ctx, baseX + 5, faceTop + 4, 2, 1, '#FF79C6');
+        pDot(ctx, baseX + 6, faceTop + 5, '#FFAAA6');
+        pRect(ctx, baseX + 15, faceTop + 4, 2, 1, '#FF79C6');
+        pDot(ctx, baseX + 15, faceTop + 5, '#FFAAA6');
       }
 
-      // Facial Hair
+      // Chin & Neck Shadow Separation (#E5B88A)
+      pRect(ctx, baseX + 7, faceTop + 8, 8, 1, '#E5B88A');
+
+      // Facial Hair & Expressive Mouth
       if (style === 'calligrapher') {
         pRect(ctx, baseX + 6, faceTop + 6, 10, 6, '#F8FAFC'); // Grand white beard
         pRect(ctx, baseX + 7, faceTop + 11, 8, 4, '#E2E8F0');
         pRect(ctx, baseX + 8, faceTop + 14, 6, 3, '#CBD5E1');
       } else if (style === 'foreigner') {
         pRect(ctx, baseX + 8, faceTop + 6, 6, 2, '#EAB308'); // Blonde stubble
+      } else if (isDrinking) {
+        // Drinking / slurping mouth
+        pRect(ctx, baseX + 9, faceTop + 6, 3, 2, '#991B1B');
+        pDot(ctx, baseX + 10, faceTop + 6, '#F87171');
+      } else if (sway % 2 !== 0) {
+        // Talking animated mouth cycle
+        pRect(ctx, baseX + 9, faceTop + 6, 4, 2, '#DC2626');
+        pRect(ctx, baseX + 10, faceTop + 6, 2, 1, '#FFF1F2');
       } else {
-        // Cheerful smile
+        // Cheerful sweet smile with highlight
         pRect(ctx, baseX + 9, faceTop + 6, 4, 1, '#DC2626');
         pDot(ctx, baseX + 10, faceTop + 6, '#FFFFFF');
       }
@@ -1660,144 +1705,374 @@
   // 4. BARISTA OWNER SPRITE (CHỊ THẢO BOBA)
   // Stands tall inside the stall behind counter
   // ==========================================
-  function drawOwnerBarista(ctx, hx, hy, bob, isBlinking, outfit) {
+  // ==========================================
+  // 4. BARISTA OWNER SPRITE (CHỊ THẢO BOBA / HEEHEE)
+  // Artisan Pixel Art HD with 4 Outfits, Anime Eyes, Hair Physics & Expressive Mouth
+  // ==========================================
+  function drawOwnerBarista(ctx, hx, hy, bob, isBlinking, outfit, tick, isTalking, isShaking) {
     if (bob === undefined) bob = 0;
     if (isBlinking === undefined) isBlinking = false;
+    if (tick === undefined) tick = 0;
+    if (isTalking === undefined) isTalking = false;
+    if (isShaking === undefined) isShaking = false;
 
     var skin = '#FFE0BD';
     var headTop = 76 + bob;
     var faceTop = headTop + 4;
     var headX = hx + 8;
 
-    // Custom outfit palette overrides
-    var skirtColor = '#831843';
-    var skirtPleat = '#500724';
-    var skirtHighlight = '#9D174D';
-    var blouseColor = '#FFF5F5';
-    var apronColor = '#FB7185';
-    var apronPocket = '#F43F5E';
-    var apronStrap = '#E11D48';
-    var ribbonColor = '#F43F5E';
-    var shoeColor = '#FB7185';
-
-    if (outfit && typeof outfit === 'object') {
-      if (outfit.dressColor) apronColor = outfit.dressColor;
-      if (outfit.apronColor) skirtColor = outfit.apronColor;
-      if (outfit.trimColor) ribbonColor = outfit.trimColor;
-      if (outfit.collarColor) blouseColor = outfit.collarColor;
-      skirtPleat = 'rgba(0,0,0,0.25)';
-      skirtHighlight = 'rgba(255,255,255,0.2)';
-      shoeColor = apronColor;
+    // Detect Outfit Category
+    var outfitKey = 'barista';
+    if (typeof outfit === 'string') {
+      outfitKey = outfit.toLowerCase();
+    } else if (outfit && typeof outfit === 'object') {
+      if (outfit.id) outfitKey = outfit.id.toLowerCase();
+      else if (outfit.name) outfitKey = outfit.name.toLowerCase();
+      else if (outfit.type && outfit.type !== 'outfit') outfitKey = outfit.type.toLowerCase();
     }
 
-    // 1. SNEAKER SHOES ON STALL FLOOR (Y = 144)
-    pRect(ctx, hx + 3, 142, 6, 2, shoeColor);
-    pRect(ctx, hx + 11, 142, 6, 2, shoeColor);
-    pRect(ctx, hx + 2, 143, 8, 1, '#FFFFFF'); // white soles
-    pRect(ctx, hx + 10, 143, 8, 1, '#FFFFFF');
+    var isLolita = outfitKey.includes('lolita');
+    var isAoDai = outfitKey.includes('ao_dai') || outfitKey.includes('sen');
+    var isChef = outfitKey.includes('chef') || outfitKey.includes('master');
+    var isBarista = !isLolita && !isAoDai && !isChef;
 
-    // 2. SLENDER LEGS IN WHITE ANKLE SOCKS
-    pRect(ctx, hx + 4, 138, 5, 4, '#FFFFFF');
-    pRect(ctx, hx + 12, 138, 5, 4, '#FFFFFF');
-    pDot(ctx, hx + 6, 139, ribbonColor); // ribbon
-    pDot(ctx, hx + 14, 139, ribbonColor);
+    // Hair Physics (Idle hair sway & biological breathing)
+    var hairSway = Math.round(Math.sin(tick * 0.05) * 1.5);
 
-    pRect(ctx, hx + 4, 114 + bob, 4, 25, skin);
-    pRect(ctx, hx + 12, 114 + bob, 4, 25, skin);
-    pRect(ctx, hx + 7, 114 + bob, 1, 25, '#F6C8A6');
-    pRect(ctx, hx + 12, 114 + bob, 1, 25, '#F6C8A6');
-
-    // 3. PLEATED SKIRT (Below counter)
-    var skirtTop = 104 + bob;
-    pRect(ctx, hx - 2, skirtTop, 22, 14, skirtColor);
-    for (var px = hx - 1; px <= hx + 18; px += 3) {
-      pRect(ctx, px, skirtTop, 1, 13, skirtPleat);
-      pRect(ctx, px + 1, skirtTop + 1, 1, 12, skirtHighlight);
-    }
-    pRect(ctx, hx - 2, skirtTop + 13, 22, 1, ribbonColor);
-
-    // 4. BLOUSE (Above counter at 114)
-    var torsoTop = 92 + bob;
-    pRect(ctx, hx - 1, torsoTop, 20, 16, blouseColor);
-    pRect(ctx, hx + 6, torsoTop, 6, 3, skin); // neckline
-
-    // 5. BOBA APRON
-    pRect(ctx, hx + 2, torsoTop + 2, 14, 14, apronColor);
-    pRect(ctx, hx + 1, torsoTop + 10, 16, 6, apronPocket);
-    pRect(ctx, hx + 3, torsoTop + 1, 2, 8, apronStrap); // straps
-    pRect(ctx, hx + 13, torsoTop + 1, 2, 8, apronStrap);
-
-    // Embroidered mini boba cup on chest
-    pRect(ctx, hx + 8, torsoTop + 4, 3, 4, '#FFFFFF');
-    pDot(ctx, hx + 9, torsoTop + 5, '#78350F'); // tea
-    pDot(ctx, hx + 9, torsoTop + 3, '#FDE047'); // straw
-
-    // Apron front utility pocket
-    pRect(ctx, hx + 4, torsoTop + 9, 10, 6, apronPocket);
-    pRect(ctx, hx + 5, torsoTop + 10, 8, 4, apronColor);
-
-    // 6. CHESTNUT HAIR (Back Dome)
-    pRect(ctx, headX - 8, headTop - 3, 18, 16, '#4E2A16');
-    pRect(ctx, headX - 9, headTop + 3, 3, 12, '#3D2010');
-    pRect(ctx, headX + 8, headTop + 3, 3, 12, '#3D2010');
-
-    // 7. TWIN HAIR BUNS WITH PINK RIBBONS
-    pRect(ctx, headX - 10, headTop - 7, 5, 5, '#4E2A16');
-    pRect(ctx, headX - 9, headTop - 6, 3, 3, '#F43F5E');
-    pDot(ctx, headX - 8, headTop - 6, '#FFF1F2');
-
-    pRect(ctx, headX + 7, headTop - 7, 5, 5, '#4E2A16');
-    pRect(ctx, headX + 8, headTop - 6, 3, 3, '#F43F5E');
-    pDot(ctx, headX + 8, headTop - 6, '#FFF1F2');
-
-    // 8. ANIME HEAD & EXPRESSIVE FACE
-    pRect(ctx, headX - 6, faceTop, 14, 10, skin);
-    pRect(ctx, headX - 5, faceTop + 8, 12, 2, '#F6C8A6'); // chin
-    pRect(ctx, headX - 7, faceTop + 2, 2, 4, skin); // ears
-    pRect(ctx, headX + 7, faceTop + 2, 2, 4, skin);
-
-    // Eyes
-    if (isBlinking) {
-      pRect(ctx, headX - 4, faceTop + 3, 3, 1, '#1E293B');
-      pRect(ctx, headX + 3, faceTop + 3, 3, 1, '#1E293B');
+    // 1. SNEAKERS & SHOES ON STALL FLOOR (Y = 142-144)
+    if (isAoDai) {
+      // Dainty silk slippers
+      pRect(ctx, hx + 4, 142, 5, 2, '#0D9488');
+      pRect(ctx, hx + 12, 142, 5, 2, '#0D9488');
+      pDot(ctx, hx + 6, 142, '#FACC15');
+      pDot(ctx, hx + 14, 142, '#FACC15');
+    } else if (isLolita) {
+      // Mary Jane patent shoes with pink ribbons & white lace frill
+      pRect(ctx, hx + 3, 141, 6, 3, '#DB2777');
+      pRect(ctx, hx + 11, 141, 6, 3, '#DB2777');
+      pRect(ctx, hx + 2, 143, 8, 1, '#1E293B');
+      pRect(ctx, hx + 10, 143, 8, 1, '#1E293B');
+      pDot(ctx, hx + 5, 141, '#FDE047');
+      pDot(ctx, hx + 13, 141, '#FDE047');
+    } else if (isChef) {
+      // Professional anti-slip black chef clogs
+      pRect(ctx, hx + 3, 141, 6, 3, '#1E293B');
+      pRect(ctx, hx + 11, 141, 6, 3, '#1E293B');
+      pRect(ctx, hx + 2, 143, 8, 1, '#475569');
+      pRect(ctx, hx + 10, 143, 8, 1, '#475569');
     } else {
-      pRect(ctx, headX - 4, faceTop + 2, 3, 3, '#1E293B');
-      pDot(ctx, headX - 4, faceTop + 2, '#FFFFFF'); // Specular
-      pDot(ctx, headX - 3, faceTop + 4, '#38BDF8'); // Cyan iris
+      // Vintage canvas sneakers with white soles & red bows
+      pRect(ctx, hx + 3, 142, 6, 2, '#FB7185');
+      pRect(ctx, hx + 11, 142, 6, 2, '#FB7185');
+      pRect(ctx, hx + 2, 143, 8, 1, '#FFFFFF');
+      pRect(ctx, hx + 10, 143, 8, 1, '#FFFFFF');
+    }
 
+    // 2. SLENDER LEGS & SOCKS
+    var legTop = 114 + bob;
+    if (isAoDai) {
+      // Flowing pure white silk pants
+      pRect(ctx, hx + 3, legTop, 6, 27, '#F8FAFC');
+      pRect(ctx, hx + 11, legTop, 6, 27, '#F8FAFC');
+      pRect(ctx, hx + 8, legTop, 1, 27, '#E2E8F0');
+      pRect(ctx, hx + 11, legTop, 1, 27, '#E2E8F0');
+    } else if (isLolita) {
+      // Over-knee white lace stockings with pink ribbon garter
+      pRect(ctx, hx + 4, legTop, 4, 27, '#FFFFFF');
+      pRect(ctx, hx + 12, legTop, 4, 27, '#FFFFFF');
+      pRect(ctx, hx + 3, legTop + 6, 6, 1, '#F472B6'); // lace band
+      pRect(ctx, hx + 11, legTop + 6, 6, 1, '#F472B6');
+      pDot(ctx, hx + 5, legTop + 6, '#FDE047');
+      pDot(ctx, hx + 13, legTop + 6, '#FDE047');
+    } else {
+      // Bare legs with white ankle socks
+      pRect(ctx, hx + 4, 137, 5, 5, '#FFFFFF');
+      pRect(ctx, hx + 12, 137, 5, 5, '#FFFFFF');
+      pDot(ctx, hx + 6, 138, isChef ? '#DC2626' : '#FB7185');
+      pDot(ctx, hx + 14, 138, isChef ? '#DC2626' : '#FB7185');
+
+      pRect(ctx, hx + 4, legTop, 4, 23, skin);
+      pRect(ctx, hx + 12, legTop, 4, 23, skin);
+      pRect(ctx, hx + 7, legTop, 1, 23, '#F6C8A6');
+      pRect(ctx, hx + 12, legTop, 1, 23, '#F6C8A6');
+    }
+
+    // 3. SKIRT / LOWER ROBE (Below Counter)
+    var skirtTop = 104 + bob;
+    if (isAoDai) {
+      // Silk Ao Dai long panels (split high at waist)
+      pRect(ctx, hx - 1, skirtTop, 20, 24, '#0D9488');
+      pRect(ctx, hx + 0, skirtTop + 2, 18, 22, '#14B8A6');
+      pRect(ctx, hx - 1, skirtTop, 2, 24, '#047857'); // Shadow crease
+      pRect(ctx, hx + 17, skirtTop, 2, 24, '#047857');
+      // Embroidered Lotus Blossom on lower robe
+      pRect(ctx, hx + 11, skirtTop + 14, 4, 4, '#F472B6');
+      pDot(ctx, hx + 12, skirtTop + 13, '#FDA4AF');
+      pDot(ctx, hx + 13, skirtTop + 15, '#FDE047');
+      pRect(ctx, hx + 12, skirtTop + 18, 2, 4, '#15803D'); // Stem
+    } else if (isLolita) {
+      // Multi-tiered flared cupcake skirt with lace ruffles
+      pRect(ctx, hx - 3, skirtTop - 2, 24, 17, '#F472B6');
+      pRect(ctx, hx - 2, skirtTop + 3, 22, 2, '#FBCFE8');
+      pRect(ctx, hx - 3, skirtTop + 7, 24, 2, '#FFFFFF'); // Tier 1 lace
+      pRect(ctx, hx - 4, skirtTop + 12, 26, 3, '#DB2777');
+      // Scalloped bottom hemline lace
+      for (var lx = hx - 4; lx <= hx + 21; lx += 3) {
+        pRect(ctx, lx, skirtTop + 15, 2, 2, '#FFFFFF');
+      }
+      // Mint-pink ombre waist sash
+      pRect(ctx, hx - 2, skirtTop - 2, 22, 2, '#2DD4BF');
+      pRect(ctx, hx + 7, skirtTop - 1, 4, 3, '#2DD4BF');
+      pDot(ctx, hx + 8, skirtTop, '#FFFFFF');
+    } else if (isChef) {
+      // Royal Chef tailored trousers with gold piping
+      pRect(ctx, hx - 1, skirtTop, 20, 14, '#1E293B');
+      pRect(ctx, hx - 1, skirtTop, 1, 14, '#FACC15'); // Gold stripe
+      pRect(ctx, hx + 18, skirtTop, 1, 14, '#FACC15');
+      pRect(ctx, hx + 8, skirtTop, 2, 14, '#0F172A');
+    } else {
+      // Classic Pleated Barista Skirt
+      pRect(ctx, hx - 2, skirtTop, 22, 14, '#831843');
+      for (var px = hx - 1; px <= hx + 18; px += 3) {
+        pRect(ctx, px, skirtTop, 1, 13, '#500724');
+        pRect(ctx, px + 1, skirtTop + 1, 1, 12, '#9D174D');
+      }
+      pRect(ctx, hx - 2, skirtTop + 13, 22, 1, '#F43F5E');
+    }
+
+    // 4. TORSO, BLOUSE & OUTFIT DETAILS (Above Counter at 92-108)
+    var torsoTop = 92 + bob;
+    if (isAoDai) {
+      // Fitted emerald silk bodice with high mandarin collar & gold frogs
+      pRect(ctx, hx - 1, torsoTop, 20, 14, '#0D9488');
+      pRect(ctx, hx + 1, torsoTop + 1, 16, 12, '#14B8A6');
+      pRect(ctx, hx + 6, torsoTop - 2, 6, 3, '#0D9488'); // Mandarin collar
+      pRect(ctx, hx + 6, torsoTop - 2, 6, 1, '#FACC15'); // Gold collar trim
+      // Side diagonal frog fasteners (hàng cúc chéo vàng)
+      pDot(ctx, hx + 11, torsoTop + 1, '#FACC15');
+      pDot(ctx, hx + 13, torsoTop + 3, '#FACC15');
+      pDot(ctx, hx + 14, torsoTop + 6, '#FACC15');
+      // Embroidered lotus bud on upper chest
+      pRect(ctx, hx + 5, torsoTop + 4, 3, 3, '#F472B6');
+      pDot(ctx, hx + 6, torsoTop + 3, '#FDA4AF');
+      pDot(ctx, hx + 6, torsoTop + 5, '#FDE047');
+      pDot(ctx, hx + 5, torsoTop + 7, '#15803D');
+    } else if (isLolita) {
+      // Sweet Lolita corset bodice with princess puff sleeves & lace yoke
+      pRect(ctx, hx - 2, torsoTop, 22, 14, '#F472B6');
+      pRect(ctx, hx + 4, torsoTop, 10, 8, '#FFFFFF'); // White lace yoke
+      pRect(ctx, hx + 5, torsoTop + 1, 8, 6, '#FFF1F2');
+      // Criss-cross ribbon lacing
+      pDot(ctx, hx + 6, torsoTop + 3, '#DB2777');
+      pDot(ctx, hx + 11, torsoTop + 3, '#DB2777');
+      pDot(ctx, hx + 7, torsoTop + 5, '#DB2777');
+      pDot(ctx, hx + 10, torsoTop + 5, '#DB2777');
+      // Puff sleeves on shoulders
+      pRect(ctx, hx - 4, torsoTop + 1, 4, 5, '#F472B6');
+      pRect(ctx, hx - 4, torsoTop + 6, 4, 1, '#FFFFFF'); // Lace cuff
+      pRect(ctx, hx + 18, torsoTop + 1, 4, 5, '#F472B6');
+      pRect(ctx, hx + 18, torsoTop + 6, 4, 1, '#FFFFFF');
+    } else if (isChef) {
+      // Double-breasted Master Chef white coat with gold trim & French scarf
+      pRect(ctx, hx - 1, torsoTop, 20, 14, '#F8FAFC');
+      pRect(ctx, hx + 17, torsoTop, 2, 14, '#E2E8F0');
+      // French-knotted ruby red neckerchief
+      pRect(ctx, hx + 5, torsoTop - 1, 8, 3, '#DC2626');
+      pRect(ctx, hx + 7, torsoTop + 2, 4, 3, '#B91C1C');
+      pDot(ctx, hx + 8, torsoTop + 4, '#EF4444');
+      // 2 Rows of 4 Royal Black & Gold Chef Buttons
+      for (var row = 0; row < 3; row++) {
+        pDot(ctx, hx + 5, torsoTop + 4 + row * 3, '#1E293B');
+        pDot(ctx, hx + 6, torsoTop + 4 + row * 3, '#FACC15');
+        pDot(ctx, hx + 12, torsoTop + 4 + row * 3, '#1E293B');
+        pDot(ctx, hx + 13, torsoTop + 4 + row * 3, '#FACC15');
+      }
+      // Michelin 5-star embroidery crest
+      pDot(ctx, hx + 15, torsoTop + 3, '#FACC15');
+    } else {
+      // Classic Vintage Barista Blouse & Apron
+      pRect(ctx, hx - 1, torsoTop, 20, 16, '#FFF8F5');
+      pRect(ctx, hx + 6, torsoTop, 6, 2, skin); // Neckline
+      // Red neck ribbon bow
+      pRect(ctx, hx + 7, torsoTop + 1, 4, 2, '#DC2626');
+      pDot(ctx, hx + 8, torsoTop + 1, '#FCA5A5');
+
+      // Vintage Canvas Apron (Brown Leather & Canvas)
+      pRect(ctx, hx + 2, torsoTop + 3, 14, 13, '#78350F');
+      pRect(ctx, hx + 3, torsoTop + 4, 12, 11, '#92400E');
+      // X-Back straps
+      pRect(ctx, hx + 3, torsoTop + 1, 2, 8, '#B45309');
+      pRect(ctx, hx + 13, torsoTop + 1, 2, 8, '#B45309');
+      // Pearl buttons on straps
+      pDot(ctx, hx + 3, torsoTop + 3, '#FFFFFF');
+      pDot(ctx, hx + 14, torsoTop + 3, '#FFFFFF');
+
+      // Embroidered mini boba cup & bronze nametag "HEEHEE"
+      pRect(ctx, hx + 5, torsoTop + 5, 4, 2, '#FACC15'); // Bronze badge
+      pDot(ctx, hx + 6, torsoTop + 5, '#78350F');
+      pRect(ctx, hx + 11, torsoTop + 5, 3, 4, '#FFFFFF'); // Boba cup
+      pDot(ctx, hx + 12, torsoTop + 6, '#78350F'); // Tea
+      pDot(ctx, hx + 12, torsoTop + 4, '#FDE047'); // Straw
+
+      // Utility pocket with brass barista pen
+      pRect(ctx, hx + 4, torsoTop + 9, 10, 5, '#5C2D13');
+      pRect(ctx, hx + 5, torsoTop + 10, 8, 3, '#78350F');
+      pRect(ctx, hx + 11, torsoTop + 8, 1, 3, '#FACC15'); // Pen clip
+    }
+
+    // 5. CHESTNUT HAIR BACK VOLUME WITH IDLE SWAY
+    pRect(ctx, headX - 8 + hairSway, headTop - 3, 18, 16, '#4E2A16');
+    pRect(ctx, headX - 10 + hairSway, headTop + 3, 3, 13, '#3D2010');
+    pRect(ctx, headX + 9 + hairSway, headTop + 3, 3, 13, '#3D2010');
+
+    // 6. HEADWEAR & HAIR ACCESSORIES (BY OUTFIT)
+    if (isChef) {
+      // Tall Toque Blanche Michelin Chef Hat with 100 pleated folds
+      pRect(ctx, headX - 7, headTop - 15, 16, 12, '#FFFFFF');
+      pRect(ctx, headX - 8, headTop - 13, 18, 9, '#F8FAFC');
+      // Pleats shading
+      for (var fx = headX - 6; fx <= headX + 7; fx += 2) {
+        pRect(ctx, fx, headTop - 15, 1, 10, '#E2E8F0');
+      }
+      // Golden Crown Hat Band
+      pRect(ctx, headX - 7, headTop - 3, 16, 3, '#FACC15');
+      pDot(ctx, headX, headTop - 2, '#DC2626'); // Ruby crest
+    } else if (isAoDai) {
+      // Traditional Vietnamese Royal Mấn Headband with gold beads
+      pRect(ctx, headX - 8, headTop - 6, 18, 6, '#0D9488');
+      pRect(ctx, headX - 7, headTop - 7, 16, 2, '#14B8A6');
+      for (var mx = headX - 6; mx <= headX + 6; mx += 3) {
+        pDot(ctx, mx, headTop - 5, '#FACC15'); // Gold beads
+        pDot(ctx, mx + 1, headTop - 6, '#FFFFFF'); // Pearl sparkles
+      }
+    } else if (isLolita) {
+      // Bunny-Ear Rose Lace Headband
+      pRect(ctx, headX - 8, headTop - 6, 18, 3, '#FFFFFF');
+      // Bunny ears with pink inner
+      pRect(ctx, headX - 9, headTop - 12, 4, 7, '#FFFFFF');
+      pRect(ctx, headX - 8, headTop - 11, 2, 5, '#F472B6');
+      pRect(ctx, headX + 7, headTop - 12, 4, 7, '#FFFFFF');
+      pRect(ctx, headX + 8, headTop - 11, 2, 5, '#F472B6');
+      // Pink roses on sides
+      pRect(ctx, headX - 10, headTop - 5, 3, 3, '#F43F5E');
+      pDot(ctx, headX - 9, headTop - 4, '#FDA4AF');
+      pRect(ctx, headX + 9, headTop - 5, 3, 3, '#F43F5E');
+      pDot(ctx, headX + 10, headTop - 4, '#FDA4AF');
+    } else {
+      // Twin Hair Buns with Red Ribbons & Gold Boba Hairpin
+      pRect(ctx, headX - 10, headTop - 7, 5, 5, '#4E2A16');
+      pRect(ctx, headX - 9, headTop - 6, 3, 3, '#F43F5E');
+      pDot(ctx, headX - 8, headTop - 6, '#FFF1F2');
+
+      pRect(ctx, headX + 7, headTop - 7, 5, 5, '#4E2A16');
+      pRect(ctx, headX + 8, headTop - 6, 3, 3, '#F43F5E');
+      pDot(ctx, headX + 8, headTop - 6, '#FFF1F2');
+
+      // Golden boba hairpin
+      pRect(ctx, headX + 4, headTop - 4, 3, 2, '#FDE047');
+      pDot(ctx, headX + 5, headTop - 5, '#FFFFFF');
+    }
+
+    // 7. ANIME HEAD & PEACH SKIN
+    pRect(ctx, headX - 6, faceTop, 14, 10, skin);
+    pRect(ctx, headX - 5, faceTop + 8, 12, 2, '#F6C8A6'); // Jawline
+    pRect(ctx, headX - 4, faceTop + 9, 10, 1, '#E5B88A'); // Chin shadow
+    pRect(ctx, headX - 7, faceTop + 2, 2, 4, skin); // Ears
+    pRect(ctx, headX + 7, faceTop + 2, 2, 4, skin);
+    // Gold hoop earrings
+    pDot(ctx, headX - 7, faceTop + 5, '#FACC15');
+    pDot(ctx, headX + 8, faceTop + 5, '#FACC15');
+
+    // 8. EXPRESSIVE ANIME EYES (3-TIER IRIS GRADIENT + SPECULAR SPARKLE ✦)
+    // Dynamic 3-frame Blink Cycle
+    var blinkCycle = (tick % 160);
+    var blinkStage = 0; // 0 = open, 1 = half, 2 = closed
+    if (typeof isBlinking === 'number') {
+      blinkStage = isBlinking;
+    } else if (isBlinking || (blinkCycle >= 150 && blinkCycle <= 156)) {
+      if (blinkCycle === 150 || blinkCycle === 156) blinkStage = 1;
+      else blinkStage = 2;
+    }
+
+    if (blinkStage === 2) {
+      // Closed Eye (Curved feminine lashline)
+      pRect(ctx, headX - 4, faceTop + 3, 4, 1, '#1E293B');
+      pDot(ctx, headX - 5, faceTop + 2, '#1E293B'); // Upcurled eyelash
+      pRect(ctx, headX + 2, faceTop + 3, 4, 1, '#1E293B');
+      pDot(ctx, headX + 6, faceTop + 2, '#1E293B');
+    } else if (blinkStage === 1) {
+      // Half-closed eyelid
+      pRect(ctx, headX - 4, faceTop + 2, 4, 2, '#1E293B');
+      pDot(ctx, headX - 3, faceTop + 3, '#B45309');
+      pRect(ctx, headX + 2, faceTop + 2, 4, 2, '#1E293B');
+      pDot(ctx, headX + 3, faceTop + 3, '#B45309');
+    } else {
+      // OPEN EYE: Upper Lashline + 3-Tier Iris Gradient + Specular Catchlight ✦
+      // Left Eye
+      pRect(ctx, headX - 5, faceTop + 1, 4, 1, '#1E293B'); // Lashline
+      pDot(ctx, headX - 5, faceTop + 0, '#1E293B'); // Winged tip
+      pRect(ctx, headX - 4, faceTop + 2, 3, 3, '#1E293B'); // Eye socket
+      pDot(ctx, headX - 4, faceTop + 2, '#FFFFFF'); // Specular Sparkle ✦ (10 o'clock)
+      pDot(ctx, headX - 3, faceTop + 3, isAoDai ? '#0D9488' : '#B45309'); // Mid tone
+      pDot(ctx, headX - 3, faceTop + 4, isAoDai ? '#34D399' : '#FDE047'); // Golden light tone
+
+      // Right Eye
+      pRect(ctx, headX + 3, faceTop + 1, 4, 1, '#1E293B'); // Lashline
+      pDot(ctx, headX + 6, faceTop + 0, '#1E293B');
       pRect(ctx, headX + 3, faceTop + 2, 3, 3, '#1E293B');
       pDot(ctx, headX + 3, faceTop + 2, '#FFFFFF');
-      pDot(ctx, headX + 4, faceTop + 4, '#38BDF8');
+      pDot(ctx, headX + 4, faceTop + 3, isAoDai ? '#0D9488' : '#B45309');
+      pDot(ctx, headX + 4, faceTop + 4, isAoDai ? '#34D399' : '#FDE047');
     }
 
-    // Má hồng kẹo ngọt
-    pRect(ctx, headX - 6, faceTop + 5, 3, 2, '#FB7185');
-    pDot(ctx, headX - 5, faceTop + 5, '#FDA4AF');
-    pRect(ctx, headX + 5, faceTop + 5, 3, 2, '#FB7185');
-    pDot(ctx, headX + 5, faceTop + 5, '#FDA4AF');
+    // 9. COZY BLUSH (Má hồng 2-tone kẻ sọc dithering mềm #FF79C6 & #FFAAA6)
+    pRect(ctx, headX - 6, faceTop + 5, 3, 1, '#FF79C6');
+    pDot(ctx, headX - 5, faceTop + 6, '#FFAAA6');
+    pRect(ctx, headX + 5, faceTop + 5, 3, 1, '#FF79C6');
+    pDot(ctx, headX + 5, faceTop + 6, '#FFAAA6');
 
-    // Nụ cười chúm chím
-    pRect(ctx, headX - 1, faceTop + 6, 4, 1, '#F43F5E');
-    pDot(ctx, headX, faceTop + 6, '#FFFFFF');
+    // 10. EXPRESSIVE MOUTH (Chúm chím, Cử động trò chuyện, Mím môi tập trung)
+    if (isShaking) {
+      // Concentrated pursed lips while shaking shaker
+      pRect(ctx, headX - 1, faceTop + 7, 3, 1, '#E11D48');
+      pDot(ctx, headX, faceTop + 6, '#F43F5E');
+    } else if (isTalking) {
+      // Animated speaking mouth cycle (2 frames)
+      var talkFrame = (Math.floor(tick / 6) % 2);
+      if (talkFrame === 0) {
+        pRect(ctx, headX - 1, faceTop + 6, 4, 2, '#DC2626');
+        pRect(ctx, headX, faceTop + 6, 2, 1, '#FFF1F2'); // teeth/tongue
+      } else {
+        pRect(ctx, headX, faceTop + 6, 2, 2, '#B91C1C');
+      }
+    } else {
+      // Sweet charming smile with specular light
+      pRect(ctx, headX - 1, faceTop + 6, 4, 1, '#F43F5E');
+      pDot(ctx, headX, faceTop + 6, '#FFFFFF');
+      pDot(ctx, headX + 2, faceTop + 5, '#F43F5E'); // Dimple curl
+    }
 
-    // 9. FRONT HAIR BANGS & SIDE LOCKS
+    // 11. FRONT HAIR BANGS, SIDE LOCKS & ANGEL RING HIGHLIGHT
     pRect(ctx, headX - 7, headTop - 4, 16, 5, '#4E2A16');
     pRect(ctx, headX - 5, headTop - 5, 12, 2, '#67391F');
-    pDot(ctx, headX - 2, headTop - 5, '#8C4D2A'); // specular halo
-    pRect(ctx, headX - 7, headTop + 1, 2, 7, '#4E2A16');
-    pRect(ctx, headX + 7, headTop + 1, 2, 7, '#4E2A16');
+    // Angel Ring Highlight (Dải hào quang ngà óng ả trên đỉnh đầu)
+    pRect(ctx, headX - 3, headTop - 5, 8, 1, '#8C4D2A');
+    pDot(ctx, headX, headTop - 5, '#FDE047');
+    pDot(ctx, headX + 1, headTop - 5, '#FFFFFF');
 
-    // Gold boba hairpin
-    pRect(ctx, headX + 4, headTop - 3, 2, 2, '#FDE047');
-    pDot(ctx, headX + 5, headTop - 4, '#FFFFFF');
+    // Side Locks with idle breath & wind sway
+    pRect(ctx, headX - 7 + hairSway, headTop + 1, 2, 8, '#4E2A16');
+    pRect(ctx, headX + 7 - hairSway, headTop + 1, 2, 8, '#4E2A16');
 
-    // 10. UPPER ARMS (Behind counter)
-    pRect(ctx, hx - 2, torsoTop + 2, 3, 8, skin);
-    pRect(ctx, hx + 16, torsoTop + 2, 3, 8, skin);
+    // 12. UPPER ARMS (Behind counter)
+    var armSleeveColor = isAoDai ? '#0D9488' : (isLolita ? '#F472B6' : (isChef ? '#F8FAFC' : skin));
+    pRect(ctx, hx - 2, torsoTop + 2, 3, 8, armSleeveColor);
+    pRect(ctx, hx + 16, torsoTop + 2, 3, 8, armSleeveColor);
   }
 
   // ==========================================
   // 5. BARISTA FOREARMS & SHAKER ON COUNTER
+  // Shaker Inox 304 Phản Quang, Thể Tích 150/300/500ml, Lốc Xoáy Trà Sữa & Rót Trà
   // ==========================================
   function drawOwnerForearms(ctx, hx, hy, bob, isShaking, tick) {
     if (bob === undefined) bob = 0;
@@ -1806,48 +2081,66 @@
 
     if (isShaking) {
       var shakeArm = Math.round(Math.sin(tick * 0.8) * 4);
+      var shakeAngle = Math.sin(tick * 0.8) * 0.15;
 
-      // Forearms holding stainless shaker
+      // Forearms holding stainless shaker with wrist motion
       pRect(ctx, hx + 14, 104 + bob, 4, 7, skin);
       pRect(ctx, hx + 12, 98 + bob + shakeArm, 4, 8, skin);
       pRect(ctx, hx - 1, 104 + bob, 4, 7, skin);
       pRect(ctx, hx + 9, 99 + bob + shakeArm, 4, 7, skin);
 
-      // Stainless steel shaker in pixel art with heart sticker
-      var shakerX = hx + 12;
-      var shakerY = 90 + bob + shakeArm;
+      // Shaker Inox 304 High-End Pixel Art
+      var shakerX = hx + 11;
+      var shakerY = 89 + bob + shakeArm;
 
-      pRect(ctx, shakerX, shakerY, 8, 15, '#CBD5E1');
-      pRect(ctx, shakerX + 1, shakerY, 2, 15, '#FFFFFF'); // chrome shine
-      pRect(ctx, shakerX + 6, shakerY, 2, 15, '#94A3B8'); // shadow
-      pRect(ctx, shakerX + 2, shakerY - 3, 4, 3, '#94A3B8'); // cap
-      pRect(ctx, shakerX + 3, shakerY - 4, 2, 2, '#CBD5E1');
+      // Shaker Base & Cap
+      pRect(ctx, shakerX, shakerY, 10, 17, '#CBD5E1'); // Inox body
+      pRect(ctx, shakerX + 1, shakerY, 2, 17, '#FFFFFF'); // Chrome specular gloss line
+      pRect(ctx, shakerX + 8, shakerY, 2, 17, '#64748B'); // Metal shadow
+      pRect(ctx, shakerX + 2, shakerY - 4, 6, 4, '#94A3B8'); // Metal Dome Lid
+      pRect(ctx, shakerX + 3, shakerY - 5, 4, 2, '#E2E8F0'); // Cap finial
+      pDot(ctx, shakerX + 4, shakerY - 5, '#FFFFFF');
 
-      // Pink heart sticker on shaker
-      pDot(ctx, shakerX + 3, shakerY + 6, '#F472B6');
-      pDot(ctx, shakerX + 4, shakerY + 6, '#F472B6');
-      pDot(ctx, shakerX + 3, shakerY + 7, '#F43F5E');
+      // Vạch Chia Thể Tích Sắc Nét (150ml, 300ml, 500ml)
+      pRect(ctx, shakerX + 1, shakerY + 4, 3, 1, '#475569'); // 500ml
+      pRect(ctx, shakerX + 1, shakerY + 8, 3, 1, '#475569'); // 300ml
+      pRect(ctx, shakerX + 1, shakerY + 12, 3, 1, '#475569'); // 150ml
 
-      // Motion sparkles
-      pDot(ctx, shakerX - 2, shakerY + 4, '#FFFFFF');
-      pDot(ctx, shakerX - 3, shakerY + 8, '#FFFFFF');
-      pDot(ctx, shakerX + 9, shakerY + 4, '#FFFFFF');
-      pDot(ctx, shakerX + 10, shakerY + 8, '#FFFFFF');
+      // Cửa Sổ Kính Trong Suốt & Dòng Xoáy Lốc Trà Sữa (Boba Swirl Vortex)
+      pRect(ctx, shakerX + 4, shakerY + 5, 4, 8, '#0F172A');
+      var vortexOffset = (Math.floor(tick / 3) % 4);
+      pRect(ctx, shakerX + 4, shakerY + 6, 4, 6, '#B45309'); // Amber tea
+      pDot(ctx, shakerX + 4 + vortexOffset % 3, shakerY + 7, '#FDE047'); // Foamy swirl
+      pDot(ctx, shakerX + 5, shakerY + 9, '#18181B'); // Swirling boba pearl
+      pDot(ctx, shakerX + 6, shakerY + 11, '#18181B');
+
+      // Cute Pink Heart Hologram Sticker on shaker
+      pDot(ctx, shakerX + 4, shakerY + 2, '#F472B6');
+      pDot(ctx, shakerX + 5, shakerY + 2, '#F472B6');
+      pDot(ctx, shakerX + 4, shakerY + 3, '#F43F5E');
+
+      // Dynamic Motion Sparkles & Aeration Bubbles
+      pDot(ctx, shakerX - 2, shakerY + 3, '#FFFFFF');
+      pDot(ctx, shakerX - 3, shakerY + 9, '#FDE047');
+      pDot(ctx, shakerX + 11, shakerY + 3, '#FFFFFF');
+      pDot(ctx, shakerX + 12, shakerY + 9, '#FDE047');
     } else {
-      // Left forearm holding silver jigger with rose gold bracelet
+      // Left forearm holding silver dual jigger with rose gold bracelet
       pRect(ctx, hx - 1, 104 + bob, 3, 7, skin);
-      pRect(ctx, hx + 1, 109 + bob, 3, 2, '#E17055'); // bracelet
-      pRect(ctx, hx + 2, 111 + bob, 3, 3, skin); // hand
+      pRect(ctx, hx + 1, 109 + bob, 3, 2, '#E17055'); // Rose gold bracelet
+      pDot(ctx, hx + 2, 109 + bob, '#FDE047'); // Bell charm
+      pRect(ctx, hx + 2, 111 + bob, 3, 3, skin); // Hand
 
-      // Silver dual-ended jigger
-      pRect(ctx, hx + 4, 108 + bob, 4, 2, '#CBD5E1');
-      pRect(ctx, hx + 5, 110 + bob, 2, 2, '#94A3B8');
-      pRect(ctx, hx + 4, 112 + bob, 4, 3, '#CBD5E1');
-      pRect(ctx, hx + 5, 108 + bob, 1, 7, '#FFFFFF'); // shine
+      // Silver dual-ended measurement jigger (Ly đong inox)
+      pRect(ctx, hx + 4, 107 + bob, 4, 3, '#CBD5E1');
+      pRect(ctx, hx + 5, 110 + bob, 2, 2, '#94A3B8'); // Waist
+      pRect(ctx, hx + 4, 112 + bob, 4, 4, '#CBD5E1');
+      pRect(ctx, hx + 5, 107 + bob, 1, 9, '#FFFFFF'); // Specular highlight
 
-      // Resting right arm on counter
+      // Resting right arm on marble counter with gold ring
       pRect(ctx, hx + 14, 104 + bob, 3, 8, skin);
       pRect(ctx, hx + 16, 111 + bob, 3, 3, skin);
+      pDot(ctx, hx + 17, 112 + bob, '#FACC15'); // Gold ring
     }
   }
 

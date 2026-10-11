@@ -27,8 +27,22 @@ class BaristaWorkstation {
     this.tick = 0;
     this.liquidFill = 0.72; // Current fill animation target
     this.currentFill = 0.72;
-    this.steamParticles = [];
-    this.frostParticles = [];
+
+    // Performance & Benchmark Monitoring (Roadmap VI.1 & VII Sprint 4)
+    this.lastFrameTime = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+    this.frameDuration = 0;
+    this.avgFrameTime = 1.2; // ms per render (Solid < 2.5ms)
+    this.fps = 60;
+
+    // Static Particle Pools (Zero GC allocation during render loop)
+    this.steamParticles = Array.from({ length: 25 }, () => ({
+      active: false,
+      x: 0, y: 0, vx: 0, vy: 0, alpha: 0, r: 0
+    }));
+    this.frostParticles = Array.from({ length: 35 }, () => ({
+      active: false,
+      x: 0, y: 0, vx: 0, vy: 0, alpha: 0, r: 0
+    }));
     this.iceCubes = [];
     this.bobaPearls = [];
     this.floatingTexts = [];
@@ -56,6 +70,7 @@ class BaristaWorkstation {
     this.canvas.width = Math.floor(cssWidth * this.dpr);
     this.canvas.height = Math.floor(cssHeight * this.dpr);
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.ctx.imageSmoothingEnabled = false;
   }
 
   // Sugar progression: 0% -> 30% -> 50% -> 70% -> 100% -> 0%
@@ -101,6 +116,16 @@ class BaristaWorkstation {
       (this.tea === 'thai_xanh' && this.toppings.includes('thach_la_dua') && this.toppings.includes('tranchau_duongden'));
   }
 
+  isMatchaSilverRecipe() {
+    return this.currentRecipe === 'matcha_kyoto_dat_bac' ||
+      (this.tea === 'thai_xanh' && this.toppings.includes('thach_la_dua') && this.toppings.includes('tranchau_den'));
+  }
+
+  isGinsengRecipe() {
+    return this.currentRecipe === 'tra_sam_nui_seoul' ||
+      (this.tea === 'sua_tuoi' && this.toppings.includes('tranchau_duongden') && this.toppings.includes('suong_sao'));
+  }
+
   initCupContents() {
     // Generate ice cubes based on ice level
     this.iceCubes = [];
@@ -144,6 +169,21 @@ class BaristaWorkstation {
           size: 2.2 + Math.random() * 3.2,
           rot: Math.random() * Math.PI * 2,
           rotSpeed: (Math.random() - 0.5) * 0.04,
+          sparklePhase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    // Generate floating pure silver flakes for Matcha Kyoto Dát Bạc
+    this.silverFlakes = [];
+    if (this.isMatchaSilverRecipe()) {
+      for (let i = 0; i < 9; i++) {
+        this.silverFlakes.push({
+          x: (Math.random() - 0.5) * 34,
+          y: (Math.random() - 0.5) * 36,
+          size: 2.0 + Math.random() * 3.0,
+          rot: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.045,
           sparklePhase: Math.random() * Math.PI * 2
         });
       }
@@ -252,7 +292,7 @@ class BaristaWorkstation {
     this.cupState = 'empty';
   }
 
-  resetCup() {
+  resetCup(showNotice = false) {
     this.tea = 'den';
     this.sugar = '0%';
     this.ice = 'Nóng';
@@ -260,7 +300,9 @@ class BaristaWorkstation {
     this.isShaken = false;
     this.cupState = 'empty';
     this.initCupContents();
-    this.addFloatingText('🔄 Đã làm lại ly mới!', '#ffffff');
+    if (showNotice) {
+      this.addFloatingText('🔄 Đã làm lại ly mới!', '#ffffff');
+    }
     this.onChange({ tea: this.tea, sugar: this.sugar, ice: this.ice, toppings: this.toppings });
   }
 
@@ -271,15 +313,15 @@ class BaristaWorkstation {
   }
 
   addFloatingText(text, color = '#f4c430') {
-    this.floatingTexts.push({
+    this.floatingTexts = [{
       text,
       color,
       x: this.width * 0.5,
       y: this.height * 0.45,
       vy: -1.2,
       opacity: 1.0,
-      scale: 1.2
-    });
+      scale: 1.15
+    }];
   }
 
   // --- RENDER LOOP ---
@@ -318,51 +360,57 @@ class BaristaWorkstation {
       }
     }
 
-    // Steam particles for hot drink
+    // Steam particles for hot drink (Recycled from static pool - zero allocation)
     if (this.ice === 'Nóng' && Math.random() < 0.28) {
-      const cx = this.width * 0.5;
-      const cy = this.height * 0.44;
-      this.steamParticles.push({
-        x: cx + (Math.random() - 0.5) * 30,
-        y: cy,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: -0.6 - Math.random() * 0.5,
-        alpha: 0.55,
-        r: 3 + Math.random() * 3
-      });
+      const p = this.steamParticles.find(sp => !sp.active);
+      if (p) {
+        const cx = this.width * 0.5;
+        const cy = this.height * 0.44;
+        p.active = true;
+        p.x = cx + (Math.random() - 0.5) * 30;
+        p.y = cy;
+        p.vx = (Math.random() - 0.5) * 0.3;
+        p.vy = -0.6 - Math.random() * 0.5;
+        p.alpha = 0.55;
+        p.r = 3 + Math.random() * 3;
+      }
     }
 
     this.steamParticles.forEach(p => {
+      if (!p.active) return;
       p.x += p.vx + Math.sin(this.tick * 0.08 + p.x) * 0.2;
       p.y += p.vy;
       p.alpha -= 0.012;
       p.r += 0.1;
+      if (p.alpha <= 0) p.active = false;
     });
-    this.steamParticles = this.steamParticles.filter(p => p.alpha > 0);
 
-    // Frost mist particles during shaking
+    // Frost mist particles during shaking (Recycled from static pool - zero allocation)
     if (this.handAction === 'shake') {
       const cx = this.width * 0.5;
       const cy = this.height * 0.48;
       for (let i = 0; i < 2; i++) {
-        this.frostParticles.push({
-          x: cx + (Math.random() - 0.5) * 50,
-          y: cy + (Math.random() - 0.5) * 70,
-          vx: (Math.random() - 0.5) * 4,
-          vy: -1 - Math.random() * 3,
-          alpha: 0.85,
-          r: 2.2 + Math.random() * 3.5
-        });
+        const fp = this.frostParticles.find(p => !p.active);
+        if (fp) {
+          fp.active = true;
+          fp.x = cx + (Math.random() - 0.5) * 50;
+          fp.y = cy + (Math.random() - 0.5) * 70;
+          fp.vx = (Math.random() - 0.5) * 4;
+          fp.vy = -1 - Math.random() * 3;
+          fp.alpha = 0.85;
+          fp.r = 2.2 + Math.random() * 3.5;
+        }
       }
     }
 
     this.frostParticles.forEach(p => {
+      if (!p.active) return;
       p.x += p.vx;
       p.y += p.vy;
       p.alpha -= 0.035;
       p.r += 0.08;
+      if (p.alpha <= 0) p.active = false;
     });
-    this.frostParticles = this.frostParticles.filter(p => p.alpha > 0);
 
     // Floating text update
     this.floatingTexts.forEach(t => {
@@ -376,6 +424,9 @@ class BaristaWorkstation {
   render() {
     const ctx = this.ctx;
     if (!ctx) return;
+
+    const tStart = (typeof performance !== 'undefined') ? performance.now() : 0;
+    ctx.imageSmoothingEnabled = false;
 
     ctx.clearRect(0, 0, this.width, this.height);
 
@@ -398,7 +449,10 @@ class BaristaWorkstation {
     // 6. Draw Floating Status & Notifications
     this.drawFloatingTexts(ctx);
 
-    // 7. Draw First-Person Barista Animated Arm & Hand
+    // 7. Draw Active NPC Staff Indicator on Workstation
+    this.drawStaffAssistantBadge(ctx);
+
+    // 8. Draw First-Person Barista Animated Arm & Hand
     if (this.handAction === 'shake') {
       this.drawTwoHandedShake(ctx);
     } else if (this.handAction === 'pour_cup') {
@@ -408,6 +462,44 @@ class BaristaWorkstation {
     } else if (this.handAction) {
       this.drawBaristaHand(ctx);
     }
+
+    // Benchmark telemetry (Roadmap VII Sprint 4: solid 60 FPS, render time < 2.5ms)
+    if (tStart > 0) {
+      const tEnd = performance.now();
+      this.frameDuration = tEnd - tStart;
+      this.avgFrameTime = this.avgFrameTime * 0.96 + this.frameDuration * 0.04;
+    }
+  }
+
+  drawStaffAssistantBadge(ctx) {
+    const staff = this.activeStaff;
+    if (!staff || staff.expired) return;
+    ctx.save();
+    const isAuto = staff.autoBrewEnabled !== false;
+    const text = `${staff.avatar || '🧑‍🍳'} ${staff.name || 'Barista'} • ${isAuto ? 'Tự động pha ⚡' : 'Hỗ trợ quầy'}`;
+    ctx.font = 'bold 11px "Quicksand", sans-serif';
+    const tw = ctx.measureText(text).width + 16;
+    const bx = Math.round((this.width - tw) * 0.5);
+    const by = 6;
+    const bh = 18;
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(bx, by, tw, bh, 9);
+    } else {
+      ctx.rect(bx, by, tw, bh);
+    }
+    ctx.fill();
+    ctx.strokeStyle = isAuto ? '#00cec9' : '#ffeaa7';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = isAuto ? '#55efc4' : '#ffeaa7';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, this.width * 0.5, by + bh * 0.5 + 0.5);
+    ctx.restore();
   }
 
   drawCountertop(ctx) {
@@ -452,6 +544,41 @@ class BaristaWorkstation {
     // Soft countertop shadows & reflections
     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
     ctx.fillRect(0, tableTop + 3, w, 8);
+
+    // Dynamic Weather Atmospheric Tint & Flash on Workstation
+    const weatherId = (window.state && window.state.storeState && window.state.storeState.weather)
+      ? window.state.storeState.weather.id
+      : 'sunny';
+
+    if (weatherId === 'stormy') {
+      // Stormy dimness & lightning flash on countertop
+      ctx.fillStyle = 'rgba(25, 20, 45, 0.22)';
+      ctx.fillRect(0, 0, w, h);
+      if (window.state && window.state.canvas && window.state.canvas.screenFlash > 0) {
+        ctx.fillStyle = `rgba(240, 248, 255, ${window.state.canvas.screenFlash * 0.7})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+    } else if (weatherId === 'rainy') {
+      // Rainy cool tone
+      ctx.fillStyle = 'rgba(15, 30, 50, 0.16)';
+      ctx.fillRect(0, 0, w, h);
+    } else if (weatherId === 'cloudy') {
+      // Soft overcast
+      ctx.fillStyle = 'rgba(40, 45, 55, 0.12)';
+      ctx.fillRect(0, 0, w, h);
+    } else if (weatherId === 'windy') {
+      // Gentle fresh breeze
+      ctx.fillStyle = 'rgba(20, 45, 40, 0.08)';
+      ctx.fillRect(0, 0, w, h);
+    } else {
+      // Warm sunny god ray across the counter
+      const sunGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
+      sunGrad.addColorStop(0, 'rgba(255, 235, 160, 0.08)');
+      sunGrad.addColorStop(0.5, 'rgba(255, 220, 120, 0.04)');
+      sunGrad.addColorStop(1, 'rgba(255, 220, 120, 0)');
+      ctx.fillStyle = sunGrad;
+      ctx.fillRect(0, 0, w, h);
+    }
   }
 
   drawSideStations(ctx) {
@@ -992,6 +1119,7 @@ class BaristaWorkstation {
     // Steam vapor if hot drink
     if (this.ice === 'Nóng') {
       this.steamParticles.forEach(p => {
+        if (!p.active) return;
         ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
         ctx.beginPath();
         ctx.arc(p.x, p.y - 18, p.r, 0, Math.PI * 2);
@@ -1262,6 +1390,66 @@ class BaristaWorkstation {
         [-6, -1, 5].forEach((popX, idx) => {
           ctx.fillRect(cupX + popX, liquidTop + (idx % 2), 1.8, 1.8);
         });
+      }
+
+      // Special Drink FX: Matcha Uji Kyoto Dát Bạc (Pure Silver Flakes & Crystal Shimmer)
+      if (this.isMatchaSilverRecipe()) {
+        const silverCount = 8;
+        for (let s = 0; s < silverCount; s++) {
+          const sx = cupX - botR * 0.7 + ((s * 9 + 5) % Math.max(1, botR * 1.5));
+          const sy = liquidTop + 4 + (s % 4) * 8;
+          ctx.save();
+          ctx.translate(sx, sy);
+          ctx.rotate(this.tick * 0.025 + s);
+          const sGrad = ctx.createLinearGradient(-2, -2, 2, 2);
+          sGrad.addColorStop(0, '#ffffff');
+          sGrad.addColorStop(0.5, '#e0f7fa');
+          sGrad.addColorStop(1, '#b0bec5');
+          ctx.fillStyle = sGrad;
+          ctx.fillRect(-1.6, -1.6, 3.2, 2.6);
+
+          // Specular platinum sparkle
+          const spk = Math.sin(this.tick * 0.15 + s * 1.3);
+          if (spk > 0.55) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-0.5, -2.5, 1, 5);
+            ctx.fillRect(-2.5, -0.5, 5, 1);
+          }
+          ctx.restore();
+        }
+      }
+
+      // Special Drink FX: Trà Sữa Sâm Núi Seoul (Honey Ginseng Slices & Royal Golden Aura)
+      if (this.isGinsengRecipe()) {
+        // Floating Golden Ginseng Root Slice
+        const gx = cupX - 2;
+        const gy = liquidTop + 2;
+        ctx.save();
+        ctx.translate(gx, gy);
+        ctx.rotate(Math.sin(this.tick * 0.03) * 0.15);
+        // Ginseng outer ring
+        ctx.fillStyle = '#d35400';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 7.5, 3.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Ginseng core flesh
+        ctx.fillStyle = '#f39c12';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 6, 2.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Ginseng core grain
+        ctx.fillStyle = '#f1c40f';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 3.5, 1.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Delicate herbal root whisker
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(7, 0);
+        ctx.quadraticCurveTo(11, 2, 13, 1);
+        ctx.stroke();
+        ctx.restore();
       }
 
       // Ice cubes in cup
@@ -1896,6 +2084,7 @@ class BaristaWorkstation {
 
     // 2. Chilly Frost Mist & Condensation Vapor
     this.frostParticles.forEach(fp => {
+      if (!fp.active) return;
       ctx.save();
       ctx.fillStyle = `rgba(180, 235, 255, ${fp.alpha})`;
       ctx.beginPath();
@@ -2194,6 +2383,37 @@ class BaristaWorkstation {
             const gX = (1 - t) * (1 - t) * spoutX + 2 * (1 - t) * t * (spoutX + 20) + t * t * cupX;
             const gY = (1 - t) * (1 - t) * spoutY + 2 * (1 - t) * t * ((spoutY + cupTopY) * 0.5) + t * t * (cupTopY + 2);
             ctx.fillRect(gX - 1, gY - 1, 2.2, 2.2);
+          }
+        }
+      }
+
+      // Pure Silver flakes cascading down the pouring stream
+      if (this.isMatchaSilverRecipe()) {
+        ctx.fillStyle = '#ffffff';
+        for (let s = 0; s < 4; s++) {
+          const silP = ((p * 4.2 + s * 0.25) % 1.0);
+          if (silP > 0.05 && silP < 0.95) {
+            const t = silP;
+            const sX = (1 - t) * (1 - t) * spoutX + 2 * (1 - t) * t * (spoutX + 20) + t * t * cupX;
+            const sY = (1 - t) * (1 - t) * spoutY + 2 * (1 - t) * t * ((spoutY + cupTopY) * 0.5) + t * t * (cupTopY + 2);
+            ctx.fillStyle = s % 2 === 0 ? '#ffffff' : '#b2ebf2';
+            ctx.fillRect(sX - 1, sY - 1, 2.2, 2.2);
+          }
+        }
+      }
+
+      // Golden Ginseng essence ribbon cascading down the pouring stream
+      if (this.isGinsengRecipe()) {
+        ctx.fillStyle = '#f39c12';
+        for (let gs = 0; gs < 2; gs++) {
+          const ginP = ((p * 2.8 + gs * 0.45) % 1.0);
+          if (ginP > 0.1 && ginP < 0.9) {
+            const t = ginP;
+            const ginX = (1 - t) * (1 - t) * spoutX + 2 * (1 - t) * t * (spoutX + 20) + t * t * cupX;
+            const ginY = (1 - t) * (1 - t) * spoutY + 2 * (1 - t) * t * ((spoutY + cupTopY) * 0.5) + t * t * (cupTopY + 2);
+            ctx.beginPath();
+            ctx.ellipse(ginX, ginY, 3.5, 1.8, 0.4, 0, Math.PI * 2);
+            ctx.fill();
           }
         }
       }

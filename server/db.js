@@ -121,6 +121,9 @@ const db = {
           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS rest_until_ts BIGINT DEFAULT 0;
           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS active_buffs TEXT DEFAULT '{}';
           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS custom_prices TEXT DEFAULT '{}';
+          ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS farm_data TEXT DEFAULT '{}';
+          ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS franchises TEXT DEFAULT '[]';
+          ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS auction_items TEXT DEFAULT '[]';
           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS orders_served BIGINT DEFAULT 0;
           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_orders BIGINT DEFAULT 0;
           ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_earned BIGINT DEFAULT 0;
@@ -172,6 +175,9 @@ const db = {
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN properties TEXT DEFAULT \'{}\';'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN decorations TEXT DEFAULT \'[]\';'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN custom_prices TEXT DEFAULT \'{}\';'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN farm_data TEXT DEFAULT \'{}\';'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN franchises TEXT DEFAULT \'[]\';'); } catch (e) {}
+      try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN auction_items TEXT DEFAULT \'[]\';'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN negotiation TEXT;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN orders_served INTEGER DEFAULT 0;'); } catch (e) {}

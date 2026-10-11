@@ -372,7 +372,6 @@ export function initWorkflow() {
       if (state.canvas) state.canvas.setShaking(true);
       if (state.workstation) {
         state.workstation.triggerHandAction('shake');
-        state.workstation.addFloatingText('🍸 LẮC ĐỀU BÌNH PHA CHẾ! ✨', '#bd93f9');
       }
       const txt = elBtnShaker.querySelector('.wf-text');
       if (txt) txt.innerText = 'Đang Lắc...';
@@ -381,7 +380,6 @@ export function initWorkflow() {
         if (state.canvas) state.canvas.setShaking(false);
         state.isShaken = true;
         updateWorkflowButtons();
-        showToast('✨ Đã lắc đều! Hãy bấm [2. Rót Cốc] để đổ vào ly.', 2400);
       }, 1100);
     });
   }
@@ -395,10 +393,17 @@ export function initWorkflow() {
         return;
       }
       elBtnPourCup.disabled = true;
-      if (window.sound) window.sound.pour();
+      if (window.sound) {
+        window.sound.pour();
+        // ASMR Torch Flame trigger if customer ordered Crème Brûlée drink
+        const isBrulee = state.currentOrder?.recipeId === 'tra_sua_kem_kho_bong' || 
+          (state.workstation && typeof state.workstation.isBruleeRecipe === 'function' && state.workstation.isBruleeRecipe());
+        if (isBrulee && typeof window.sound.torchFlame === 'function') {
+          setTimeout(() => window.sound.torchFlame(), 450);
+        }
+      }
       if (state.workstation) {
         state.workstation.triggerHandAction('pour_cup');
-        state.workstation.addFloatingText('🧋 RÓT TRÀ SỮA VÀO CỐC! ✨', '#f4c430');
       }
       const txt = elBtnPourCup.querySelector('.wf-text');
       if (txt) txt.innerText = 'Đang Rót...';
@@ -407,7 +412,6 @@ export function initWorkflow() {
         state.isPoured = true;
         if (state.workstation) state.workstation.setCupState('filled');
         updateWorkflowButtons();
-        showToast('✨ Đã rót đầy ly! Hãy bấm [3. Dập Nắp] để niêm phong miệng cốc.', 2500);
       }, 1150);
     });
   }
@@ -424,7 +428,6 @@ export function initWorkflow() {
       if (window.sound) window.sound.seal();
       if (state.workstation) {
         state.workstation.triggerHandAction('seal_cup');
-        state.workstation.addFloatingText('🖲️ DẬP NẮP NIÊM PHONG! 🔒', '#50fa7b');
       }
       const txt = elBtnSealCup.querySelector('.wf-text');
       if (txt) txt.innerText = 'Đang Dập...';
@@ -433,7 +436,6 @@ export function initWorkflow() {
         state.isSealed = true;
         if (state.workstation) state.workstation.setCupState('sealed');
         updateWorkflowButtons();
-        showToast('🎉 Đã dập nắp hoàn chỉnh! Bấm [GIAO LY (SERVE)] cho khách nào!', 2600);
       }, 1100);
     });
   }
@@ -511,17 +513,14 @@ export function initWorkflow() {
       elBtnServe.disabled = true;
       const timeTaken = Date.now() - state.orderStartTime;
 
-      let chosenRecipeId = 'tra_sua_truyen_thong';
-      if (state.selectedTea === 'den') {
-        if (state.currentOrder && state.currentOrder.recipeId === 'hong_tra_tac') {
-          chosenRecipeId = 'hong_tra_tac';
-        } else {
-          chosenRecipeId = 'tra_sua_truyen_thong';
-        }
-      } else if (state.selectedTea === 'thai_xanh') chosenRecipeId = 'tra_thai_xanh';
-      else if (state.selectedTea === 'sua_tuoi') chosenRecipeId = 'sua_tuoi_duong_den';
-      else if (state.selectedTea === 'lai') chosenRecipeId = 'tra_dao_cam_sa';
-      else if (state.selectedTea === 'olong_nuong') chosenRecipeId = 'tra_olong_nuong';
+      let chosenRecipeId = state.currentOrder?.recipeId || 'tra_sua_truyen_thong';
+      if (state.selectedTea !== expectedTea) {
+        if (state.selectedTea === 'den') chosenRecipeId = 'tra_sua_truyen_thong';
+        else if (state.selectedTea === 'thai_xanh') chosenRecipeId = 'tra_thai_xanh';
+        else if (state.selectedTea === 'sua_tuoi') chosenRecipeId = 'sua_tuoi_duong_den';
+        else if (state.selectedTea === 'lai') chosenRecipeId = 'tra_dao_cam_sa';
+        else if (state.selectedTea === 'olong_nuong') chosenRecipeId = 'tra_olong_nuong';
+      }
 
       if (window.sound) window.sound.bell();
 
@@ -549,35 +548,41 @@ export function initWorkflow() {
           const collabExtra = res.collabBonus > 0 
             ? ` (+${res.collabBonusPercent}% Collab: ${res.activeCollabs} quán)` 
             : '';
+          const organicExtra = res.isOrganic && res.organicBonus > 0
+            ? ` (🍃 +${res.organicBonus.toLocaleString('vi-VN')}đ Organic 5⭐)`
+            : '';
 
           if (state.workstation) {
             state.workstation.triggerHandAction('serve');
-            state.workstation.addFloatingText(`✨ +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}!`, '#50fa7b');
+            state.workstation.addFloatingText(`✨ +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}!`, res.isOrganic ? '#2ed573' : '#50fa7b');
           }
 
           const currentOrderObj = state.currentOrder;
           const isShipperOrder = !!(currentOrderObj && (currentOrderObj.isShipper || currentOrderObj.orderId === state.canvas?.motorbikeShipper?.orderId));
+          const isAutoStaffActive = !!(state.activeStaff && !state.activeStaff.expired);
 
           if (isShipperOrder) {
             if (state.canvas && state.canvas.onShipperOrderServed) {
               state.canvas.onShipperOrderServed(currentOrderObj.orderId);
             }
-            showToast(`📦 Đã giao trà sữa cho anh Shipper mang đi giao hỏa tốc! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}`, 4000);
-          } else {
-            showToast(`🎉 Giao thành công! Nhận +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}`);
+            if (!isAutoStaffActive) {
+              showToast(`📦 Đã giao đơn Shipper! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 1800);
+            }
+          } else if (!isAutoStaffActive) {
+            showToast(`🎉 Giao thành công! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 1800);
           }
 
           if (res.tiktokerViral) {
             setTimeout(() => {
-              showToast(`🔥 VIDEO TIKTOK CỦA TÚ VIRAL TRIỆU VIEW! Lượng khách kéo đến nườm nượp!`, 6000);
-            }, 800);
+              showToast(`🔥 VIDEO TIKTOK CỦA TÚ VIRAL TRIỆU VIEW! Lượng khách kéo đến nườm nượp!`, 4000);
+            }, 600);
           }
 
           if (res.tiktokerGoalReached) {
             setTimeout(() => {
               if (window.sound) window.sound.coin();
-              showToast(res.message || `🎉 CHÚC MỪNG! Quán đã đạt doanh thu gấp 3 LẦN vốn từ chiến dịch TikToker!`, 7000);
-            }, 1200);
+              showToast(res.message || `🎉 CHÚC MỪNG! Quán đã đạt doanh thu gấp 3 LẦN vốn từ chiến dịch TikToker!`, 4500);
+            }, 900);
           }
 
           state.storeState = await window.API.getState();
@@ -592,7 +597,7 @@ export function initWorkflow() {
           state.isPoured = false;
           state.isSealed = false;
           if (state.workstation) {
-            state.workstation.resetCup();
+            state.workstation.resetCup(false);
           } else {
             state.selectedTea = 'den';
             state.selectedSugar = '50%';
@@ -643,7 +648,10 @@ export function initWorkflow() {
         showToast('⚠️ Độ ngọt đã đạt mức tối đa (100%)!');
         return;
       }
-      if (window.sound) window.sound.pour();
+      if (window.sound) {
+        if (typeof window.sound.syrupPump === 'function') window.sound.syrupPump();
+        else window.sound.pour();
+      }
       if (state.workstation) {
         state.selectedSugar = state.workstation.nextSugarStep();
       } else {
@@ -679,7 +687,7 @@ export function initWorkflow() {
     btnResetCup.addEventListener('click', () => {
       if (window.sound) window.sound.bell();
       if (state.workstation) {
-        state.workstation.resetCup();
+        state.workstation.resetCup(true);
       } else {
         state.selectedTea = 'den';
         state.selectedSugar = '0%';

@@ -8,12 +8,61 @@ import { cartMethods } from './canvas/cart.js';
 import { primitiveMethods } from './canvas/primitives.js';
 import { npcMethods } from './canvas/npc.js';
 import { eventMethods } from './canvas/events.js';
+import { weatherMethods } from './canvas/weather.js';
 
 class GameCanvas {
+  getEffectiveScene() {
+    const chap = Number(this.chapter) || 1;
+    const validScenes = ['town'];
+    if (chap >= 2) validScenes.push('hust');
+    if (chap >= 3) {
+      validScenes.push('walking_street');
+      validScenes.push('moc_chau');
+    }
+    if (chap >= 4) validScenes.push('franchise');
+
+    if (this.sceneSetting && validScenes.includes(this.sceneSetting)) {
+      return this.sceneSetting;
+    }
+
+    if (chap >= 4) return 'franchise';
+    if (chap >= 3) return 'walking_street';
+    if (chap >= 2) return 'hust';
+    return 'town';
+  }
+
   setChapter(chapter) {
-    this.chapter = chapter || 1;
-    if (this.chapter < 2) {
-      this.sceneSetting = 'town';
+    const newChap = Number(chapter) || 1;
+    const oldChapter = Number(this.chapter) || 1;
+    this.chapter = newChap;
+
+    if (!this._chapterInitialized) {
+      this._chapterInitialized = true;
+      let saved = null;
+      try { saved = localStorage.getItem('hyhy_scene_setting'); } catch (e) {}
+      if (saved) {
+        this.setSceneSetting(saved);
+      } else {
+        this.sceneSetting = this.getEffectiveScene();
+      }
+      return;
+    }
+
+    if (newChap > oldChapter) {
+      // Advance automatically to the new chapter's scene when unlocking a new chapter
+      if (newChap >= 4) this.sceneSetting = 'franchise';
+      else if (newChap === 3) this.sceneSetting = 'walking_street';
+      else if (newChap === 2) this.sceneSetting = 'hust';
+      else this.sceneSetting = 'town';
+      try { localStorage.setItem('hyhy_scene_setting', this.sceneSetting); } catch (e) {}
+    } else {
+      let saved = null;
+      try { saved = localStorage.getItem('hyhy_scene_setting'); } catch (e) {}
+      if (saved) {
+        this.setSceneSetting(saved);
+      } else {
+        this.sceneSetting = this.getEffectiveScene();
+      }
     }
   }
 
@@ -45,7 +94,13 @@ class GameCanvas {
     
     // Chapter & Setting
     this.chapter = 1;
-    this.sceneSetting = 'town'; // 'town' (Phố Nhỏ Ch.1) or 'hust' (Cổng Bách Khoa Ch.2)
+    this._chapterInitialized = false;
+    let initialScene = 'town';
+    try {
+      const saved = localStorage.getItem('hyhy_scene_setting');
+      if (saved) initialScene = saved;
+    } catch (e) {}
+    this.sceneSetting = initialScene;
     this.hasAmulet = false;
     this.talismanCount = 0;
     this.activeCollabs = [];
@@ -79,6 +134,20 @@ class GameCanvas {
     this.isShaking = false;
     this.isDrinking = false;
     this.drinkLevel = 1.0;
+    
+    // Dynamic Weather system
+    this.weather = { id: 'sunny' };
+    this.raindrops = [];
+    this.rainRipples = [];
+    this.windParticles = [];
+    this.cloudyMist = [];
+    this.dustMotes = [];
+    this.lightning = null;
+    this.screenFlash = 0;
+    this.screenShake = 0;
+    if (typeof this.setWeather === 'function') {
+      this.setWeather(this.weather);
+    }
     
     // Drifting blossom petals / leaves in the wind
     this.petals = [];
@@ -163,27 +232,69 @@ class GameCanvas {
     this.initLoop();
   }
 
-  setSceneSetting(setting) {
-    if (this.chapter < 2) {
-      this.sceneSetting = 'town';
-      return;
+  getUnlockedScenes() {
+    const chap = Number(this.chapter) || 1;
+    const validScenes = ['town'];
+    if (chap >= 2) validScenes.push('hust');
+    if (chap >= 3) {
+      validScenes.push('walking_street');
+      validScenes.push('moc_chau');
     }
-    this.sceneSetting = setting || 'town';
+    if (chap >= 4) validScenes.push('franchise');
+    return validScenes;
+  }
+
+  setSceneSetting(setting) {
+    const validScenes = this.getUnlockedScenes();
+    if (setting && validScenes.includes(setting)) {
+      this.sceneSetting = setting;
+    } else {
+      this.sceneSetting = this.getEffectiveScene();
+    }
+    try { localStorage.setItem('hyhy_scene_setting', this.sceneSetting); } catch (e) {}
+    return this.sceneSetting;
   }
 
   toggleSceneSetting() {
-    if (this.chapter < 2) {
+    const chap = Number(this.chapter) || 1;
+    if (chap < 2) {
       this.sceneSetting = 'town';
       return 'town';
     }
-    this.sceneSetting = (this.sceneSetting === 'hust') ? 'town' : 'hust';
-    return this.sceneSetting;
+
+    const current = this.getEffectiveScene();
+    let next = 'town';
+
+    if (chap === 2) {
+      next = (current === 'hust') ? 'town' : 'hust';
+    } else if (chap === 3) {
+      // Cycle: walking_street -> moc_chau -> hust -> town -> walking_street
+      if (current === 'walking_street') next = 'moc_chau';
+      else if (current === 'moc_chau') next = 'hust';
+      else if (current === 'hust') next = 'town';
+      else next = 'walking_street';
+    } else if (chap >= 4) {
+      // Cycle: franchise -> walking_street -> moc_chau -> hust -> town -> franchise
+      if (current === 'franchise') next = 'walking_street';
+      else if (current === 'walking_street') next = 'moc_chau';
+      else if (current === 'moc_chau') next = 'hust';
+      else if (current === 'hust') next = 'town';
+      else next = 'franchise';
+    }
+
+    this.sceneSetting = next;
+    try { localStorage.setItem('hyhy_scene_setting', next); } catch (e) {}
+    return next;
   }
 
   initLoop() {
     const loop = () => {
-      this.update();
-      this.render();
+      try {
+        this.update();
+        this.render();
+      } catch (err) {
+        console.error('GameCanvas loop error:', err);
+      }
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -764,11 +875,21 @@ class GameCanvas {
         this.floatingTexts.splice(i, 1);
       }
     }
+
+    // Update Dynamic Weather system (rain, storm, lightning, puddle ripples)
+    if (typeof this.updateWeather === 'function') {
+      this.updateWeather();
+    }
   }
 
   render() {
     const ctx = this.ctx;
     ctx.save();
+    if (this.screenShake > 0) {
+      const shakeX = (Math.random() - 0.5) * 4;
+      const shakeY = (Math.random() - 0.5) * 4;
+      ctx.translate(shakeX, shakeY);
+    }
     ctx.scale(2, 2);
     ctx.imageSmoothingEnabled = false;
 
@@ -790,11 +911,21 @@ class GameCanvas {
     // 3b. HYHY BARISTA SPRITE (Full body: legs, skirt, apron, head, beret standing inside stall)
     this.drawHyhy(ctx);
 
+    // 3b-2. ACTIVE HIRED NPC STAFF SPRITE (Standing behind stall counter next to Hyhy)
+    if (this.activeStaff && typeof this.drawActiveStaff === 'function') {
+      this.drawActiveStaff(ctx);
+    }
+
     // 3c. MILK TEA CART FRONT COUNTER & EQUIPMENT (In front of Hyhy's body)
     this.drawCartFront(ctx);
     
     // 3d. HYHY FOREARMS & SHAKER (Resting/active on top of the counter)
     this.drawHyhyForearms(ctx);
+
+    // 3d-2. ACTIVE HIRED NPC STAFF FOREARMS, COUNTER CUP/SHAKER & NAMEPLATE
+    if (this.activeStaff && typeof this.drawActiveStaffForearms === 'function') {
+      this.drawActiveStaffForearms(ctx);
+    }
 
     // 3e. STORE PET (Corgi, Mèo Thần Tài, Capybara)
     this.drawStorePet(ctx);
@@ -839,22 +970,60 @@ class GameCanvas {
     // 9. PARTICLES & FLOATING NUMBERS
     this.drawParticles(ctx);
     const tod = this.getTimeOfDay();
-    if (tod === 'night' || tod === 'afternoon') {
+    const weatherId = (this.weather && this.weather.id) || 'sunny';
+    const isStorm = weatherId === 'stormy';
+    const isRain = weatherId === 'rainy';
+    const isCloudy = weatherId === 'cloudy';
+    const isWindy = weatherId === 'windy';
+
+    // Determine atmospheric ambient tone depending on time of day AND active weather
+    let ambientMultiply = null;
+    if (isStorm) {
+      ambientMultiply = tod === 'night' ? '#686688' : (tod === 'afternoon' ? '#7d7596' : '#8a86a8');
+    } else if (isRain) {
+      ambientMultiply = tod === 'night' ? '#707890' : (tod === 'afternoon' ? '#98a2b2' : '#a8b8c8');
+    } else if (isCloudy) {
+      ambientMultiply = tod === 'night' ? '#707090' : (tod === 'afternoon' ? '#c8b8a8' : '#d8e0e8');
+    } else if (tod === 'night') {
+      ambientMultiply = '#707090';
+    } else if (tod === 'afternoon') {
+      ambientMultiply = '#d2b48c';
+    }
+
+    if (ambientMultiply) {
       ctx.globalCompositeOperation = 'multiply';
-      ctx.fillStyle = tod === 'night' ? '#707090' : '#d2b48c'; 
+      ctx.fillStyle = ambientMultiply; 
       ctx.fillRect(0, 0, this.width, this.height);
       ctx.globalCompositeOperation = 'source-over';
-      
+    }
+
+    // Street Lamp illumination / glow passes
+    const shouldLightLamps = tod === 'night' || tod === 'afternoon' || isStorm || isRain;
+    if (shouldLightLamps) {
       ctx.globalCompositeOperation = 'screen';
-      [188, 528, 705].forEach(lx => {
+      const curScene = (typeof this.getEffectiveScene === 'function') ? this.getEffectiveScene() : (this.sceneSetting || 'town');
+      const lampLxs = (curScene === 'walking_street') 
+        ? [95] 
+        : (curScene === 'franchise') 
+          ? [120, 480, 680] 
+          : (curScene === 'town')
+            ? [188, 528, 705]
+            : []; // HUST & moc_chau have their own specialized ambient & illuminated elements
+      lampLxs.forEach(lx => {
         const ly = 55;
         const radGrad = ctx.createRadialGradient(lx - 9, ly + 60, 10, lx - 9, ly + 90, 120);
-        radGrad.addColorStop(0, tod === 'night' ? 'rgba(255, 230, 120, 0.4)' : 'rgba(255, 200, 100, 0.2)');
+        const lampAlpha = tod === 'night' ? 0.45 : (isStorm ? 0.38 : (isRain ? 0.28 : 0.2));
+        radGrad.addColorStop(0, `rgba(255, 230, 120, ${lampAlpha})`);
         radGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = radGrad;
         ctx.fillRect(0, 0, this.width, this.height);
       });
       ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // 10. DYNAMIC WEATHER EFFECTS (Rain, Storms, Wet Pavement Reflections, Lightning & Screen Flash)
+    if (typeof this.drawWeatherEffects === 'function') {
+      this.drawWeatherEffects(ctx);
     }
 
     ctx.restore();
@@ -870,7 +1039,8 @@ Object.assign(
   cartMethods,
   primitiveMethods,
   npcMethods,
-  eventMethods
+  eventMethods,
+  weatherMethods
 );
 
 // Global window export for browser compatibility

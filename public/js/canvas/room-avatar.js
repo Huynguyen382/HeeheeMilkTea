@@ -199,10 +199,17 @@ export const RoomAvatar = {
     const skirtTilt = isMoving ? Math.sin(player.stepTick * 2.2) * 1.8 : 0;
 
     // Resolve outfit colors: default Lolita Pastel or equipped outfit skin
+    // Resolve outfit details: barista, lolita, ao dai, chef
     const outfit = player.outfit || {};
-    const dressColor = outfit.dressColor || '#f78da7';
-    const trimColor = outfit.trimColor || '#ffffff';
-    const collarColor = outfit.collarColor || '#ffffff';
+    const outfitId = (outfit.id || outfit.type || '').toLowerCase();
+    const isAoDai = outfitId.includes('ao_dai') || outfitId.includes('sen') || (outfit.dressColor === '#00d2d3');
+    const isChef = outfitId.includes('chef') || outfitId.includes('master') || (outfit.dressColor === '#222f3e');
+    const isLolita = outfitId.includes('lolita') || (outfit.dressColor === '#ff9ff3');
+    const isBarista = !isAoDai && !isChef && !isLolita;
+
+    const dressColor = outfit.dressColor || (isAoDai ? '#0D9488' : (isChef ? '#F8FAFC' : (isLolita ? '#F472B6' : '#831843')));
+    const trimColor = outfit.trimColor || (isAoDai ? '#FACC15' : (isChef ? '#FACC15' : (isLolita ? '#FFFFFF' : '#F43F5E')));
+    const collarColor = outfit.collarColor || (isChef ? '#DC2626' : '#FFFFFF');
     const sleeveColor = outfit.sleeveColor || dressColor;
 
     // Left Arm (swings opposite)
@@ -217,7 +224,7 @@ export const RoomAvatar = {
     ctx.fillStyle = '#ffeaa7'; // hand
     ctx.fillRect(10 + armSwing * 0.4, drawY - 15 - armSwing * 0.3, 4, 4);
 
-    // Flared A-Line Dress
+    // Flared A-Line Dress / Robe
     ctx.fillStyle = dressColor;
     ctx.beginPath();
     ctx.moveTo(-12 + skirtTilt, drawY - 8);
@@ -231,12 +238,49 @@ export const RoomAvatar = {
     ctx.fillStyle = trimColor;
     ctx.fillRect(-12 + skirtTilt, drawY - 9, 24, 2.5);
 
-    // Decorative Peter Pan Collar
+    // Signature Chest Accents
+    if (isAoDai) {
+      // Golden frog fasteners & embroidered lotus
+      ctx.fillStyle = '#FACC15';
+      ctx.fillRect(2, drawY - 22, 2, 2);
+      ctx.fillRect(4, drawY - 20, 2, 2);
+      ctx.fillStyle = '#F472B6';
+      ctx.fillRect(-4, drawY - 18, 3, 3); // lotus bud
+      ctx.fillStyle = '#FDE047';
+      ctx.fillRect(-3, drawY - 17, 1.5, 1.5);
+    } else if (isChef) {
+      // Royal Chef buttons
+      ctx.fillStyle = '#1E293B';
+      ctx.fillRect(-3, drawY - 20, 2, 2);
+      ctx.fillRect(2, drawY - 20, 2, 2);
+      ctx.fillRect(-3, drawY - 15, 2, 2);
+      ctx.fillRect(2, drawY - 15, 2, 2);
+      ctx.fillStyle = '#FACC15';
+      ctx.fillRect(-2, drawY - 20, 1, 1);
+      ctx.fillRect(3, drawY - 20, 1, 1);
+    } else if (isBarista) {
+      // Canvas apron pocket & pen
+      ctx.fillStyle = '#78350F';
+      ctx.fillRect(-5, drawY - 20, 10, 10);
+      ctx.fillStyle = '#FACC15';
+      ctx.fillRect(1, drawY - 19, 1.5, 3); // brass pen
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(-3, drawY - 17, 3, 3); // mini boba icon
+    }
+
+    // Decorative Collar / Neckerchief
     ctx.fillStyle = collarColor;
-    ctx.beginPath();
-    ctx.ellipse(-4, drawY - 25, 4.2, 3, 0.2, 0, Math.PI * 2);
-    ctx.ellipse(4, drawY - 25, 4.2, 3, -0.2, 0, Math.PI * 2);
-    ctx.fill();
+    if (isChef) {
+      // French ruby neckerchief
+      ctx.fillRect(-6, drawY - 26, 12, 3.5);
+      ctx.fillStyle = '#B91C1C';
+      ctx.fillRect(-2, drawY - 23, 4, 3);
+    } else {
+      ctx.beginPath();
+      ctx.ellipse(-4, drawY - 25, 4.2, 3, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(4, drawY - 25, 4.2, 3, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // 7. Head & Peach Complexion
     ctx.fillStyle = '#ffeaa7';
@@ -266,22 +310,57 @@ export const RoomAvatar = {
     ctx.fillRect(-14, drawY - 35, 5, 23 + hairBounce);
     ctx.fillRect(9, drawY - 35, 5, 23 - hairBounce);
 
-    // Pink flower hairpin on right temple
-    ctx.fillStyle = '#ff7675';
-    ctx.beginPath();
-    ctx.arc(10, drawY - 39, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(10, drawY - 39, 1.5, 0, Math.PI * 2);
-    ctx.fill();
+    // Headpiece Accessories by Outfit
+    if (isChef) {
+      // Tall Pleated Chef Hat (Toque Blanche)
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(-9, drawY - 58, 18, 15);
+      ctx.fillStyle = '#E2E8F0';
+      for (let cx = -7; cx <= 7; cx += 3.5) {
+        ctx.fillRect(cx, drawY - 58, 1.5, 15);
+      }
+      ctx.fillStyle = '#FACC15';
+      ctx.fillRect(-9, drawY - 44, 18, 3); // Gold band
+    } else if (isAoDai) {
+      // Traditional Vietnamese Royal Mấn Headband
+      ctx.fillStyle = '#0D9488';
+      ctx.beginPath();
+      ctx.ellipse(0, drawY - 44, 13, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FACC15';
+      for (let mx = -10; mx <= 10; mx += 4) {
+        ctx.fillRect(mx, drawY - 45, 2, 2);
+      }
+    } else if (isLolita) {
+      // Bunny-Ear Rose Lace Headband
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(-10, drawY - 54, 4, 10);
+      ctx.fillRect(6, drawY - 54, 4, 10);
+      ctx.fillStyle = '#F472B6';
+      ctx.fillRect(-9, drawY - 53, 2, 8);
+      ctx.fillRect(7, drawY - 53, 2, 8);
+      ctx.fillRect(-12, drawY - 44, 24, 2.5);
+    } else {
+      // Pink flower hairpin on right temple
+      ctx.fillStyle = '#ff7675';
+      ctx.beginPath();
+      ctx.arc(10, drawY - 39, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(10, drawY - 39, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // 9. Facial Features
     if (facing !== 'up') {
-      // Rosy Cheeks Blush
-      ctx.fillStyle = '#fab1a0';
-      ctx.fillRect(-9, drawY - 30, 4.5, 2.8);
-      ctx.fillRect(4.5, drawY - 30, 4.5, 2.8);
+      // Rosy Cheeks Blush with cozy dithering
+      ctx.fillStyle = '#FF79C6';
+      ctx.fillRect(-9, drawY - 30, 4.5, 2.5);
+      ctx.fillRect(4.5, drawY - 30, 4.5, 2.5);
+      ctx.fillStyle = '#FFAAA6';
+      ctx.fillRect(-8, drawY - 29, 2.5, 1.5);
+      ctx.fillRect(5.5, drawY - 29, 2.5, 1.5);
 
       // Sweet tiny mouth
       ctx.fillStyle = '#e17055';
@@ -298,14 +377,22 @@ export const RoomAvatar = {
         ctx.arc(5, drawY - 32, 2.5, Math.PI, 0);
         ctx.stroke();
       } else {
-        // Big open anime eyes with specular highlights
-        ctx.fillStyle = '#2d3436';
-        ctx.fillRect(-7, drawY - 35, 3.8, 5.2);
-        ctx.fillRect(3.5, drawY - 35, 3.8, 5.2);
-        // White specular catchlight dot
+        // Big open anime eyes with 3-tier iris gradient & specular sparkles
+        ctx.fillStyle = '#1E293B';
+        ctx.fillRect(-7, drawY - 35, 4, 5.5);
+        ctx.fillRect(3.5, drawY - 35, 4, 5.5);
+        // Mid iris amber / jade
+        ctx.fillStyle = isAoDai ? '#0D9488' : '#B45309';
+        ctx.fillRect(-6.5, drawY - 33, 3, 2.5);
+        ctx.fillRect(4, drawY - 33, 3, 2.5);
+        // Golden sparkle iris
+        ctx.fillStyle = isAoDai ? '#34D399' : '#FDE047';
+        ctx.fillRect(-6, drawY - 31.5, 2, 1.5);
+        ctx.fillRect(4.5, drawY - 31.5, 2, 1.5);
+        // White specular catchlight dot ✦
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-7, drawY - 35, 1.8, 2);
-        ctx.fillRect(3.5, drawY - 35, 1.8, 2);
+        ctx.fillRect(-7, drawY - 35, 2, 2);
+        ctx.fillRect(3.5, drawY - 35, 2, 2);
       }
     } else {
       // Facing Up: back of head hair

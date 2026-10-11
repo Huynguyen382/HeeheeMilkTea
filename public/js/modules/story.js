@@ -52,6 +52,7 @@ export function openStoryModal(sceneIdx = 0, chapterNum = null) {
   }
 
   storySceneIdx = sceneIdx;
+  storyQuestChapter = storyChapter;
   switchStoryTab('dialogue');
   renderStoryScene(storySceneIdx);
   if (modalStory) modalStory.style.display = 'flex';
@@ -102,6 +103,29 @@ export function renderStoryScene(idx) {
     storyHintBox.style.display = 'none';
   }
 
+  // Render chapter selector pills if multiple chapters unlocked
+  const selectorEl = document.getElementById('story-chapter-selector');
+  if (selectorEl) {
+    const maxChap = Math.min(4, Math.max(1, state.storeState?.save?.chapter || 1));
+    if (maxChap > 1) {
+      let html = '';
+      for (let c = 1; c <= maxChap; c++) {
+        const active = (c === storyChapter);
+        html += `<button type="button" class="btn-chap-pick" data-chap="${c}" style="background: ${active ? 'var(--gold)' : 'rgba(255,255,255,0.1)'}; color: ${active ? '#111' : '#fff'}; border: 1px solid ${active ? 'var(--gold)' : 'rgba(255,255,255,0.2)'}; border-radius: 4px; padding: 1px 6px; font-size: 0.72rem; cursor: pointer; font-weight: ${active ? 'bold' : 'normal'};">C${c}</button>`;
+      }
+      selectorEl.innerHTML = html;
+      selectorEl.querySelectorAll('.btn-chap-pick').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const targetC = parseInt(e.currentTarget.dataset.chap, 10);
+          storyChapter = targetC;
+          renderStoryScene(0);
+        });
+      });
+    } else {
+      selectorEl.innerHTML = '';
+    }
+  }
+
   if (storyStepIndicator) {
     storyStepIndicator.innerText = `${storySceneIdx + 1} / ${scenes.length}`;
   }
@@ -124,6 +148,8 @@ export function renderStoryScene(idx) {
   if (window.sound && window.sound.talk) window.sound.talk(520);
 }
 
+let storyQuestChapter = 1;
+
 export function renderStoryQuests() {
   if (!storyQuestList || !state.storeState || !state.storeState.save) return;
   const save = state.storeState.save;
@@ -145,12 +171,44 @@ export function renderStoryQuests() {
   }
 
   const currentChapter = save.chapter || 1;
+  const maxChap = Math.min(4, Math.max(1, currentChapter));
+  if (!storyQuestChapter || storyQuestChapter > maxChap) {
+    storyQuestChapter = currentChapter;
+  }
+  const viewingChapter = storyQuestChapter;
+
+  // Render chapter selector pills in Quests tab
+  const questChapterSelector = document.getElementById('story-quests-chapter-selector');
+  if (questChapterSelector) {
+    if (maxChap > 1) {
+      let html = '';
+      for (let c = 1; c <= maxChap; c++) {
+        const active = (c === viewingChapter);
+        const isCompleted = (c < currentChapter);
+        const badge = isCompleted ? '✅' : '📍';
+        html += `<button type="button" class="btn-quest-chap-pick" data-chap="${c}" style="background: ${active ? 'var(--gold)' : 'rgba(255,255,255,0.1)'}; color: ${active ? '#111' : '#fff'}; border: 1px solid ${active ? 'var(--gold)' : 'rgba(255,255,255,0.2)'}; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; cursor: pointer; font-weight: ${active ? 'bold' : 'normal'}; display: inline-flex; align-items: center; gap: 3px;">
+          <span>${badge} C${c}</span>
+        </button>`;
+      }
+      questChapterSelector.innerHTML = html;
+      questChapterSelector.querySelectorAll('.btn-quest-chap-pick').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          storyQuestChapter = parseInt(e.currentTarget.dataset.chap, 10);
+          renderStoryQuests();
+        });
+      });
+    } else {
+      questChapterSelector.innerHTML = '';
+    }
+  }
+
   const money = save.money !== undefined ? save.money : (save.cash || 0);
   const debt = save.debt_remaining !== undefined ? save.debt_remaining : 3000000;
 
   let quests = [];
 
-  if (currentChapter === 1) {
+  if (viewingChapter === 1) {
+    const isChap1Passed = currentChapter > 1;
     quests = [
       {
         id: 'q1', icon: '🌟', title: 'Khởi Nghiệp Vỉa Hè',
@@ -162,134 +220,181 @@ export function renderStoryQuests() {
         id: 'q2', icon: '🍹', title: 'Đôi Bàn Tay Vàng',
         desc: 'Hoàn thành pha chế và giao ít nhất 1 ly trà sữa cho khách.',
         reward: 'Kinh nghiệm Barista',
-        isDone: (daily.orders_served && daily.orders_served > 0) || money > 200000,
-        progressText: (daily.orders_served > 0 || money > 200000) ? '1/1 ly' : '0/1 ly'
+        isDone: isChap1Passed || (daily.orders_served && daily.orders_served > 0) || money > 200000,
+        progressText: (isChap1Passed || daily.orders_served > 0 || money > 200000) ? '1/1 ly' : '0/1 ly'
       },
       {
         id: 'q3', icon: '🍊', title: 'Mở Rộng Thực Đơn',
         desc: 'Mua thêm ít nhất 1 công thức món mới trong mục [Nâng Cấp].',
         reward: 'Bán được món giá cao',
-        isDone: recipes.length >= 2,
-        progressText: `${recipes.length}/2 món`
+        isDone: isChap1Passed || recipes.length >= 2,
+        progressText: isChap1Passed ? 'Đã mở rộng' : `${recipes.length}/2 món`
       },
       {
         id: 'q4', icon: '💸', title: 'Trút Bớt Gánh Nặng',
         desc: 'Trả ít nhất 500.000đ nợ đầu tiên cho Anh Bảnh.',
         reward: 'Giảm áp lực đòi nợ',
-        isDone: debt <= 2500000,
-        progressText: debt <= 2500000 ? 'Đã trả' : 'Chưa trả'
+        isDone: isChap1Passed || debt <= 2500000,
+        progressText: (isChap1Passed || debt <= 2500000) ? 'Đã trả' : 'Chưa trả'
       },
       {
         id: 'q5', icon: '🏆', title: 'Tự Do Khởi Nghiệp',
         desc: 'Trả hết sạch 3.000.000đ nợ cho Anh Bảnh để mở khóa Chương 2!',
         reward: 'Mở khóa Chương 2',
-        isDone: debt === 0 || currentChapter >= 2,
-        progressText: `${(3000000 - debt).toLocaleString('vi-VN')}đ / 3Tr`
+        isDone: isChap1Passed || debt === 0,
+        progressText: isChap1Passed ? '3.000.000đ / 3Tr (Hoàn tất)' : `${(3000000 - debt).toLocaleString('vi-VN')}đ / 3Tr`
       }
     ];
-  } else if (currentChapter === 2) {
+  } else if (viewingChapter === 2) {
+    const isChap2Passed = currentChapter > 2;
     const targetMoney = 50000000; // Mục tiêu Endgame Chương 2
     quests = [
       {
         id: 'c2_q1', icon: '📦', title: 'Bài Toán Chi Phí',
         desc: 'Đạt doanh thu 80.000đ/ngày để bù đắp chi phí mặt bằng khi Kết Ca.',
         reward: 'Kỹ năng quản lý tài chính',
-        isDone: (daily.earned_today || 0) >= 80000,
-        progressText: `${(daily.earned_today || 0).toLocaleString('vi-VN')}đ / 80k`
+        isDone: isChap2Passed || (daily.earned_today || 0) >= 80000,
+        progressText: isChap2Passed ? 'Đã hoàn tất' : `${(daily.earned_today || 0).toLocaleString('vi-VN')}đ / 80k`
       },
       {
         id: 'c2_q2', icon: '🍹', title: 'Hương Vị Gen Z',
         desc: 'Sở hữu công thức Sữa Tươi Đường Đen hoặc Trà Đào Cam Sả.',
         reward: 'Thu hút khách sành điệu',
-        isDone: recipes.includes('sua_tuoi_duong_den') || recipes.includes('tra_dao_cam_sa'),
-        progressText: (recipes.includes('sua_tuoi_duong_den') || recipes.includes('tra_dao_cam_sa')) ? 'Đã có' : 'Chưa mở khóa'
+        isDone: isChap2Passed || recipes.includes('sua_tuoi_duong_den') || recipes.includes('tra_dao_cam_sa'),
+        progressText: (isChap2Passed || recipes.includes('sua_tuoi_duong_den') || recipes.includes('tra_dao_cam_sa')) ? 'Đã có' : 'Chưa mở khóa'
       },
       {
         id: 'c2_q3', icon: '📱', title: 'Bão Trending',
         desc: 'Bỏ vốn đầu tư book Tú TikToker ghé quán ít nhất 1 lần.',
         reward: 'Doanh thu bùng nổ x3',
-        isDone: !!upgrades.tiktoker_ever_invited,
-        progressText: upgrades.tiktoker_ever_invited ? 'Đã Viral' : '0/1 lần'
+        isDone: isChap2Passed || !!upgrades.tiktoker_ever_invited,
+        progressText: (isChap2Passed || upgrades.tiktoker_ever_invited) ? 'Đã Viral' : '0/1 lần'
       },
       {
         id: 'c2_q4', icon: '🐾', title: 'Người Bạn Đồng Hành',
         desc: 'Nhận nuôi 1 Thú Cưng để buff chỉ số và báo động trộm cắp.',
         reward: 'An ninh + Buff Tip',
-        isDone: !!upgrades.active_pet,
-        progressText: upgrades.active_pet ? 'Đã nhận nuôi' : 'Chưa có'
+        isDone: isChap2Passed || !!upgrades.active_pet,
+        progressText: (isChap2Passed || upgrades.active_pet) ? 'Đã nhận nuôi' : 'Chưa có'
       },
       {
         id: 'c2_q5', icon: '🚨', title: 'Đội Trưởng An Ninh',
         desc: 'Phản xạ nhanh nhấp chuột tóm gọn 1 tên trộm áo đen.',
         reward: '+10.000đ & Kỷ niệm chương',
-        isDone: (save.thieves_caught && save.thieves_caught > 0),
-        progressText: `${save.thieves_caught || 0}/1 tên`
+        isDone: isChap2Passed || (save.thieves_caught && save.thieves_caught > 0),
+        progressText: isChap2Passed ? 'Đã hoàn tất' : `${save.thieves_caught || 0}/1 tên`
       },
       {
         id: 'c2_q6', icon: '🤝', title: 'Liên Minh Bền Vững',
         desc: 'Kết nối Collab thành công với ít nhất 1 mã quán của đối tác.',
         reward: '+10% Doanh thu',
-        isDone: (daily.collab_count && daily.collab_count > 0) || (save.active_collabs && save.active_collabs > 0),
-        progressText: `${daily.collab_count || save.active_collabs || 0}/1 đối tác`
+        isDone: isChap2Passed || (daily.collab_count && daily.collab_count > 0) || (save.active_collabs && save.active_collabs > 0),
+        progressText: isChap2Passed ? 'Đã hợp tác' : `${daily.collab_count || save.active_collabs || 0}/1 đối tác`
       },
       {
         id: 'c2_q_sabotage', icon: '⚔️', title: 'Thương Trường Khốc Liệt',
         desc: 'Sở hữu hoặc sử dụng Thẻ Hãm Hại (Bóc Phốt / QLTT) lên một quán đối thủ.',
         reward: 'Áp đảo thị phần',
-        isDone: !!(upgrades.sabotage_used_count && upgrades.sabotage_used_count > 0) || !!(upgrades.the_boc_phot && upgrades.the_boc_phot > 0) || !!(upgrades.the_quan_ly_thi_truong && upgrades.the_quan_ly_thi_truong > 0),
-        progressText: (upgrades.sabotage_used_count && upgrades.sabotage_used_count > 0) ? 'Đã tấn công' : ((upgrades.the_boc_phot || upgrades.the_quan_ly_thi_truong) ? 'Đã sắm thẻ' : '0/1 lần')
+        isDone: isChap2Passed || !!(upgrades.sabotage_used_count && upgrades.sabotage_used_count > 0) || !!(upgrades.the_boc_phot && upgrades.the_boc_phot > 0) || !!(upgrades.the_quan_ly_thi_truong && upgrades.the_quan_ly_thi_truong > 0),
+        progressText: (isChap2Passed || (upgrades.sabotage_used_count && upgrades.sabotage_used_count > 0)) ? 'Đã tấn công' : ((upgrades.the_boc_phot || upgrades.the_quan_ly_thi_truong) ? 'Đã sắm thẻ' : '0/1 lần')
       },
       {
         id: 'c2_q7', icon: '🏰', title: 'Bước Ra Phố Lớn (Endgame)',
         desc: 'Tích lũy đủ 50.000.000đ tiền mặt để thuê mặt bằng ở Phố Thương Mại.',
         reward: 'Mở rộng thương hiệu',
-        isDone: money >= targetMoney,
-        progressText: `${(money / 1000000).toFixed(1)}Tr / 50Tr`
+        isDone: isChap2Passed || money >= targetMoney,
+        progressText: isChap2Passed ? '50Tr / 50Tr (Hoàn tất)' : `${(money / 1000000).toFixed(1)}Tr / 50Tr`
       }
     ];
-  } else if (currentChapter >= 3) {
-    const targetC3Money = 200000000;
+  } else if (viewingChapter === 3) {
+    const isChap3Passed = currentChapter > 3;
+    const targetC3Money = 100000000;
     quests = [
       {
         id: 'c3_q1', icon: '🏛️', title: 'Khai Trương Flagship Store',
         desc: 'Phục vụ ít nhất 1 lượt khách ghé tiệm tại Phố Đi Bộ.',
         reward: 'Danh tiếng Đô Thị',
-        isDone: (daily.orders_served && daily.orders_served > 0) || true,
+        isDone: true,
         progressText: 'Hoàn tất'
       },
       {
         id: 'c3_q2', icon: '✨', title: 'Thực Đơn Thượng Lưu',
         desc: 'Mở khóa Trà Sữa Dát Vàng hoặc Nitro Cold Brew.',
         reward: 'Giá bán cực khủng',
-        isDone: recipes.includes('tra_sua_dat_vang') || recipes.includes('nitro_cold_brew'),
-        progressText: (recipes.includes('tra_sua_dat_vang') || recipes.includes('nitro_cold_brew')) ? 'Đã sở hữu' : 'Chưa có'
+        isDone: isChap3Passed || recipes.includes('tra_sua_dat_vang') || recipes.includes('nitro_cold_brew'),
+        progressText: (isChap3Passed || recipes.includes('tra_sua_dat_vang') || recipes.includes('nitro_cold_brew')) ? 'Đã sở hữu' : 'Chưa có'
       },
       {
         id: 'c3_q3', icon: '🌽', title: 'Cửa Hàng Trưởng Bé Bắp',
         desc: 'Nâng cấp Bé Bắp lên chức Cửa Hàng Trưởng để tự động dập nắp ly.',
         reward: 'Tự động dập nắp 100%',
-        isDone: !!upgrades.staff_be_bap_manager,
-        progressText: upgrades.staff_be_bap_manager ? 'Đã thăng chức' : 'Chưa thăng chức'
+        isDone: isChap3Passed || !!upgrades.staff_be_bap_manager,
+        progressText: (isChap3Passed || upgrades.staff_be_bap_manager) ? 'Đã thăng chức' : 'Chưa thăng chức'
       },
       {
         id: 'c3_q4', icon: '🛵', title: 'Đội Trưởng Logistics Anh Lâm',
         desc: 'Nâng cấp Anh Lâm lên Đội Trưởng Logistics điều phối hạm đội xe.',
         reward: '+35% Doanh thu ship',
-        isDone: !!upgrades.staff_anh_lam_captain,
-        progressText: upgrades.staff_anh_lam_captain ? 'Đã thăng chức' : 'Chưa thăng chức'
+        isDone: isChap3Passed || !!upgrades.staff_anh_lam_captain,
+        progressText: (isChap3Passed || upgrades.staff_anh_lam_captain) ? 'Đã thăng chức' : 'Chưa thăng chức'
       },
       {
         id: 'c3_q5', icon: '🎤', title: 'Thần Tượng Triệu View',
         desc: 'Sở hữu hoặc sử dụng Thẻ Hợp Đồng Idol Triệu View thu hút bão khách.',
         reward: 'Khách kéo đến nghẹt phố',
-        isDone: !!(upgrades.the_idol_trieu_view && upgrades.the_idol_trieu_view > 0) || !!upgrades.idol_viral_used,
-        progressText: (upgrades.the_idol_trieu_view || upgrades.idol_viral_used) ? 'Đã kích hoạt' : 'Chưa có'
+        isDone: isChap3Passed || !!(upgrades.the_idol_trieu_view && upgrades.the_idol_trieu_view > 0) || !!upgrades.idol_viral_used,
+        progressText: (isChap3Passed || upgrades.the_idol_trieu_view || upgrades.idol_viral_used) ? 'Đã kích hoạt' : 'Chưa có'
       },
       {
         id: 'c3_q6', icon: '👑', title: 'Đế Chế Nhượng Quyền (Endgame C3)',
-        desc: 'Tích lũy 200.000.000đ vốn đầu tư để tiến tới Nhượng Quyền Toàn Cầu.',
+        desc: 'Tích lũy 100.000.000đ vốn đầu tư để tiến tới Nhượng Quyền Toàn Cầu.',
         reward: 'Mở khóa Chương 4',
-        isDone: money >= targetC3Money,
+        isDone: isChap3Passed || money >= targetC3Money,
+        progressText: isChap3Passed ? '100Tr / 100Tr (Hoàn tất)' : `${(money / 1000000).toFixed(1)}Tr / 100Tr`
+      }
+    ];
+  } else if (viewingChapter >= 4) {
+    let franchises = [];
+    try {
+      franchises = typeof save.franchises === 'string' ? JSON.parse(save.franchises) : (save.franchises || []);
+    } catch (e) {
+      franchises = [];
+    }
+    const targetC4Money = 200000000;
+    quests = [
+      {
+        id: 'c4_q1', icon: '🌐', title: 'Chi Nhánh Sài Gòn Hoa Lệ',
+        desc: 'Sở hữu chi nhánh Sài Gòn Nguyễn Huệ đầu tiên.',
+        reward: 'Thu tiền nhượng quyền thụ động',
+        isDone: franchises.some(f => f.id === 'sg_nguyen_hue') || true,
+        progressText: 'Hoàn tất'
+      },
+      {
+        id: 'c4_q2', icon: '🍵', title: 'Công Thức Matcha Thượng Hạng',
+        desc: 'Mở khóa công thức Matcha Kyoto Dát Bạc.',
+        reward: 'Món trà hoàng gia',
+        isDone: recipes.includes('matcha_kyoto_dat_bac'),
+        progressText: recipes.includes('matcha_kyoto_dat_bac') ? 'Đã sở hữu' : 'Chưa mở khóa'
+      },
+      {
+        id: 'c4_q3', icon: '🔨', title: 'Sàn Đấu Giá Trà Cổ Thụ',
+        desc: 'Tham gia đấu giá ít nhất 1 mẻ trà quý trên Sàn Đấu Giá Quốc Tế.',
+        reward: 'Hào quang bảo vật',
+        isDone: !!(save.auction_won_count && save.auction_won_count > 0) || !!(upgrades.auction_won && upgrades.auction_won > 0),
+        progressText: (save.auction_won_count || upgrades.auction_won) ? 'Đã sở hữu báu vật' : '0/1 mẻ'
+      },
+      {
+        id: 'c4_q4', icon: '⭐', title: 'Nâng Cấp Chi Nhánh 5 Sao',
+        desc: 'Nâng cấp ít nhất 1 chi nhánh nhượng quyền lên Cấp 2 trở lên.',
+        reward: '+100% Doanh thu thụ động',
+        isDone: franchises.some(f => f.level >= 2),
+        progressText: franchises.some(f => f.level >= 2) ? 'Đã đạt' : 'Cấp 1/2'
+      },
+      {
+        id: 'c4_q5', icon: '👑', title: 'Vua Trà Sữa Đô Thị (Endgame Toàn Cầu)',
+        desc: 'Tích lũy 200.000.000đ tài sản để ghi tên vào Bảng Vàng Boba Tycoon Legend.',
+        reward: 'Vua Trà Sữa Bất Bại 🏆',
+        isDone: money >= targetC4Money,
         progressText: `${(money / 1000000).toFixed(1)}Tr / 200Tr`
       }
     ];
@@ -299,17 +404,19 @@ export function renderStoryQuests() {
     let pct = 0;
     if (q.isDone) {
       pct = 100;
-    } else if (q.id === 'q5' && currentChapter === 1) {
+    } else if (q.id === 'q5' && viewingChapter === 1) {
       pct = Math.min(100, Math.max(0, ((3000000 - debt) / 3000000) * 100));
     } else if (q.id === 'c2_q7') {
       pct = Math.min(100, Math.max(0, (money / 50000000) * 100));
     } else if (q.id === 'c3_q6') {
+      pct = Math.min(100, Math.max(0, (money / 100000000) * 100));
+    } else if (q.id === 'c4_q5') {
       pct = Math.min(100, Math.max(0, (money / 200000000) * 100));
     } else if (q.id === 'c2_q1') {
       pct = Math.min(100, Math.max(0, ((daily.earned_today || 0) / 80000) * 100));
     }
 
-    const progressBarHtml = (q.id === 'q5' || q.id === 'c2_q7' || q.id === 'c3_q6' || q.id === 'c2_q1') ? `
+    const progressBarHtml = (q.id === 'q5' || q.id === 'c2_q7' || q.id === 'c3_q6' || q.id === 'c4_q5' || q.id === 'c2_q1') ? `
       <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.4); border-radius: 4px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
         <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #f4c430, #ff9f43); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 8px rgba(244,196,48,0.5);"></div>
       </div>

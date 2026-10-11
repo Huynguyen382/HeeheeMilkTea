@@ -264,6 +264,81 @@ const API = {
 
   async cheerFriendRoom(toStoreId, message) {
     return await this.request('/game/room/cheer', 'POST', { toStoreId, message });
+  },
+
+  // Farm & Crafting System
+  async getFarm() {
+    return await this.request('/game/farm');
+  },
+
+  async plantFarm(plotId, cropId) {
+    return await this.request('/game/farm/plant', 'POST', { plotId, cropId });
+  },
+
+  async waterFarm(plotId) {
+    return await this.request('/game/farm/water', 'POST', { plotId });
+  },
+
+  async fertilizeFarm(plotId, useTeaCoin = false) {
+    return await this.request('/game/farm/fertilize', 'POST', { plotId, useTeaCoin });
+  },
+
+  async harvestFarm(plotId) {
+    return await this.request('/game/farm/harvest', 'POST', { plotId });
+  },
+
+  async harvestAllFarm() {
+    return await this.request('/game/farm/harvest-all', 'POST');
+  },
+
+  async craftFarm(recipeId) {
+    return await this.request('/game/farm/craft', 'POST', { recipeId });
+  },
+
+  // Chapter 4, Franchise & Auction System
+  async unlockChapter4() {
+    return await this.request('/game/unlock-chapter-4', 'POST');
+  },
+
+  async getFranchise() {
+    return await this.request('/game/franchise');
+  },
+
+  async openFranchise(franchiseId) {
+    return await this.request('/game/franchise/open', 'POST', { franchiseId });
+  },
+
+  async upgradeFranchise(franchiseId) {
+    return await this.request('/game/franchise/upgrade', 'POST', { franchiseId });
+  },
+
+  async collectFranchiseRoyalties() {
+    return await this.request('/game/franchise/collect', 'POST');
+  },
+
+  async bidAuction(itemId, bidAmount) {
+    return await this.request('/game/auction/bid', 'POST', { itemId, bidAmount });
+  },
+
+  // NPC Staff & Offline Revenue System (Roadmap Section IV.2)
+  async getStaffStatus() {
+    return await this.request('/staff/status');
+  },
+
+  async hireStaff(npcId, hours, autoRenew = false) {
+    return await this.request('/staff/hire', 'POST', { npcId, hours, autoRenew });
+  },
+
+  async extendStaff(additionalHours) {
+    return await this.request('/staff/extend', 'POST', { additionalHours });
+  },
+
+  async claimOfflineStaff() {
+    return await this.request('/staff/claim-offline', 'POST');
+  },
+
+  async terminateStaff() {
+    return await this.request('/staff/terminate', 'POST');
   }
 };
 

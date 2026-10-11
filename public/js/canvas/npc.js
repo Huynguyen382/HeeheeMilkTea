@@ -691,10 +691,11 @@ export const npcMethods = {
     const isHappy = isFront && this.isDrinking;
 
     // 2. Master NPC Character Pipeline (Supports both classic 50 NPCs & Modular NPC generator)
+    const fnDrawNPC = (typeof drawNPCCharacter === 'function') ? drawNPCCharacter : (typeof window !== 'undefined' ? window.drawNPCCharacter : null);
     if (char && char.isModular) {
       this.drawModularNPC(ctx, char, baseX, baseY, sway, isFront, isHappy, isBlinking);
-    } else if (char && typeof drawNPCCharacter === 'function') {
-      drawNPCCharacter(ctx, char, baseX, baseY, sway, isFront, isHappy, isBlinking);
+    } else if (char && typeof fnDrawNPC === 'function') {
+      fnDrawNPC(ctx, char, baseX, baseY, sway, isFront, isHappy, isBlinking);
     } else {
       const autoNpc = this.getOrCreateModularNPC(customerName || type);
       this.drawModularNPC(ctx, autoNpc, baseX, baseY, sway, isFront, isHappy, isBlinking);

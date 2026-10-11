@@ -1,0 +1,473 @@
+/* ==========================================================================
+   ĐẾ CHẾ NHƯỢNG QUYỀN & SÀN ĐẤU GIÁ NGUYÊN LIỆU QUÝ (FRANCHISE CSS)
+   ========================================================================== */
+
+.franchise-modal-content {
+  max-width: 880px !important;
+  width: 95% !important;
+  max-height: 92vh !important;
+  display: flex;
+  flex-direction: column;
+  background: #181124 !important;
+  border: 2px solid #fdcb6e !important;
+  box-shadow: 0 10px 45px rgba(253, 203, 110, 0.3), 0 0 25px rgba(0, 0, 0, 0.85) !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* Panorama Header */
+.franchise-header-panorama {
+  background: linear-gradient(180deg, #321c45 0%, #201430 100%);
+  padding: 16px 20px 12px 20px;
+  border-bottom: 2px solid rgba(253, 203, 110, 0.35);
+}
+
+.franchise-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.franchise-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.franchise-title-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 8px rgba(253, 203, 110, 0.6));
+}
+
+.franchise-title-text h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fdcb6e;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.franchise-title-text p {
+  margin: 2px 0 0 0;
+  font-size: 0.8rem;
+  color: #dfe6e9;
+}
+
+/* Stats HUD */
+.franchise-hud-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(253, 203, 110, 0.2);
+}
+
+.franchise-stats-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.franchise-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f1f2f6;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-collect-royalties {
+  background: linear-gradient(135deg, #f1c40f, #e67e22);
+  color: #111;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 10px rgba(241, 196, 15, 0.4);
+  transition: all 0.2s;
+}
+
+.btn-collect-royalties:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.btn-collect-royalties:disabled {
+  background: #57606f;
+  color: #a4b0be;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.55;
+}
+
+/* Navigation Tabs */
+.franchise-nav-tabs {
+  display: flex;
+  background: #140d1e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 12px;
+  gap: 6px;
+}
+
+.franchise-nav-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #a4b0be;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.franchise-nav-tab:hover {
+  color: #f1f2f6;
+}
+
+.franchise-nav-tab.active {
+  color: #fdcb6e;
+  border-bottom-color: #fdcb6e;
+  background: rgba(253, 203, 110, 0.08);
+}
+
+/* Tab Panes Body */
+.franchise-body-container {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(92vh - 170px);
+}
+
+/* Branches Cards */
+.branches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.branch-card {
+  background: #201530;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.branch-card.branch-active {
+  border-color: #fdcb6e;
+  box-shadow: 0 4px 18px rgba(253, 203, 110, 0.15);
+}
+
+.branch-top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.branch-icon-box {
+  font-size: 2.2rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+.branch-title-col {
+  flex: 1;
+}
+
+.branch-name-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f1f2f6;
+}
+
+.branch-location-sub {
+  font-size: 0.76rem;
+  color: #fdcb6e;
+  margin-top: 2px;
+}
+
+.branch-level-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(253, 203, 110, 0.2);
+  color: #fdcb6e;
+  border: 1px solid #fdcb6e;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.branch-desc-text {
+  font-size: 0.78rem;
+  color: #a4b0be;
+  line-height: 1.35;
+}
+
+.branch-stats-box {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 10px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #ced6e0;
+}
+
+.branch-stat-val {
+  font-weight: 700;
+  color: #2ed573;
+}
+
+.branch-footer-row {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.btn-branch-action {
+  flex: 1;
+  background: linear-gradient(135deg, #fdcb6e, #e17055);
+  color: #111;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn-branch-action:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.btn-branch-action:disabled {
+  background: #57606f;
+  color: #a4b0be;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn-branch-upgrade {
+  background: rgba(0, 206, 201, 0.2);
+  border: 1px solid #00cec9;
+  color: #00cec9;
+}
+
+.btn-branch-upgrade:hover:not(:disabled) {
+  background: rgba(0, 206, 201, 0.35);
+}
+
+/* Tab 2: Sàn Đấu Giá (Auction House) */
+.auction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.auction-card {
+  background: #201530;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auction-card.auction-won {
+  border-color: #2ed573;
+  background: #14241b;
+  box-shadow: 0 4px 18px rgba(46, 213, 115, 0.2);
+}
+
+.auction-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auction-icon-box {
+  font-size: 2.2rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+.auction-title-col {
+  flex: 1;
+}
+
+.auction-name-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f1f2f6;
+}
+
+.auction-badge-pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.auction-desc-text {
+  font-size: 0.78rem;
+  color: #dfe6e9;
+  line-height: 1.4;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.auction-bid-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  gap: 10px;
+}
+
+.auction-price-tag {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #fdcb6e;
+}
+
+.btn-auction-bid {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 800;
+  font-size: 0.84rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 12px rgba(231, 76, 60, 0.4);
+}
+
+.btn-auction-bid:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.btn-auction-bid:disabled {
+  background: #57606f;
+  color: #a4b0be;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.won-badge {
+  background: #2ed573;
+  color: #111;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+}
+
+/* Tab 3: Leaderboard */
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #201530;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.leaderboard-table th {
+  background: #140d1e;
+  color: #fdcb6e;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 2px solid rgba(253, 203, 110, 0.2);
+}
+
+.leaderboard-table td {
+  padding: 12px;
+  font-size: 0.82rem;
+  color: #dfe6e9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard-table tr:hover {
+  background: rgba(253, 203, 110, 0.05);
+}
+
+.leaderboard-table tr.row-player {
+  background: rgba(253, 203, 110, 0.12);
+  border: 1px solid #fdcb6e;
+}
+
+.rank-badge {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.rank-1 { color: #f1c40f; }
+.rank-2 { color: #bdc3c7; }
+.rank-3 { color: #e67e22; }
+
+@media (max-width: 600px) {
+  .branches-grid, .auction-grid {
+    grid-template-columns: 1fr;
+  }
+  .franchise-hud-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-collect-royalties {
+    width: 100%;
+    justify-content: center;
+  }
+}
+

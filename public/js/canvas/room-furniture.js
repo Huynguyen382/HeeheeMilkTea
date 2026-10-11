@@ -373,29 +373,64 @@ export const RoomFurniture = {
     ctx.ellipse(x + pw, y + ph, pw, ph, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Turquoise plush cushion
+    // Turquoise plush cushion with tufting stitches
     ctx.fillStyle = '#00cec9';
     ctx.beginPath();
     ctx.ellipse(x + pw, y + ph, pw - 8, ph - 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Sleeping Shiba Inu curled up
+    // Cushion stitch tufts
+    ctx.fillStyle = '#00a8a8';
+    [-14, 0, 14].forEach(ox => {
+      ctx.fillRect(x + pw + ox - 1, y + ph + 2, 2, 2);
+    });
+
+    // Sleeping Shiba Inu / Tabby curled up
     const shibaX = x + pw;
     const shibaY = y + ph - 2;
 
-    // Gentle breathing jump
+    // Gentle breathing rhythm
     const breath = Math.sin(tick * 0.08) * 1.2;
 
-    // Shiba body (orange fur)
+    // Body shadow underneath
+    ctx.fillStyle = 'rgba(0, 80, 80, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(shibaX + 2, shibaY + 7, 16, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Shiba body (warm amber orange fur)
     ctx.fillStyle = '#e67e22';
     ctx.beginPath();
     ctx.ellipse(shibaX, shibaY + breath, 18, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Fur tone gradient / back stripe
+    ctx.fillStyle = '#d35400';
+    ctx.beginPath();
+    ctx.ellipse(shibaX + 2, shibaY - 3 + breath, 13, 5, -0.2, 0, Math.PI * 2);
     ctx.fill();
 
     // White chest & belly
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.ellipse(shibaX + 4, shibaY + 2 + breath, 10, 6, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Curled bushy tail with white tip and twitch
+    const tailTwitch = Math.sin(tick * 0.1) * 1.5;
+    ctx.fillStyle = '#d35400';
+    ctx.beginPath();
+    ctx.ellipse(shibaX + 16, shibaY - 2 + breath + tailTwitch, 6, 6, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(shibaX + 18, shibaY - 4 + breath + tailTwitch, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Front tucked paws (white socks)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(shibaX - 4, shibaY + 5 + breath, 3.5, 2.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Shiba Head
@@ -413,27 +448,37 @@ export const RoomFurniture = {
     ctx.fillStyle = '#1c0f0a';
     ctx.fillRect(shibaX - 16, shibaY - 1 + breath, 3, 2.5);
 
-    // Pointy Shiba Ears
+    // Pointy Shiba Ears with inner pink
     ctx.fillStyle = '#d35400';
     ctx.beginPath();
     ctx.moveTo(shibaX - 14, shibaY - 10 + breath);
     ctx.lineTo(shibaX - 11, y - 17 + breath);
     ctx.lineTo(shibaX - 7, shibaY - 9 + breath);
     ctx.fill();
+    ctx.fillStyle = '#fab1a0';
+    ctx.beginPath();
+    ctx.moveTo(shibaX - 13, shibaY - 11 + breath);
+    ctx.lineTo(shibaX - 11, y - 15 + breath);
+    ctx.lineTo(shibaX - 9, shibaY - 10 + breath);
+    ctx.fill();
 
     // Peaceful sleeping eye curve
     ctx.strokeStyle = '#1c0f0a';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.arc(shibaX - 9, shibaY - 3 + breath, 2, 0, Math.PI);
+    ctx.arc(shibaX - 9, shibaY - 3 + breath, 2.5, 0, Math.PI);
     ctx.stroke();
 
     // Sleep Zzz bubbles if not cheered
     if (petHappyTimer <= 0) {
       ctx.fillStyle = '#a29bfe';
-      ctx.font = 'bold 9px sans-serif';
-      const zY = (tick * 0.25) % 10;
-      ctx.fillText('z', shibaX + 16, shibaY - 6 - zY);
+      ctx.font = 'bold 9px monospace';
+      const zPhase = (tick * 0.05) % 3;
+      const zY1 = ((tick * 0.3) % 18);
+      const zY2 = ((tick * 0.3 + 9) % 18);
+      ctx.fillText('z', shibaX + 13, shibaY - 6 - zY1);
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText('Z', shibaX + 18, shibaY - 12 - zY2);
     }
 
     ctx.restore();

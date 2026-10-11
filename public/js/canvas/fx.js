@@ -14,6 +14,9 @@ export const fxMethods = {
     const currentX = (this.queue.length > 0) ? this.queue[0].currentX : this.customerX;
 
     // Spawn floating coins & sparkles
+    if (this.floatingTexts.length > 1) {
+      this.floatingTexts = this.floatingTexts.slice(-1);
+    }
     this.floatingTexts.push({
       text: `+${payout.toLocaleString('vi-VN')}đ ⭐`,
       x: currentX + 5,
@@ -49,6 +52,9 @@ export const fxMethods = {
   triggerFailEffects() {
     this.bubbleType = 'angry';
     const currentX = (this.queue.length > 0) ? this.queue[0].currentX : this.customerX;
+    if (this.floatingTexts.length > 1) {
+      this.floatingTexts = this.floatingTexts.slice(-1);
+    }
     this.floatingTexts.push({
       text: 'HUỶ ĐƠN! ❌',
       x: currentX,
@@ -301,13 +307,26 @@ export const fxMethods = {
       }
     }
 
-    // 7. Crystal Specular Glare Lines on Cup Edge
+    // 7. Crystal Specular Glare Lines & Condensation Dew Droplets on Cup
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(topL + 2, y + 6);
     ctx.lineTo(botL + 2, y + cupH - 2);
     ctx.stroke();
+
+    // Cold Condensation Droplets & Running Dew Trails (Giọt sương ngưng tụ mát lạnh)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.beginPath();
+    ctx.arc(topL + 5, y + 12, 1, 0, Math.PI * 2);
+    ctx.arc(topR - 4, y + 16, 1.2, 0, Math.PI * 2);
+    ctx.arc(botL + 4, y + 20, 0.9, 0, Math.PI * 2);
+    ctx.arc(botR - 3, y + 21, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+    // Tiny water droplet trail lines
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.42)';
+    ctx.fillRect(topL + 4.8, y + 12, 0.7, 3);
+    ctx.fillRect(topR - 4.2, y + 16, 0.7, 3.5);
 
     // 8. Cup Lip Rim & Dome Lid
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';

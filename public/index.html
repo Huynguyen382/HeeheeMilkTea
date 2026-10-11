@@ -9,10 +9,22 @@
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/room.css">
+  <link rel="stylesheet" href="css/farm.css">
+  <link rel="stylesheet" href="css/franchise.css">
+  <link rel="stylesheet" href="css/staff.css">
   <script>
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        keys.forEach(k => {
+          if (k !== 'heehee-boba-v6') caches.delete(k);
+        });
+      });
+    }
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => {
+        navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+          reg.update();
+        }).catch(err => {
           console.warn('Service Worker registration skipped:', err);
         });
       });
@@ -52,6 +64,18 @@
         <button id="btn-pricing-header" class="hud-stat-pill pill-pricing" style="background: rgba(241, 196, 15, 0.15); border: 1.5px solid #f1c40f; color: #f1c40f; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;" title="Bảng Giá Trà Sữa & Mặc Cả">
           <span>🏷️ Bảng Giá</span>
         </button>
+        <button id="btn-farm-header" class="hud-stat-pill pill-farm" style="background: rgba(46, 213, 115, 0.15); border: 1.5px solid #2ed573; color: #2ed573; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; position: relative;" title="Nông Trại Chè Mộc Châu & Xưởng Chế Biến">
+          <span>🌱 Nông Trại</span>
+          <span class="nav-menu-badge" id="hud-farm-badge" style="display: none; top: -3px; right: -3px;"></span>
+        </button>
+        <button id="btn-franchise-header" class="hud-stat-pill pill-franchise" style="background: rgba(253, 203, 110, 0.15); border: 1.5px solid #fdcb6e; color: #fdcb6e; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;" title="Đế Chế Nhượng Quyền & Sàn Đấu Giá Trà Quý">
+          <span>👑 Nhượng Quyền</span>
+        </button>
+        <button id="btn-staff-header" class="hud-stat-pill pill-staff" style="background: rgba(162, 155, 254, 0.15); border: 1.5px solid #a29bfe; color: #a29bfe; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; position: relative;" title="Thuê NPC Trực Quầy & Thu Nhập Offline">
+          <span id="btn-staff-icon">🧑‍🍳</span>
+          <span id="btn-staff-label">Nhân Viên</span>
+          <span class="nav-menu-badge" id="hud-staff-badge" style="display: none; top: -3px; right: -3px;"></span>
+        </button>
         <!-- Menu toggle button in header -->
         <button id="btn-menu-header" class="btn-hud-menu" title="Mở Bảng Điều Khiển & Cài Đặt Quán">
           <span class="hud-menu-icon">☰</span>
@@ -71,6 +95,10 @@
         </span>
       </div>
       <div class="hud-sub-right">
+        <!-- Bối cảnh hiện tại (Nhấn để chọn đổi bối cảnh nhanh) -->
+        <div id="scene-badge" class="time-badge" style="cursor: pointer; border-color: #f1c40f; color: #ffeaa7; background: rgba(241, 196, 15, 0.15);" title="Bối cảnh hiện tại - Nhấn để chọn đổi bối cảnh theo ý muốn">
+          🏡 Phố Cổ
+        </div>
         <!-- Đồng hồ & Trạng thái tuần tra đêm (7h00 - 22h30) -->
         <div id="game-clock-badge" class="time-badge" style="cursor: pointer;" title="Giờ bán: 7h00 - 22h30. Quá 22h30 công an đi tuần (xác suất 75% + 10%/giờ). Sau 1h sáng bùa vô hiệu!">
           🕒 <span id="game-clock-text">08:00</span> • <span id="game-clock-status">🟢 Giờ bán</span>
@@ -94,6 +122,8 @@
       <span id="buff-stealth" style="display: none; background: rgba(139, 233, 253, 0.2); border: 1px solid #8be9fd; color: #8be9fd; border-radius: 4px; padding: 2px 6px;">🔮 Ẩn Thân Kích Hoạt</span>
       <span id="buff-sabotage" style="display: none; background: rgba(255, 85, 85, 0.3); border: 1.5px solid #ff5555; color: #ff5555; border-radius: 4px; padding: 2px 7px; font-weight: bold; animation: pulse 1.5s infinite;">🚨 Đang Bị Quán Khác Chơi Xấu</span>
       <span id="buff-live-event" style="display: none; background: rgba(245, 158, 11, 0.25); border: 1.5px solid #f59e0b; color: #fbbf24; border-radius: 4px; padding: 2px 7px; font-weight: bold;">🎪 Sự Kiện Đang Diễn Ra</span>
+      <span id="buff-active-staff" style="display: none; background: rgba(162, 155, 254, 0.25); border: 1.5px solid #a29bfe; color: #a29bfe; border-radius: 4px; padding: 2px 7px; font-weight: bold; cursor: pointer;" title="Bấm để xem quản lý nhân viên">🧑‍🍳 <span id="buff-staff-name">Nhân Viên</span>: <span id="buff-staff-time">--:--</span> (<span id="buff-staff-money" style="color: #55efc4;">+0đ</span>)</span>
+      <span id="buff-weather" style="display: none; background: rgba(253, 203, 110, 0.2); border: 1.5px solid #fdcb6e; color: #ffeaa7; border-radius: 4px; padding: 2px 7px; font-weight: bold; cursor: pointer;" title="Thời tiết hiện tại - Nhấn để xem chi tiết & dự báo">🌤️ <span id="buff-weather-text">Nắng Vàng (+25% Khách)</span></span>
     </div>
 
     <!-- LOW REPUTATION (< 3.0⭐) ALERT & RESCUE BANNER -->
@@ -348,11 +378,32 @@
               <span class="m-desc">Nhập cốt trà, topping & vật tư</span>
             </div>
           </button>
+          <button class="menu-item-btn" id="menu-btn-farm" style="border-color: #2ed573;">
+            <span class="m-icon">🌱</span>
+            <div class="m-info">
+              <span class="m-title" style="color: #2ed573;">Nông Trại Mộc Châu</span>
+              <span class="m-desc">Thu hoạch chè & ủ siro Organic 5⭐</span>
+            </div>
+          </button>
           <button class="menu-item-btn" id="menu-btn-upgrades">
             <span class="m-icon">🛒</span>
             <div class="m-info">
               <span class="m-title">Nâng Cấp & Công Thức</span>
               <span class="m-desc">Mua máy dập, thú cưng & món mới</span>
+            </div>
+          </button>
+          <button class="menu-item-btn" id="menu-btn-franchise" style="border-color: #fdcb6e;">
+            <span class="m-icon">👑</span>
+            <div class="m-info">
+              <span class="m-title" style="color: #fdcb6e;">Đế Chế Nhượng Quyền</span>
+              <span class="m-desc">Mở chi nhánh toàn cầu & Đấu giá</span>
+            </div>
+          </button>
+          <button class="menu-item-btn" id="menu-btn-staff" style="border-color: #a29bfe;">
+            <span class="m-icon">🧑‍🍳</span>
+            <div class="m-info">
+              <span class="m-title" id="menu-staff-title" style="color: #a29bfe;">Nhân Viên & Thu Nhập Offline</span>
+              <span class="m-desc" id="menu-staff-desc">Thuê NPC trực quầy & tích luỹ doanh thu (5 TC/h)</span>
             </div>
           </button>
           <button class="menu-item-btn" id="nav-debt">
@@ -420,10 +471,10 @@
             </div>
           </button>
           <button class="menu-item-btn" id="btn-toggle-scene">
-            <span class="m-icon">🏛️</span>
+            <span class="m-icon" id="menu-scene-icon">🏡</span>
             <div class="m-info">
-              <span class="m-title" id="menu-scene-title">Đổi Bối Cảnh</span>
-              <span class="m-desc">Cổng Parabol BK ↔ Phố Nhỏ Quê</span>
+              <span class="m-title" id="menu-scene-title">Chọn Bối Cảnh Quán</span>
+              <span class="m-desc" id="menu-scene-desc">Nhấn để chọn địa điểm & khung cảnh</span>
             </div>
           </button>
           <button class="menu-item-btn" id="nav-sound">
@@ -500,8 +551,13 @@
   <div class="modal-overlay" id="modal-daily-quests">
     <div class="modal-content" style="max-width: 460px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
-        <div class="modal-title" style="color: #00cec9; display: flex; align-items: center; gap: 6px;">
-          <span>📋 NHIỆM VỤ HẰNG NGÀY</span>
+        <div>
+          <div class="modal-title" style="color: #00cec9; display: flex; align-items: center; gap: 6px;">
+            <span>📋 NHIỆM VỤ HẰNG NGÀY</span>
+          </div>
+          <div id="modal-daily-quests-date" style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">
+            ⏰ Làm mới vào 00:00 hằng ngày (Giờ thực tế GMT+7)
+          </div>
         </div>
         <button class="btn-close" id="close-daily-quests">&times;</button>
       </div>
@@ -757,6 +813,12 @@
         <div style="color: #f4c430; font-weight: bold; font-size: 1.05rem;">👑 ĐẠI CHIẾN BÁCH KHOA TOÀN THẮNG!</div>
         <div style="color: #dfe6e9; font-size: 0.9rem; margin: 5px 0;">Đã tích lũy đủ 50.000.000đ! Lão Ba (Trâu Vàng) tâm phục khẩu phục. HeeHee chính thức gom đủ vốn mở <b>Flagship Store 2 Tầng Phố Đi Bộ</b>!</div>
         <button id="btn-unlock-chapter-3" class="btn-action-wide" style="background: linear-gradient(135deg, #f4c430, #2ecc71); color: #111; font-weight: bold; font-size: 0.98rem; padding: 9px; margin-top: 4px;">🏰 MỞ KHÓA CHƯƠNG 3: FLAGSHIP PHỐ ĐI BỘ</button>
+      </div>
+      <!-- CHAPTER 4 UNLOCK SECTION (Sau khi hoàn thành Chương 3 và tích lũy đủ 100.000.000đ) -->
+      <div id="chapter-4-unlock-section" style="display: none; margin-top: 10px; padding: 10px; background: rgba(253, 203, 110, 0.15); border: 2px solid #fdcb6e; border-radius: 6px; text-align: center;">
+        <div style="color: #fdcb6e; font-weight: bold; font-size: 1.05rem;">👑 VƯƠN TẦM ĐẾ CHẾ TOÀN CẦU!</div>
+        <div style="color: #dfe6e9; font-size: 0.9rem; margin: 5px 0;">Đã tích lũy đủ 100.000.000đ! Vươn ra khỏi Phố Đi Bộ để thành lập Chuỗi Nhượng Quyền HeeHee Toàn Cầu (Sài Gòn, Đà Nẵng, Tokyo, Seoul) & Sàn Đấu Giá Trà Quý!</div>
+        <button id="btn-unlock-chapter-4-debt" class="btn-action-wide" style="background: linear-gradient(135deg, #fdcb6e, #e17055); color: #111; font-weight: bold; font-size: 0.98rem; padding: 9px; margin-top: 4px;">👑 MỞ KHÓA CHƯƠNG 4: ĐẾ CHẾ NHƯỢNG QUYỀN</button>
       </div>
     </div>
   </div>
@@ -1121,10 +1183,13 @@
 
         <!-- STAFF DELEGATION SECTION (CHƯƠNG 3) -->
         <div style="margin-top: 6px; padding-top: 6px; border-top: 2px dashed #f4c430;">
-          <div style="font-weight: bold; color: #f4c430; font-size: 1.15rem; margin-bottom: 4px;">👥 PHÂN QUYỀN NHÂN SỰ (STAFF DELEGATION)</div>
+          <div style="font-weight: bold; color: #f4c430; font-size: 1.15rem; margin-bottom: 4px;">👥 TUYỂN DỤNG &amp; PHÂN QUYỀN NHÂN SỰ</div>
           <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;">
-            Thăng chức cho đồng đội để tự động hóa quy trình và bùng nổ năng suất bán hàng!
+            Thuê NPC Barista trực quầy tự động bằng TeaCoin (5 TC/giờ) hoặc thăng chức quản lý cho đồng đội!
           </div>
+          <button type="button" class="btn-action-wide" id="btn-open-staff-from-upgrades" style="background: linear-gradient(135deg, #6c5ce7, #00cec9); color: #fff; font-weight: bold; margin-bottom: 10px; box-shadow: 0 0 12px rgba(0, 206, 201, 0.35);">
+            🧑‍🍳 Mở Bảng Thuê NPC Trực Quầy Tự Động (5 TeaCoin/giờ)
+          </button>
 
           <!-- Staff 1: Bé Bắp -->
           <div style="background: #241424; padding: 10px; border-radius: 6px; border: 1px solid #f4c430; margin-bottom: 8px;">
@@ -1409,9 +1474,12 @@
       <!-- TAB 1: VISUAL NOVEL DIALOGUE SCENE -->
       <div id="story-view-dialogue" style="display: flex; flex-direction: column; gap: 8px;">
         <!-- Chapter badge & Title -->
-        <div id="story-chapter-badge" style="background: rgba(244, 196, 48, 0.12); border: 1px solid var(--gold); border-radius: 6px; padding: 4px 8px; font-size: 0.95rem; color: var(--gold); display: flex; justify-content: space-between; align-items: center;">
+        <div id="story-chapter-badge" style="background: rgba(244, 196, 48, 0.12); border: 1px solid var(--gold); border-radius: 6px; padding: 4px 8px; font-size: 0.95rem; color: var(--gold); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
           <span id="story-chapter-title">Chương 1: Xe Đẩy Vỉa Hè (Món Nợ 3 Triệu)</span>
-          <button id="btn-story-replay" style="background: none; border: none; color: #8be9fd; cursor: pointer; font-size: 0.88rem;">🔄 Đọc lại từ đầu</button>
+          <div style="display: flex; gap: 5px; align-items: center;">
+            <div id="story-chapter-selector" style="display: flex; gap: 3px;"></div>
+            <button id="btn-story-replay" style="background: none; border: none; color: #8be9fd; cursor: pointer; font-size: 0.84rem;">🔄 Đọc lại</button>
+          </div>
         </div>
 
         <!-- Character Avatar & Speech Bubble -->
@@ -1445,8 +1513,13 @@
 
       <!-- TAB 2: CỘT MỐC NHIỆM VỤ DẪN DẮT (QUESTS) -->
       <div id="story-view-quests" style="display: none;">
-        <div style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 6px;">
-          Hoàn thành các cột mốc cốt truyện dưới đây để xây dựng tiệm trà sữa HeeHee vững mạnh và thoát khỏi gánh nặng nợ nần!
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+          <div style="color: var(--text-muted); font-size: 0.88rem; flex: 1;">
+            Cột mốc & nhiệm vụ phát triển tiệm trà sữa HeeHee:
+          </div>
+          <div id="story-quests-chapter-selector" style="display: flex; gap: 4px;">
+            <!-- Rendered dynamically via story.js -->
+          </div>
         </div>
         <div class="quest-list" id="story-quest-list">
           <!-- Dynamic quests rendered via JS -->
@@ -1734,14 +1807,292 @@
         </ul>
       </div>
 
-      <div style="display: flex; gap: 8px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
         <button id="btn-test-lightning" class="btn-action-wide" style="display: none; margin: 0; background: linear-gradient(135deg, #a29bfe, #6c5ce7); color: #fff; font-weight: bold;">
           ⚡ Kích Hoạt Sấm Sét Thử Nghiệm!
         </button>
       </div>
 
+      <!-- QUICK WEATHER PREVIEW SWITCHER -->
+      <div style="margin-bottom: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px; border: 1px solid rgba(255,255,255,0.06);">
+        <div style="font-size: 0.8rem; font-weight: bold; color: #dfe6e9; margin-bottom: 6px; text-align: center;">🧪 TRẢI NGHIỆM ĐỔI HIỆU ỨNG THỜI TIẾT:</div>
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;" id="weather-test-btns">
+          <button class="btn-weather-pill" data-weather="sunny" style="background: rgba(241, 196, 15, 0.18); border: 1px solid #f1c40f; color: #f1c40f; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">☀️ Nắng</button>
+          <button class="btn-weather-pill" data-weather="rainy" style="background: rgba(52, 152, 219, 0.18); border: 1px solid #3498db; color: #74b9ff; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">🌧️ Mưa</button>
+          <button class="btn-weather-pill" data-weather="stormy" style="background: rgba(162, 155, 254, 0.2); border: 1px solid #a29bfe; color: #e056fd; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">⛈️ Bão</button>
+          <button class="btn-weather-pill" data-weather="cloudy" style="background: rgba(149, 165, 166, 0.18); border: 1px solid #a4b0be; color: #dfe6e9; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">⛅ Râm</button>
+          <button class="btn-weather-pill" data-weather="windy" style="background: rgba(46, 204, 113, 0.18); border: 1px solid #2ecc71; color: #55efc4; border-radius: 6px; padding: 6px 2px; font-size: 0.78rem; font-weight: bold; cursor: pointer;">🍃 Gió</button>
+        </div>
+      </div>
+
       <div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; margin-top: 10px;">
         💡 Thời tiết thay đổi ngẫu nhiên mỗi khi Kết Ca (sang ngày mới) hoặc do Admin kích hoạt từ trang quản trị!
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BẢNG CHỌN BỐI CẢNH & KHUNG CẢNH QUÁN (SCENE SELECTOR MODAL) -->
+  <div class="modal-overlay" id="modal-scene-selector" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 480px; max-height: 90vh; overflow-y: auto; border-color: #f1c40f; background: #191224;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #f1c40f; display: flex; align-items: center; gap: 6px;">
+          <span>🗺️ CHỌN BỐI CẢNH & KHUNG GIỜ QUÁN</span>
+        </div>
+        <button class="btn-close" id="close-scene-selector">&times;</button>
+      </div>
+
+      <div style="font-size: 0.85rem; color: #dfe6e9; margin-bottom: 10px; line-height: 1.4;">
+        Chọn trực tiếp địa điểm kinh doanh mà bạn yêu thích! Các bối cảnh mới sẽ tự động mở khóa khi bạn thăng cấp chương cốt truyện.
+      </div>
+
+      <!-- DANH SÁCH 5 BỐI CẢNH -->
+      <div id="scene-selector-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+        <!-- Injected dynamically via ui.js -->
+      </div>
+
+      <!-- BỘ CHỌN NHANH KHUNG GIỜ ÁNH SÁNG (SÁNG / TRƯA / CHIỀU / TỐI / TỰ ĐỘNG) -->
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px;">
+        <div style="font-size: 0.82rem; font-weight: bold; color: #8be9fd; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span>🌅 KHUNG GIỜ ÁNH SÁNG BỐI CẢNH:</span>
+          <span id="scene-time-mode-label" style="font-size: 0.75rem; color: #50fa7b;">⏱️ Theo đồng hồ quán</span>
+        </div>
+        <div id="scene-time-selector-btns" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;">
+          <button type="button" class="btn-scene-time" data-time="auto" style="background: rgba(80, 250, 123, 0.18); border: 1px solid #50fa7b; color: #50fa7b; border-radius: 6px; padding: 6px 2px; font-size: 0.76rem; font-weight: bold; cursor: pointer;">🔄 Tự động</button>
+          <button type="button" class="btn-scene-time" data-time="morning" style="background: rgba(255, 159, 67, 0.15); border: 1px solid #ff9f43; color: #ffeaa7; border-radius: 6px; padding: 6px 2px; font-size: 0.76rem; font-weight: bold; cursor: pointer;">🌅 Sáng</button>
+          <button type="button" class="btn-scene-time" data-time="noon" style="background: rgba(241, 196, 15, 0.15); border: 1px solid #f1c40f; color: #f1c40f; border-radius: 6px; padding: 6px 2px; font-size: 0.76rem; font-weight: bold; cursor: pointer;">☀️ Trưa</button>
+          <button type="button" class="btn-scene-time" data-time="afternoon" style="background: rgba(230, 126, 34, 0.15); border: 1px solid #e67e22; color: #fab1a0; border-radius: 6px; padding: 6px 2px; font-size: 0.76rem; font-weight: bold; cursor: pointer;">🌇 Chiều</button>
+          <button type="button" class="btn-scene-time" data-time="night" style="background: rgba(162, 155, 254, 0.15); border: 1px solid #a29bfe; color: #a29bfe; border-radius: 6px; padding: 6px 2px; font-size: 0.76rem; font-weight: bold; cursor: pointer;">🌙 Tối</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NÔNG TRẠI CHÈ MỘC CHÂU & XƯỞNG CHẾ BIẾN THỦ CÔNG (FARM & CRAFTING MODAL) -->
+  <div class="modal-overlay" id="modal-farm" style="z-index: 100001;">
+    <div class="modal-content farm-modal-content">
+      <!-- Panorama Header -->
+      <div class="farm-header-panorama">
+        <div class="farm-header-top">
+          <div class="farm-header-title">
+            <span class="farm-title-icon">🌱</span>
+            <div class="farm-title-text">
+              <h2>NÔNG TRẠI CHÈ MỘC CHÂU</h2>
+              <p>Thu hoạch búp trà hữu cơ & ủ siro, nấu trân châu Organic 5⭐ thủ công</p>
+            </div>
+          </div>
+          <button class="btn-close" id="close-farm">&times;</button>
+        </div>
+
+        <!-- Live Stats HUD Bar -->
+        <div class="farm-hud-stats-bar">
+          <span class="farm-stat-pill">💰 Tiền mặt: <b id="farm-stat-money" style="color: #2ed573;">0đ</b></span>
+          <span class="farm-stat-pill">🍵 TeaCoin: <b id="farm-stat-teacoin" style="color: #00cec9;">0</b></span>
+          <span class="farm-stat-pill">🧺 Thu hoạch: <b id="farm-stat-harvests" style="color: #f1c40f;">0 vụ</b></span>
+          <span class="farm-stat-pill farm-stat-organic" id="farm-stat-organic-badge">
+            🍃 Signature Organic 5⭐: Còn 0 ly
+          </span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="farm-nav-tabs">
+        <button class="farm-nav-tab active" data-tab="farm-plots">
+          <span>🌱 Đồi Chè Mộc Châu</span>
+        </button>
+        <button class="farm-nav-tab" data-tab="farm-craft">
+          <span>🥣 Xưởng Chế Biến Thủ Công</span>
+        </button>
+        <button class="farm-nav-tab" data-tab="farm-storage">
+          <span>📦 Kho Nông Sản Thô</span>
+        </button>
+      </div>
+
+      <!-- Tab Panes Container -->
+      <div class="farm-body-container">
+        <!-- TAB 1: ĐỒI CHÈ MỘC CHÂU -->
+        <div class="farm-tab-pane" id="tab-farm-plots" style="display: block;">
+          <div class="farm-toolbar">
+            <span class="farm-toolbar-desc">
+              💡 Gieo hạt búp trà & hoa quả giúp <b>tiết kiệm 50% chi phí nguyên liệu</b> so với mua sẵn tại chợ sỉ!
+            </span>
+            <button class="btn-farm-action" id="btn-farm-harvest-all" style="display: none; background: linear-gradient(135deg, #f1c40f, #2ed573); color: #111;">
+              🧺 Thu Hoạch Tất Cả
+            </button>
+          </div>
+
+          <!-- Plots Grid -->
+          <div class="farm-plots-grid" id="farm-plots-grid">
+            <!-- Plots injected by farm.js -->
+          </div>
+        </div>
+
+        <!-- TAB 2: XƯỞNG CHẾ BIẾN THỦ CÔNG -->
+        <div class="farm-tab-pane" id="tab-farm-craft" style="display: none;">
+          <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.84rem; color: #ced6e0;">
+            ✨ Chế biến nông sản tươi từ Đồi Chè Mộc Châu để mở khóa nhãn <b>"Signature Organic 5⭐"</b>: <b>Tăng +40% giá bán</b> cho toàn bộ đồ uống và nhận thêm đánh giá 5 sao từ thực khách!
+          </div>
+
+          <div class="farm-craft-list" id="farm-craft-recipes-list">
+            <!-- Craft recipes injected by farm.js -->
+          </div>
+        </div>
+
+        <!-- TAB 3: KHO NÔNG SẢN THÔ -->
+        <div class="farm-tab-pane" id="tab-farm-storage" style="display: none;">
+          <div style="margin-bottom: 12px; font-size: 0.84rem; color: #a4b0be;">
+            Kho nông sản thu hái từ các ô đất, sử dụng làm nguyên liệu cho Xưởng Chế Biến:
+          </div>
+
+          <div class="farm-storage-grid" id="farm-storage-materials-grid">
+            <!-- Raw materials storage injected by farm.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- INLINE DIALOG: CHỌN HẠT GIỐNG GIEO TRỒNG -->
+      <div class="dialog-overlay-inline" id="dialog-plant-crop" style="display: none;">
+        <div class="dialog-content-box">
+          <div class="dialog-header">
+            <h3 id="plant-dialog-plot-title">🌱 Chọn Giống Cây Trồng Mộc Châu</h3>
+            <button class="btn-close" id="close-plant-dialog" style="padding: 2px 8px; font-size: 1.2rem;">&times;</button>
+          </div>
+          <div class="dialog-body" id="plant-crop-list">
+            <!-- Crops catalog injected by farm.js -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ĐẾ CHẾ NHƯỢNG QUYỀN & SÀN ĐẤU GIÁ (FRANCHISE & AUCTION MODAL) -->
+  <div class="modal-overlay" id="modal-franchise" style="z-index: 100001;">
+    <div class="modal-content franchise-modal-content">
+      <!-- Panorama Header -->
+      <div class="franchise-header-panorama">
+        <div class="franchise-header-top">
+          <div class="franchise-header-title">
+            <span class="franchise-title-icon">👑</span>
+            <div class="franchise-title-text">
+              <h2>ĐẾ CHẾ NHƯỢNG QUYỀN & SÀN ĐẤU GIÁ TRÀ QUÝ</h2>
+              <p>Mở rộng chuỗi toàn cầu, thu tiền thụ động và sở hữu mẻ trà cổ thụ vô giá</p>
+            </div>
+          </div>
+          <button class="btn-close" id="close-franchise">&times;</button>
+        </div>
+
+        <!-- Live Stats HUD Bar -->
+        <div class="franchise-hud-bar">
+          <div class="franchise-stats-group">
+            <span class="franchise-stat-pill">💰 Tiền mặt: <b id="franchise-stat-money" style="color: #2ed573;">0đ</b></span>
+            <span class="franchise-stat-pill">🏛️ Tổng tài sản: <b id="franchise-stat-networth" style="color: #fdcb6e;">0đ</b></span>
+            <span class="franchise-stat-pill">🌐 Chi nhánh: <b id="franchise-stat-branches" style="color: #74b9ff;">0/4</b></span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.78rem; color: #ced6e0;">Tiền chờ thu: <b id="franchise-stat-pending" style="color: #f1c40f;">0đ</b></span>
+            <button class="btn-collect-royalties" id="btn-collect-royalties" disabled>
+              💰 Thu Tiền Nhượng Quyền
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chapter 4 Unlock Banner (If in Chapter 3) -->
+      <div id="franchise-c4-unlock-banner" style="display: none; background: rgba(253, 203, 110, 0.15); border-bottom: 1px solid rgba(253, 203, 110, 0.3); padding: 10px 16px; justify-content: space-between; align-items: center;">
+        <div style="font-size: 0.84rem; color: #dfe6e9;">
+          👑 <b>Điều kiện mở Chương 4:</b> Đạt 100.000.000đ vốn để nhận ngay Chi Nhánh Sài Gòn đầu tiên và mở quyền đấu giá quốc tế!
+        </div>
+        <button id="btn-unlock-chapter-4" class="btn-branch-action" style="padding: 5px 12px; font-size: 0.8rem; flex: none;">
+          🚀 Mở Khóa Chương 4 Ngay
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="franchise-nav-tabs">
+        <button class="franchise-nav-tab active" data-tab="branches">
+          <span>🌐 Chuỗi Chi Nhánh</span>
+        </button>
+        <button class="franchise-nav-tab" data-tab="auction">
+          <span>🔨 Sàn Đấu Giá Trà Quý</span>
+        </button>
+        <button class="franchise-nav-tab" data-tab="leaderboard">
+          <span>🏆 Bảng Xếp Hạng Vua Trà Sữa</span>
+        </button>
+      </div>
+
+      <!-- Tab Panes Container -->
+      <div class="franchise-body-container">
+        <!-- TAB 1: CHUỖI CHI NHÁNH -->
+        <div class="franchise-tab-pane" id="tab-branches" style="display: block;">
+          <div style="margin-bottom: 12px; font-size: 0.82rem; color: #ced6e0; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px;">
+            💡 Các chi nhánh nhượng quyền tự động sinh lời mỗi phút. Nâng cấp chi nhánh để tăng vọt doanh thu và mở khóa công thức quốc tế!
+          </div>
+          <div class="branches-grid" id="branches-grid">
+            <!-- Injected by franchise.js -->
+          </div>
+        </div>
+
+        <!-- TAB 2: SÀN ĐẤU GIÁ NGUYÊN LIỆU QUÝ -->
+        <div class="franchise-tab-pane" id="tab-auction" style="display: none;">
+          <div style="margin-bottom: 12px; font-size: 0.82rem; color: #ced6e0; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px;">
+            🔨 Sở hữu các mẻ trà cổ thụ & sữa tươi quý hiếm để kích hoạt <b>hào quang danh tiếng và tăng giá vĩnh viễn</b> cho quán trà sữa!
+          </div>
+          <div class="auction-grid" id="auction-grid">
+            <!-- Injected by franchise.js -->
+          </div>
+        </div>
+
+        <!-- TAB 3: BẢNG XẾP HẠNG -->
+        <div class="franchise-tab-pane" id="tab-leaderboard" style="display: none;">
+          <div style="margin-bottom: 12px; font-size: 0.82rem; color: #ced6e0; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px;">
+            👑 Bảng xếp hạng Top các chuỗi trà sữa sầm uất và quyền lực nhất dựa trên Tổng Tài Sản (Net Worth) & Cơ Sở Nhượng Quyền:
+          </div>
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Hạng</th>
+                <th>Thương Hiệu & Chủ Quán</th>
+                <th>Tổng Tài Sản</th>
+                <th>Cơ Sở</th>
+                <th>Đánh Giá</th>
+                <th>Danh Hiệu</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-list-body">
+              <!-- Injected by franchise.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL QUẢN LÝ NHÂN VIÊN NPC (ROADMAP: NPC_STAFF_OFFLINE_ROADMAP.md) -->
+  <div class="modal-overlay" id="modal-staff" style="z-index: 100002;">
+    <div class="modal-content staff-modal-content">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(162, 155, 254, 0.3); padding-bottom: 12px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.5rem;">🧑‍🍳</span>
+          <div>
+            <h2 style="margin: 0; font-size: 1.15rem; color: #ffeaa7;">QUẢN LÝ NHÂN VIÊN & DOANH THU OFFLINE</h2>
+            <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #b2bec3;">Tuyển dụng NPC trực quầy (5 TeaCoin/h) và tự động nhận lợi nhuận tích luỹ</p>
+          </div>
+        </div>
+        <button class="btn-close" id="close-staff" title="Đóng">&times;</button>
+      </div>
+      <div id="staff-modal-body">
+        <!-- Rendered by staff.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL BÁO CÁO THU HOẠCH OFFLINE KHI ĐĂNG NHẬP LẠI (ROADMAP: NPC_STAFF_OFFLINE_ROADMAP.md V.2) -->
+  <div class="modal-overlay" id="modal-staff-offline-summary" style="z-index: 100003;">
+    <div class="modal-content staff-modal-content offline-summary-box" style="max-width: 480px; text-align: center;">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: -10px;">
+        <button class="btn-close" id="close-staff-offline-summary" title="Đóng">&times;</button>
+      </div>
+      <div id="staff-offline-summary-body">
+        <!-- Rendered by staff.js -->
       </div>
     </div>
   </div>

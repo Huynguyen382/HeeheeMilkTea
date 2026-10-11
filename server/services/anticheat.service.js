@@ -193,7 +193,7 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   const collabBonusPercent = activeCollabs * 10;
   const collabBonus = Math.round(order.price * (collabBonusPercent / 100));
 
-  // Thưởng nhân sự (Staff Upgrades)
+  // Thưởng nhân sự (Staff Upgrades & Active Hired NPC Contract)
   const upgrades = JSON.parse(save.upgrades || '{}');
   let staffBonus = 0;
   if (upgrades.staff_be_bap_manager) {
@@ -202,6 +202,32 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   const isShipperOrder = !!(order.customer_name && (order.customer_name.includes('Lâm') || order.customer_name.includes('Shipper')));
   if (upgrades.staff_anh_lam_captain && isShipperOrder) {
     staffBonus += Math.round(order.price * 0.35); // Anh Lâm Đội Trưởng Logistics +35% đơn shipper
+  }
+
+  // Kiểm tra hợp đồng NPC đang trực quầy (NPC_STAFF_OFFLINE_ROADMAP.md)
+  let activeNpcContract = null;
+  try {
+    activeNpcContract = await db.prepare(`
+      SELECT * FROM npc_staff_contracts
+      WHERE store_id = ? AND is_active = 1 AND expires_at > ?
+      ORDER BY id DESC LIMIT 1
+    `).get(storeId, now);
+  } catch (e) {}
+
+  if (activeNpcContract) {
+    if (activeNpcContract.npc_id === 'be_bap') {
+      staffBonus += Math.round(order.price * 0.05); // Bé Bắp: Chuẩn vị trà truyền thống (+5% giá trị đơn & giảm 15% cốt liệu)
+    } else if (activeNpcContract.npc_id === 'anh_lam') {
+      staffBonus += Math.round(order.price * (isShipperOrder ? 0.25 : 0.10)); // Anh Lâm: +25% đơn Shipper, +10% đơn thường
+    } else if (activeNpcContract.npc_id === 'co_mai') {
+      staffBonus += Math.round(order.price * 0.20); // Cô Mai: +20% tiền Tip mỗi ly
+    } else if (activeNpcContract.npc_id === 'bot_p800') {
+      staffBonus += Math.round(order.price * 0.15); // Bot P-800: +15% thưởng pha chế chuẩn xác 100%
+    }
+    // Đồng bộ mốc thời gian trực quầy online để không tính trùng lặp với doanh thu offline
+    try {
+      await db.prepare('UPDATE npc_staff_contracts SET last_settled_at = ? WHERE id = ?').run(now, activeNpcContract.id);
+    } catch (e) {}
   }
 
   // Thưởng phương tiện (Vehicle Fleet)
@@ -216,14 +242,39 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     dineInBonus = Math.floor(Math.random() * 15000) + 15000; // Tip rơi trên bàn 15.000đ - 30.000đ
   }
 
-  const payout = order.price + collabBonus + staffBonus + vehicleBonus + dineInBonus;
+  const activeBuffs = JSON.parse(save.active_buffs || '{}');
+
+  // Đồ uống Signature Organic 5⭐ từ Nông Trại Mộc Châu (+40% giá bán)
+  let organicBonus = 0;
+  let isOrganic = false;
+  if (activeBuffs.organic_signature > 0) {
+    organicBonus = Math.round(order.price * 0.40);
+    isOrganic = true;
+    activeBuffs.organic_signature -= 1;
+    if (activeBuffs.organic_signature <= 0) {
+      delete activeBuffs.organic_signature;
+    }
+  }
+
+  // Đấu giá nguyên liệu cổ thụ quý hiếm (Auction House Buffs)
+  let auctionBonus = 0;
+  if (activeBuffs.permanent_tea_boost && (order.recipe_id.includes('tra_') || order.recipe_id.includes('hong_tra'))) {
+    auctionBonus += Math.round(order.price * 0.30);
+  }
+  if (activeBuffs.permanent_milk_boost && (order.recipe_id.includes('sua_') || order.recipe_id.includes('kem_kho'))) {
+    auctionBonus += Math.round(order.price * 0.45);
+  }
+  if (activeBuffs.permanent_tip_boost && dineInBonus > 0) {
+    dineInBonus = Math.round(dineInBonus * 1.50);
+  }
+
+  const payout = order.price + collabBonus + staffBonus + vehicleBonus + dineInBonus + organicBonus + auctionBonus;
   const isOverloadedNow = false;
 
   // 5. Check customer archetype effects (Tú TikToker review & Buff decrements)
   let tiktokerViral = false;
   let tiktokerGoalReached = false;
-  let repGain = dineInBonus > 0 ? 0.04 : 0.02;
-  const activeBuffs = JSON.parse(save.active_buffs || '{}');
+  let repGain = (dineInBonus > 0 ? 0.04 : 0.02) + (isOrganic ? 0.04 : 0) + (activeNpcContract?.npc_id === 'co_mai' ? 0.03 : 0);
   const isTiktokerCustomer = !!(order.customer_name && order.customer_name.includes('Tú'));
   if (isTiktokerCustomer) {
     activeBuffs.tiktoker_status = 'viral';
@@ -269,7 +320,9 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     nitro_cold_brew: 'tra_olong',
     tra_sua_dat_vang: 'tra_den',
     tra_sen_tay_ho: 'tra_lai',
-    kem_kho_banh_bong: 'tra_thai_xanh'
+    kem_kho_banh_bong: 'tra_thai_xanh',
+    matcha_kyoto_dat_bac: 'tra_thai_xanh',
+    tra_sam_nui_seoul: 'sua_tuoi'
   };
   const teaIngId = recipeTeaMap[order.recipe_id] || 'tra_den';
   currentInv[teaIngId] = Math.max(0, (currentInv[teaIngId] || 0) - 1);
@@ -282,7 +335,10 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   currentInv['ly_nap'] = Math.max(0, (currentInv['ly_nap'] || 0) - 1);
 
   // Ingredient cost estimation (Cốt trà + ly nắp ~7.000đ + topping ~3.500đ/loại)
-  const drinkIngredientCost = 7000 + (orderToppings.length * 3500);
+  const rawDrinkIngredientCost = 7000 + (orderToppings.length * 3500);
+  const drinkIngredientCost = activeNpcContract?.npc_id === 'be_bap'
+    ? Math.round(rawDrinkIngredientCost * 0.85) // Bé Bắp: Tiết kiệm 15% chi phí nguyên liệu pha chế
+    : rawDrinkIngredientCost;
 
   // Update daily stats & shift stats
   try {
@@ -325,9 +381,16 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   try {
     dailyQuests = JSON.parse(save.daily_quests || '{}');
   } catch (e) {}
+  const realDate = getRealDate();
   const currentDay = save.day_in_game || 1;
-  if (!dailyQuests || dailyQuests.day !== currentDay) {
+
+  if (dailyQuests && dailyQuests.quests && !dailyQuests.date) {
+    dailyQuests.date = realDate;
+  }
+
+  if (!dailyQuests || dailyQuests.date !== realDate) {
     dailyQuests = {
+      date: realDate,
       day: currentDay,
       allCompletedBonusClaimed: false,
       quests: {
@@ -338,6 +401,8 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
         quest_patrol_vigilant: { progress: 0, claimed: false }
       }
     };
+  } else {
+    dailyQuests.day = currentDay;
   }
   if (!dailyQuests.quests) dailyQuests.quests = {};
   if (!dailyQuests.quests.quest_checkin) dailyQuests.quests.quest_checkin = { progress: 1, claimed: false };
@@ -383,6 +448,9 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     activeCollabs,
     staffBonus,
     dineInBonus,
+    organicBonus,
+    isOrganic,
+    organicRemaining: activeBuffs.organic_signature || 0,
     newMoney,
     reputation: newRep,
     repGain,

@@ -57,7 +57,9 @@ export const RECIPE_TEA_MAP = {
   nitro_cold_brew: { teaId: 'olong_nuong', teaName: 'Ô Long Nướng', icon: '💨', btnLabel: 'Ô Long Nướng' },
   tra_sua_dat_vang: { teaId: 'den', teaName: 'Trà Đen Đậm', icon: '👑', btnLabel: 'Trà Đen Đậm' },
   tra_sen_tay_ho: { teaId: 'lai', teaName: 'Lục Trà Lài', icon: '🪷', btnLabel: 'Lục Trà Lài' },
-  kem_kho_banh_bong: { teaId: 'thai_xanh', teaName: 'Thái Xanh', icon: '🔥', btnLabel: 'Thái Xanh' }
+  kem_kho_banh_bong: { teaId: 'thai_xanh', teaName: 'Thái Xanh', icon: '🔥', btnLabel: 'Thái Xanh' },
+  matcha_kyoto_dat_bac: { teaId: 'thai_xanh', teaName: 'Thái Xanh / Matcha', icon: '🍵', btnLabel: 'Thái Xanh' },
+  tra_sam_nui_seoul: { teaId: 'sua_tuoi', teaName: 'Sữa Tươi Sâm', icon: '🇰🇷', btnLabel: 'Sữa Tươi' }
 };
 
 export const TEA_INV_MAP = {

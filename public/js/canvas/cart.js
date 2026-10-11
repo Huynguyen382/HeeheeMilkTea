@@ -259,6 +259,17 @@ export const cartMethods = {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.fillRect(cx - 5, cy + 18, 155, 1); // specular gloss line
 
+    // Stainless Steel Honeycomb Drainage Tray (Khay Inox Thoát Nước Đục Lỗ Tổ Ong)
+    ctx.fillStyle = '#94A3B8';
+    ctx.fillRect(cx + 25, cy + 17, 44, 4);
+    ctx.fillStyle = '#CBD5E1';
+    ctx.fillRect(cx + 26, cy + 17.5, 42, 3);
+    ctx.fillStyle = '#475569';
+    for (let hx = cx + 28; hx < cx + 66; hx += 3) {
+      ctx.fillRect(hx, cy + 18, 1.5, 1);
+      ctx.fillRect(hx + 1.5, cy + 19, 1.5, 1);
+    }
+
     // 6. Front Awning Support Pillars (Polished Chrome & Gold Brackets)
     ctx.fillStyle = '#c5c5d2';
     ctx.fillRect(cx + 4, cy - 35, 4, 53);
@@ -267,24 +278,39 @@ export const cartMethods = {
     ctx.fillRect(cx + 3, cy + 13, 6, 4);
     ctx.fillRect(cx + 136, cy + 13, 6, 4);
 
-    // 7. Fabric Striped Awning Roof with Scalloped Edge
+    // 7. Fabric Striped Awning Roof with Scalloped Edge & Dynamic Wind Wave
     const awningY = cy - 42;
     const stripeColors = ['#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a'];
     const sw = 18;
     for (let i = 0; i < stripeColors.length; i++) {
       ctx.fillStyle = stripeColors[i];
       const sx = cx - 8 + i * sw;
-      ctx.fillRect(sx, awningY, sw, 16);
+      const wave = Math.sin(this.tick * 0.05 + i * 0.35) * 1.5;
+      ctx.fillRect(sx, awningY, sw, 16 + wave);
 
       // Scalloped bottom ruffle
       ctx.beginPath();
-      ctx.arc(sx + sw / 2, awningY + 16, sw / 2, 0, Math.PI);
+      ctx.arc(sx + sw / 2, awningY + 16 + wave, sw / 2, 0, Math.PI);
       ctx.fill();
     }
 
     // Awning shadow underneath
     ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    ctx.fillRect(cx - 8, awningY + 16, 162, 3);
+    ctx.fillRect(cx - 8, awningY + 17, 162, 3);
+
+    // Warm twinkling fairy lights on awning edge
+    const fairyColors = ['#ff7675', '#ffeaa7', '#55efc4', '#a29bfe', '#fd79a8'];
+    for (let f = 0; f < 8; f++) {
+      const fx = cx - 2 + f * 20;
+      const fy = awningY + 18 + Math.sin(this.tick * 0.05 + f * 0.35) * 1.5;
+      const glow = (Math.sin(this.tick * 0.1 + f) + 1) * 0.3 + 0.4;
+      ctx.fillStyle = fairyColors[f % fairyColors.length];
+      ctx.fillRect(fx + 4, fy, 2.5, 2.5);
+      ctx.fillStyle = `rgba(255, 235, 160, ${glow * 0.25})`;
+      ctx.beginPath();
+      ctx.arc(fx + 5, fy + 1, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // --- SLEEPING CAT ON AWNING ROOF ---
     const catX = cx + 85;
@@ -335,8 +361,12 @@ export const cartMethods = {
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    const curScene = (typeof this.getEffectiveScene === 'function') ? this.getEffectiveScene() : (this.sceneSetting || 'town');
+    const staffName = (this.activeStaff && !this.activeStaff.expired) ? this.activeStaff.name : null;
+    const signText = staffName
+      ? `🧑‍🍳 ${staffName.toUpperCase()} TRỰC QUẦY`
+      : ((this.chapter >= 4 || curScene === 'franchise') ? '👑 HEEHEE GLOBAL 👑' : (curScene === 'moc_chau' ? '🌱 HEEHEE MỘC CHÂU' : ((this.chapter >= 3 || curScene === 'walking_street') ? '★ HEEHEE FLAGSHIP ★' : '🧋 TRÀ SỮA HEEHEE')));
     let fontSize = 9.5;
-    const signText = (this.chapter >= 3) ? '★ HEEHEE FLAGSHIP ★' : '🧋 TRÀ SỮA HEEHEE';
     ctx.font = `bold ${fontSize}px sans-serif`;
     while (ctx.measureText(signText).width > plaqueW - 14 && fontSize > 6) {
       fontSize -= 0.5;
@@ -366,34 +396,34 @@ export const cartMethods = {
     ctx.fillRect(cx + 6, cy + 6, 2, 9);
 
     // B. Glass Topping Jars with Condensation Sheen
-    this.drawGlassJar(ctx, cx + 28, cy + 7, '#111'); // Tapioca
-    this.drawGlassJar(ctx, cx + 40, cy + 7, '#f39c12'); // Golden pearl
-    this.drawGlassJar(ctx, cx + 52, cy + 7, '#27ae60'); // Matcha jelly
+    this.drawGlassJar(ctx, cx + 26, cy + 7, '#111'); // Tapioca
+    this.drawGlassJar(ctx, cx + 38, cy + 7, '#f39c12'); // Golden pearl
+    this.drawGlassJar(ctx, cx + 50, cy + 7, '#27ae60'); // Matcha jelly
 
     // C. Stainless Steel Ice Tub with Ice Scoop Handle
     ctx.fillStyle = '#95a5a6';
     ctx.beginPath();
-    ctx.roundRect(cx + 66, cy + 8, 14, 9, 1);
+    ctx.roundRect(cx + 62, cy + 8, 12, 9, 1);
     ctx.fill();
     ctx.fillStyle = '#ecf0f1'; // ice cubes
-    ctx.fillRect(cx + 68, cy + 7, 10, 4);
+    ctx.fillRect(cx + 64, cy + 7, 8, 4);
     ctx.fillStyle = '#bdc3c7';
-    ctx.fillRect(cx + 76, cy + 3, 2, 6);
+    ctx.fillRect(cx + 70, cy + 3, 2, 6);
 
-    // D. Cup Sealing Machine (Máy dập nắp)
-    const sealX = cx + 84;
+    // D. Cup Sealing Machine (Máy dập nắp - đặt giữa Chị Thảo và Nhân Viên Trực Quầy)
+    const sealX = cx + 76;
     ctx.fillStyle = '#c0392b';
     ctx.beginPath();
-    ctx.roundRect(sealX, cy + 2, 16, 16, 2);
+    ctx.roundRect(sealX, cy + 2, 15, 16, 2);
     ctx.fill();
     ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(sealX + 2, cy + 4, 12, 12);
+    ctx.fillRect(sealX + 2, cy + 4, 11, 12);
     // Film roll
     ctx.fillStyle = '#f39c12';
-    ctx.fillRect(sealX + 3, cy - 3, 10, 5);
+    ctx.fillRect(sealX + 3, cy - 3, 9, 5);
     // Pull lever
     ctx.fillStyle = '#34495e';
-    ctx.fillRect(sealX + 13, cy, 2, 7);
+    ctx.fillRect(sealX + 12, cy, 2, 7);
 
     // E. Boiling Pearl Cooker Pot with Animated Brown Sugar Bubbles & Steam
     ctx.fillStyle = '#2c3e50';
@@ -451,88 +481,279 @@ export const cartMethods = {
 
     // 1. Xe Đạp Thồ Sen Tây Hồ (🚲 Gác cạnh quán)
     if (upMap.xe_dap_tho_sen) {
-      const bx = cx - 28;
-      const by = cy + 38;
-      // Bicycle wheels
-      ctx.fillStyle = '#2d3436';
+      const bx = cx - 36;
+      const by = cy + 34;
+
+      // Ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
       ctx.beginPath();
-      ctx.arc(bx, by + 12, 6, 0, Math.PI * 2);
-      ctx.arc(bx + 16, by + 12, 6, 0, Math.PI * 2);
+      ctx.ellipse(bx + 11, by + 23, 16, 3, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#dfe6e9'; // Spokes center
-      ctx.fillRect(bx - 0.5, by + 11.5, 1, 1);
-      ctx.fillRect(bx + 15.5, by + 11.5, 1, 1);
-      // Frame (Vintage green)
-      ctx.strokeStyle = '#27ae60';
-      ctx.lineWidth = 1.2;
+
+      // Bicycle Wheels (Nan hoa căm xe sắc nét từng tia)
+      const spokeCycle = (Math.floor(this.tick / 6) % 2);
+      // Rear wheel
+      ctx.fillStyle = '#18181B';
       ctx.beginPath();
-      ctx.moveTo(bx, by + 12);
-      ctx.lineTo(bx + 7, by + 12);
-      ctx.lineTo(bx + 13, by + 6);
-      ctx.lineTo(bx + 16, by + 12);
-      ctx.moveTo(bx + 7, by + 12);
-      ctx.lineTo(bx + 5, by + 4); // seat post
-      ctx.lineTo(bx, by + 12);
+      ctx.arc(bx + 2, by + 18, 6.5, 0, Math.PI * 2);
+      ctx.arc(bx + 20, by + 18, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#475569';
+      ctx.beginPath();
+      ctx.arc(bx + 2, by + 18, 5, 0, Math.PI * 2);
+      ctx.arc(bx + 20, by + 18, 5, 0, Math.PI * 2);
+      ctx.fill();
+      // Silver spokes crosshairs
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.lineWidth = 0.8;
+      [bx + 2, bx + 20].forEach(wx => {
+        ctx.beginPath();
+        ctx.moveTo(wx - 4.5, by + 18); ctx.lineTo(wx + 4.5, by + 18);
+        ctx.moveTo(wx, by + 13.5); ctx.lineTo(wx, by + 22.5);
+        if (spokeCycle) {
+          ctx.moveTo(wx - 3.5, by + 14.5); ctx.lineTo(wx + 3.5, by + 21.5);
+          ctx.moveTo(wx + 3.5, by + 14.5); ctx.lineTo(wx - 3.5, by + 21.5);
+        }
+        ctx.stroke();
+      });
+
+      // Vintage Green Steel Frame (Khung xe Thống Nhất xanh rêu)
+      ctx.strokeStyle = '#15803D';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(bx + 2, by + 18);
+      ctx.lineTo(bx + 10, by + 18); // bottom bracket
+      ctx.lineTo(bx + 16, by + 11);
+      ctx.lineTo(bx + 20, by + 18);
+      ctx.moveTo(bx + 10, by + 18);
+      ctx.lineTo(bx + 8, by + 8); // seat tube
+      ctx.lineTo(bx + 2, by + 18);
+      ctx.moveTo(bx + 8, by + 10);
+      ctx.lineTo(bx + 16, by + 11); // top tube
       ctx.stroke();
-      // Handlebar & Saddle
-      ctx.fillStyle = '#795548';
-      ctx.fillRect(bx + 3, by + 3, 5, 1.5); // saddle
-      ctx.strokeStyle = '#95a5a6';
+
+      // Leather Saddle & Handlebar
+      ctx.fillStyle = '#78350F';
+      ctx.fillRect(bx + 6, by + 7, 6, 2); // saddle
+      ctx.strokeStyle = '#94A3B8';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(bx + 13, by + 6);
-      ctx.lineTo(bx + 12, by + 2);
-      ctx.lineTo(bx + 14, by + 2);
+      ctx.moveTo(bx + 16, by + 11);
+      ctx.lineTo(bx + 16, by + 5);
+      ctx.lineTo(bx + 18, by + 5);
       ctx.stroke();
-      // Lotus Flower Basket on Rear Rack (Bó hoa sen Tây Hồ tươi thắm)
-      ctx.fillStyle = '#55efc4';
+      ctx.fillStyle = '#FACC15';
+      ctx.fillRect(bx + 17, by + 4, 1.5, 1.5); // brass bell
+
+      // Woven Bamboo Basket overflowing with pink Lotus Blossoms (Giỏ hoa sen Tây Hồ tươi thắm)
+      ctx.fillStyle = '#D97706'; // Woven bamboo basket
+      ctx.fillRect(bx - 3, by + 9, 8, 6);
+      ctx.fillStyle = '#B45309';
+      ctx.fillRect(bx - 2, by + 10, 6, 4);
+
+      // Lotus blossoms (Búp sen bách diệp hé nở có giọt sương mai)
+      ctx.fillStyle = '#15803D'; // Lotus leaves
+      ctx.fillRect(bx - 4, by + 8, 3, 2);
+      ctx.fillRect(bx + 3, by + 8, 3, 2);
+      ctx.fillStyle = '#F472B6'; // Pink petals
       ctx.beginPath();
-      ctx.arc(bx + 1, by + 6, 3, 0, Math.PI * 2);
+      ctx.arc(bx - 1, by + 7, 2.5, 0, Math.PI * 2);
+      ctx.arc(bx + 2, by + 6, 3, 0, Math.PI * 2);
+      ctx.arc(bx + 4, by + 8, 2, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#ff7675'; // Lotus blossoms
-      ctx.beginPath();
-      ctx.arc(bx + 2, by + 4, 2, 0, Math.PI * 2);
-      ctx.arc(bx - 1, by + 5, 2, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillStyle = '#FDA4AF';
+      ctx.fillRect(bx + 1, by + 5, 2, 2);
+      ctx.fillStyle = '#FFFFFF'; // Morning dew drop
+      ctx.fillRect(bx + 2, by + 5, 1, 1);
     }
 
     // 2. Xe Dream Chiến Tem Lửa (🏍️ Đỗ cạnh vỉa hè)
     if (upMap.xe_dream_chien && (!this.motorbikeShipper || !this.motorbikeShipper.active)) {
-      const dx = cx - 18;
-      const dy = cy + 50;
+      const dx = cx - 22;
+      const dy = cy + 48;
+
       // Ground shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
       ctx.beginPath();
-      ctx.ellipse(dx + 8, dy + 10, 10, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(dx + 12, dy + 11, 16, 3.5, 0, 0, Math.PI * 2);
       ctx.fill();
-      // Wheels
-      ctx.fillStyle = '#111';
-      ctx.fillRect(dx - 3, dy + 5, 4, 4);
-      ctx.fillRect(dx + 13, dy + 5, 4, 4);
-      // Silver spokes
-      ctx.fillStyle = '#bdc3c7';
-      ctx.fillRect(dx - 2, dy + 6, 2, 2);
-      ctx.fillRect(dx + 14, dy + 6, 2, 2);
-      // Engine block & Exhaust pipe (Bô Dream sáng loáng)
-      ctx.fillStyle = '#7f8c8d';
-      ctx.fillRect(dx + 2, dy + 4, 6, 4);
-      ctx.fillStyle = '#ecf0f1';
-      ctx.fillRect(dx + 3, dy + 7, 10, 1.5);
-      // Dark Red Body with Fire Decal (Đỏ mận tem lửa)
-      ctx.fillStyle = '#78281f';
-      ctx.fillRect(dx, dy + 1, 14, 4);
-      ctx.fillStyle = '#f39c12'; // Fire decal
-      ctx.fillRect(dx + 4, dy + 2, 5, 1);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(dx + 7, dy + 1, 2, 1);
-      // Black seat
-      ctx.fillStyle = '#2c3e50';
-      ctx.fillRect(dx, dy - 1, 9, 2);
-      // Headlight & Mirror
-      ctx.fillStyle = '#f1c40f';
-      ctx.fillRect(dx + 13, dy, 2, 2);
-      ctx.fillStyle = '#bdc3c7';
-      ctx.fillRect(dx + 11, dy - 3, 1, 3);
+
+      // Spoke Wheels with chrome hubs
+      const dWheel = (wx) => {
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.arc(wx, dy + 7, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(wx, dy + 7, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#E2E8F0';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(wx - 3.5, dy + 7); ctx.lineTo(wx + 3.5, dy + 7);
+        ctx.moveTo(wx, dy + 3.5); ctx.lineTo(wx, dy + 10.5);
+        ctx.stroke();
+        ctx.fillStyle = '#E2E8F0';
+        ctx.fillRect(wx - 1, dy + 6, 2, 2);
+      };
+      dWheel(dx + 1);
+      dWheel(dx + 19);
+
+      // Chrome Exhaust Pipe emitting gentle pixel smoke puffs
+      ctx.fillStyle = '#E2E8F0';
+      ctx.fillRect(dx + 5, dy + 8, 14, 2);
+      ctx.fillStyle = '#94A3B8';
+      ctx.fillRect(dx + 18, dy + 7, 2, 3); // tip
+      // Smoke puffs
+      const smokePuff = (Math.floor(this.tick / 12) % 3);
+      ctx.fillStyle = 'rgba(226, 232, 240, 0.7)';
+      if (smokePuff === 0) ctx.fillRect(dx + 21, dy + 6, 2, 2);
+      else if (smokePuff === 1) ctx.fillRect(dx + 23, dy + 5, 2.5, 2.5);
+      else ctx.fillRect(dx + 25, dy + 4, 3, 2);
+
+      // Engine block & Gear pedal
+      ctx.fillStyle = '#64748B';
+      ctx.fillRect(dx + 6, dy + 4, 8, 5);
+      ctx.fillStyle = '#CBD5E1';
+      ctx.fillRect(dx + 7, dy + 5, 4, 3);
+      ctx.fillStyle = '#F8FAFC';
+      ctx.fillRect(dx + 8, dy + 5, 2, 1); // reflection
+
+      // Legendary White Fairing (Yếm xe trắng)
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(dx + 5, dy + 1, 4, 8);
+      ctx.fillStyle = '#E2E8F0';
+      ctx.fillRect(dx + 6, dy + 3, 2, 5);
+
+      // Deep Maroon Body with 3-tier Fire Decal (Đỏ mận tem lửa)
+      ctx.fillStyle = '#991B1B';
+      ctx.fillRect(dx + 8, dy + 1, 12, 4);
+      // Tem Lửa: Đỏ - Cam - Vàng mạ ánh kim
+      ctx.fillStyle = '#EA580C';
+      ctx.fillRect(dx + 9, dy + 2, 8, 1);
+      ctx.fillStyle = '#FACC15';
+      ctx.fillRect(dx + 10, dy + 3, 6, 1);
+      ctx.fillStyle = '#FEF08A';
+      ctx.fillRect(dx + 12, dy + 2, 1, 1); // "Dream II" gold badge
+
+      // Black Leather Seat & Chrome Rear Handle
+      ctx.fillStyle = '#1E293B';
+      ctx.fillRect(dx + 8, dy - 1, 10, 3);
+      ctx.fillStyle = '#E2E8F0';
+      ctx.fillRect(dx + 17, dy, 3, 2);
+
+      // HeeHee Express Boba Delivery Cargo Box
+      ctx.fillStyle = '#FF5376';
+      ctx.fillRect(dx + 16, dy - 6, 8, 7);
+      ctx.fillStyle = '#FF7597';
+      ctx.fillRect(dx + 17, dy - 5, 6, 5);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(dx + 18, dy - 4, 4, 2); // logo
+      ctx.fillStyle = '#831843';
+      ctx.fillRect(dx + 19, dy - 4, 2, 1);
+
+      // Front Basket with 2 Sealed Boba Cups
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(dx - 1, dy + 1, 5, 5);
+      ctx.fillStyle = '#38BDF8';
+      ctx.fillRect(dx + 0, dy + 0, 2, 3);
+      ctx.fillStyle = '#F472B6';
+      ctx.fillRect(dx + 2, dy + 0, 2, 3);
+
+      // Headlight with warm glow & Chrome Mirrors
+      ctx.fillStyle = '#FEF08A';
+      ctx.fillRect(dx + 2, dy - 1, 3, 3);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(dx + 2, dy - 1, 1, 1);
+      ctx.fillStyle = '#94A3B8';
+      ctx.fillRect(dx + 4, dy - 4, 1, 3);
+      ctx.fillStyle = '#38BDF8';
+      ctx.fillRect(dx + 3, dy - 5, 2, 2);
+    }
+
+    // 3. Xe Bán Tải Pickup 4x4 Offroad (🛻 Chở hàng Mộc Châu đỗ cạnh quầy)
+    if (upMap.xe_ban_tai_pickup || upMap.xe_ban_tai) {
+      const px = cx + 144;
+      const py = cy + 46;
+
+      // Ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+      ctx.beginPath();
+      ctx.ellipse(px + 14, py + 15, 18, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Heavy Offroad Mud-Terrain Tires with red suspension springs
+      const pTire = (wx) => {
+        ctx.fillStyle = '#EF4444'; // Red spring
+        ctx.fillRect(wx - 1, py + 7, 2, 3);
+        ctx.fillStyle = '#09090B'; // Mud tire
+        ctx.beginPath();
+        ctx.arc(wx, py + 11, 6.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#27272A';
+        ctx.beginPath();
+        ctx.arc(wx, py + 11, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#71717A';
+        ctx.fillRect(wx - 1, py + 10, 2, 2); // Hub
+      };
+      pTire(px + 5);
+      pTire(px + 23);
+
+      // Heavy Steel Chassis & Red Tow Winch
+      ctx.fillStyle = '#18181B';
+      ctx.fillRect(px - 1, py + 7, 30, 4);
+      ctx.fillStyle = '#DC2626'; // Winch
+      ctx.fillRect(px + 28, py + 8, 2, 2);
+
+      // Desert Orange Body & High Cab
+      ctx.fillStyle = '#C2410C';
+      ctx.fillRect(px + 10, py - 2, 14, 9);
+      ctx.fillStyle = '#FB923C'; // Roof highlight
+      ctx.fillRect(px + 11, py - 3, 12, 1);
+      // Tinted Windows
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(px + 12, py - 1, 4, 4); // Rear side window
+      ctx.fillRect(px + 18, py - 1, 5, 4); // Front side window
+      ctx.fillStyle = '#38BDF8';
+      ctx.fillRect(px + 19, py + 0, 1, 3); // Glare
+
+      // Safari Snorkel Air Intake on A-Pillar
+      ctx.fillStyle = '#18181B';
+      ctx.fillRect(px + 23, py - 2, 1.5, 6);
+      ctx.fillRect(px + 22, py - 4, 3, 2);
+
+      // 4-Pod Roof LED Lights
+      ctx.fillStyle = '#18181B';
+      ctx.fillRect(px + 12, py - 4, 10, 1.5);
+      for (let li = 0; li < 4; li++) {
+        ctx.fillStyle = '#FEF08A';
+        ctx.fillRect(px + 13 + li * 2.2, py - 5, 1.5, 1.5);
+      }
+
+      // Truck Bed loaded with Boba Supplies (Bao Trà Ô Long 25kg, Phuy Sữa Inox, Sọt Cam Sả)
+      ctx.fillStyle = '#9A3412';
+      ctx.fillRect(px - 1, py + 2, 12, 6);
+      // Stainless Steel Milk Drum
+      ctx.fillStyle = '#E2E8F0';
+      ctx.fillRect(px + 0, py - 2, 4, 5);
+      ctx.fillStyle = '#94A3B8';
+      ctx.fillRect(px + 0, py - 1, 4, 1);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(px + 1, py - 2, 1, 4);
+      // 25kg Mộc Châu Tea Sack with rope
+      ctx.fillStyle = '#D97706';
+      ctx.fillRect(px + 5, py - 2, 5, 5);
+      ctx.fillStyle = '#15803D';
+      ctx.fillRect(px + 6, py - 1, 3, 2); // Green tea emblem
+      ctx.fillStyle = '#FEF08A';
+      ctx.fillRect(px + 5, py + 1, 5, 0.8); // Rope tie
+      // Fruit crate (Orange & Lemongrass)
+      ctx.fillStyle = '#78350F';
+      ctx.fillRect(px + 2, py + 1, 3, 3);
+      ctx.fillStyle = '#F97316';
+      ctx.fillRect(px + 3, py + 0.5, 1.5, 1.5);
     }
   },
 

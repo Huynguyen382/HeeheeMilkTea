@@ -7,6 +7,7 @@ import { openStoryModal } from './story.js';
 import { scheduleNextOrder } from './order-manager.js';
 import { showJailModal } from './modals.js';
 import { renderOrderTicket } from './workflow.js';
+import { connectSSE } from './live-sync.js';
 
 let modalAuth = null;
 let formLogin = null;
@@ -25,6 +26,8 @@ export async function initStore() {
       state.storeState = res.state;
       if (modalAuth) modalAuth.style.display = 'none';
       updateUI();
+      if (window.checkStaffOnLoad) window.checkStaffOnLoad();
+      connectSSE();
 
       if (state.storeState.save && state.storeState.save.is_jailed === 1) {
         showJailModal(state.storeState.save.jail_reason);
@@ -126,6 +129,8 @@ export function setupAuthEvents() {
           if (modalAuth) modalAuth.style.display = 'none';
           showToast('🎉 Chào mừng bạn đến với Tiệm Trà Sữa HeeHee!', 3500);
           updateUI();
+          if (window.checkStaffOnLoad) window.checkStaffOnLoad();
+          connectSSE();
 
           const storySeenKey = 'heehee_story_seen_' + (state.storeState.store_code || 'guest');
           if (!localStorage.getItem(storySeenKey)) {
@@ -172,6 +177,8 @@ export function setupAuthEvents() {
         if (modalAuth) modalAuth.style.display = 'none';
         showToast(res.message, 3500);
         updateUI();
+        if (window.checkStaffOnLoad) window.checkStaffOnLoad();
+        connectSSE();
 
         const storySeenKey = 'heehee_story_seen_' + (state.storeState.store_code || 'guest');
         if (!localStorage.getItem(storySeenKey)) {
@@ -213,6 +220,8 @@ export function setupAuthEvents() {
         if (modalAuth) modalAuth.style.display = 'none';
         showToast(res.message, 4000);
         updateUI();
+        if (window.checkStaffOnLoad) window.checkStaffOnLoad();
+        connectSSE();
 
         const storySeenKey = 'heehee_story_seen_' + (state.storeState.store_code || 'guest');
         openStoryModal(0, 1);

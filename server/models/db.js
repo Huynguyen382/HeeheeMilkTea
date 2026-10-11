@@ -137,6 +137,22 @@ const db = {
             detail TEXT,
             logged_at TEXT NOT NULL
           );
+
+          CREATE TABLE IF NOT EXISTS npc_staff_contracts (
+            id SERIAL PRIMARY KEY,
+            store_id INTEGER NOT NULL UNIQUE REFERENCES stores(id) ON DELETE CASCADE,
+            npc_id TEXT NOT NULL,
+            hourly_rate INTEGER DEFAULT 5,
+            hired_at BIGINT NOT NULL,
+            hire_duration_hours REAL NOT NULL,
+            expires_at BIGINT NOT NULL,
+            last_settled_at BIGINT NOT NULL,
+            auto_renew INTEGER DEFAULT 0,
+            accumulated_money BIGINT DEFAULT 0,
+            accumulated_cups INTEGER DEFAULT 0,
+            is_active INTEGER DEFAULT 1,
+            created_at BIGINT NOT NULL
+          );
          `);
          await client.query(`
            ALTER TABLE active_orders ADD COLUMN IF NOT EXISTS original_price INTEGER;
@@ -148,6 +164,9 @@ const db = {
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS custom_prices TEXT DEFAULT '{}';
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS teacoin BIGINT DEFAULT 0;
            ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS daily_quests TEXT DEFAULT '{}';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS farm_data TEXT DEFAULT '{}';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS franchises TEXT DEFAULT '[]';
+           ALTER TABLE game_saves ADD COLUMN IF NOT EXISTS auction_items TEXT DEFAULT '[]';
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS orders_served BIGINT DEFAULT 0;
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_orders BIGINT DEFAULT 0;
            ALTER TABLE daily_stats ADD COLUMN IF NOT EXISTS shift_earned BIGINT DEFAULT 0;
@@ -202,6 +221,9 @@ const db = {
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN custom_prices TEXT DEFAULT '{}';"); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE game_saves ADD COLUMN teacoin INTEGER DEFAULT 0;'); } catch (e) {}
       try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN daily_quests TEXT DEFAULT '{}';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN farm_data TEXT DEFAULT '{}';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN franchises TEXT DEFAULT '[]';"); } catch (e) {}
+      try { sqliteDb.exec("ALTER TABLE game_saves ADD COLUMN auction_items TEXT DEFAULT '[]';"); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN original_price INTEGER;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE active_orders ADD COLUMN negotiation TEXT;'); } catch (e) {}
       try { sqliteDb.exec('ALTER TABLE daily_stats ADD COLUMN orders_served INTEGER DEFAULT 0;'); } catch (e) {}
@@ -302,6 +324,23 @@ const db = {
           event_type TEXT NOT NULL,
           detail TEXT,
           logged_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS npc_staff_contracts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          store_id INTEGER NOT NULL UNIQUE,
+          npc_id TEXT NOT NULL,
+          hourly_rate INTEGER DEFAULT 5,
+          hired_at INTEGER NOT NULL,
+          hire_duration_hours REAL NOT NULL,
+          expires_at INTEGER NOT NULL,
+          last_settled_at INTEGER NOT NULL,
+          auto_renew INTEGER DEFAULT 0,
+          accumulated_money INTEGER DEFAULT 0,
+          accumulated_cups INTEGER DEFAULT 0,
+          is_active INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY(store_id) REFERENCES stores(id) ON DELETE CASCADE
         );
       `);
       console.log('Local SQLite database initialized successfully at:', dbPath);

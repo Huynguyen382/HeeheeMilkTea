@@ -226,29 +226,268 @@ class SoundManager {
     setTimeout(() => this.playTone(1318.51, 'sine', 0.2, 0.18), 80);
   }
 
-  pour() {
-    this.playTone(220, 'triangle', 0.15, 0.25);
-    setTimeout(() => this.playTone(280, 'triangle', 0.15, 0.18), 60);
-  }
+  // --- BARISTA WORKSTATION ASMR SOUND EFFECTS (ROADMAP SECTION V) ---
 
+  // Gắp đá vào bình shaker: Tiếng kim loại lanh lảnh clink-clack (tần số cao 3.2 kHz)
   ice() {
-    this.playTone(1200, 'sine', 0.04, 0.15);
-    setTimeout(() => this.playTone(1600, 'sine', 0.04, 0.15), 50);
+    if (!this.soundEnabled) return;
+    this.init();
+    try {
+      const now = this.ctx.currentTime;
+      // 1. First high-frequency metallic ping (3200 Hz)
+      const osc1 = this.ctx.createOscillator();
+      const gain1 = this.ctx.createGain();
+      const filter1 = this.ctx.createBiquadFilter();
+      filter1.type = 'bandpass';
+      filter1.frequency.setValueAtTime(3200, now);
+      filter1.Q.setValueAtTime(3.8, now);
+
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(3200, now);
+      osc1.frequency.exponentialRampToValueAtTime(2950, now + 0.08);
+
+      gain1.gain.setValueAtTime(0.24, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      osc1.connect(filter1);
+      filter1.connect(gain1);
+      gain1.connect(this.ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.09);
+
+      // 2. Second bouncing ice clack rebound at 2650 Hz
+      setTimeout(() => {
+        try {
+          const now2 = this.ctx.currentTime;
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(2650, now2);
+          gain2.gain.setValueAtTime(0.18, now2);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now2 + 0.06);
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(now2);
+          osc2.stop(now2 + 0.07);
+        } catch(e) {}
+      }, 45);
+    } catch (e) {}
   }
 
-  talk(pitch = 520) {
-    this.playTone(pitch, 'triangle', 0.04, 0.12, 0.01);
-  }
+  // Bơm siro đường: Tiếng nén pít-tông dính dớp squish-pump
+  syrupPump() {
+    if (!this.soundEnabled) return;
+    this.init();
+    try {
+      const now = this.ctx.currentTime;
+      // 1. Mechanical spring click
+      const clickOsc = this.ctx.createOscillator();
+      const clickGain = this.ctx.createGain();
+      clickOsc.type = 'triangle';
+      clickOsc.frequency.setValueAtTime(1400, now);
+      clickGain.gain.setValueAtTime(0.12, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+      clickOsc.connect(clickGain);
+      clickGain.connect(this.ctx.destination);
+      clickOsc.start(now);
+      clickOsc.stop(now + 0.035);
 
+      // 2. Viscous squish-pump suction glide (220Hz -> 85Hz)
+      const squishOsc = this.ctx.createOscillator();
+      const squishGain = this.ctx.createGain();
+      const squishFilter = this.ctx.createBiquadFilter();
+      squishFilter.type = 'lowpass';
+      squishFilter.frequency.setValueAtTime(450, now);
+      squishFilter.frequency.exponentialRampToValueAtTime(120, now + 0.14);
+
+      squishOsc.type = 'sawtooth';
+      squishOsc.frequency.setValueAtTime(220, now);
+      squishOsc.frequency.exponentialRampToValueAtTime(85, now + 0.14);
+
+      squishGain.gain.setValueAtTime(0.18, now);
+      squishGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+      squishOsc.connect(squishFilter);
+      squishFilter.connect(squishGain);
+      squishGain.connect(this.ctx.destination);
+      squishOsc.start(now);
+      squishOsc.stop(now + 0.15);
+    } catch (e) {}
+  }
+  squishPump() { this.syrupPump(); }
+
+  // Lắc bình Shaker: Tiếng đá va đập mạnh trong chất lỏng chuka-chuka
   shake() {
-    this.playTone(150, 'sawtooth', 0.08, 0.22);
-    setTimeout(() => this.playTone(120, 'sawtooth', 0.08, 0.22), 80);
+    if (!this.soundEnabled) return;
+    this.init();
+    try {
+      const now = this.ctx.currentTime;
+      // Triple rhythmic shaker stroke (forward-backward-impact)
+      const playStroke = (time, baseFreq, vol) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(baseFreq, time);
+        filter.Q.setValueAtTime(2.2, time);
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(baseFreq * 0.45, time);
+        osc.frequency.exponentialRampToValueAtTime(110, time + 0.08);
+
+        gain.gain.setValueAtTime(vol, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(time);
+        osc.stop(time + 0.09);
+
+        // Resonant ice slosh ping
+        const icePing = this.ctx.createOscillator();
+        const iceGain = this.ctx.createGain();
+        icePing.type = 'triangle';
+        icePing.frequency.setValueAtTime(baseFreq * 1.8, time);
+        iceGain.gain.setValueAtTime(vol * 0.55, time);
+        iceGain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+        icePing.connect(iceGain);
+        iceGain.connect(this.ctx.destination);
+        icePing.start(time);
+        icePing.stop(time + 0.06);
+      };
+
+      playStroke(now, 850, 0.22);
+      playStroke(now + 0.07, 1050, 0.20);
+      playStroke(now + 0.14, 780, 0.16);
+    } catch (e) {}
   }
 
-  seal() {
-    this.playTone(440, 'sine', 0.06, 0.18);
-    setTimeout(() => this.playTone(880, 'sine', 0.12, 0.2), 60);
+  // Rót trà vào cốc: Dòng trà tuôn trào sóng sánh glug-glug
+  pour() {
+    if (!this.soundEnabled) return;
+    this.init();
+    try {
+      const now = this.ctx.currentTime;
+      const playGlug = (time, startFreq, endFreq, vol, dur) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(startFreq, time);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, time + dur);
+
+        gain.gain.setValueAtTime(0.001, time);
+        gain.gain.linearRampToValueAtTime(vol, time + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(time);
+        osc.stop(time + dur + 0.01);
+      };
+
+      playGlug(now, 260, 420, 0.20, 0.12);
+      playGlug(now + 0.06, 320, 540, 0.18, 0.13);
+      playGlug(now + 0.13, 380, 680, 0.15, 0.14);
+    } catch (e) {}
   }
+
+  // Dập nắp niêm phong: Cần gạt dập dứt khoát chunk-click!
+  seal() {
+    if (!this.soundEnabled) return;
+    this.init();
+    try {
+      const now = this.ctx.currentTime;
+      // 1. Heavy mechanical chunk (impact 160Hz -> 55Hz)
+      const chunkOsc = this.ctx.createOscillator();
+      const chunkGain = this.ctx.createGain();
+      const chunkFilter = this.ctx.createBiquadFilter();
+      chunkFilter.type = 'lowpass';
+      chunkFilter.frequency.setValueAtTime(350, now);
+
+      chunkOsc.type = 'triangle';
+      chunkOsc.frequency.setValueAtTime(160, now);
+      chunkOsc.frequency.exponentialRampToValueAtTime(55, now + 0.09);
+
+      chunkGain.gain.setValueAtTime(0.28, now);
+      chunkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      chunkOsc.connect(chunkFilter);
+      chunkFilter.connect(chunkGain);
+      chunkGain.connect(this.ctx.destination);
+      chunkOsc.start(now);
+      chunkOsc.stop(now + 0.10);
+
+      // 2. High-pitch heat-lock click at +70ms (1850Hz latch snap)
+      setTimeout(() => {
+        try {
+          const now2 = this.ctx.currentTime;
+          const clickOsc = this.ctx.createOscillator();
+          const clickGain = this.ctx.createGain();
+          clickOsc.type = 'sine';
+          clickOsc.frequency.setValueAtTime(1850, now2);
+          clickOsc.frequency.exponentialRampToValueAtTime(1100, now2 + 0.08);
+
+          clickGain.gain.setValueAtTime(0.22, now2);
+          clickGain.gain.exponentialRampToValueAtTime(0.001, now2 + 0.08);
+
+          clickOsc.connect(clickGain);
+          clickGain.connect(this.ctx.destination);
+          clickOsc.start(now2);
+          clickOsc.stop(now2 + 0.09);
+        } catch(e) {}
+      }, 70);
+    } catch (e) {}
+  }
+
+  // Khò lửa Brûlée: Ngọn lửa xanh quét mặt kem và caramen nổ lách tách sizzle-crackle
+  torchFlame() {
+    if (!this.soundEnabled) return;
+    this.init();
+    try {
+      const now = this.ctx.currentTime;
+      // 1. Gas blowtorch jet whoosh
+      const jetOsc = this.ctx.createOscillator();
+      const jetGain = this.ctx.createGain();
+      const jetFilter = this.ctx.createBiquadFilter();
+      jetFilter.type = 'bandpass';
+      jetFilter.frequency.setValueAtTime(1800, now);
+      jetFilter.Q.setValueAtTime(1.8, now);
+
+      jetOsc.type = 'sawtooth';
+      jetOsc.frequency.setValueAtTime(320, now);
+
+      jetGain.gain.setValueAtTime(0.18, now);
+      jetGain.gain.linearRampToValueAtTime(0.22, now + 0.1);
+      jetGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+      jetOsc.connect(jetFilter);
+      jetFilter.connect(jetGain);
+      jetGain.connect(this.ctx.destination);
+      jetOsc.start(now);
+      jetOsc.stop(now + 0.36);
+
+      // 2. Caramel crackle sizzle bursts
+      [0.05, 0.12, 0.19, 0.26].forEach((offset, idx) => {
+        setTimeout(() => {
+          try {
+            const nowC = this.ctx.currentTime;
+            const popOsc = this.ctx.createOscillator();
+            const popGain = this.ctx.createGain();
+            popOsc.type = 'triangle';
+            popOsc.frequency.setValueAtTime(2400 + idx * 300, nowC);
+            popGain.gain.setValueAtTime(0.12, nowC);
+            popGain.gain.exponentialRampToValueAtTime(0.001, nowC + 0.04);
+            popOsc.connect(popGain);
+            popGain.connect(this.ctx.destination);
+            popOsc.start(nowC);
+            popOsc.stop(nowC + 0.045);
+          } catch(e) {}
+        }, offset * 1000);
+      });
+    } catch (e) {}
+  }
+  bruleeSizzle() { this.torchFlame(); }
 
   strawPop() {
     this.playTone(800, 'sine', 0.03, 0.25);
@@ -276,6 +515,79 @@ class SoundManager {
     setTimeout(() => this.playTone(900, 'sawtooth', 0.25, 0.25), 200);
     setTimeout(() => this.playTone(600, 'sawtooth', 0.25, 0.25), 400);
     setTimeout(() => this.playTone(900, 'sawtooth', 0.25, 0.25), 600);
+  }
+
+  // Tiếng búa gõ sàn đấu giá (Gavel knock)
+  gavel() {
+    if (!this.soundEnabled) return;
+    this.init();
+    try {
+      const now = this.ctx.currentTime;
+      // Sharp wooden impact
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(450, now);
+      filter.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.16);
+
+      // Second crisp knock rebound
+      setTimeout(() => {
+        this.playTone(160, 'triangle', 0.12, 0.25, 0.01);
+      }, 120);
+    } catch (e) {}
+  }
+
+  // Tiếng giọt nước suối tưới đồi chè
+  waterDrop() {
+    if (!this.soundEnabled) return;
+    this.init();
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(700, now);
+      osc.frequency.exponentialRampToValueAtTime(1760, now + 0.08);
+
+      gain.gain.setValueAtTime(0.01, now);
+      gain.gain.linearRampToValueAtTime(0.2, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    } catch (e) {}
+  }
+
+  // Tiếng hái búp chè tươi giòn tan (Bright crisp chime)
+  harvest() {
+    this.playTone(1046.5, 'sine', 0.06, 0.2); // C6
+    setTimeout(() => this.playTone(1318.5, 'sine', 0.08, 0.22), 50); // E6
+    setTimeout(() => this.playTone(1567.98, 'sine', 0.15, 0.25), 110); // G6
+  }
+
+  // Tiếng xưởng chế biến thủ công (Craft chime)
+  craft() {
+    this.playTone(523.25, 'triangle', 0.08, 0.18);
+    setTimeout(() => this.playTone(659.25, 'sine', 0.08, 0.2), 60);
+    setTimeout(() => this.playTone(783.99, 'triangle', 0.1, 0.22), 120);
+    setTimeout(() => this.playTone(1046.5, 'sine', 0.2, 0.25), 180);
   }
 
   // Realistic Procedural Thunder Clap & Rumble for Stormy Weather

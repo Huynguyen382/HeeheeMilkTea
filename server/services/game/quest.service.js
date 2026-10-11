@@ -58,9 +58,18 @@ function getOrInitDailyQuests(save) {
     dailyQuests = JSON.parse(save.daily_quests || '{}');
   } catch (e) {}
 
+  const realDate = anticheat.getRealDate();
   const currentDay = save.day_in_game || 1;
-  if (!dailyQuests || dailyQuests.day !== currentDay) {
+
+  // Migration support: if dailyQuests exists from legacy code without date, set current realDate
+  if (dailyQuests && dailyQuests.quests && !dailyQuests.date) {
+    dailyQuests.date = realDate;
+  }
+
+  // Quests reset STRICTLY when crossing real-world calendar days (GMT+7)
+  if (!dailyQuests || dailyQuests.date !== realDate) {
     dailyQuests = {
+      date: realDate,
       day: currentDay,
       allCompletedBonusClaimed: false,
       quests: {
@@ -71,6 +80,9 @@ function getOrInitDailyQuests(save) {
         quest_patrol_vigilant: { progress: 0, claimed: false }
       }
     };
+  } else {
+    // Keep game shift day synced for reference without wiping quest progress
+    dailyQuests.day = currentDay;
   }
 
   if (!dailyQuests.quests) dailyQuests.quests = {};
@@ -134,6 +146,7 @@ async function getDailyQuests(storeId) {
 
   return {
     success: true,
+    date: dailyQuests.date || anticheat.getRealDate(),
     day: currentDay,
     teacoin,
     quests: questList,

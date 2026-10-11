@@ -107,7 +107,40 @@ export function updateBuffsUI(buffs) {
     }
   }
 
+  // Check active weather buff
+  const bWeather = document.getElementById('buff-weather');
+  if (bWeather && bWeather.style.display !== 'none') {
+    hasAny = true;
+  }
+
   bar.style.display = hasAny ? 'flex' : 'none';
+}
+
+export function updateMoneyDisplay(amount) {
+  if (state.storeState && state.storeState.save) {
+    state.storeState.save.money = amount;
+  }
+  const formatted = (amount || 0).toLocaleString('vi-VN') + 'đ';
+  const elM = document.getElementById('stat-money');
+  if (elM) elM.innerText = formatted;
+  const mMoney = document.getElementById('menu-stat-money');
+  if (mMoney) mMoney.innerText = formatted;
+}
+
+export function updateTeaCoinDisplay(amount) {
+  if (state.storeState && state.storeState.save) {
+    state.storeState.save.teacoin = amount;
+  }
+  const formatted = (amount || 0).toLocaleString('vi-VN');
+  const elTeaCoin = document.getElementById('stat-teacoin');
+  if (elTeaCoin) elTeaCoin.innerText = formatted;
+  const mTeaCoin = document.getElementById('menu-stat-teacoin');
+  if (mTeaCoin) mTeaCoin.innerText = formatted;
+}
+
+if (typeof window !== 'undefined') {
+  window.updateMoneyDisplay = updateMoneyDisplay;
+  window.updateTeaCoinDisplay = updateTeaCoinDisplay;
 }
 
 // Update HUD and stats
@@ -256,33 +289,109 @@ export function updateUI() {
     }
   }
 
-  // Scene Switcher Button label & styling
+  // Sync Chapter, Invisibility Amulet & Collab Stalls to Canvas FIRST so scene state is accurate
+  if (state.canvas) {
+    state.canvas.setChapter(save.chapter || 1);
+    const rawTalisman = save.upgrades ? save.upgrades.bua_an_than : 0;
+    const talismanCount = typeof rawTalisman === 'number' ? rawTalisman : (rawTalisman ? 1 : 0);
+    state.canvas.setHasAmulet(talismanCount > 0, talismanCount);
+    if (save.upgrades) {
+      state.canvas.setActivePet(save.upgrades.active_pet || null, !!save.upgrades.is_pet_stolen);
+    }
+    // Sync active NPC staff standing at counter (strictly from active TeaCoin contract)
+    if (state.activeStaff && !state.activeStaff.expired) {
+      state.canvas.activeStaff = state.activeStaff;
+    } else {
+      state.canvas.activeStaff = null;
+    }
+    if (state.workstation) {
+      state.workstation.activeStaff = state.canvas.activeStaff;
+    }
+    // Sync active collab partner carts to canvas
+    if (state.canvas.setCollabs && state.storeState && state.storeState.collabs) {
+      state.canvas.setCollabs(state.storeState.collabs.activeCollabs || []);
+    }
+  }
+
+  // Scene Switcher HUD Badge & Menu Button label/styling
   const btnToggleScene = document.getElementById('btn-toggle-scene');
   const menuSceneTitle = document.getElementById('menu-scene-title');
-  if (btnToggleScene && state.canvas) {
-    const isUnlockedC2 = (save.chapter >= 2);
-    if (!isUnlockedC2) {
-      if (menuSceneTitle) {
-        menuSceneTitle.innerText = '🏡 Phố Nhỏ Quê (Chương 2 🔒)';
-      } else {
-        btnToggleScene.innerText = '🏡 Phố Nhỏ (🔒)';
+  const menuSceneIcon = document.getElementById('menu-scene-icon');
+  const elSceneBadge = document.getElementById('scene-badge');
+  if (state.canvas) {
+    const chap = Number(save.chapter) || 1;
+    const curScene = (typeof state.canvas.getEffectiveScene === 'function')
+      ? state.canvas.getEffectiveScene()
+      : (state.canvas.sceneSetting || 'town');
+    const unlockedCount = (typeof state.canvas.getUnlockedScenes === 'function')
+      ? state.canvas.getUnlockedScenes().length
+      : (chap >= 4 ? 5 : chap === 3 ? 4 : chap === 2 ? 2 : 1);
+
+    const sceneMetaMap = {
+      town: {
+        icon: '🏡',
+        badgeText: '🏡 Phố Cổ',
+        menuTitle: '🏡 Phố Cổ Hà Nội (C1)',
+        color: '#f1c40f',
+        bg: 'rgba(241, 196, 15, 0.16)'
+      },
+      hust: {
+        icon: '🏛️',
+        badgeText: '🏛️ Bách Khoa',
+        menuTitle: '🏛️ ĐH Bách Khoa (C2)',
+        color: '#00cec9',
+        bg: 'rgba(0, 206, 201, 0.16)'
+      },
+      walking_street: {
+        icon: '🏰',
+        badgeText: '🏰 Phố Đi Bộ',
+        menuTitle: '🏰 Phố Đi Bộ (C3)',
+        color: '#2ecc71',
+        bg: 'rgba(46, 204, 113, 0.16)'
+      },
+      moc_chau: {
+        icon: '🌱',
+        badgeText: '🌱 Mộc Châu',
+        menuTitle: '🌱 Đồi Chè Mộc Châu (C3)',
+        color: '#55efc4',
+        bg: 'rgba(85, 239, 196, 0.16)'
+      },
+      franchise: {
+        icon: '👑',
+        badgeText: '👑 Sài Gòn',
+        menuTitle: '👑 Đại Lộ Sài Gòn (C4)',
+        color: '#e056fd',
+        bg: 'rgba(224, 86, 253, 0.18)'
       }
-      btnToggleScene.style.borderColor = '#636e72';
-      btnToggleScene.style.color = '#b2bec3';
-      btnToggleScene.style.opacity = '0.65';
-      btnToggleScene.title = '🔒 Cần trả hết nợ cho Anh Bảnh để mở khóa Chương 2!';
-    } else {
-      const isHUST = (state.canvas.sceneSetting === 'hust');
-      const sceneText = isHUST ? '🏛️ Bách Khoa' : '🏡 Phố Nhỏ Quê';
+    };
+
+    const meta = sceneMetaMap[curScene] || sceneMetaMap.town;
+
+    if (elSceneBadge) {
+      elSceneBadge.innerText = meta.badgeText;
+      elSceneBadge.style.borderColor = meta.color;
+      elSceneBadge.style.color = meta.color;
+      elSceneBadge.style.background = meta.bg;
+      elSceneBadge.title = `Bối cảnh hiện tại: ${meta.menuTitle} — Nhấn để mở bảng chọn bối cảnh (${unlockedCount}/5 đã mở)`;
+    }
+
+    if (btnToggleScene) {
+      if (menuSceneIcon) menuSceneIcon.innerText = meta.icon;
       if (menuSceneTitle) {
-        menuSceneTitle.innerText = sceneText;
+        menuSceneTitle.innerText = meta.menuTitle;
       } else {
-        btnToggleScene.innerText = sceneText;
+        btnToggleScene.innerText = meta.menuTitle;
+      }
+      const mDesc = btnToggleScene.querySelector('.m-desc');
+      if (mDesc) {
+        mDesc.innerText = chap < 2
+          ? `Đã mở 1/5 bối cảnh • Bấm để xem danh sách`
+          : `Nhấn để chọn nhanh (${unlockedCount}/5 bối cảnh đã mở)`;
       }
       btnToggleScene.style.opacity = '1';
-      btnToggleScene.style.borderColor = isHUST ? '#00cec9' : '#f1c40f';
-      btnToggleScene.style.color = isHUST ? '#00cec9' : '#f1c40f';
-      btnToggleScene.title = 'Chuyển đổi bối cảnh: Cổng Bách Khoa ↔ Phố Nhỏ Quê';
+      btnToggleScene.style.borderColor = meta.color;
+      btnToggleScene.style.color = meta.color;
+      btnToggleScene.title = `Bối cảnh hiện tại: ${meta.menuTitle}. Nhấn để mở bảng chọn bối cảnh!`;
     }
   }
 
@@ -327,24 +436,10 @@ export function updateUI() {
     if (elQueueInd) elQueueInd.style.display = 'none';
   }
 
-  // Sync Chapter, Invisibility Amulet & Collab Stalls to Canvas
-  if (state.canvas) {
-    state.canvas.setChapter(save.chapter || 1);
-    const rawTalisman = save.upgrades ? save.upgrades.bua_an_than : 0;
-    const talismanCount = typeof rawTalisman === 'number' ? rawTalisman : (rawTalisman ? 1 : 0);
-    state.canvas.setHasAmulet(talismanCount > 0, talismanCount);
-    if (save.upgrades) {
-      state.canvas.setActivePet(save.upgrades.active_pet || null, !!save.upgrades.is_pet_stolen);
-    }
-    // Sync active collab partner carts to canvas
-    if (state.canvas.setCollabs && state.storeState && state.storeState.collabs) {
-      state.canvas.setCollabs(state.storeState.collabs.activeCollabs || []);
-    }
-  }
-
   // Debt Modal & Chapter Progression UI
   const debtSec = document.getElementById('chapter-2-unlock-section');
   const chap3Sec = document.getElementById('chapter-3-unlock-section');
+  const chap4Sec = document.getElementById('chapter-4-unlock-section');
   const debtPayControls = document.getElementById('debt-pay-controls');
   const navDebtBtn = document.getElementById('nav-debt');
   const menuDebtTitle = document.getElementById('menu-debt-title');
@@ -355,11 +450,16 @@ export function updateUI() {
     const canUnlockChap3 = (save.chapter === 2 && (save.money || 0) >= 50000000);
     if (chap3Sec) chap3Sec.style.display = canUnlockChap3 ? 'block' : 'none';
 
+    const canUnlockChap4 = (save.chapter === 3 && (save.money || 0) >= 100000000);
+    if (chap4Sec) chap4Sec.style.display = canUnlockChap4 ? 'block' : 'none';
+
     if (menuDebtTitle) {
       if (save.chapter === 1) menuDebtTitle.innerText = '🚀 Lên Chương 2';
       else if (canUnlockChap3) menuDebtTitle.innerText = '🏰 Lên Chương 3';
       else if (save.chapter === 2) menuDebtTitle.innerText = '🏆 Mục Tiêu 50Tr';
-      else menuDebtTitle.innerText = '⭐ Flagship Store';
+      else if (canUnlockChap4) menuDebtTitle.innerText = '👑 Lên Chương 4';
+      else if (save.chapter === 3) menuDebtTitle.innerText = '👑 Mục Tiêu 100Tr';
+      else menuDebtTitle.innerText = '👑 Đế Chế Toàn Cầu';
     } else if (navDebtBtn) {
       if (save.chapter === 1) {
         navDebtBtn.innerHTML = '🚀 Lên Chương 2';
@@ -370,14 +470,29 @@ export function updateUI() {
       } else if (save.chapter === 2) {
         navDebtBtn.innerHTML = '🏆 Mục Tiêu 50Tr';
         navDebtBtn.style.color = '#8be9fd';
+      } else if (canUnlockChap4) {
+        navDebtBtn.innerHTML = '👑 Lên Chương 4';
+        navDebtBtn.style.color = '#fdcb6e';
+      } else if (save.chapter === 3) {
+        navDebtBtn.innerHTML = '👑 Mục Tiêu 100Tr';
+        navDebtBtn.style.color = '#fdcb6e';
       } else {
-        navDebtBtn.innerHTML = '⭐ Flagship Store';
-        navDebtBtn.style.color = '#50fa7b';
+        navDebtBtn.innerHTML = '👑 Đế Chế Toàn Cầu';
+        navDebtBtn.style.color = '#fdcb6e';
       }
     }
-  } else {
+  }
+
+  // Auto-refresh staff status if unlocked condition is met
+  const isStaffEligible = ((save.chapter || 1) >= 3) || ((save.chapter || 1) >= 2 && (save.money || 0) >= 50000000);
+  if (isStaffEligible && window.staffState && !window.staffState.isUnlocked && typeof window.checkStaffOnLoad === 'function') {
+    window.checkStaffOnLoad();
+  }
+
+  if (save.debt_remaining > 0) {
     if (debtSec) debtSec.style.display = 'none';
     if (chap3Sec) chap3Sec.style.display = 'none';
+    if (chap4Sec) chap4Sec.style.display = 'none';
     if (debtPayControls) debtPayControls.style.display = 'block';
     if (menuDebtTitle) {
       menuDebtTitle.innerText = '💰 Sổ Nợ Anh Bảnh';
@@ -471,7 +586,147 @@ export function updateUI() {
   updateMixingButtonsState();
 }
 
-// Store code copy & Scene toggle initialization
+export const SCENE_CATALOG = [
+  {
+    id: 'town',
+    icon: '🏡',
+    shortName: 'Phố Cổ',
+    name: 'Phố Cổ Hà Nội',
+    chapter: 1,
+    color: '#f1c40f',
+    bgTint: 'rgba(241, 196, 15, 0.14)',
+    desc: 'Góc vỉa hè phố cổ sầm uất, nơi khởi nguồn chiếc xe đẩy trà sữa Hyhy.',
+    unlockHint: 'Mở sẵn từ Chương 1'
+  },
+  {
+    id: 'hust',
+    icon: '🏛️',
+    shortName: 'Bách Khoa',
+    name: 'Cổng Parabol ĐH Bách Khoa',
+    chapter: 2,
+    color: '#00cec9',
+    bgTint: 'rgba(0, 206, 201, 0.14)',
+    desc: 'Thiên đường sinh viên Bách - Kinh - Xây tấp nập giờ tan tầm.',
+    unlockHint: 'Mở khóa ở Chương 2 (Sau khi trả hết sạch 3.000.000đ nợ)'
+  },
+  {
+    id: 'walking_street',
+    icon: '🏰',
+    shortName: 'Phố Đi Bộ',
+    name: 'Flagship Phố Đi Bộ Hồ Gươm',
+    chapter: 3,
+    color: '#2ecc71',
+    bgTint: 'rgba(46, 204, 113, 0.14)',
+    desc: 'Cửa hàng Flagship 2 tầng mặt tiền trung tâm phố đi bộ nhộn nhịp.',
+    unlockHint: 'Mở khóa ở Chương 3 (Đạt cột mốc vốn 50.000.000đ)'
+  },
+  {
+    id: 'moc_chau',
+    icon: '🌱',
+    shortName: 'Mộc Châu',
+    name: 'Đồi Chè Trái Tim Mộc Châu',
+    chapter: 3,
+    color: '#55efc4',
+    bgTint: 'rgba(85, 239, 196, 0.14)',
+    desc: 'Không gian cao nguyên đồi chè xanh mướt & nông trại trà Organic 5⭐.',
+    unlockHint: 'Mở khóa ở Chương 3 (Cùng Nông Trại Chè Mộc Châu)'
+  },
+  {
+    id: 'franchise',
+    icon: '👑',
+    shortName: 'Sài Gòn',
+    name: 'Đại Lộ Sài Gòn & Nhượng Quyền',
+    chapter: 4,
+    color: '#e056fd',
+    bgTint: 'rgba(224, 86, 253, 0.14)',
+    desc: 'Tòa tháp thương mại rực rỡ ánh đèn neon giữa trung tâm đại lộ.',
+    unlockHint: 'Mở khóa ở Chương 4 (Đạt cột mốc vốn 100.000.000đ)'
+  }
+];
+
+export function renderSceneSelectorModal() {
+  const listEl = document.getElementById('scene-selector-list');
+  if (!listEl) return;
+
+  const save = state.storeState?.save || {};
+  const chap = Number(save.chapter) || 1;
+  const curScene = (state.canvas && typeof state.canvas.getEffectiveScene === 'function')
+    ? state.canvas.getEffectiveScene()
+    : (state.canvas?.sceneSetting || 'town');
+
+  listEl.innerHTML = SCENE_CATALOG.map(scene => {
+    const isUnlocked = chap >= scene.chapter;
+    const isActive = isUnlocked && curScene === scene.id;
+
+    const borderColor = isActive ? scene.color : (isUnlocked ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)');
+    const bgStyle = isActive
+      ? `linear-gradient(135deg, ${scene.bgTint}, rgba(255,255,255,0.06))`
+      : (isUnlocked ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.28)');
+    const opacity = isUnlocked ? '1' : '0.6';
+    const cursor = isUnlocked ? 'pointer' : 'not-allowed';
+
+    let statusBadge = '';
+    if (isActive) {
+      statusBadge = `<span style="background: ${scene.color}; color: #111; font-weight: 800; font-size: 0.76rem; padding: 4px 10px; border-radius: 20px; white-space: nowrap; box-shadow: 0 0 10px ${scene.color}66;">✓ Đang hiển thị</span>`;
+    } else if (isUnlocked) {
+      statusBadge = `<span style="background: rgba(255,255,255,0.1); border: 1px solid ${scene.color}; color: ${scene.color}; font-weight: bold; font-size: 0.76rem; padding: 4px 10px; border-radius: 20px; white-space: nowrap;">Chọn ngay ▶</span>`;
+    } else {
+      statusBadge = `<span style="background: rgba(255, 85, 85, 0.15); border: 1px solid #ff5555; color: #ff7675; font-weight: bold; font-size: 0.74rem; padding: 3px 8px; border-radius: 20px; white-space: nowrap;">🔒 Chương ${scene.chapter}</span>`;
+    }
+
+    return `
+      <div class="scene-option-card" data-scene-id="${scene.id}" data-unlocked="${isUnlocked ? '1' : '0'}"
+           style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 10px; border: ${isActive ? '2px' : '1px'} solid ${borderColor}; background: ${bgStyle}; opacity: ${opacity}; cursor: ${cursor}; transition: transform 0.12s ease, border-color 0.15s ease;">
+        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+          <div style="font-size: 1.9rem; line-height: 1; flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid ${isUnlocked ? scene.color : 'rgba(255,255,255,0.1)'};">
+            ${scene.icon}
+          </div>
+          <div style="min-width: 0;">
+            <div style="font-weight: 800; font-size: 0.95rem; color: ${isUnlocked ? scene.color : '#b2bec3'}; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span>${scene.name}</span>
+              <span style="font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.08); color: #dfe6e9;">Chương ${scene.chapter}</span>
+            </div>
+            <div style="font-size: 0.8rem; color: #dfe6e9; margin-top: 2px; line-height: 1.35;">
+              ${isUnlocked ? scene.desc : `<span style="color: #fab1a0;">🔒 ${scene.unlockHint}</span>`}
+            </div>
+          </div>
+        </div>
+        <div style="flex-shrink: 0;">
+          ${statusBadge}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Sync Time-of-Day buttons inside modal
+  const customTod = state.canvas ? state.canvas.customTimeOfDay : null;
+  const activeTimeKey = customTod || 'auto';
+  const timeModeLabel = document.getElementById('scene-time-mode-label');
+  if (timeModeLabel && state.canvas) {
+    timeModeLabel.innerText = customTod
+      ? `🎨 Cố định: ${state.canvas.getTimeOfDayLabel ? state.canvas.getTimeOfDayLabel() : customTod}`
+      : `⏱️ Tự động theo giờ quán (${state.canvas.getTimeOfDayLabel ? state.canvas.getTimeOfDayLabel() : ''})`;
+  }
+
+  document.querySelectorAll('#scene-time-selector-btns .btn-scene-time').forEach(btn => {
+    const tKey = btn.getAttribute('data-time');
+    const isSelected = tKey === activeTimeKey;
+    btn.style.transform = isSelected ? 'scale(1.04)' : 'scale(1)';
+    btn.style.boxShadow = isSelected ? '0 0 8px rgba(241, 196, 15, 0.5)' : 'none';
+    btn.style.fontWeight = isSelected ? '800' : '600';
+    btn.style.opacity = isSelected ? '1' : '0.72';
+  });
+}
+
+export function openSceneSelectorModal() {
+  const modal = document.getElementById('modal-scene-selector');
+  if (!modal) return;
+  if (window.sound && window.sound.pop) window.sound.pop();
+  renderSceneSelectorModal();
+  modal.style.display = 'flex';
+}
+
+// Store code copy & Scene Selector initialization
 export function initUIControls() {
   // Click store code to copy
   if (elStoreCode) {
@@ -483,7 +738,6 @@ export function initUIControls() {
         await navigator.clipboard.writeText(state.storeState.store_code);
         showToast('📋 Đã sao chép Mã Quán: ' + state.storeState.store_code, 2000);
       } catch {
-        // Fallback for older browsers
         const ta = document.createElement('textarea');
         ta.value = state.storeState.store_code;
         ta.style.position = 'fixed';
@@ -497,34 +751,95 @@ export function initUIControls() {
     });
   }
 
-  // Scene switcher button (Bách Khoa ↔ Phố Nhỏ Quê)
+  // Open Scene Selector Modal from both Top HUD #scene-badge and Game Menu #btn-toggle-scene
   const btnToggleScene = document.getElementById('btn-toggle-scene');
-  if (btnToggleScene) {
-    // Restore saved setting only if Chapter >= 2
-    const savedSetting = localStorage.getItem('hyhy_scene_setting');
-    const curChapter = state.storeState?.save?.chapter || 1;
-    if (curChapter >= 2 && savedSetting && state.canvas && state.canvas.setSceneSetting) {
-      state.canvas.setSceneSetting(savedSetting);
-    } else if (state.canvas && state.canvas.setSceneSetting) {
-      state.canvas.setSceneSetting('town');
-    }
+  const elSceneBadge = document.getElementById('scene-badge');
+  const modalSceneSelector = document.getElementById('modal-scene-selector');
+  const closeSceneSelector = document.getElementById('close-scene-selector');
+  const sceneSelectorList = document.getElementById('scene-selector-list');
+  const sceneTimeBtns = document.getElementById('scene-time-selector-btns');
 
+  if (btnToggleScene) {
     btnToggleScene.addEventListener('click', () => {
-      const save = state.storeState?.save;
-      if (!save || (save.chapter || 1) < 2 || (save.debt_remaining || 0) > 0) {
+      openSceneSelectorModal();
+    });
+  }
+
+  if (elSceneBadge) {
+    elSceneBadge.addEventListener('click', () => {
+      openSceneSelectorModal();
+    });
+  }
+
+  if (closeSceneSelector && modalSceneSelector) {
+    closeSceneSelector.addEventListener('click', () => {
+      modalSceneSelector.style.display = 'none';
+    });
+    modalSceneSelector.addEventListener('click', (e) => {
+      if (e.target === modalSceneSelector) modalSceneSelector.style.display = 'none';
+    });
+  }
+
+  // Handle direct 1-click scene card selection
+  if (sceneSelectorList) {
+    sceneSelectorList.addEventListener('click', (e) => {
+      const card = e.target.closest('.scene-option-card');
+      if (!card) return;
+      const sceneId = card.getAttribute('data-scene-id');
+      const isUnlocked = card.getAttribute('data-unlocked') === '1';
+      const sceneInfo = SCENE_CATALOG.find(s => s.id === sceneId);
+
+      if (!isUnlocked) {
         if (window.sound && window.sound.fail) window.sound.fail();
-        showToast('🔒 Bối cảnh Bách Khoa bị khóa! Bạn phải trả hết sạch 3.000.000đ nợ mới có thể mở Chương 2!', 3500);
+        showToast(`🔒 ${sceneInfo ? sceneInfo.unlockHint : 'Bối cảnh này chưa mở khóa!'}`, 3500);
         return;
       }
-      if (!state.canvas || !state.canvas.toggleSceneSetting) return;
-      const newSetting = state.canvas.toggleSceneSetting();
-      localStorage.setItem('hyhy_scene_setting', newSetting);
-      if (window.sound) window.sound.bell();
+
+      if (state.canvas && typeof state.canvas.setSceneSetting === 'function') {
+        state.canvas.setSceneSetting(sceneId);
+      }
+      if (window.sound && window.sound.bell) window.sound.bell();
       updateUI();
-      const name = (newSetting === 'hust') 
-        ? '🏛️ Cổng Parabol Đại học Bách Khoa Hà Nội' 
-        : '🏡 Phố Nhỏ Quê Hương (Chương 1)';
-      showToast(`📍 Bối cảnh chuyển sang: ${name}`, 3000);
+      renderSceneSelectorModal();
+      if (sceneInfo) {
+        showToast(`📍 Đã chuyển sang bối cảnh: ${sceneInfo.icon} ${sceneInfo.name}`, 2500);
+      }
+    });
+  }
+
+  // Handle direct 1-click Time-of-Day lighting selection inside Scene Selector Modal
+  if (sceneTimeBtns) {
+    sceneTimeBtns.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-scene-time');
+      if (!btn || !state.canvas) return;
+      const timeVal = btn.getAttribute('data-time');
+      state.canvas.customTimeOfDay = (timeVal === 'auto') ? null : timeVal;
+      if (window.sound && window.sound.pop) window.sound.pop();
+      const elTimeBadge = document.getElementById('time-of-day-badge');
+      if (elTimeBadge && state.canvas.getTimeOfDayLabel) {
+        elTimeBadge.innerText = state.canvas.getTimeOfDayLabel();
+      }
+      renderSceneSelectorModal();
+      const modeNames = {
+        auto: '🔄 Tự động theo đồng hồ quán',
+        morning: '🌅 Buổi Sáng Bình Minh',
+        noon: '☀️ Buổi Trưa Nắng Ấm',
+        afternoon: '🌇 Buổi Chiều Hoàng Hôn',
+        night: '🌙 Buổi Tối Lung Linh'
+      };
+      showToast(`🎨 Khung giờ bối cảnh: ${modeNames[timeVal] || timeVal}`, 2200);
+    });
+  }
+
+  // Also allow clicking #time-of-day-badge on top HUD to quickly cycle time-of-day lighting
+  const elTimeOfDayBadge = document.getElementById('time-of-day-badge');
+  if (elTimeOfDayBadge) {
+    elTimeOfDayBadge.addEventListener('click', () => {
+      if (!state.canvas || typeof state.canvas.cycleTimeOfDay !== 'function') return;
+      const res = state.canvas.cycleTimeOfDay();
+      if (window.sound && window.sound.pop) window.sound.pop();
+      elTimeOfDayBadge.innerText = state.canvas.getTimeOfDayLabel();
+      showToast(`🌅 Khung cảnh: ${res.label}`, 2200);
     });
   }
 
@@ -563,4 +878,5 @@ export function initUIControls() {
     }
   }, 1000);
 }
+
 

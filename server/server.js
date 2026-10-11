@@ -29,6 +29,7 @@ const storeRoutes = require('./routes/store.routes');
 const gameRoutes = require('./routes/game.routes');
 const anticheatRoutes = require('./routes/anticheat.routes');
 const adminRoutes = require('./routes/admin.routes');
+const staffRoutes = require('./routes/staff.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,6 +60,8 @@ app.use('/api', rateLimitMiddleware());
 app.use('/api/auth', authRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/game', gameRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/game/staff', staffRoutes);
 app.use('/api/anticheat', anticheatRoutes);
 app.use('/api/admin', adminRoutes);
 

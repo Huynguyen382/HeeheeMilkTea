@@ -48,6 +48,9 @@ async function generateOrder(storeId, options = {}) {
 
   const daily = await anticheat.getOrCreateDailyStats(storeId, save.chapter);
   const activeBuffs = JSON.parse(save.active_buffs || '{}');
+  const { WEATHER_TYPES } = require('./weather.service');
+  const weatherId = activeBuffs.weather ? activeBuffs.weather.id : 'sunny';
+  const currentWeather = WEATHER_TYPES[weatherId] || WEATHER_TYPES.sunny;
 
   // Check Proactive TikToker Invitation
   let isInvitedTiktoker = false;
@@ -156,6 +159,13 @@ async function generateOrder(storeId, options = {}) {
     waveSize = Math.min(15, Math.floor(waveSize * 1.3));
   }
 
+  // Weather effect on customer foot traffic (e.g. Sunny +25% foot traffic, Stormy -15% walking traffic)
+  if (currentWeather.customerBonus > 0 && Math.random() < currentWeather.customerBonus) {
+    waveSize = Math.min(14, waveSize + 1);
+  } else if (currentWeather.customerBonus < 0 && Math.random() < Math.abs(currentWeather.customerBonus)) {
+    waveSize = Math.max(1, waveSize - 1);
+  }
+
   if (options.isShipper) {
     // Shipper randomly orders multiple drinks, up to 12 orders
     // Weighted distribution: 1-2 drinks (30%), 3-5 drinks (35%), 6-9 drinks (25%), 10-12 drinks (10%)
@@ -199,6 +209,12 @@ async function generateOrder(storeId, options = {}) {
       };
     } else if (isInvitedTiktoker && i === 0) {
       cust = CUSTOMERS.find(c => c.isTiktoker) || CUSTOMERS[3];
+    } else if (currentWeather.isStorm || (currentWeather.shipperBonus && Math.random() < currentWeather.shipperBonus)) {
+      // Stormy weather: Shippers appear more often
+      const shipperCust = CUSTOMERS.find(c => c.isShipper);
+      if (shipperCust && Math.random() < 0.45) {
+        cust = shipperCust;
+      }
     }
 
     // 1. Cân bằng tỷ lệ các loại cốt trà của cửa hàng (Mỗi loại cốt trà ~20% cơ hội)
@@ -263,9 +279,12 @@ async function generateOrder(storeId, options = {}) {
 
     const orderId = 'ORD-' + crypto.randomBytes(4).toString('hex');
     
-    // Patience with active buff & Capybara pet
+    // Patience with active buff & Capybara pet & weather
     // Base patience is extended x2.5 + 25s so players have ample time to brew without stress
     let patienceMs = Math.floor(cust.patience * 2.5 + 25000);
+    if (currentWeather.patienceBonus) {
+      patienceMs = Math.floor(patienceMs * (1 + currentWeather.patienceBonus)); // e.g. Rainy +40% patience
+    }
     if (activeBuffs.patience_boost && activeBuffs.patience_boost > 0) {
       patienceMs = Math.floor(patienceMs * 1.5); // +50% patience
     }
@@ -295,6 +314,9 @@ async function generateOrder(storeId, options = {}) {
     }
 
     if (cust.tipMult) price = Math.floor(price * cust.tipMult);
+    if (currentWeather.tipBonus) {
+      price = Math.floor(price * (1 + currentWeather.tipBonus)); // e.g. Stormy +25% tip, Sunny +10% tip
+    }
     if (activeBuffs.tip_bonus && activeBuffs.tip_bonus > 0) {
       price = Math.floor(price * 1.1); // +10% money
     }

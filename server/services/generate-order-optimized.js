@@ -93,9 +93,19 @@ async function generateOrderOptimized(db, storeId) {
     teaRecipesCache[tea] = validKeys.filter(k => RECIPES[k] && RECIPES[k].tea === tea);
   }
 
+  // Parse weather
+  const { WEATHER_TYPES } = require('./game/weather.service');
+  const weatherId = activeBuffs?.weather?.id || 'sunny';
+  const currentWeather = WEATHER_TYPES[weatherId] || WEATHER_TYPES.sunny;
+
   // 2. Wave size calculation using optimized distribution
   const waveCondition = cpuOptimizer.getWaveCondition(activeBuffs, save.reputation, isInvitedTiktoker);
-  const waveSize = probabilityDistributions.getWaveSize(fastRandom, waveCondition);
+  let waveSize = probabilityDistributions.getWaveSize(fastRandom, waveCondition);
+  if (currentWeather.customerBonus > 0 && fastRandom.next() < currentWeather.customerBonus) {
+    waveSize = Math.min(5, waveSize + 1);
+  } else if (currentWeather.customerBonus < 0 && fastRandom.next() < Math.abs(currentWeather.customerBonus)) {
+    waveSize = Math.max(1, waveSize - 1);
+  }
 
   const orders = [];
   let snackEvent = null;
@@ -116,6 +126,11 @@ async function generateOrderOptimized(db, storeId) {
     let cust = CUSTOMERS[fastRandom.int(0, CUSTOMERS.length - 1)];
     if (isInvitedTiktoker && i === 0) {
       cust = tiktokerCustomer;
+    } else if (currentWeather.isStorm || (currentWeather.shipperBonus && fastRandom.next() < currentWeather.shipperBonus)) {
+      const shipperCust = CUSTOMERS.find(c => c.isShipper);
+      if (shipperCust && fastRandom.next() < 0.45) {
+        cust = shipperCust;
+      }
     }
 
     // 1. Cân bằng tỷ lệ các loại cốt trà của cửa hàng
@@ -151,8 +166,11 @@ async function generateOrderOptimized(db, storeId) {
 
     const orderId = idGenerator.next();
     
-    // Patience with active buff & Capybara pet
+    // Patience with active buff & Capybara pet & weather
     let patienceMs = Math.floor(cust.patience * 2.5 + 25000);
+    if (currentWeather.patienceBonus) {
+      patienceMs = Math.floor(patienceMs * (1 + currentWeather.patienceBonus));
+    }
     if (activeBuffs.patience_boost && activeBuffs.patience_boost > 0) {
       patienceMs = Math.floor(patienceMs * 1.5); // +50% patience
     }
@@ -174,6 +192,9 @@ async function generateOrderOptimized(db, storeId) {
     }
 
     if (cust.tipMult) price = Math.floor(price * cust.tipMult);
+    if (currentWeather.tipBonus) {
+      price = Math.floor(price * (1 + currentWeather.tipBonus));
+    }
     if (activeBuffs.tip_bonus && activeBuffs.tip_bonus > 0) {
       price = Math.floor(price * 1.1); // +10% money
     }

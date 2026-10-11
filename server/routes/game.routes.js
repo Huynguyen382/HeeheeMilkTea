@@ -4,6 +4,8 @@ const gameService = require('../services/game.service');
 const anticheat = require('../services/anticheat.service');
 const { authStore } = require('../middleware/auth.middleware');
 
+const liveSync = require('../services/live-sync.service');
+
 const router = express.Router();
 const handle = (label, fn) => async (req, res) => {
   try { res.json(await fn(req)); }
@@ -57,6 +59,7 @@ router.post('/buy-ingredients', authStore, handle('Buy ingredients', req => game
 router.post('/advance-day', authStore, handle('Advance day', req => gameService.endShift(req.store.id)));
 router.post('/end-shift', authStore, handle('End shift', req => gameService.endShift(req.store.id)));
 router.post('/unlock-chapter-3', authStore, handle('Unlock Chapter 3', req => gameService.unlockChapter3(req.store.id)));
+router.post('/unlock-chapter-4', authStore, handle('Unlock Chapter 4', req => gameService.unlockChapter4(req.store.id)));
 router.post('/negotiate', authStore, handle('Negotiate order', req => gameService.negotiateOrder(req.store.id, req.body.orderId, !!req.body.accept)));
 router.post('/custom-prices', authStore, handle('Custom prices', req => gameService.setCustomPrices(req.store.id, req.body.customPrices)));
 router.post('/use-sabotage', authStore, handle('Use sabotage card', req => gameService.useSabotageCard(req.store.id, req.body.cardId, req.body.targetStoreCode)));
@@ -73,5 +76,54 @@ router.post('/room/buy', authStore, handle('Buy room decor', req => gameService.
 router.post('/room/equip', authStore, handle('Equip room decor', req => gameService.equipRoomDecor(req.store.id, req.body.decorId, req.body.equipped)));
 router.get('/room/visit/:identifier', authStore, handle('Visit friend room', req => gameService.getFriendRoom(req.params.identifier)));
 router.post('/room/cheer', authStore, handle('Cheer friend room', req => gameService.cheerFriendRoom(req.store.id, req.body.toStoreId, req.body.message)));
+
+// Moc Chau Tea Farm & Crafting Workshop Routes
+router.get('/farm', authStore, handle('Get farm state', req => gameService.getFarmState(req.store.id)));
+router.post('/farm/plant', authStore, handle('Plant crop', req => gameService.plantCrop(req.store.id, req.body.plotId, req.body.cropId)));
+router.post('/farm/water', authStore, handle('Water plot', req => gameService.waterPlot(req.store.id, req.body.plotId)));
+router.post('/farm/fertilize', authStore, handle('Fertilize plot', req => gameService.fertilizePlot(req.store.id, req.body.plotId, !!req.body.useTeaCoin)));
+router.post('/farm/harvest', authStore, handle('Harvest plot', req => gameService.harvestPlot(req.store.id, req.body.plotId)));
+router.post('/farm/harvest-all', authStore, handle('Harvest all plots', req => gameService.harvestAll(req.store.id)));
+router.post('/farm/craft', authStore, handle('Craft recipe', req => gameService.craftRecipe(req.store.id, req.body.recipeId)));
+
+// Franchise & Rare Ingredient Auction Routes
+router.get('/franchise', authStore, handle('Get franchise state', req => gameService.getFranchiseState(req.store.id)));
+router.post('/franchise/open', authStore, handle('Open franchise branch', req => gameService.openFranchise(req.store.id, req.body.franchiseId)));
+router.post('/franchise/upgrade', authStore, handle('Upgrade franchise branch', req => gameService.upgradeFranchise(req.store.id, req.body.franchiseId)));
+router.post('/franchise/collect', authStore, handle('Collect franchise royalties', req => gameService.collectRoyalties(req.store.id)));
+router.post('/auction/bid', authStore, handle('Bid rare auction', req => gameService.bidAuction(req.store.id, req.body.itemId, req.body.bidAmount)));
+
+// Weather System
+router.get('/weather', authStore, handle('Get weather', req => gameService.getCurrentWeather(req.store.id)));
+router.post('/weather/change', authStore, async (req, res) => {
+  try {
+    const { weatherId } = req.body;
+    if (!weatherId) return res.status(400).json({ error: 'Thiếu weatherId' });
+    const result = await gameService.setWeatherForStore(req.store.id, weatherId);
+    liveSync.pushToStore(req.store.id, 'weather_changed', {
+      weather: result.weather,
+      message: result.message
+    });
+    res.json(result);
+  } catch (err) {
+    console.error('Change weather error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Real-time Event Stream & Polling Heartbeat
+router.get('/live-stream', authStore, (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  liveSync.registerSSE(req.store.id, res);
+});
+
+router.post('/heartbeat', authStore, (req, res) => {
+  const since = Number(req.body.since || 0);
+  const events = liveSync.pullEvents(req.store.id, since);
+  res.json({ success: true, timestamp: Date.now(), events });
+});
 
 module.exports = router;

@@ -230,6 +230,41 @@ body {
   transform: scale(1.04);
 }
 
+.weather-badge-sunny {
+  background: rgba(241, 196, 15, 0.2) !important;
+  border-color: #f1c40f !important;
+  color: #fdcb6e !important;
+  box-shadow: 0 0 8px rgba(241, 196, 15, 0.3);
+}
+
+.weather-badge-rainy {
+  background: rgba(52, 152, 219, 0.22) !important;
+  border-color: #3498db !important;
+  color: #74b9ff !important;
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.35);
+}
+
+.weather-badge-stormy {
+  background: rgba(162, 155, 254, 0.28) !important;
+  border-color: #a29bfe !important;
+  color: #e056fd !important;
+  box-shadow: 0 0 12px rgba(162, 155, 254, 0.5);
+  animation: pulse 1.6s infinite;
+}
+
+.weather-badge-cloudy {
+  background: rgba(149, 165, 166, 0.22) !important;
+  border-color: #a4b0be !important;
+  color: #dfe6e9 !important;
+}
+
+.weather-badge-windy {
+  background: rgba(46, 204, 113, 0.22) !important;
+  border-color: #2ecc71 !important;
+  color: #55efc4 !important;
+  box-shadow: 0 0 8px rgba(46, 204, 113, 0.35);
+}
+
 .cap-progress-fill.overloaded {
   background: linear-gradient(90deg, #ff79c6, #bd93f9);
 }
@@ -1066,6 +1101,10 @@ body.modal-open {
   z-index: 10000;
   padding: 12px;
   box-sizing: border-box;
+}
+
+.modal-overlay.active {
+  display: flex;
 }
 
 .modal-content {

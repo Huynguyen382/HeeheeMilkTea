@@ -1,5 +1,6 @@
 // Main Game Application Controller (Modular Orchestrator)
 import { state } from './modules/state.js';
+import { GameCanvas } from './canvas.js';
 import './modules/npc-appearances.js';
 import { initUIControls } from './modules/ui.js';
 import { initDevMode } from './modules/dev-mode.js';
@@ -14,11 +15,26 @@ import { initShift } from './modules/shift.js';
 import { initStore } from './modules/auth.js';
 import { initRoomModule } from './modules/room.js';
 import { initWeatherModule } from './modules/weather.js';
+import { initFarmModule } from './modules/farm.js';
+import { initFranchiseModule } from './modules/franchise.js';
+import { initStaffModule } from './modules/staff.js';
+import { initLiveSync } from './modules/live-sync.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
+let isBootstrapped = false;
+
+async function bootstrapApp() {
+  if (isBootstrapped) return;
+  isBootstrapped = true;
+
+  // Expose state globally for non-module scripts (e.g. workstation.js)
+  if (typeof window !== 'undefined') {
+    window.state = state;
+  }
+
   // 1. Initialize Game Canvas
-  if (typeof window.GameCanvas !== 'undefined') {
-    state.canvas = new window.GameCanvas('scene');
+  const CanvasClass = GameCanvas || window.GameCanvas;
+  if (CanvasClass) {
+    state.canvas = new CanvasClass('scene');
     state.canvas.onShipperArrived = handleShipperOrderArrival;
   }
 
@@ -35,7 +51,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   initShift();
   initRoomModule();
   initWeatherModule();
+  initFarmModule();
+  initFranchiseModule();
+  initStaffModule();
+  initLiveSync();
 
   // 3. Launch Store Authentication & Session Flow
   await initStore();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrapApp);
+} else {
+  bootstrapApp();
+}

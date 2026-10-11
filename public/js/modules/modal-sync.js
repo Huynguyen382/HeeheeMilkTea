@@ -63,6 +63,7 @@ export function initModalSync(scheduler) {
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay && overlay.id !== 'modal-auth' && overlay.id !== 'overlay-resting' && overlay.id !== 'modal-jail') {
+        overlay.classList.remove('active');
         overlay.style.display = 'none';
       }
     });

@@ -203,9 +203,86 @@ async function unlockChapter3(storeId) {
   };
 }
 
+// Unlock Chapter 4 (Đế Chế Nhượng Quyền & Vua Trà Sữa Đô Thị)
+async function unlockChapter4(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
+
+  if ((save.chapter || 1) < 3) {
+    return { success: false, message: 'Bạn cần mở khóa Cửa hàng Flagship Chương 3 trước khi lên Chương 4!' };
+  }
+
+  if (save.chapter >= 4) {
+    return { success: false, message: 'Bạn đã mở khóa Chương 4 rồi!' };
+  }
+
+  const TARGET_CAPITAL = 100000000;
+  if (save.money < TARGET_CAPITAL) {
+    return {
+      success: false,
+      message: `Chưa gom đủ 100.000.000đ vốn thành lập Tổng công ty Nhượng Quyền! Hiện có: ${save.money.toLocaleString('vi-VN')}đ (còn thiếu ${(TARGET_CAPITAL - save.money).toLocaleString('vi-VN')}đ).`
+    };
+  }
+
+  const newChapter = 4;
+  let franchises = [];
+  try {
+    franchises = JSON.parse(save.franchises || '[]');
+  } catch (e) {
+    franchises = [];
+  }
+
+  // Tặng ngay chi nhánh Sài Gòn đầu tiên nếu chưa có
+  if (!franchises.some(f => f.id === 'sg_nguyen_hue')) {
+    franchises.push({
+      id: 'sg_nguyen_hue',
+      level: 1,
+      openedAt: Date.now(),
+      lastCollectedAt: Date.now()
+    });
+  }
+
+  let recipes = [];
+  try {
+    recipes = JSON.parse(save.recipes || '[]');
+  } catch (e) {
+    recipes = [];
+  }
+  if (!recipes.includes('matcha_kyoto_dat_bac')) recipes.push('matcha_kyoto_dat_bac');
+
+  const updatedSave = {
+    store_id: storeId,
+    chapter: newChapter,
+    day_in_game: save.day_in_game,
+    money: save.money,
+    debt_remaining: 0,
+    reputation: 5.0,
+    teacoin: save.teacoin || 0
+  };
+  const hash = anticheat.generateSaveHash(updatedSave);
+
+  await db.prepare(`
+    UPDATE game_saves 
+    SET chapter = ?, franchises = ?, recipes = ?, reputation = 5.0, save_hash = ?, updated_at = ?
+    WHERE store_id = ?
+  `).run(newChapter, JSON.stringify(franchises), JSON.stringify(recipes), hash, new Date().toISOString(), storeId);
+
+  invalidateStoreCache(storeId);
+
+  return {
+    success: true,
+    chapter: newChapter,
+    money: save.money,
+    franchises,
+    recipes,
+    message: '👑 VƯƠN TẦM ĐẾ CHẾ TOÀN CẦU! HeeHee chính thức thăng hạng CHƯƠNG 4: ĐẾ CHẾ NHƯỢNG QUYỀN TOÀN CẦU! Khai trương chi nhánh Sài Gòn đầu tiên và mở quyền đấu giá mẻ trà cổ thụ quý hiếm!'
+  };
+}
+
 module.exports = {
   payDebt,
   unlockChapter2,
   unlockChapter3,
+  unlockChapter4,
   policeFine
 };

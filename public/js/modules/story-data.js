@@ -151,8 +151,48 @@ export const STORY_DATA = {
         avatar: '👑',
         speaker: 'HeeHee (Nhà Sáng Lập)',
         role: 'Menu Thượng Lưu & Nhượng Quyền',
-        text: 'Tại Flagship Store, chúng ta mở khóa thực đơn thượng lưu: Trà Sữa Dát Vàng 24K, Nitro Cold Brew, Trà Sen Tây Hồ Thượng Hạng, Kem Khò Bánh Bỏng!\n\nKhách VIP ngồi lại còn hào phóng bo thêm tiền Tip siêu khủng từ 15k - 30k mỗi ly!\n\nMục tiêu tiếp theo: Tích lũy 200.000.000đ để tiến tới Chương 4 - Nhượng quyền toàn cầu!',
+        text: 'Tại Flagship Store, chúng ta mở khóa thực đơn thượng lưu: Trà Sữa Dát Vàng 24K, Nitro Cold Brew, Trà Sen Tây Hồ Thượng Hạng, Kem Khò Bánh Bỏng!\n\nKhách VIP ngồi lại còn hào phóng bo thêm tiền Tip siêu khủng từ 15k - 30k mỗi ly!\n\nMục tiêu tiếp theo: Tích lũy 100.000.000đ để tiến tới Chương 4 - Nhượng quyền toàn cầu!',
         hint: { icon: '🚀', text: 'Khai phá thực đơn thượng lưu, thu tiền tip Dine-In và chuẩn bị cho Đế Chế Nhượng Quyền!' }
+      }
+    ]
+  },
+  4: {
+    title: 'Chương 4: Đế Chế Nhượng Quyền Toàn Cầu (Vua Trà Sữa Đô Thị)',
+    scenes: [
+      {
+        avatar: '👑',
+        speaker: 'HeeHee (Chủ Tịch Tập Đoàn)',
+        role: 'Vươn tầm thế giới',
+        text: 'Từ một chiếc xe đẩy vỉa hè nợ 3 triệu đồng cho đến cửa hàng Flagship 2 tầng Phố Đi Bộ, hôm nay thương hiệu HEEHEE chính thức bước lên đỉnh cao mới:\n\n🎉 TẬP ĐOÀN NHƯỢNG QUYỀN TOÀN CẦU HEEHEE GLOBAL!\n\nChúng ta đã chính thức mở Chi Nhánh Sài Gòn đầu tiên ngay trung tâm Phố Đi Bộ Nguyễn Huệ hoa lệ!',
+        hint: { icon: '👑', text: 'Chào mừng bạn đến với Chương 4: Đế Chế Nhượng Quyền Toàn Cầu!' }
+      },
+      {
+        avatar: '🌽',
+        speaker: 'Bé Bắp (Tổng Giám Đốc Vận Hành - COO)',
+        role: 'Chuỗi chi nhánh tự động',
+        text: 'Chị HeeHee ơi, em vừa nhận chức TỔNG GIÁM ĐỐC VẬN HÀNH (COO)!\n\nTừ nay, mỗi chi nhánh nhượng quyền (Sài Gòn Nguyễn Huệ, Đà Nẵng, Tokyo, Seoul...) sẽ TỰ ĐỘNG TẠO DOANH THU THỤ ĐỘNG mỗi giờ!\n\nChị chỉ cần bấm [Thu Tiền Nhượng Quyền] là hàng triệu đồng tiền bản quyền sẽ chảy thẳng về tài khoản!',
+        hint: { icon: '💰', text: 'Thu tiền nhượng quyền thụ động định kỳ từ mạng lưới chi nhánh nhượng quyền!' }
+      },
+      {
+        avatar: '🛵',
+        speaker: 'Anh Lâm (Giám Đốc Chuỗi Cung Ứng)',
+        role: 'Supply Chain Director',
+        text: 'Anh đã nâng cấp hạm đội xe tải lạnh 4x4 chuyên dụng và mạng lưới vận chuyển hỏa tốc!\n\nLá trà Mộc Châu hảo hạng, hoa sen Tây Hồ tươi rói và cốt sữa béo ngậy được vận chuyển xuyên suốt Bắc - Nam không gián đoạn một giây nào!',
+        hint: { icon: '🚚', text: 'Hệ thống logistics vận chuyển nguyên liệu phủ sóng toàn quốc!' }
+      },
+      {
+        avatar: '🔨',
+        speaker: 'Thương Gia Quốc Tế (Chuyên Gia Đấu Giá)',
+        role: 'Sàn Đấu Giá Quý Hiếm',
+        text: 'Kính chào Chủ Tịch HeeHee! Sàn Đấu Giá Trà Cổ Thụ Quốc Tế đã chính thức mở cửa đón tiếp quý tiệm!\n\nTại đây, quý khách có thể đặt giá thầu tranh đoạt các mẻ trà huyền thoại: Trà Cổ Thụ Tà Xùa 300 Năm, Ô Long Hun Khói Đài Loan, Bạch Trà Shan Tuyết Đỉnh Fansipan!\n\nMỗi mẻ trà quý sẽ buff hào quang danh tiếng vĩnh viễn và gia tăng doanh thu bùng nổ!',
+        hint: { icon: '🔨', text: 'Tham gia Sàn Đấu Giá trong mục [Đế Chế] để sở hữu các mẻ trà báu vật!' }
+      },
+      {
+        avatar: '✨',
+        speaker: 'HeeHee (Vua Trà Sữa)',
+        role: 'Mục tiêu tối thượng',
+        text: 'Mục tiêu tối thượng của Chương 4:\n\n• Nâng cấp các chi nhánh lên cấp độ 5 sao!\n• Sở hữu công thức Matcha Kyoto Dát Bạc và các bảo vật trà quý!\n• Tích lũy khối tài sản 200.000.000đ để bước lên ngôi vị VUA TRÀ SỮA ĐÔ THỊ TOÀN CẦU (Boba Tycoon Legend)!\n\nCùng viết tiếp trang sử huy hoàng cho Tiệm Trà Sữa HeeHee nào!',
+        hint: { icon: '🏆', text: 'Chinh phục ngôi vị Vua Trà Sữa Đô Thị Toàn Cầu!' }
       }
     ]
   }

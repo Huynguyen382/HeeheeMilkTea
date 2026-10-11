@@ -104,6 +104,26 @@ const RECIPES = {
     tea: 'thai_xanh',
     toppings: ['thach_la_dua', 'tranchau_duongden'],
     desc: '🔥 Cốt trà: [Thái Xanh] • Lớp kem béo ngậy được khò lửa caramel thơm lừng, rắc bánh bỏng giòn tan'
+  },
+  matcha_kyoto_dat_bac: {
+    id: 'matcha_kyoto_dat_bac',
+    name: 'Matcha Uji Kyoto Dát Bạc',
+    chapter: 4,
+    basePrice: 95000,
+    cost: 30000,
+    tea: 'thai_xanh',
+    toppings: ['thach_la_dua', 'tranchau_den'],
+    desc: '🍵 Cốt trà: [Thái Xanh/Matcha] • Bột matcha Uji thượng hạng phủ lá bạc nguyên chất lấp lánh nhập khẩu từ cố đô Kyoto'
+  },
+  tra_sam_nui_seoul: {
+    id: 'tra_sam_nui_seoul',
+    name: 'Trà Sữa Sâm Núi Hoàng Gia Seoul',
+    chapter: 4,
+    basePrice: 110000,
+    cost: 35000,
+    tea: 'sua_tuoi',
+    toppings: ['tranchau_duongden', 'suong_sao'],
+    desc: '🇰🇷 Cốt trà: [Sữa Tươi] • Sâm núi Geumsan 6 năm tuổi bồi bổ nguyên khí kết hợp mật mía đường đen béo ngậy'
   }
 };
 
@@ -132,7 +152,9 @@ const CORE_RECIPES = [
   'nitro_cold_brew',
   'tra_sua_dat_vang',
   'tra_sen_tay_ho',
-  'kem_kho_banh_bong'
+  'kem_kho_banh_bong',
+  'matcha_kyoto_dat_bac',
+  'tra_sam_nui_seoul'
 ];
 
 // Helper to generate realistic multi-topping combinations for customers

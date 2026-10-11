@@ -750,6 +750,9 @@ export function initModals() {
           }
           localStorage.setItem('hyhy_scene_setting', 'walking_street');
           updateUI();
+          if (typeof window.checkStaffOnLoad === 'function') {
+            window.checkStaffOnLoad();
+          }
           if (modalDebt) modalDebt.style.display = 'none';
           setTimeout(() => {
             if (typeof window.openStoryModal === 'function') {
@@ -762,6 +765,44 @@ export function initModals() {
       } catch (err) {
         console.error('Unlock chapter 3 error:', err);
         showToast('❌ Lỗi khi mở khóa Chương 3!');
+      }
+    });
+  }
+
+  const btnUnlockChap4Debt = document.getElementById('btn-unlock-chapter-4-debt');
+  if (btnUnlockChap4Debt) {
+    btnUnlockChap4Debt.addEventListener('click', async () => {
+      const curMoney = state.storeState?.save?.money || 0;
+      if (curMoney < 100000000) {
+        if (window.sound && window.sound.fail) window.sound.fail();
+        showToast(`❌ Chưa đủ vốn 100.000.000đ! Hiện có ${curMoney.toLocaleString('vi-VN')}đ.`);
+        return;
+      }
+
+      try {
+        const res = await window.API.unlockChapter4();
+        if (res && res.success) {
+          if (window.sound) window.sound.coin();
+          showToast(res.message, 6500);
+          state.storeState = await window.API.getState();
+          if (state.canvas) {
+            state.canvas.setChapter(4);
+            state.canvas.setSceneSetting('franchise');
+          }
+          localStorage.setItem('hyhy_scene_setting', 'franchise');
+          updateUI();
+          if (modalDebt) modalDebt.style.display = 'none';
+          setTimeout(() => {
+            if (typeof window.openStoryModal === 'function') {
+              window.openStoryModal(0, 4);
+            }
+          }, 600);
+        } else {
+          showToast('❌ ' + (res.message || 'Chưa đủ điều kiện mở khóa Chương 4!'));
+        }
+      } catch (err) {
+        console.error('Unlock chapter 4 error:', err);
+        showToast('❌ Lỗi khi mở khóa Chương 4!');
       }
     });
   }
@@ -1202,12 +1243,17 @@ export async function renderDailyQuestsModal() {
       return;
     }
 
-    const { teacoin, day, quests, allCompleted, allBonusClaimed } = res;
+    const { teacoin, day, date, quests, allCompleted, allBonusClaimed } = res;
 
     // Update state save data
     if (state.storeState && state.storeState.save) {
       state.storeState.save.teacoin = teacoin;
       updateUI();
+    }
+
+    const dateEl = document.getElementById('modal-daily-quests-date');
+    if (dateEl && date) {
+      dateEl.innerText = `⏰ Ngày: ${date} • Làm mới vào 00:00 hằng ngày (GMT+7)`;
     }
 
     if (balanceEl) balanceEl.innerText = `${(teacoin || 0).toLocaleString('vi-VN')} TeaCoin`;

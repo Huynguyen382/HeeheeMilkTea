@@ -3,13 +3,61 @@
  * Rain, Storms, Thunderstorm Lightning Bolts, Screen Flash & Screen Shake
  */
 
+import { staticBgCache } from './background/cache.js';
+
 export const weatherMethods = {
   setWeather(weather) {
     if (!weather) return;
+    const oldId = this.weather ? this.weather.id : null;
     this.weather = typeof weather === 'string' ? { id: weather } : weather;
-    // Pre-populate raindrops if changing to rain or storm
-    if ((this.weather.id === 'rainy' || this.weather.id === 'stormy') && (!this.raindrops || this.raindrops.length === 0)) {
-      this.initRaindrops();
+    // Invalidate static background cache if weather id changed so new sky gradient & clouds re-render
+    if (oldId !== this.weather.id && staticBgCache) {
+      staticBgCache.cacheKey = null;
+    }
+    // Handle particles when changing weather
+    if (this.weather.id === 'rainy' || this.weather.id === 'stormy') {
+      const targetCount = this.weather.id === 'stormy' ? 95 : 45;
+      if (!this.raindrops || this.raindrops.length < targetCount - 5 || oldId !== this.weather.id) {
+        this.initRaindrops();
+      }
+    } else {
+      this.raindrops = [];
+      this.rainRipples = [];
+    }
+
+    if (this.weather.id === 'windy') {
+      this.initWindParticles();
+    } else {
+      this.windParticles = [];
+    }
+
+    if (this.weather.id === 'cloudy') {
+      this.initCloudyMist();
+    } else {
+      this.cloudyMist = [];
+    }
+
+    if (this.weather.id === 'sunny' || !this.weather.id) {
+      this.initSunnyParticles();
+    } else {
+      this.dustMotes = [];
+    }
+  },
+
+  initSunnyParticles() {
+    this.dustMotes = [];
+    const count = 24;
+    for (let i = 0; i < count; i++) {
+      this.dustMotes.push({
+        x: Math.random() * (this.width || 440),
+        y: Math.random() * 145 + 10,
+        vy: -(Math.random() * 0.18 + 0.08),
+        vx: (Math.random() - 0.5) * 0.22,
+        r: Math.random() * 1.4 + 0.6,
+        alpha: Math.random() * 0.55 + 0.25,
+        pulseSpeed: Math.random() * 0.04 + 0.02,
+        phase: Math.random() * Math.PI * 2
+      });
     }
   },
 
@@ -27,6 +75,38 @@ export const weatherMethods = {
     }
   },
 
+  initWindParticles() {
+    this.windParticles = [];
+    const colors = ['#e67e22', '#d35400', '#f39c12', '#27ae60', '#ff7675', '#fdcb6e'];
+    for (let i = 0; i < 35; i++) {
+      this.windParticles.push({
+        x: Math.random() * (this.width + 100) - 50,
+        y: Math.random() * 180,
+        vx: -(Math.random() * 3.5 + 2.5),
+        vy: (Math.random() - 0.2) * 1.2,
+        size: Math.random() > 0.4 ? 3 : 2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.15,
+        type: Math.random() < 0.25 ? 'gust' : 'leaf'
+      });
+    }
+  },
+
+  initCloudyMist() {
+    this.cloudyMist = [];
+    for (let i = 0; i < 6; i++) {
+      this.cloudyMist.push({
+        x: (i * (this.width / 5)) - 40,
+        y: 110 + (i % 3) * 18,
+        w: 120 + Math.random() * 60,
+        h: 24 + Math.random() * 14,
+        speed: 0.15 + Math.random() * 0.12,
+        alpha: 0.18 + Math.random() * 0.12
+      });
+    }
+  },
+
   updateWeather() {
     if (!this.weather) {
       this.weather = { id: 'sunny' };
@@ -34,6 +114,8 @@ export const weatherMethods = {
 
     const isRain = this.weather.id === 'rainy';
     const isStorm = this.weather.id === 'stormy';
+    const isWind = this.weather.id === 'windy';
+    const isCloud = this.weather.id === 'cloudy';
 
     // 1. Update Raindrops
     if (isRain || isStorm) {
@@ -48,6 +130,7 @@ export const weatherMethods = {
         // Splashing on pavement at y >= 142
         if (drop.y >= 142) {
           if (Math.random() < 0.25) {
+            if (!this.particles) this.particles = [];
             this.particles.push({
               x: drop.x,
               y: 142 + Math.random() * 20,
@@ -117,6 +200,57 @@ export const weatherMethods = {
     if (this.screenShake > 0) {
       this.screenShake--;
     }
+
+    // 4. Windy Particles & Leaves Update
+    if (isWind) {
+      if (!this.windParticles || this.windParticles.length < 25) {
+        this.initWindParticles();
+      }
+      this.windParticles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy + Math.sin(p.angle) * 0.45;
+        p.angle += p.spin;
+        if (p.x < -40) {
+          p.x = this.width + 30;
+          p.y = Math.random() * 180;
+        }
+        if (p.y < 10) p.y = 10;
+        if (p.y > 195) p.y = 170;
+      });
+    }
+
+    // 5. Cloudy Mist Update
+    if (isCloud) {
+      if (!this.cloudyMist || this.cloudyMist.length < 4) {
+        this.initCloudyMist();
+      }
+      this.cloudyMist.forEach(m => {
+        m.x += m.speed;
+        if (m.x > this.width + 50) {
+          m.x = -m.w - 30;
+          m.y = 110 + Math.random() * 30;
+        }
+      });
+    }
+
+    // 6. Sunny Dust Motes Update (Roadmap III.2)
+    const isSunny = !this.weather.id || this.weather.id === 'sunny';
+    if (isSunny) {
+      if (!this.dustMotes || this.dustMotes.length < 15) {
+        this.initSunnyParticles();
+      }
+      this.dustMotes.forEach(m => {
+        m.y += m.vy;
+        m.x += m.vx + Math.sin(m.phase) * 0.22;
+        m.phase += m.pulseSpeed;
+        if (m.y < 12) {
+          m.y = 150;
+          m.x = Math.random() * (this.width || 440);
+        }
+        if (m.x < -10) m.x = (this.width || 440) + 10;
+        if (m.x > (this.width || 440) + 10) m.x = -10;
+      });
+    }
   },
 
   // Generate procedural branching jagged lightning bolt
@@ -166,7 +300,7 @@ export const weatherMethods = {
     this.screenShake = 12;
 
     // Trigger thunder audio clap
-    if (window.sound && typeof window.sound.thunder === 'function') {
+    if (typeof window !== 'undefined' && window.sound && typeof window.sound.thunder === 'function') {
       window.sound.thunder();
     }
   },
@@ -196,7 +330,14 @@ export const weatherMethods = {
       ctx.fillRect(68, 144, 75, 40);
 
       // Street Lamp Wet Reflections
-      const lampXs = (this.chapter === 3) ? [645] : [188, 528, 705];
+      const curScene = (typeof this.getEffectiveScene === 'function') ? this.getEffectiveScene() : (this.sceneSetting || 'town');
+      const lampXs = (curScene === 'walking_street') 
+        ? [95] 
+        : (curScene === 'franchise') 
+          ? [120, 480, 680] 
+          : (curScene === 'town')
+            ? [188, 528, 705]
+            : [];
       lampXs.forEach(lx => {
         const lampRefGrad = ctx.createLinearGradient(0, 144, 0, 195);
         lampRefGrad.addColorStop(0, 'rgba(255, 234, 167, 0.32)');
@@ -272,6 +413,97 @@ export const weatherMethods = {
       ctx.save();
       ctx.fillStyle = `rgba(240, 248, 255, ${this.screenFlash})`;
       ctx.fillRect(0, 0, this.width, this.height);
+      ctx.restore();
+    }
+
+    // 4. Draw Windy Leaves & Air Swirl Streaks
+    if (this.weather.id === 'windy' && this.windParticles && this.windParticles.length > 0) {
+      ctx.save();
+      this.windParticles.forEach(p => {
+        if (p.type === 'gust') {
+          // Semi-transparent wind gust line
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.quadraticCurveTo(p.x + 12, p.y + 2, p.x + 24, p.y - 1);
+          ctx.stroke();
+        } else {
+          // Drifting leaf / flower petal
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.angle);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, p.size * 2, p.size, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      });
+      ctx.restore();
+    }
+
+    // 5. Draw Cloudy Low-Lying Atmospheric Mist
+    if (this.weather.id === 'cloudy' && this.cloudyMist && this.cloudyMist.length > 0) {
+      ctx.save();
+      this.cloudyMist.forEach(m => {
+        const grad = ctx.createRadialGradient(
+          m.x + m.w / 2, m.y + m.h / 2, 2,
+          m.x + m.w / 2, m.y + m.h / 2, m.w / 2
+        );
+        grad.addColorStop(0, `rgba(223, 230, 233, ${m.alpha})`);
+        grad.addColorStop(0.5, `rgba(200, 214, 229, ${m.alpha * 0.6})`);
+        grad.addColorStop(1, 'rgba(200, 214, 229, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.ellipse(m.x + m.w / 2, m.y + m.h / 2, m.w / 2, m.h / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    // 6. Draw Sunny God Rays & Floating Golden Dust Motes (Roadmap III.2)
+    const isSunny = !this.weather || !this.weather.id || this.weather.id === 'sunny';
+    const tod = (typeof this.getTimeOfDay === 'function') ? this.getTimeOfDay() : 'noon';
+    if (isSunny && tod !== 'night') {
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+
+      // 6a. Conical Translucent God Rays streaming diagonally through canopy and eaves
+      const rayAlpha = tod === 'morning' ? 0.08 : (tod === 'afternoon' ? 0.11 : 0.06);
+      const rayOrigins = [
+        { x: 55, topW: 16, botX: 115, botW: 75 },
+        { x: 195, topW: 22, botX: 280, botW: 95 },
+        { x: 340, topW: 18, botX: 425, botW: 85 }
+      ];
+
+      rayOrigins.forEach(ray => {
+        const grad = ctx.createLinearGradient(ray.x, 0, ray.botX, 175);
+        grad.addColorStop(0, `rgba(255, 235, 160, ${rayAlpha * 1.4})`);
+        grad.addColorStop(0.6, `rgba(255, 220, 120, ${rayAlpha * 0.8})`);
+        grad.addColorStop(1, 'rgba(255, 220, 120, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(ray.x - ray.topW / 2, 0);
+        ctx.lineTo(ray.x + ray.topW / 2, 0);
+        ctx.lineTo(ray.botX + ray.botW / 2, 175);
+        ctx.lineTo(ray.botX - ray.botW / 2, 175);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      // 6b. Golden Dust Motes floating softly in sunlight
+      if (this.dustMotes && this.dustMotes.length > 0) {
+        this.dustMotes.forEach(m => {
+          const currentAlpha = m.alpha * (0.6 + 0.4 * Math.sin(m.phase));
+          ctx.fillStyle = `rgba(254, 211, 48, ${currentAlpha})`;
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
       ctx.restore();
     }
   }

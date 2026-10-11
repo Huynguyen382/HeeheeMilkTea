@@ -139,7 +139,6 @@ export function startNextOrderInQueue() {
         if (graceCount < MAX_GRACE) {
           graceCount++;
           elapsed = Math.floor(duration * 0.4); // Hồi lại 60% thanh thời gian
-          showToast(`⏳ [${state.currentOrder ? state.currentOrder.customerName : 'Khách'}] thấy bạn đang pha chế nên vui vẻ đợi thêm! ✨`, 3500);
           return;
         } else {
           // Đã gia hạn 2 lần, giữ lại 20% thanh thời gian cho đến khi giao ly
@@ -162,7 +161,6 @@ export function startNextOrderInQueue() {
             `"Tụi em đang đứng check-in chụp hình quán đẹp quá nè, chị cứ làm từ từ nha! 📸"`
           ];
           const quote = waitQuotes[Math.floor(Math.random() * waitQuotes.length)];
-          showToast(`⏳ [${state.currentOrder ? state.currentOrder.customerName : 'Khách'}]: ${quote}`, 4500);
           const elQuote = document.getElementById('order-dialogue');
           if (elQuote) elQuote.innerText = quote;
           return;
@@ -253,11 +251,6 @@ export async function handleShipperOrderArrival() {
         : `🛵 Anh Lâm: Cho anh lấy đơn ship hỏa tốc!`;
     }
 
-    if (count > 1) {
-      showToast(`🛵 Anh Lâm Shipper đã tới quầy nhận đơn khủng ${count} LY giao hỏa tốc! 📦🧋`, 5000);
-    } else {
-      showToast('🛵 Anh Lâm Shipper đã tới quầy nhận đơn giao hàng hỏa tốc! 📦', 4500);
-    }
     if (window.sound) window.sound.bell();
 
     if (!state.currentOrder) {

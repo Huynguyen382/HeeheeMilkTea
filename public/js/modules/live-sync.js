@@ -142,9 +142,9 @@ export function handleLiveEvent(eventType, data) {
 /**
  * Initialize SSE Connection
  */
-function connectSSE() {
+export function connectSSE() {
   if (sseSource || isConnecting) return;
-  const token = localStorage.getItem('heehee_token') || localStorage.getItem('token');
+  const token = localStorage.getItem('hyhy_session_token') || localStorage.getItem('heehee_token') || (window.API && window.API.token);
   if (!token) return;
 
   isConnecting = true;

@@ -887,154 +887,251 @@ export const eventMethods = {
 
   drawMotorbikeShipper(ctx) {
     const ms = this.motorbikeShipper;
-    if (!ms.active) return;
+    if (!ms || !ms.active) return;
 
-    const mx = ms.x;
-    const my = 134;
+    const mx = Math.round(ms.x);
+    const my = 136; // Align wheels with sidewalk / street curb (y = 148)
+    const isRiding = (ms.state === 'approaching' || ms.state === 'departing');
+    const engineVib = isRiding ? Math.round(Math.sin(this.tick * 0.8) * 0.6) : 0;
 
-    // Draw Motorbike (Xe máy công nghệ có thùng hàng phía sau)
     ctx.save();
-    // Motorbike shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+
+    // 1. Ground Shadow under Motorbike
+    ctx.fillStyle = 'rgba(10, 5, 12, 0.42)';
     ctx.beginPath();
-    ctx.ellipse(mx + 8, my + 8, 16, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(mx + 12, my + 12, 20, 4, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Wheels
-    ctx.fillStyle = '#111';
-    ctx.fillRect(mx - 6, my + 3, 5, 5); // Rear wheel
-    ctx.fillRect(mx + 15, my + 3, 5, 5); // Front wheel
-    ctx.fillStyle = '#95a5a6';
-    ctx.fillRect(mx - 4, my + 5, 1, 1);
-    ctx.fillRect(mx + 17, my + 5, 1, 1);
+    // 2. Spoke Wheels with Chrome Hubs (Matching cart.js Dream/Wave)
+    const drawBikeWheel = (wx) => {
+      ctx.fillStyle = '#0F172A';
+      ctx.beginPath();
+      ctx.arc(wx, my + 7, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.arc(wx, my + 7, 4.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      const rot = isRiding ? (this.tick * 0.4) : 0;
+      ctx.moveTo(wx - Math.cos(rot) * 3.5, my + 7 - Math.sin(rot) * 3.5);
+      ctx.lineTo(wx + Math.cos(rot) * 3.5, my + 7 + Math.sin(rot) * 3.5);
+      ctx.moveTo(wx - Math.cos(rot + 1.57) * 3.5, my + 7 - Math.sin(rot + 1.57) * 3.5);
+      ctx.lineTo(wx + Math.cos(rot + 1.57) * 3.5, my + 7 + Math.sin(rot + 1.57) * 3.5);
+      ctx.stroke();
+      ctx.fillStyle = '#E2E8F0';
+      ctx.fillRect(wx - 1, my + 6, 2, 2);
+    };
+    // Facing left toward the stall counter: front wheel at mx + 1, rear wheel at mx + 20
+    drawBikeWheel(mx + 1);
+    drawBikeWheel(mx + 20);
 
-    // Motorbike Frame & Fairing (Green / Orange #27ae60)
-    ctx.fillStyle = '#27ae60';
-    ctx.fillRect(mx - 2, my - 2, 16, 5);
-    ctx.fillStyle = '#2c3e50'; // Seat
-    ctx.fillRect(mx - 4, my - 4, 12, 3);
-    // Headlight
-    ctx.fillStyle = '#f1c40f';
-    ctx.fillRect(mx + 18, my - 2, 2, 3);
+    // 3. Chrome Exhaust Pipe & Animated Smoke Puffs
+    ctx.fillStyle = '#E2E8F0';
+    ctx.fillRect(mx + 6, my + 7 + engineVib, 15, 2);
+    ctx.fillStyle = '#94A3B8';
+    ctx.fillRect(mx + 19, my + 6 + engineVib, 3, 3);
+    const smokePuff = (Math.floor(this.tick / 10) % 3);
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.72)';
+    if (smokePuff === 0) ctx.fillRect(mx + 23, my + 5, 2, 2);
+    else if (smokePuff === 1) ctx.fillRect(mx + 25, my + 4, 2.5, 2.5);
+    else ctx.fillRect(mx + 27, my + 3, 3, 2);
 
-    // Insulated Delivery Food Box on Rear Rack (Thùng giao trà sữa)
-    ctx.fillStyle = '#e67e22'; // Orange delivery box
-    ctx.fillRect(mx - 10, my - 13, 11, 11);
-    ctx.strokeStyle = '#d35400';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(mx - 10, my - 13, 11, 11);
-    // Box logo or drinks counter
-    ctx.fillStyle = '#ffffff';
-    if (ms.servedCount && ms.servedCount > 0) {
-      ctx.font = 'bold 7px monospace';
-      ctx.fillText(`${ms.servedCount}🧋`, mx - 9, my - 4);
-    } else {
-      ctx.font = 'bold 6px monospace';
-      ctx.fillText('TEA', mx - 9, my - 5);
-    }
-
-    // Kickstand when parked / waiting
-    if (ms.state !== 'approaching' && ms.state !== 'departing') {
-      ctx.strokeStyle = '#7f8c8d';
+    // 4. Engine Block & Kickstand
+    ctx.fillStyle = '#64748B';
+    ctx.fillRect(mx + 6, my + 3 + engineVib, 8, 5);
+    ctx.fillStyle = '#CBD5E1';
+    ctx.fillRect(mx + 7, my + 4 + engineVib, 5, 3);
+    if (!isRiding) {
+      ctx.strokeStyle = '#94A3B8';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(mx + 3, my + 3);
-      ctx.lineTo(mx + 1, my + 7);
+      ctx.moveTo(mx + 10, my + 8);
+      ctx.lineTo(mx + 8, my + 12);
       ctx.stroke();
     }
 
-    // Shipper Person (Anh Lâm - Chiến thần giao hàng)
-    if (ms.state === 'approaching' || ms.state === 'departing') {
-      // Riding on the bike
-      ctx.fillStyle = '#16a34a'; // Delivery jacket xanh lá
-      ctx.fillRect(mx + 2, my - 12, 7, 9);
-      // Reflective stripe on back
-      ctx.fillStyle = '#f1f5f9';
-      ctx.fillRect(mx + 2, my - 8, 7, 2);
-      ctx.fillStyle = '#ea580c'; // Orange accent
-      ctx.fillRect(mx + 2, my - 6, 7, 1);
-      // Red sports helmet with white stripe
-      ctx.fillStyle = '#b91c1c';
-      ctx.fillRect(mx + 3, my - 17, 6, 6);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(mx + 5, my - 17, 2, 6);
-      // Pilot goggles (Kính phi công phản quang)
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(mx + 6, my - 16, 4, 3);
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillRect(mx + 7, my - 15, 3, 2);
+    // 5. Wave Chiến / Dream Chiến Body & White Fairing (Yếm trắng + Thân Xanh Lá/Cam Giao Hàng)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(mx + 4, my + engineVib, 4, 8);
+    ctx.fillStyle = '#E2E8F0';
+    ctx.fillRect(mx + 5, my + 2 + engineVib, 2, 5);
+
+    ctx.fillStyle = '#16A34A'; // Shipper green fairing
+    ctx.fillRect(mx + 7, my + engineVib, 13, 4);
+    ctx.fillStyle = '#EA580C'; // Orange speed decal
+    ctx.fillRect(mx + 8, my + 1 + engineVib, 9, 1);
+    ctx.fillStyle = '#FACC15'; // Gold lightning stripe
+    ctx.fillRect(mx + 9, my + 2 + engineVib, 7, 1);
+
+    // Black Leather Seat & Handlebars
+    ctx.fillStyle = '#1E293B';
+    ctx.fillRect(mx + 8, my - 2 + engineVib, 10, 3);
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(mx + 3, my - 5 + engineVib, 3, 6); // Steering column
+    ctx.fillStyle = '#FEF08A'; // Bright LED Headlight facing left
+    ctx.fillRect(mx + 1, my - 5 + engineVib, 2, 3);
+    ctx.fillStyle = 'rgba(254, 240, 138, 0.28)';
+    ctx.beginPath();
+    ctx.moveTo(mx + 1, my - 4 + engineVib);
+    ctx.lineTo(mx - 14, my - 9 + engineVib);
+    ctx.lineTo(mx - 14, my + 2 + engineVib);
+    ctx.closePath();
+    ctx.fill();
+
+    // 6. Insulated Rear Delivery Cargo Box (Thùng Giữ Nhiệt Cam Phản Quang)
+    const boxX = mx + 17;
+    const boxY = my - 12 + engineVib;
+    ctx.fillStyle = '#EA580C';
+    ctx.fillRect(boxX, boxY, 12, 11);
+    ctx.fillStyle = '#F97316';
+    ctx.fillRect(boxX + 1, boxY + 1, 10, 9);
+    ctx.fillStyle = '#F1F5F9'; // Reflective silver band
+    ctx.fillRect(boxX, boxY + 4, 12, 2);
+    ctx.fillStyle = '#0F172A';
+    ctx.fillRect(boxX + 2, boxY + 1, 8, 3);
+    ctx.fillStyle = '#FDE047';
+    ctx.font = 'bold 5.5px monospace';
+    if (ms.servedCount && ms.servedCount > 0) {
+      ctx.fillText(`${ms.servedCount}LY`, boxX + 2.5, boxY + 9);
     } else {
-      // Shipper walks or stands at ms.walkX (Anh Lâm đi lại lấy trà)
-      const wx = ms.walkX;
-      const wy = 112;
+      ctx.fillText('BOBA', boxX + 2, boxY + 9);
+    }
+
+    // 7. ANH LÂM SHIPPER CHARACTER MODEL (Synchronized with characters.js style: 'anhlam_shipper')
+    const pR = (x, y, w, h, col) => {
+      ctx.fillStyle = col;
+      ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+    };
+    const pD = (x, y, col) => {
+      ctx.fillStyle = col;
+      ctx.fillRect(Math.round(x), Math.round(y), 1, 1);
+    };
+    const isBlinking = (this.tick % 85) < 4;
+
+    if (isRiding) {
+      // Anh Lâm ngồi lái xe Wave Chiến (Tỷ lệ chuẩn ModelNPC anhlam_shipper)
+      const rX = mx + 3;
+      const rY = my - 30 + engineVib;
+      const skin = '#FCD7B0';
+
+      // Mũ bảo hiểm nửa đầu đỏ sọc trắng & Kính phi công xanh phản quang
+      pR(rX + 4, rY + 1, 12, 5, '#B91C1C');
+      pR(rX + 5, rY, 10, 2, '#DC2626');
+      pR(rX + 9, rY + 1, 2, 5, '#FFFFFF');
+      pR(rX + 4, rY + 3, 12, 3, '#0F172A');
+      pR(rX + 5, rY + 4, 4, 2, '#38BDF8'); pD(rX + 6, rY + 4, '#FFFFFF');
+      pR(rX + 11, rY + 4, 4, 2, '#38BDF8'); pD(rX + 12, rY + 4, '#FFFFFF');
+
+      // Khuôn mặt nam tính
+      pR(rX + 5, rY + 6, 10, 7, skin);
+      pR(rX + 6, rY + 12, 8, 1, '#E5B88A');
+      if (!isBlinking) {
+        pR(rX + 6, rY + 8, 2, 2, '#0F172A'); pD(rX + 6, rY + 8, '#FFFFFF');
+        pR(rX + 11, rY + 8, 2, 2, '#0F172A'); pD(rX + 11, rY + 8, '#FFFFFF');
+      } else {
+        pR(rX + 6, rY + 8, 2, 1, '#0F172A');
+        pR(rX + 11, rY + 8, 2, 1, '#0F172A');
+      }
+      pR(rX + 8, rY + 11, 3, 1, '#B91C1C');
+
+      // Áo Bomber Shipper Xanh Lá Phản Quang + Dải Cam + Túi Bao Tử
+      pR(rX + 5, rY + 13, 11, 12, '#16A34A');
+      pR(rX + 5, rY + 18, 11, 2, '#F1F5F9');
+      pR(rX + 5, rY + 20, 11, 1, '#EA580C');
+      pR(rX + 6, rY + 16, 7, 3, '#0F172A');
+      pR(rX + 8, rY + 17, 3, 1, '#FACC15');
+
+      // Tay cầm ghi-đông xe máy
+      pR(rX + 1, rY + 15, 5, 3, '#16A34A');
+      pR(rX, rY + 17, 3, 3, skin);
+
+      // Chân gác lên để chân xe máy & Giày Sneaker Đỏ Đế Trắng
+      pR(rX + 6, rY + 24, 5, 7, '#1E293B');
+      pR(rX + 4, rY + 29, 5, 3, '#DC2626');
+      pR(rX + 4, rY + 31, 5, 1, '#FFFFFF');
+    } else {
+      // Anh Lâm bước xuống xe đi bộ tới quầy (Sử dụng trực tiếp drawNPCCharacter của characters.js!)
+      const wx = Math.round(ms.walkX);
       const isWalking = (ms.state === 'walking_to_counter' || ms.state === 'carrying_drink' || ms.state === 'departing_empty');
-      const walkBob = isWalking ? Math.sin(this.tick * 0.3) * 2 : 0;
-      const legStride = isWalking ? Math.sin(this.tick * 0.3) * 2 : 0;
+      const walkBob = isWalking ? Math.round(Math.sin(this.tick * 0.4) * 2) : Math.round(Math.sin(this.tick * 0.16) * 1);
+      const sway = isWalking
+        ? (Math.sin(this.tick * 0.4) > 0 ? 1 : 0)
+        : (Math.sin(this.tick * 0.18) > 0 ? 1 : 0);
 
-      // Jeans legs
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(wx + 1 + legStride, wy + 20, 3, 10);
-      ctx.fillRect(wx + 5 - legStride, wy + 20, 3, 10);
-      // Red sneakers
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(wx + 0 + legStride, wy + 28, 4, 2);
-      ctx.fillRect(wx + 5 - legStride, wy + 28, 4, 2);
-      // Green jacket with orange accent
-      ctx.fillStyle = '#16a34a';
-      ctx.fillRect(wx, wy + 9 + walkBob, 9, 11);
-      // Reflective silver stripe (Áo phản quang)
-      ctx.fillStyle = '#f1f5f9';
-      ctx.fillRect(wx, wy + 13 + walkBob, 9, 2);
-      ctx.fillStyle = '#ea580c';
-      ctx.fillRect(wx, wy + 15 + walkBob, 9, 1);
-      // Delivery Helmet (Mũ đỏ sọc trắng)
-      ctx.fillStyle = '#b91c1c';
-      ctx.fillRect(wx + 1, wy + 1 + walkBob, 7, 7);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(wx + 4, wy + 1 + walkBob, 2, 7);
-      // Pilot goggles on forehead
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(wx + 1, wy + 3 + walkBob, 7, 3);
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillRect(wx + 2, wy + 4 + walkBob, 2, 1);
-      ctx.fillRect(wx + 5, wy + 4 + walkBob, 2, 1);
-      // Face
-      ctx.fillStyle = '#fcd7b0';
-      ctx.fillRect(wx + 2, wy + 7 + walkBob, 5, 3);
+      const shipperChar = (typeof getCharacter === 'function')
+        ? getCharacter('Anh Lâm Shipper')
+        : (window.getCharacter ? window.getCharacter('Anh Lâm Shipper') : null);
+      const fnDrawNPC = (typeof drawNPCCharacter === 'function')
+        ? drawNPCCharacter
+        : (window.drawNPCCharacter || null);
 
-      // Drink cup held in hand when carrying drink!
-      if (ms.hasDrink) {
-        const cupX = wx - 4;
-        const cupY = wy + 11 + walkBob;
-        // Plastic cup
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(cupX, cupY, 4, 6);
-        // Tea inside
-        ctx.fillStyle = '#e67e22';
-        ctx.fillRect(cupX + 1, cupY + 2, 2, 3);
-        // Cup lid
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillRect(cupX - 1, cupY - 1, 6, 2);
-        // Straw
-        ctx.fillStyle = '#f1c40f';
-        ctx.fillRect(cupX + 1, cupY - 3, 1, 3);
+      const height = 56;
+      const baseX = wx - 8;
+      const baseY = Math.round(148 - height + walkBob);
+
+      // Bóng đổ dưới chân đồng bộ với khách hàng trên vỉa hè (y = 148)
+      ctx.fillStyle = 'rgba(20, 10, 5, 0.25)';
+      ctx.beginPath();
+      ctx.ellipse(baseX + 11, 148, 10, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (shipperChar && typeof fnDrawNPC === 'function') {
+        fnDrawNPC(ctx, shipperChar, baseX, baseY, sway, true, !!ms.hasDrink, isBlinking);
       }
 
-      // Shipper speech bubble
+      // Khi đã nhận trà sữa từ quầy (ms.hasDrink), vẽ thêm ly trà sữa dập nắp trên tay Anh Lâm
+      if (ms.hasDrink) {
+        const cupX = baseX - 2;
+        const cupY = baseY + 18;
+        pR(cupX, cupY, 5, 7, '#FFFBEB');
+        pR(cupX + 1, cupY + 2, 3, 4, '#D97706');
+        pD(cupX + 2, cupY + 5, '#18181B');
+        pR(cupX - 1, cupY, 7, 2, '#2ECC71');
+        pR(cupX + 2, cupY - 3, 1, 3, '#FACC15');
+      }
+
+      // Bong bóng thoại chuẩn Pixel Art phía trên đầu Anh Lâm
       if (ms.bubble) {
-        ctx.font = 'bold 7px sans-serif';
-        const tw = ctx.measureText(ms.bubble).width;
-        const bw = Math.max(70, tw + 10);
-        const bx = wx - Math.floor(bw / 2) + 4;
+        ctx.font = 'bold 7.5px "Courier New", monospace, sans-serif';
+        const tw = Math.ceil(ctx.measureText(ms.bubble).width);
+        const bw = Math.max(84, tw + 12);
+        const bh = 15;
+        const bx = Math.min(this.width - bw - 6, Math.max(6, Math.round(baseX + 11 - bw / 2)));
+        const by = Math.max(12, baseY - 18);
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(bx, by, bw, bh);
+
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(bx, wy - 15, bw, 13);
-        ctx.strokeStyle = '#27ae60';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx, wy - 15, bw, 13);
-        ctx.fillStyle = '#2c3e50';
-        ctx.fillText(ms.bubble, bx + 5, wy - 5);
+        ctx.fillText(ms.bubble, bx + 6, by + 10.5);
       }
     }
+
+    // Bong bóng thoại khi đang chạy xe
+    if (isRiding && ms.bubble) {
+      ctx.font = 'bold 7.5px "Courier New", monospace, sans-serif';
+      const tw = Math.ceil(ctx.measureText(ms.bubble).width);
+      const bw = Math.max(80, tw + 12);
+      const bh = 15;
+      const bx = Math.min(this.width - bw - 6, Math.max(6, Math.round(mx + 10 - bw / 2)));
+      const by = my - 46;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(bx, by, bw, bh);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(ms.bubble, bx + 6, by + 10.5);
+    }
+
     ctx.restore();
   }
 };
