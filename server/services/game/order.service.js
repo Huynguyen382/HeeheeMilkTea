@@ -388,24 +388,17 @@ async function generateOrder(storeId, options = {}) {
       price = Math.max(10000, price);
     }
 
-    // Đàm phán & Mặc cả: Khi đặt giá quá cao các NPC có thể mặc cả
+    // Đàm phán & Mặc cả: Khi đặt giá cao hơn giá thị trường, 70% khách sẽ mặc cả
     let negotiation = null;
     const priceRatio = customRecipePrice / marketBasePrice;
     let haggleChance = 0;
 
     if (priceRatio > 1.0) {
-      // Đặt giá cao hơn thị trường: NPC có nguy cơ mặc cả tỷ lệ thuận với mức giá chênh lệch
-      if (priceRatio <= 1.2) {
-        haggleChance = 0.35; // Cao hơn 1-20%: 35% cơ hội khách mặc cả
-      } else if (priceRatio <= 1.5) {
-        haggleChance = 0.65; // Cao hơn 21-50%: 65% cơ hội khách mặc cả
-      } else {
-        haggleChance = 0.90; // Cao hơn >50%: 90% khách sẽ mặc cả!
-      }
+      // Đặt giá cao hơn thị trường: 70% cơ hội khách mặc cả
+      haggleChance = 0.70;
     } else {
-      // Giá bằng hoặc thấp hơn giá thị trường: chỉ có một ít khách có tính kì kèo mặc cả nhẹ
-      const customerBonus = locationConfig?.customerBonus || 0;
-      haggleChance = Math.min(0.20, NEGOTIATION.haggleChance * 0.3 + customerBonus * 0.1);
+      // Giá bằng hoặc thấp hơn thị trường: khách không mặc cả
+      haggleChance = 0;
     }
 
     if (Math.random() < haggleChance) {

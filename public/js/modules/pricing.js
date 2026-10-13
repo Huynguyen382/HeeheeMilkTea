@@ -6,31 +6,28 @@ export function getRiskInfo(currentPrice, basePrice) {
   const ratio = currentPrice / basePrice;
   if (ratio <= 1.0) {
     return {
-      text: '🟢 Giá chuẩn • Khách không mặc cả',
+      text: '🟢 Giá chuẩn',
       bg: 'rgba(46, 204, 113, 0.15)',
       border: '#2ecc71',
       color: '#2ecc71'
     };
   } else if (ratio <= 1.2) {
-    const pct = Math.round((ratio - 1) * 100);
     return {
-      text: `🟡 Hơi cao (+${pct}%) • 35% khách mặc cả`,
+      text: '🟡 Hơi cao • Khách có thể mặc cả',
       bg: 'rgba(241, 196, 15, 0.15)',
       border: '#f1c40f',
       color: '#f1c40f'
     };
   } else if (ratio <= 1.5) {
-    const pct = Math.round((ratio - 1) * 100);
     return {
-      text: `🟠 Khá chát (+${pct}%) • 65% khách mặc cả`,
+      text: '🟠 Khá chát • Khách có thể mặc cả',
       bg: 'rgba(230, 126, 34, 0.15)',
       border: '#e67e22',
       color: '#e67e22'
     };
   } else {
-    const pct = Math.round((ratio - 1) * 100);
     return {
-      text: `🔴 Quá đắt (+${pct}%) • 90% mặc cả (70% hủy nếu từ chối)`,
+      text: '🔴 Giá cao • Khách có thể mặc cả & hủy đơn',
       bg: 'rgba(231, 76, 60, 0.2)',
       border: '#e74c3c',
       color: '#ff7675'
@@ -137,10 +134,10 @@ export function openPricingModal() {
       </div>
 
       <div style="display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap;">
-        <button class="btn-price-preset" data-pct="1.0" data-recipe="${key}" style="font-size: 0.72rem; padding: 2px 6px; background: #2d182a; border: 1px solid #57334d; color: #bdc3c7; border-radius: 3px; cursor: pointer;">Chuẩn (0%)</button>
-        <button class="btn-price-preset" data-pct="1.15" data-recipe="${key}" style="font-size: 0.72rem; padding: 2px 6px; background: #2d182a; border: 1px solid #57334d; color: #bdc3c7; border-radius: 3px; cursor: pointer;">+15%</button>
-        <button class="btn-price-preset" data-pct="1.3" data-recipe="${key}" style="font-size: 0.72rem; padding: 2px 6px; background: #2d182a; border: 1px solid #57334d; color: #bdc3c7; border-radius: 3px; cursor: pointer;">+30%</button>
-        <button class="btn-price-preset" data-pct="1.6" data-recipe="${key}" style="font-size: 0.72rem; padding: 2px 6px; background: #2d182a; border: 1px solid #57334d; color: #bdc3c7; border-radius: 3px; cursor: pointer;">+60%</button>
+        <button class="btn-price-preset" data-pct="1.0" data-recipe="${key}" style="font-size: 0.72rem; padding: 2px 6px; background: #2d182a; border: 1px solid #57334d; color: #bdc3c7; border-radius: 3px; cursor: pointer;">Chuẩn</button>
+        <button class="btn-price-preset" data-pct="1.15" data-recipe="${key}" style="font-size: 0.72rem; padding: 2px 6px; background: #2d182a; border: 1px solid #57334d; color: #bdc3c7; border-radius: 3px; cursor: pointer;">Tăng nhẹ</button>
+        <button class="btn-price-preset" data-pct="1.3" data-recipe="${key}" style="font-size: 0.72rem; padding: 2px 6px; background: #2d182a; border: 1px solid #57334d; color: #bdc3c7; border-radius: 3px; cursor: pointer;">Tăng vừa</button>
+        <button class="btn-price-preset" data-pct="1.6" data-recipe="${key}" style="font-size: 0.72rem; padding: 2px 6px; background: #2d182a; border: 1px solid #57334d; color: #bdc3c7; border-radius: 3px; cursor: pointer;">Tăng mạnh</button>
       </div>
     `;
 

@@ -203,8 +203,8 @@ export function renderOrderTicket() {
           <button id="btn-accept-haggle" style="flex: 1; background: #27ae60; color: #fff; border: none; border-radius: 4px; padding: 6px 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s;" title="Đồng ý bán với giá khách đề nghị">
             ✅ Bớt Cho Khách (${Number(neg.requestedPrice).toLocaleString('vi-VN')}đ)
           </button>
-          <button id="btn-refuse-haggle" style="flex: 1; background: #c0392b; color: #fff; border: none; border-radius: 4px; padding: 6px 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s;" title="Từ chối: 70% khách hủy đơn, 30% khách vẫn mua">
-            ❌ Từ Chối (70% Hủy)
+          <button id="btn-refuse-haggle" style="flex: 1; background: #c0392b; color: #fff; border: none; border-radius: 4px; padding: 6px 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s;" title="Từ chối bớt giá (khách có thể hủy đơn)">
+            ❌ Từ Chối Bớt Giá
           </button>
         </div>
       </div>
