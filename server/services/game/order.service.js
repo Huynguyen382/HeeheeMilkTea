@@ -324,9 +324,10 @@ async function generateOrder(storeId, options = {}) {
     // Giới hạn giá cốc trà sữa cơ bản theo chương (Ch1: 50k, Ch2: 60k, Ch3: 70k, Ch4: 80k)
     const chapterBaseCap = CHAPTER_CUP_PRICE_CAPS[save.chapter] || 80000;
     const customPrices = JSON.parse(save.custom_prices || '{}');
-    const marketBasePrice = Math.min(recipe.basePrice, chapterBaseCap);
+    const maxAllowed = Math.max(recipe.basePrice, chapterBaseCap);
+    const marketBasePrice = Math.min(recipe.basePrice, maxAllowed);
     const customRecipePrice = (customPrices[recipe.id] && Number(customPrices[recipe.id]) > 0)
-      ? Math.min(Number(customPrices[recipe.id]), chapterBaseCap)
+      ? Math.min(Number(customPrices[recipe.id]), maxAllowed)
       : marketBasePrice;
 
     // Tính giá cơ bản của ly (bao gồm chênh lệch topping nhưng không vượt trần chương)
@@ -912,8 +913,9 @@ async function setCustomPrices(storeId, customPrices) {
   for (const [recipeId, price] of Object.entries(customPrices)) {
     if (RECIPES[recipeId]) {
       const numPrice = Math.round(Number(price));
-      if (!isNaN(numPrice) && numPrice >= 20000) {
-        currentPrices[recipeId] = Math.min(numPrice, chapterBaseCap);
+      const maxAllowed = Math.max(RECIPES[recipeId].basePrice, chapterBaseCap);
+      if (!isNaN(numPrice) && numPrice >= 10000) {
+        currentPrices[recipeId] = Math.min(numPrice, maxAllowed);
       }
     }
   }

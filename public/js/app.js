@@ -24,6 +24,7 @@ import { initFranchiseModule } from './modules/franchise.js';
 import { initStaffModule } from './modules/staff.js';
 import { initLiveSync } from './modules/live-sync.js';
 import { initCoffeeModule } from './modules/coffee.js';
+import { initPricing } from './modules/pricing.js';
 
 let isBootstrapped = false;
 
@@ -59,6 +60,7 @@ async function bootstrapApp() {
   initFarmModule();
   initFranchiseModule();
   initStaffModule();
+  initPricing();
   initLiveSync();
   initCoffeeModule();
 

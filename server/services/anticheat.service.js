@@ -190,10 +190,11 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     customPrices = JSON.parse(save.custom_prices || '{}');
   } catch (e) {}
   const recipeDef = RECIPES[order.recipe_id] || { basePrice: 25000 };
+  const maxAllowed = Math.max(recipeDef.basePrice, chapterBaseCap);
   const rawBasePrice = customPrices[order.recipe_id]
-    ? Math.min(Number(customPrices[order.recipe_id]), recipeDef.basePrice * 2, chapterBaseCap)
-    : Math.min(recipeDef.basePrice, chapterBaseCap);
-  const baseCupPrice = Math.min(rawBasePrice, chapterBaseCap);
+    ? Math.min(Number(customPrices[order.recipe_id]), recipeDef.basePrice * 2, maxAllowed)
+    : Math.min(recipeDef.basePrice, maxAllowed);
+  const baseCupPrice = Math.min(rawBasePrice, maxAllowed);
 
   const collabRow = await db.prepare(`
     SELECT COUNT(*) as cnt 

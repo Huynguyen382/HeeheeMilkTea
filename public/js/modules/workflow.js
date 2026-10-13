@@ -183,6 +183,48 @@ export function renderOrderTicket() {
     ? 'border: 1.5px solid #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);'
     : '';
 
+  let negotiationHtml = '';
+  const neg = state.currentOrder.negotiation;
+  if (neg && neg.status === 'pending') {
+    negotiationHtml = `
+      <div style="background: rgba(241, 196, 15, 0.15); border: 1.5px solid #f1c40f; border-radius: 6px; padding: 6px 8px; margin: 4px 0;">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #f1c40f; font-size: 0.8rem;">
+          <span>💬 KHÁCH MẶC CẢ GIÁ!</span>
+          <span style="color: #ff7675; font-size: 0.72rem;">Xin bớt -${(neg.discountAmount || 0).toLocaleString('vi-VN')}đ</span>
+        </div>
+        <div style="font-size: 0.82rem; color: #ffeaa7; margin: 3px 0; font-style: italic; background: rgba(0, 0, 0, 0.35); padding: 4px 6px; border-radius: 4px; border-left: 3px solid #f1c40f;">
+          "${neg.line || 'Bớt cho mình tí xíu nhé quán ơi!'}"
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #160c18; padding: 3px 6px; border-radius: 4px; margin: 3px 0; font-size: 0.8rem;">
+          <span>Giá quán đặt: <s style="color: #a4b0be;">${state.currentOrder.price.toLocaleString('vi-VN')}đ</s></span>
+          <span>Khách xin trả: <b style="color: #2ecc71; font-size: 0.88rem;">${Number(neg.requestedPrice).toLocaleString('vi-VN')}đ</b></span>
+        </div>
+        <div style="display: flex; gap: 6px; margin-top: 5px;">
+          <button id="btn-accept-haggle" style="flex: 1; background: #27ae60; color: #fff; border: none; border-radius: 4px; padding: 6px 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s;" title="Đồng ý bán với giá khách đề nghị">
+            ✅ Bớt Cho Khách (${Number(neg.requestedPrice).toLocaleString('vi-VN')}đ)
+          </button>
+          <button id="btn-refuse-haggle" style="flex: 1; background: #c0392b; color: #fff; border: none; border-radius: 4px; padding: 6px 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s;" title="Từ chối: 70% khách hủy đơn, 30% khách vẫn mua">
+            ❌ Từ Chối (70% Hủy)
+          </button>
+        </div>
+      </div>
+    `;
+  } else if (neg && neg.status === 'accepted') {
+    negotiationHtml = `
+      <div style="background: rgba(46, 204, 113, 0.15); border: 1px solid #2ecc71; border-radius: 4px; padding: 3px 6px; margin: 3px 0; font-size: 0.78rem; color: #2ecc71; font-weight: bold; display: flex; align-items: center; justify-content: space-between;">
+        <span>🤝 Đã bớt giá theo thỏa thuận:</span>
+        <b>${state.currentOrder.price.toLocaleString('vi-VN')}đ</b>
+      </div>
+    `;
+  } else if (neg && neg.status === 'refused_stayed') {
+    negotiationHtml = `
+      <div style="background: rgba(241, 196, 15, 0.15); border: 1px solid #f1c40f; border-radius: 4px; padding: 3px 6px; margin: 3px 0; font-size: 0.78rem; color: #f1c40f; font-weight: bold; display: flex; align-items: center; justify-content: space-between;">
+        <span>💪 Khách chấp nhận mua giá gốc:</span>
+        <b>${state.currentOrder.price.toLocaleString('vi-VN')}đ</b>
+      </div>
+    `;
+  }
+
   elOrderSection.innerHTML = `
     <div class="order-box" style="${orderBoxStyle}">
       <div class="order-header" style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
@@ -192,6 +234,7 @@ export function renderOrderTicket() {
       <div id="order-dialogue" style="font-style: italic; color: #f1fa8c; font-size: 0.78rem; margin: 1px 0; background: #1c0e1a; border-left: 2.5px solid var(--gold); padding: 1px 6px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${(state.currentOrder.quote || '').replace(/"/g, '&quot;')}">
         💬 "${state.currentOrder.quote || 'Pha chế ngon giùm mình nhé!'}"
       </div>
+      ${negotiationHtml}
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; flex-wrap: wrap;">
         <span style="font-weight: bold; font-size: 0.94rem; color: #8b4513;">🍹 ${state.currentOrder.recipeName}</span>
         <span style="background: #1c0e1a; border: 1px solid #50fa7b; padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; font-weight: bold; color: #50fa7b;">
@@ -208,6 +251,91 @@ export function renderOrderTicket() {
       </div>
     </div>
   `;
+
+  // Attach negotiation button handlers
+  const btnAccept = document.getElementById('btn-accept-haggle');
+  if (btnAccept) {
+    btnAccept.onclick = async () => {
+      btnAccept.disabled = true;
+      btnAccept.innerText = 'Đang xử lý...';
+      try {
+        const res = await window.API.negotiateOrder(state.currentOrder.orderId, true);
+        if (res && res.success) {
+          showToast(res.quote || '✅ Đã đồng ý bớt giá cho khách!', 4000);
+          state.currentOrder.price = res.newPrice;
+          if (state.currentOrder.negotiation) {
+            state.currentOrder.negotiation.status = 'accepted';
+          }
+          if (state.canvas && state.canvas.floatingTexts) {
+            state.canvas.floatingTexts.push({
+              text: '🤝 Bớt giá!',
+              x: 185,
+              y: 75,
+              alpha: 1.0,
+              color: '#2ecc71'
+            });
+          }
+          renderOrderTicket();
+        } else {
+          btnAccept.disabled = false;
+          btnAccept.innerText = '✅ Bớt Cho Khách';
+          showToast(res?.message || 'Có lỗi xảy ra', 3000);
+        }
+      } catch (err) {
+        btnAccept.disabled = false;
+        console.error(err);
+      }
+    };
+  }
+
+  const btnRefuse = document.getElementById('btn-refuse-haggle');
+  if (btnRefuse) {
+    btnRefuse.onclick = async () => {
+      btnRefuse.disabled = true;
+      btnRefuse.innerText = 'Đang xử lý...';
+      try {
+        const res = await window.API.negotiateOrder(state.currentOrder.orderId, false);
+        if (res && res.success) {
+          if (res.cancelled) {
+            showToast(`❌ Khách hủy đơn! "${res.quote}"`, 5000);
+            if (state.canvas && state.canvas.cancelCustomer) {
+              state.canvas.cancelCustomer(res.quote);
+            }
+            if (state.orderTimerInterval) clearInterval(state.orderTimerInterval);
+            if (state.orderQueue && state.orderQueue.length > 0) {
+              state.orderQueue.shift();
+            }
+            if (state.canvas && state.canvas.advanceQueue) {
+              state.canvas.advanceQueue();
+            }
+            startNextOrderInQueue();
+          } else {
+            showToast(`😅 Khách vẫn chịu mua! "${res.quote}"`, 4500);
+            if (state.currentOrder.negotiation) {
+              state.currentOrder.negotiation.status = 'refused_stayed';
+            }
+            if (state.canvas && state.canvas.floatingTexts) {
+              state.canvas.floatingTexts.push({
+                text: '✨ Vẫn mua!',
+                x: 185,
+                y: 75,
+                alpha: 1.0,
+                color: '#f1c40f'
+              });
+            }
+            renderOrderTicket();
+          }
+        } else {
+          btnRefuse.disabled = false;
+          btnRefuse.innerText = '❌ Từ Chối';
+          showToast(res?.message || 'Có lỗi xảy ra', 3000);
+        }
+      } catch (err) {
+        btnRefuse.disabled = false;
+        console.error(err);
+      }
+    };
+  }
 }
 
 export function updateCupMonitor() {
