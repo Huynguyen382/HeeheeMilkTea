@@ -73,28 +73,64 @@ export function initModals() {
 
   // Tabs
   const tabBtnFriends = document.getElementById('tab-btn-friends');
+  const tabBtnGifts = document.getElementById('tab-btn-gifts');
   const tabBtnCollabs = document.getElementById('tab-btn-collabs');
   const tabContentFriends = document.getElementById('tab-content-friends');
+  const tabContentGifts = document.getElementById('tab-content-gifts');
   const tabContentCollabs = document.getElementById('tab-content-collabs');
 
+  function updateGiftsBadgeUI(pendingCount) {
+    const count = Number(pendingCount || 0);
+    const navBadge = document.getElementById('friend-gifts-badge');
+    const tabBadge = document.getElementById('gifts-pending-badge');
+    const inboxCounter = document.getElementById('gifts-inbox-counter');
+
+    if (navBadge) {
+      if (count > 0) {
+        navBadge.innerText = count > 99 ? '99+' : count;
+        navBadge.style.display = 'inline-block';
+      } else {
+        navBadge.style.display = 'none';
+      }
+    }
+
+    if (tabBadge) {
+      tabBadge.innerText = count;
+    }
+
+    if (inboxCounter) {
+      inboxCounter.innerText = `${count} quà`;
+    }
+  }
+
   function switchCollabTab(targetTab) {
+    if (tabBtnFriends) tabBtnFriends.classList.remove('active');
+    if (tabBtnGifts) tabBtnGifts.classList.remove('active');
+    if (tabBtnCollabs) tabBtnCollabs.classList.remove('active');
+    if (tabContentFriends) tabContentFriends.style.display = 'none';
+    if (tabContentGifts) tabContentGifts.style.display = 'none';
+    if (tabContentCollabs) tabContentCollabs.style.display = 'none';
+
     if (targetTab === 'collabs') {
-      if (tabBtnFriends) tabBtnFriends.classList.remove('active');
       if (tabBtnCollabs) tabBtnCollabs.classList.add('active');
-      if (tabContentFriends) tabContentFriends.style.display = 'none';
       if (tabContentCollabs) tabContentCollabs.style.display = 'block';
       renderCollabModal();
+    } else if (targetTab === 'gifts') {
+      if (tabBtnGifts) tabBtnGifts.classList.add('active');
+      if (tabContentGifts) tabContentGifts.style.display = 'block';
+      renderGiftsTab();
     } else {
       if (tabBtnFriends) tabBtnFriends.classList.add('active');
-      if (tabBtnCollabs) tabBtnCollabs.classList.remove('active');
       if (tabContentFriends) tabContentFriends.style.display = 'block';
-      if (tabContentCollabs) tabContentCollabs.style.display = 'none';
       renderFriendsTab();
     }
   }
 
   if (tabBtnFriends) {
     tabBtnFriends.addEventListener('click', () => switchCollabTab('friends'));
+  }
+  if (tabBtnGifts) {
+    tabBtnGifts.addEventListener('click', () => switchCollabTab('gifts'));
   }
   if (tabBtnCollabs) {
     tabBtnCollabs.addEventListener('click', () => switchCollabTab('collabs'));
@@ -117,7 +153,11 @@ export function initModals() {
       const incomingList = res.incoming || [];
       const outgoingList = res.outgoing || [];
 
-      // Update counters
+      // Update counters & gifts badge
+      if (res.pendingGiftsCount !== undefined) {
+        updateGiftsBadgeUI(res.pendingGiftsCount);
+      }
+
       const countNum = document.getElementById('friends-count-num');
       if (countNum) countNum.innerText = friendsList.length;
 
@@ -308,9 +348,89 @@ export function initModals() {
     }
   }
 
+  async function renderGiftsTab() {
+    try {
+      const res = await window.API.getGifts();
+      if (!res || !res.success) return;
+
+      const pendingGifts = res.pendingGifts || [];
+      const claimedGifts = res.claimedGifts || [];
+
+      updateGiftsBadgeUI(pendingGifts.length);
+
+      const incomingContainer = document.getElementById('gifts-incoming-list');
+      const claimedContainer = document.getElementById('gifts-claimed-list');
+
+      if (incomingContainer) {
+        if (pendingGifts.length > 0) {
+          incomingContainer.innerHTML = pendingGifts.map(gift => {
+            let rewardItems = [];
+            if (gift.money_amount > 0) rewardItems.push(`💵 +${(gift.money_amount).toLocaleString('vi-VN')}đ`);
+            if (gift.teacoin_amount > 0) rewardItems.push(`🍵 +${gift.teacoin_amount} TeaCoin`);
+            if (gift.ingredients && typeof gift.ingredients === 'object') {
+              for (const [k, v] of Object.entries(gift.ingredients)) {
+                if (v > 0) {
+                  const label = k === 'tea' ? 'Trà' : (k === 'pearls' ? 'Trân Châu' : k);
+                  rewardItems.push(`📦 +${v} ${label}`);
+                }
+              }
+            }
+            const rewardStr = rewardItems.join(' • ');
+
+            return `
+              <div style="background: rgba(255, 121, 198, 0.08); border: 1.5px solid #ff79c6; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 6px; font-weight: bold; color: #ff79c6; font-size: 0.95rem;">
+                    <span>${gift.icon || '🎁'}</span>
+                    <span>${escapeHtml(gift.title || 'Hộp Quà Tình Bạn')}</span>
+                  </div>
+                  <div style="font-size: 0.82rem; color: #7fffd4; margin-top: 2px;">
+                    Từ quán: <b>${escapeHtml(gift.sender_name || 'Bạn bè')}</b> <span style="font-size: 0.75rem; color: var(--text-muted);">(${escapeHtml(gift.sender_code || '')})</span>
+                  </div>
+                  ${gift.message ? `<div style="font-size: 0.78rem; color: var(--text-muted); font-style: italic; margin-top: 2px;">"${escapeHtml(gift.message)}"</div>` : ''}
+                  <div style="font-size: 0.84rem; color: #50fa7b; font-weight: bold; margin-top: 4px;">
+                    ${rewardStr}
+                  </div>
+                </div>
+                <div>
+                  <button class="btn-action-sm btn-claim-gift" data-id="${gift.id}" style="background: linear-gradient(135deg, #50fa7b, #2ecc71); color: #000; padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; white-space: nowrap;">
+                    🎁 Mở Quà
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          incomingContainer.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 10px; text-align: center;">Chưa có hộp quà nào. Hãy kết bạn và tặng quà để bạn bè gửi lại nhé!</div>';
+        }
+      }
+
+      if (claimedContainer) {
+        if (claimedGifts.length > 0) {
+          claimedContainer.innerHTML = claimedGifts.map(gift => `
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+              <div>
+                <span style="color: #a0aec0;">${gift.icon || '🎁'} Đã nhận từ <b>${escapeHtml(gift.sender_name || 'Bạn bè')}</b></span>
+                <span style="color: var(--text-muted); font-size: 0.74rem; margin-left: 4px;">(${escapeHtml(gift.sender_code || '')})</span>
+              </div>
+              <div style="color: #50fa7b; font-size: 0.78rem;">
+                ✓ Đã mở
+              </div>
+            </div>
+          `).join('');
+        } else {
+          claimedContainer.innerHTML = '<div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Chưa có lịch sử nhận quà.</div>';
+        }
+      }
+    } catch (err) {
+      console.error('Error rendering gifts tab:', err);
+    }
+  }
+
   if (navCollab) {
     navCollab.addEventListener('click', () => {
       renderFriendsTab();
+      renderGiftsTab();
       renderCollabModal();
       if (modalCollab) modalCollab.style.display = 'flex';
     });
@@ -458,6 +578,7 @@ export function initModals() {
             if (window.sound) window.sound.coin();
             showToast(res.message, 4500);
             renderFriendsTab();
+            renderGiftsTab();
             state.storeState = await window.API.getState();
             updateUI();
           } else {
@@ -467,6 +588,92 @@ export function initModals() {
         } catch (err) {
           showToast('❌ Lỗi kết nối!');
           btnGiftFr.disabled = false;
+        }
+        return;
+      }
+
+      // Send gift to all friends
+      const btnGiftAll = e.target.closest('#btn-gift-all-friends, #btn-send-all-gifts-tab');
+      if (btnGiftAll) {
+        btnGiftAll.disabled = true;
+        try {
+          const res = await window.API.sendAllFriendGifts();
+          if (res && res.success) {
+            if (window.sound) window.sound.coin();
+            showToast(res.message, 5000);
+            renderFriendsTab();
+            renderGiftsTab();
+            state.storeState = await window.API.getState();
+            updateUI();
+          } else {
+            showToast('❌ ' + (res.message || 'Lỗi khi gửi quà tất cả bạn bè!'));
+          }
+        } catch (err) {
+          showToast('❌ Lỗi kết nối!');
+        } finally {
+          btnGiftAll.disabled = false;
+        }
+        return;
+      }
+
+      // Claim individual gift
+      const btnClaimGift = e.target.closest('.btn-claim-gift');
+      if (btnClaimGift) {
+        const id = btnClaimGift.getAttribute('data-id');
+        btnClaimGift.disabled = true;
+        btnClaimGift.innerText = 'Đang mở...';
+        try {
+          const res = await window.API.claimFriendGift(id);
+          if (res && res.success) {
+            if (window.sound) window.sound.coin();
+            showToast(res.message, 5000);
+            if (res.state) {
+              state.storeState = res.state;
+            } else {
+              state.storeState = await window.API.getState();
+            }
+            updateUI();
+            renderGiftsTab();
+            renderFriendsTab();
+          } else {
+            showToast('❌ ' + (res.message || 'Lỗi khi mở quà!'));
+            btnClaimGift.disabled = false;
+            btnClaimGift.innerText = '🎁 Mở Quà';
+          }
+        } catch (err) {
+          showToast('❌ Lỗi kết nối!');
+          btnClaimGift.disabled = false;
+          btnClaimGift.innerText = '🎁 Mở Quà';
+        }
+        return;
+      }
+
+      // Claim all gifts & send back
+      const btnClaimAllGifts = e.target.closest('#btn-claim-all-gifts');
+      if (btnClaimAllGifts) {
+        btnClaimAllGifts.disabled = true;
+        btnClaimAllGifts.innerText = 'Đang mở...';
+        try {
+          const res = await window.API.claimAllAndSendBackGifts();
+          if (res && res.success) {
+            if (window.sound) window.sound.coin();
+            showToast(res.message, 5000);
+            if (res.state) {
+              state.storeState = res.state;
+            } else {
+              state.storeState = await window.API.getState();
+            }
+            updateUI();
+            renderGiftsTab();
+            renderFriendsTab();
+          } else {
+            showToast('❌ ' + (res.message || 'Lỗi khi nhận tất cả quà!'));
+          }
+        } catch (err) {
+          showToast('❌ Lỗi kết nối!');
+        } finally {
+          btnClaimAllGifts.disabled = false;
+          btnClaimAllGifts.innerHTML = '🎁 Nhận Tất Cả &amp; Tặng Lại 🔄';
         }
         return;
       }
@@ -802,6 +1009,42 @@ export function initModals() {
       } catch (err) {
         console.error('Unlock chapter 4 error:', err);
         showToast('❌ Lỗi khi mở khóa Chương 4!');
+      }
+    });
+  }
+
+  const btnUnlockChap5Debt = document.getElementById('btn-unlock-chapter-5-debt');
+  if (btnUnlockChap5Debt) {
+    btnUnlockChap5Debt.addEventListener('click', async () => {
+      const curMoney = state.storeState?.save?.money || 0;
+      if (curMoney < 200000000) {
+        if (window.sound && window.sound.fail) window.sound.fail();
+        showToast(`❌ Chưa đủ vốn 200.000.000đ! Hiện có ${curMoney.toLocaleString('vi-VN')}đ.`);
+        return;
+      }
+
+      try {
+        const res = await window.API.unlockChapter5();
+        if (res && res.success) {
+          if (window.sound && window.sound.coin) window.sound.coin();
+          showToast(res.message, 7000);
+          state.storeState = await window.API.getState();
+          if (state.canvas) {
+            state.canvas.setChapter(5);
+          }
+          updateUI();
+          if (modalDebt) modalDebt.style.display = 'none';
+          setTimeout(() => {
+            if (typeof window.openStoryModal === 'function') {
+              window.openStoryModal(0, 5);
+            }
+          }, 600);
+        } else {
+          showToast('❌ ' + (res.message || 'Chưa đủ điều kiện mở khóa Chương 5!'));
+        }
+      } catch (err) {
+        console.error('Unlock chapter 5 error:', err);
+        showToast('❌ Lỗi khi mở khóa Chương 5!');
       }
     });
   }

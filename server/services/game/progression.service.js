@@ -267,10 +267,101 @@ async function unlockChapter4(storeId) {
   };
 }
 
+// Unlock Chapter 5 (Vương Triều Trà Sữa Vũ Trụ & Boba Tycoon Legend)
+async function unlockChapter5(storeId) {
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(storeId);
+  if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
+
+  if ((save.chapter || 1) < 4) {
+    return { success: false, message: 'Bạn cần mở khóa Chuỗi Nhượng Quyền Chương 4 trước khi tiến vào Vương Triều Vũ Trụ!' };
+  }
+
+  if (save.chapter >= 5) {
+    return { success: false, message: 'Bạn đã đăng quang Chương 5: Vương Triều Trà Sữa Vũ Trụ rồi!' };
+  }
+
+  const TARGET_CAPITAL = 200000000;
+  if (save.money < TARGET_CAPITAL) {
+    return {
+      success: false,
+      message: `Chưa gom đủ 200.000.000đ vốn để đăng quang Vương Triều Trà Sữa Vũ Trụ! Hiện có: ${save.money.toLocaleString('vi-VN')}đ (còn thiếu ${(TARGET_CAPITAL - save.money).toLocaleString('vi-VN')}đ).`
+    };
+  }
+
+  const newChapter = 5;
+  const newCartSkin = 'cosmic_coffee_cart';
+  const newTeaCoin = (save.teacoin || 0) + 500;
+
+  // Add royal boss titles
+  let titles = [];
+  try {
+    titles = typeof save.boss_titles === 'string' ? JSON.parse(save.boss_titles || '[]') : (save.boss_titles || []);
+  } catch (e) {
+    titles = [];
+  }
+  if (!titles.includes('Vua Trà Sữa Vũ Trụ 👑')) titles.push('Vua Trà Sữa Vũ Trụ 👑');
+  if (!titles.includes('Boba Tycoon Legend ⭐')) titles.push('Boba Tycoon Legend ⭐');
+
+  // Add royal recipe upgrade
+  let upgrades = {};
+  try {
+    upgrades = typeof save.upgrades === 'string' ? JSON.parse(save.upgrades || '{}') : (save.upgrades || {});
+  } catch (e) {
+    upgrades = {};
+  }
+  upgrades.recipe_hong_tra_vuong_trieu_thap_cam = true;
+
+  const { resolveUnlockedRecipes } = require('./constants');
+  const tempSave = { ...save, chapter: newChapter, upgrades };
+  const recipes = resolveUnlockedRecipes(tempSave);
+
+  const updatedSave = {
+    store_id: storeId,
+    chapter: newChapter,
+    day_in_game: save.day_in_game,
+    money: save.money,
+    debt_remaining: 0,
+    reputation: 5.0,
+    teacoin: newTeaCoin
+  };
+  const hash = anticheat.generateSaveHash(updatedSave);
+
+  await db.prepare(`
+    UPDATE game_saves 
+    SET chapter = ?, cart_skin = ?, teacoin = ?, boss_titles = ?, upgrades = ?, recipes = ?, reputation = 5.0, save_hash = ?, updated_at = ?
+    WHERE store_id = ?
+  `).run(
+    newChapter,
+    newCartSkin,
+    newTeaCoin,
+    JSON.stringify(titles),
+    JSON.stringify(upgrades),
+    JSON.stringify(recipes),
+    hash,
+    new Date().toISOString(),
+    storeId
+  );
+
+  invalidateStoreCache(storeId);
+
+  return {
+    success: true,
+    chapter: newChapter,
+    money: save.money,
+    cart_skin: newCartSkin,
+    teacoin: newTeaCoin,
+    titles,
+    recipes,
+    message: '🌌 ĐĂNG QUANG VƯƠNG TRIỀU TRÀ SỮA VŨ TRỤ! HeeHee chính thức bước lên ngai vàng Boba Tycoon Legend! Mở khóa Xe Đẩy Vũ Trụ Ngân Hà lộng lẫy, tặng ngay 500 TeaCoin và công thức Hồng Trà Vương Triều!'
+  };
+}
+
 module.exports = {
   payDebt,
   unlockChapter2,
   unlockChapter3,
   unlockChapter4,
+  unlockChapter5,
   policeFine
 };
+

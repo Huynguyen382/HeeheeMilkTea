@@ -67,7 +67,8 @@ export const RECIPE_TEA_MAP = {
   tra_sua_dat_vang: { teaId: 'den', teaName: 'Trà Đen Đậm', icon: '👑', btnLabel: 'Trà Đen Đậm' },
   matcha_kyoto_dat_bac: { teaId: 'thai_xanh', teaName: 'Thái Xanh / Matcha', icon: '🍵', btnLabel: 'Thái Xanh' },
   hong_tra_vuong_trieu_thap_cam: { teaId: 'den', teaName: 'Trà Đen Đậm', icon: '💎', btnLabel: 'Trà Đen Đậm' },
-  tra_sam_nui_seoul: { teaId: 'sua_tuoi', teaName: 'Sữa Tươi Sâm', icon: '🇰🇷', btnLabel: 'Sữa Tươi' }
+  tra_sam_nui_seoul: { teaId: 'sua_tuoi', teaName: 'Sữa Tươi Sâm', icon: '🇰🇷', btnLabel: 'Sữa Tươi' },
+  tra_sua_vu_tru_ngan_ha: { teaId: 'olong_nuong', teaName: 'Ô Long Ngân Hà', icon: '🌌', btnLabel: 'Ô Long Nướng' }
 };
 
 export const TEA_INV_MAP = {

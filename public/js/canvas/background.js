@@ -9,6 +9,7 @@ import { hustMethods } from './background/scene-hust.js';
 import { walkingStreetMethods } from './background/scene-walking-street.js';
 import { mocChauMethods } from './background/scene-moc-chau.js';
 import { franchiseMethods } from './background/scene-franchise.js';
+import { cosmicMethods } from './background/scene-cosmic.js';
 
 export { StaticBackgroundCache, staticBgCache };
 
@@ -19,6 +20,7 @@ export const backgroundMethods = {
   ...walkingStreetMethods,
   ...mocChauMethods,
   ...franchiseMethods,
+  ...cosmicMethods,
 
   /**
    * Main background renderer routing to active chapter / venue scene
@@ -30,6 +32,10 @@ export const backgroundMethods = {
       ? this.getEffectiveScene() 
       : (this.sceneSetting || 'town');
 
+    if (scene === 'cosmic') {
+      this.drawCosmicEmpireBackground(ctx, tod);
+      return;
+    }
     if (scene === 'franchise') {
       this.drawFranchiseGlobalBackground(ctx, tod);
       return;

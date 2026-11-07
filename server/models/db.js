@@ -115,6 +115,20 @@ const db = {
             UNIQUE(user_store_id, friend_store_id)
           );
 
+          CREATE TABLE IF NOT EXISTS friend_gifts (
+            id SERIAL PRIMARY KEY,
+            sender_store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+            receiver_store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+            gift_type TEXT NOT NULL DEFAULT 'friendship_box',
+            money_amount INTEGER DEFAULT 10000,
+            teacoin_amount INTEGER DEFAULT 5,
+            ingredients TEXT DEFAULT '{"tea":5,"pearls":5}',
+            message TEXT DEFAULT '',
+            claimed INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            claimed_at TEXT
+          );
+
           CREATE TABLE IF NOT EXISTS active_orders (
             id TEXT PRIMARY KEY,
             store_id INTEGER NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
@@ -215,6 +229,8 @@ const db = {
            CREATE INDEX IF NOT EXISTS idx_collabs_stores ON collabs(host_store_id, friend_store_id, status);
            CREATE INDEX IF NOT EXISTS idx_daily_stats_store_date ON daily_stats(store_id, real_date);
            CREATE INDEX IF NOT EXISTS idx_friends_stores ON friends(user_store_id, friend_store_id);
+           CREATE INDEX IF NOT EXISTS idx_friend_gifts_receiver ON friend_gifts(receiver_store_id, claimed);
+           CREATE INDEX IF NOT EXISTS idx_friend_gifts_sender_date ON friend_gifts(sender_store_id, receiver_store_id, created_at);
            CREATE INDEX IF NOT EXISTS idx_boss_damage_event ON boss_damage_logs(event_id, total_damage);
          `);
          console.log('Neon PostgreSQL schema initialized successfully with optimized indexes.');
@@ -280,6 +296,8 @@ const db = {
       try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_active_orders_store_id ON active_orders(store_id);'); } catch (e) {}
       try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_collabs_stores ON collabs(host_store_id, friend_store_id, status);'); } catch (e) {}
       try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_daily_stats_store_date ON daily_stats(store_id, real_date);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_friend_gifts_receiver ON friend_gifts(receiver_store_id, claimed);'); } catch (e) {}
+      try { sqliteDb.exec('CREATE INDEX IF NOT EXISTS idx_friend_gifts_sender_date ON friend_gifts(sender_store_id, receiver_store_id, created_at);'); } catch (e) {}
 
       sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS game_saves (
@@ -342,6 +360,22 @@ const db = {
           UNIQUE(user_store_id, friend_store_id),
           FOREIGN KEY(user_store_id) REFERENCES stores(id) ON DELETE CASCADE,
           FOREIGN KEY(friend_store_id) REFERENCES stores(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS friend_gifts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          sender_store_id INTEGER NOT NULL,
+          receiver_store_id INTEGER NOT NULL,
+          gift_type TEXT NOT NULL DEFAULT 'friendship_box',
+          money_amount INTEGER DEFAULT 10000,
+          teacoin_amount INTEGER DEFAULT 5,
+          ingredients TEXT DEFAULT '{"tea":5,"pearls":5}',
+          message TEXT DEFAULT '',
+          claimed INTEGER DEFAULT 0,
+          created_at TEXT NOT NULL,
+          claimed_at TEXT,
+          FOREIGN KEY(sender_store_id) REFERENCES stores(id) ON DELETE CASCADE,
+          FOREIGN KEY(receiver_store_id) REFERENCES stores(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS active_orders (

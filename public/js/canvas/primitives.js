@@ -1,56 +1,183 @@
 // Retro Pixel Art Primitives & Barista Hyhy Renderer for GameCanvas
 
 export const primitiveMethods = {
+  // CPU-optimized 2x2 Checkerboard / Bayer Dither for soft retro pixel gradients
+  drawDitheredRect(ctx, x, y, width, height, baseColor, ditherColor) {
+    const rx = Math.round(x);
+    const ry = Math.round(y);
+    const rw = Math.max(1, Math.round(width));
+    const rh = Math.max(1, Math.round(height));
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(rx, ry, rw, rh);
+    ctx.fillStyle = ditherColor;
+    for (let py = 0; py < rh; py += 2) {
+      for (let px = 0; px < rw; px += 2) {
+        if (((px >> 1) + (py >> 1)) % 2 === 0) {
+          ctx.fillRect(rx + px, ry + py, 1, 1);
+        }
+      }
+    }
+  },
+
+  // Warm Cozy Retro Lantern with selective outlining & diffuse ambient glow
+  drawLantern(ctx, x, y, lanternColor = '#e74c3c', glowAlpha = 0.35) {
+    ctx.save();
+    const lx = Math.round(x);
+    const ly = Math.round(y);
+    // Warm diffuse ambient glow
+    if (glowAlpha > 0) {
+      const glow = ctx.createRadialGradient(lx + 4, ly + 5, 1, lx + 4, ly + 5, 14);
+      glow.addColorStop(0, `rgba(254, 250, 224, ${glowAlpha})`);
+      glow.addColorStop(0.5, `rgba(212, 163, 115, ${glowAlpha * 0.45})`);
+      glow.addColorStop(1, 'rgba(43, 30, 42, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(lx + 4, ly + 5, 14, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Selective soft outline (#2b1e2a warm dark shadow)
+    ctx.fillStyle = '#2b1e2a';
+    ctx.fillRect(lx + 2, ly, 4, 1);
+    ctx.fillRect(lx, ly + 2, 8, 6);
+    ctx.fillRect(lx + 2, ly + 8, 4, 1);
+    // 2-tone warm lantern body
+    ctx.fillStyle = lanternColor;
+    ctx.fillRect(lx + 1, ly + 2, 6, 6);
+    ctx.fillStyle = '#faedcd';
+    ctx.fillRect(lx + 2, ly + 3, 2, 4);
+    ctx.fillStyle = '#fefae0';
+    ctx.fillRect(lx + 2, ly + 3, 1, 2); // Specular core glint
+    // Brass cap & tassel
+    ctx.fillStyle = '#d4a373';
+    ctx.fillRect(lx + 2, ly + 1, 4, 1);
+    ctx.fillRect(lx + 2, ly + 8, 4, 1);
+    ctx.fillStyle = '#f4c430';
+    ctx.fillRect(lx + 3, ly + 9, 2, 2);
+    ctx.restore();
+  },
+
   drawGlassJar(ctx, x, y, contentsColor, toppingType) {
-    // Under-shelf LED bottom-edge glow
-    ctx.fillStyle = 'rgba(255, 235, 160, 0.25)';
-    ctx.fillRect(x - 1, y + 9, 13, 2);
+    ctx.save();
+    // Under-shelf diffuse ambient occlusion shadow (#2b1e2a warm tone)
+    ctx.fillStyle = 'rgba(43, 30, 42, 0.42)';
+    ctx.beginPath();
+    ctx.ellipse(x + 5.5, y + 10.5, 6.2, 2.1, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Translucent glass body with rounded bevels
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.fillRect(x, y, 11, 10);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.fillRect(x + 1, y + 1, 9, 8);
-
-    // Topping liquid / solid fill
-    ctx.fillStyle = contentsColor;
-    ctx.fillRect(x + 1, y + 4, 9, 5);
-
-    // Specular liquid highlights & topping textures
-    if (contentsColor === '#111' || toppingType === 'boba') {
-      // Brown sugar tapioca with caramel gloss & boba dots
-      ctx.fillStyle = '#78350F';
-      ctx.fillRect(x + 1, y + 4, 9, 1.5);
-      ctx.fillStyle = '#F59E0B';
-      ctx.fillRect(x + 2, y + 5, 2, 1);
-      ctx.fillRect(x + 6, y + 6, 2, 1);
-    } else if (contentsColor === '#f39c12' || toppingType === 'peach') {
-      // Golden peach slices with golden shimmer
-      ctx.fillStyle = '#FDE047';
-      ctx.fillRect(x + 2, y + 5, 3, 2);
-      ctx.fillRect(x + 6, y + 4, 3, 2);
-      ctx.fillStyle = '#EA580C';
-      ctx.fillRect(x + 3, y + 7, 2, 1);
+    // Selective Soft Edge Outline: warm light edge on left, soft dark contour on right/bottom
+    ctx.fillStyle = 'rgba(43, 30, 42, 0.45)';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x - 0.3, y + 0.8, 11.6, 9.9, [1.2, 1.2, 2.2, 2.2]);
     } else {
-      // Jade pandan / matcha jelly with emerald edge glow
-      ctx.fillStyle = '#34D399';
-      ctx.fillRect(x + 1, y + 4, 9, 1);
-      ctx.fillRect(x + 2, y + 6, 2, 2);
-      ctx.fillRect(x + 6, y + 5, 2, 2);
+      ctx.rect(x - 0.3, y + 0.8, 11.6, 9.9);
+    }
+    ctx.fill();
+
+    // Glass jar outer body with rounded corners & warm cream tint
+    ctx.fillStyle = 'rgba(254, 250, 224, 0.34)';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x, y + 1, 11, 9.5, [1, 1, 2, 2]);
+    } else {
+      ctx.rect(x, y + 1, 11, 9.5);
+    }
+    ctx.fill();
+
+    // Inner glass body volume
+    ctx.fillStyle = 'rgba(240, 248, 255, 0.22)';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x + 0.8, y + 1.8, 9.4, 8.2, [0.5, 0.5, 1.5, 1.5]);
+    } else {
+      ctx.rect(x + 0.8, y + 1.8, 9.4, 8.2);
+    }
+    ctx.fill();
+
+    // Topping contents fill with 2-tone warm shading & smooth meniscus
+    ctx.fillStyle = contentsColor;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x + 1, y + 3.8, 9, 5.8, [0, 0, 1.5, 1.5]);
+    } else {
+      ctx.rect(x + 1, y + 3.8, 9, 5.8);
+    }
+    ctx.fill();
+
+    // Warm 2-tone depth shading at bottom of jar
+    ctx.fillStyle = 'rgba(43, 30, 42, 0.26)';
+    ctx.fillRect(x + 1, y + 7.4, 9, 2.2);
+
+    // Specular liquid highlights & rich topping textures
+    if (contentsColor === '#111' || toppingType === 'boba') {
+      // Brown sugar syrup glaze meniscus
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(x + 1, y + 3.8, 9, 1.4);
+      // Spherical glossy tapioca pearls (static positions, zero GC)
+      const bobaCoordsX = [2.5, 6.5, 4.5, 8.2, 2.2];
+      const bobaCoordsY = [5.5, 5.2, 7.5, 7.6, 8.2];
+      for (let bi = 0; bi < 5; bi++) {
+        const bx = x + bobaCoordsX[bi];
+        const by = y + bobaCoordsY[bi];
+        ctx.fillStyle = '#1f1625';
+        ctx.beginPath();
+        ctx.arc(bx, by, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(bx - 0.5, by - 0.7, 0.8, 0.7);
+        ctx.fillStyle = '#fefae0';
+        ctx.fillRect(bx - 0.4, by - 0.6, 0.4, 0.4);
+      }
+    } else if (contentsColor === '#f39c12' || toppingType === 'peach') {
+      // Golden peach & mango jelly cubes with honey glaze
+      ctx.fillStyle = '#ea580c';
+      ctx.fillRect(x + 1, y + 3.8, 9, 1.2);
+      ctx.fillStyle = '#fde047';
+      ctx.fillRect(x + 2, y + 4.8, 2.8, 2.2);
+      ctx.fillRect(x + 6, y + 4.5, 3.2, 2.5);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(x + 3.5, y + 7.2, 3.2, 2.2);
+      // Glistening sugar syrup glint
+      ctx.fillStyle = '#fefae0';
+      ctx.fillRect(x + 2.4, y + 5.0, 1, 0.8);
+      ctx.fillRect(x + 6.6, y + 4.8, 1.2, 0.8);
+    } else {
+      // Translucent jade emerald jelly cubes with crystal facets
+      ctx.fillStyle = '#059669';
+      ctx.fillRect(x + 1, y + 3.8, 9, 1.2);
+      ctx.fillStyle = '#34d399';
+      ctx.fillRect(x + 1.8, y + 5.0, 3.2, 2.4);
+      ctx.fillRect(x + 5.8, y + 4.8, 3.4, 2.4);
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(x + 3.2, y + 7.2, 3.5, 2.2);
+      // Emerald facet glint
+      ctx.fillStyle = '#a7f3d0';
+      ctx.fillRect(x + 2.2, y + 5.2, 1, 0.8);
+      ctx.fillRect(x + 6.2, y + 5.0, 1.2, 0.8);
     }
 
-    // Glass glare reflection lines
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-    ctx.fillRect(x + 1, y + 1, 1, 8); // left highlight line
-    ctx.fillRect(x + 8, y + 1, 1, 3);
+    // Dual cylindrical glass specular glare & rim reflection lines
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+    ctx.fillRect(x + 1.2, y + 2, 1.1, 7.5);
+    ctx.fillStyle = 'rgba(254, 250, 224, 0.42)';
+    ctx.fillRect(x + 8.5, y + 2.5, 0.8, 6.5);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.fillRect(x + 2.2, y + 9.4, 6.5, 0.6); // Thick glass base refraction
 
-    // Inox Stainless Steel Rim & Handle
-    ctx.fillStyle = '#CBD5E1';
-    ctx.fillRect(x, y - 2, 11, 2);
-    ctx.fillStyle = '#94A3B8';
-    ctx.fillRect(x + 4, y - 4, 3, 2); // knob handle
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(x + 1, y - 2, 3, 1);
+    // Warm Wooden Cork & Brushed Brass Clamp Lid
+    ctx.fillStyle = '#8a5a36';
+    ctx.fillRect(x + 0.5, y - 0.3, 10, 1.8);
+    ctx.fillStyle = '#d4a373';
+    ctx.fillRect(x - 0.2, y - 0.8, 11.4, 1.4);
+    ctx.fillStyle = '#faedcd';
+    ctx.fillRect(x, y - 1.0, 11, 0.7); // lid top highlight
+    ctx.fillStyle = '#8a5a36';
+    ctx.fillRect(x + 4.2, y - 2.8, 2.6, 2.0); // knob base
+    ctx.fillStyle = '#faedcd';
+    ctx.beginPath();
+    ctx.arc(x + 5.5, y - 2.6, 1.6, 0, Math.PI * 2); // rounded knob
+    ctx.fill();
+    ctx.restore();
   },
 
   // Integer-aligned crisp pixel rectangle
@@ -59,7 +186,7 @@ export const primitiveMethods = {
     ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
   },
 
-  // Standard Pixel Art Head & Expressive Anime Pixel Face
+  // Standard Smooth 2D & Pixel Art Head & Expressive Anime Face
   drawOrganicHead(ctx, cx, cy, rx, ry, skinColor, blushColor, isBlinking, eyeColor = '#1a1016', isHappy = false, browColor = null) {
     const px = Math.round(cx);
     const py = Math.round(cy);
@@ -69,179 +196,240 @@ export const primitiveMethods = {
     const top = py - Math.floor(h / 2);
 
     const baseSkin = skinColor || '#ffe0bd';
-    const isTanned = (baseSkin === '#e0a96d' || baseSkin === '#d49b61');
-    const outlineColor = '#3a1e28'; // Warm dark outline
-    const shadowSkin = isTanned ? '#b87333' : '#e8a882';   // Warm chin/neck shadow
+    const isTanned = (baseSkin === '#e0a96d' || baseSkin === '#d49b61' || baseSkin === '#c28456');
+    const outlineColor = '#3a1e28'; // Warm dark contour
+    const shadowSkin = isTanned ? '#b87333' : '#e8a882';   // Warm chin/jaw shadow
     const highlightSkin = isTanned ? '#f5c699' : '#fff6ee'; // Soft forehead / cheek light
 
-    // 1. Pixel Art Head Silhouette & Outline
-    this.drawPixel(ctx, left + 3, top, w - 6, 1, outlineColor);
-    this.drawPixel(ctx, left + 1, top + 1, 2, 1, outlineColor);
-    this.drawPixel(ctx, left + w - 3, top + 1, 2, 1, outlineColor);
-    this.drawPixel(ctx, left, top + 2, 1, h - 5, outlineColor);
-    this.drawPixel(ctx, left + w - 1, top + 2, 1, h - 5, outlineColor);
-    this.drawPixel(ctx, left + 1, top + h - 3, 2, 1, outlineColor);
-    this.drawPixel(ctx, left + w - 3, top + h - 3, 2, 1, outlineColor);
-    this.drawPixel(ctx, left + 3, top + h - 2, 2, 1, outlineColor);
-    this.drawPixel(ctx, left + w - 5, top + h - 2, 2, 1, outlineColor);
-    this.drawPixel(ctx, left + 5, top + h - 1, w - 10, 1, outlineColor);
-
-    // 2. Base Skin Fill & Multi-Tone Shading
-    this.drawPixel(ctx, left + 3, top + 1, w - 6, 1, highlightSkin);
-    this.drawPixel(ctx, left + 1, top + 2, w - 2, h - 6, baseSkin);
-    this.drawPixel(ctx, left + 2, top + 3, 3, 1, highlightSkin); // Left temple light
-    this.drawPixel(ctx, left + w - 5, top + 3, 3, 1, highlightSkin); // Right temple light
-    this.drawPixel(ctx, left + 2, top + h - 4, w - 4, 1, baseSkin);
-    this.drawPixel(ctx, left + 3, top + h - 3, w - 6, 1, shadowSkin); // Jawline contour
-    this.drawPixel(ctx, left + 5, top + h - 2, w - 10, 1, shadowSkin);
-
-    // 3. Cute Pixel Ears with Gold Earring Studs
-    this.drawPixel(ctx, left - 1, py - 1, 1, 3, outlineColor);
-    this.drawPixel(ctx, left, py, 1, 2, shadowSkin);
-    this.drawPixel(ctx, left - 1, py + 1, 1, 1, '#f1c40f'); // Left gold earring glint
-    this.drawPixel(ctx, left + w, py - 1, 1, 3, outlineColor);
-    this.drawPixel(ctx, left + w - 1, py, 1, 2, shadowSkin);
-    this.drawPixel(ctx, left + w, py + 1, 1, 1, '#f1c40f'); // Right gold earring glint
-
-    // 4. Rosy Pixel Blush & Sparkle Catchlight (cheeks below eyes)
-    const blush = blushColor || (isHappy ? '#ff6b81' : '#ff7675');
-    this.drawPixel(ctx, left + 2, py + 2, 2, 1, blush);
-    this.drawPixel(ctx, left + w - 4, py + 2, 2, 1, blush);
-    this.drawPixel(ctx, left + 2, py + 2, 1, 1, '#ffffff'); // Cheek sparkle shine!
-    this.drawPixel(ctx, left + w - 3, py + 2, 1, 1, '#ffffff');
-    if (isHappy) {
-      this.drawPixel(ctx, left + 2, py + 3, 2, 1, blush);
-      this.drawPixel(ctx, left + w - 4, py + 3, 2, 1, blush);
+    // 1. Smooth Organic Face Shape with rounded cheeks & soft chin
+    ctx.save();
+    ctx.fillStyle = outlineColor;
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(left, top, w, h, [3.5, 3.5, 5, 5]);
+      ctx.fill();
+      ctx.fillStyle = baseSkin;
+      ctx.beginPath();
+      ctx.roundRect(left + 0.8, top + 0.8, w - 1.6, h - 1.6, [3, 3, 4.5, 4.5]);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = baseSkin;
+      ctx.fillRect(left + 1, top + 1, w - 2, h - 2);
     }
 
-    // 5. Expressive Pixel Eyes & Eyebrows
+    // 2. Soft Forehead Light & Smooth Jawline Shadow
+    ctx.fillStyle = highlightSkin;
+    ctx.fillRect(left + 2.5, top + 1, w - 5, 1.2);
+
+    ctx.fillStyle = shadowSkin;
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(left + 2, top + h - 2.5, w - 4, 1.8, [0, 0, 3, 3]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(left + 2, top + h - 3, w - 4, 2);
+    }
+
+    // 3. Cute Rounded Ears with Gold Earring Studs
+    ctx.fillStyle = baseSkin;
+    ctx.beginPath();
+    ctx.arc(left, py, 1.7, 0, Math.PI * 2);
+    ctx.arc(left + w, py, 1.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = shadowSkin;
+    ctx.fillRect(left - 0.5, py - 0.5, 1, 1.5);
+    ctx.fillRect(left + w - 0.5, py - 0.5, 1, 1.5);
+    // Gold earring glints
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(left - 1, py + 0.8, 1.2, 1.2);
+    ctx.fillRect(left + w - 0.2, py + 0.8, 1.2, 1.2);
+
+    // 4. Rosy Soft Glowing Blush & Sparkle Catchlight
+    const blush = blushColor || (isHappy ? '#ff6b81' : '#ff7675');
+    ctx.fillStyle = blush;
+    ctx.beginPath();
+    ctx.ellipse(left + 3.2, py + 2.5, 2.2, 1.3, 0, 0, Math.PI * 2);
+    ctx.ellipse(left + w - 3.2, py + 2.5, 2.2, 1.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Cheek sparkle catchlight dots
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(left + 2.5, py + 2, 1, 1);
+    ctx.fillRect(left + w - 3.5, py + 2, 1, 1);
+
+    // 5. Expressive Anime Eyes & Eyebrows
     const eyeSpacing = Math.round(rx * 0.44);
     const eyeY = py - 1;
     const leftEyeX = px - eyeSpacing - 2;
     const rightEyeX = px + eyeSpacing - 1;
 
-    // Eyebrow color determination
     const defaultBrow = browColor || (isTanned ? '#2d3436' : (eyeColor === '#dfe6e9' ? '#8c7b75' : (eyeColor === '#0984e3' ? '#c2921a' : '#3e271a')));
 
     if (isHappy) {
-      // Joyful curved anime eyes: ^ ^ with happy eyelashes
+      // Joyful curved anime eyes: ^ ^ with happy delicate eyelashes
       const drawHappyEye = (ex) => {
-        this.drawPixel(ctx, ex, eyeY + 1, 1, 1, '#1e1018');
-        this.drawPixel(ctx, ex + 1, eyeY, 2, 1, '#1e1018');
-        this.drawPixel(ctx, ex + 3, eyeY + 1, 1, 1, '#1e1018');
-        this.drawPixel(ctx, ex + 4, eyeY, 1, 1, '#1e1018'); // Eyelash flick
+        ctx.strokeStyle = '#1e1018';
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.arc(ex + 1.8, eyeY + 1.2, 2.0, Math.PI, 0);
+        ctx.stroke();
+        this.drawPixel(ctx, ex + 3.8, eyeY, 1, 1, '#1e1018'); // Wing flick
       };
       drawHappyEye(leftEyeX);
       drawHappyEye(rightEyeX);
 
       // Cheerful high arched eyebrows
-      this.drawPixel(ctx, leftEyeX, eyeY - 4, 3, 1, defaultBrow);
-      this.drawPixel(ctx, leftEyeX + 3, eyeY - 3, 1, 1, defaultBrow);
-      this.drawPixel(ctx, rightEyeX + 1, eyeY - 4, 3, 1, defaultBrow);
-      this.drawPixel(ctx, rightEyeX, eyeY - 3, 1, 1, defaultBrow);
+      ctx.strokeStyle = defaultBrow;
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.arc(leftEyeX + 1.5, eyeY - 2.5, 2, Math.PI + 0.3, -0.3);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(rightEyeX + 2.5, eyeY - 2.5, 2, Math.PI + 0.3, -0.3);
+      ctx.stroke();
     } else if (isBlinking) {
-      // Resting blink: sweet closed lash line _ _
-      this.drawPixel(ctx, leftEyeX, eyeY + 1, 4, 1, '#1e1018');
-      this.drawPixel(ctx, leftEyeX + 3, eyeY, 1, 1, '#1e1018');
-      this.drawPixel(ctx, leftEyeX + 4, eyeY - 1, 1, 1, '#1e1018');
-      this.drawPixel(ctx, rightEyeX, eyeY + 1, 4, 1, '#1e1018');
-      this.drawPixel(ctx, rightEyeX + 3, eyeY, 1, 1, '#1e1018');
-      this.drawPixel(ctx, rightEyeX + 4, eyeY - 1, 1, 1, '#1e1018');
+      // Resting gentle blink line with winged tip
+      ctx.strokeStyle = '#1e1018';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(leftEyeX, eyeY + 1);
+      ctx.lineTo(leftEyeX + 3.5, eyeY + 1);
+      ctx.lineTo(leftEyeX + 4.5, eyeY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(rightEyeX, eyeY + 1);
+      ctx.lineTo(rightEyeX + 3.5, eyeY + 1);
+      ctx.lineTo(rightEyeX + 4.5, eyeY);
+      ctx.stroke();
 
       // Relaxed gentle eyebrows
       this.drawPixel(ctx, leftEyeX, eyeY - 3, 3, 1, defaultBrow);
       this.drawPixel(ctx, rightEyeX + 1, eyeY - 3, 3, 1, defaultBrow);
     } else {
-      // High-End Anime Pixel Eyes with 2-tone Iris & Dual Specular Catchlights
+      // High-End Anime Eyes with 2-Tone Luminous Iris & Dual Specular Catchlights
       const drawStandardEye = (ex) => {
-        // Upper eyelash bar with winged flick
-        this.drawPixel(ctx, ex, eyeY - 1, 4, 1, '#1e1018');
-        this.drawPixel(ctx, ex + 3, eyeY - 1, 1, 1, '#1e1018');
-        this.drawPixel(ctx, ex + 4, eyeY - 2, 1, 1, '#1e1018'); // Wing flick
+        // Upper winged eyeliner
+        ctx.fillStyle = '#1e1018';
+        ctx.fillRect(ex, eyeY - 1, 4.2, 1.2);
+        this.drawPixel(ctx, ex + 4, eyeY - 1.5, 1, 1, '#1e1018'); // Winged flick
         // Sclera
-        this.drawPixel(ctx, ex, eyeY, 4, 3, '#ffffff');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(ex, eyeY, 4, 3);
         // Iris: 2-tone glowing gradient
-        this.drawPixel(ctx, ex + 1, eyeY, 2, 1, '#110813'); // Upper shadow
-        this.drawPixel(ctx, ex + 1, eyeY + 1, 2, 2, eyeColor); // Vibrant iris base
+        ctx.fillStyle = '#110813'; // Upper shadow
+        ctx.fillRect(ex + 1, eyeY, 2.2, 1.2);
+        ctx.fillStyle = eyeColor; // Radiant iris base
+        ctx.fillRect(ex + 1, eyeY + 1, 2.2, 1.8);
         // Pupil
-        this.drawPixel(ctx, ex + 1, eyeY + 1, 1, 1, '#000000');
-        // Dual catchlight sparkle
-        this.drawPixel(ctx, ex + 1, eyeY, 1, 1, '#ffffff'); // Primary bright star glint
-        this.drawPixel(ctx, ex + 2, eyeY + 2, 1, 1, 'rgba(255, 255, 255, 0.7)'); // Secondary crystal refraction
-        // Lower eyelid rim
-        this.drawPixel(ctx, ex + 1, eyeY + 3, 2, 1, '#3a1824');
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(ex + 1.2, eyeY + 1, 1.2, 1.2);
+        // Dual catchlight sparkles
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(ex + 1, eyeY, 1.1, 1.1); // Primary star glint
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillRect(ex + 2, eyeY + 1.8, 1, 1); // Secondary crystal reflection
+        // Lower delicate lashline
+        ctx.fillStyle = '#3a1824';
+        ctx.fillRect(ex + 1, eyeY + 2.8, 2, 0.8);
       };
       drawStandardEye(leftEyeX);
       drawStandardEye(rightEyeX);
 
-      // Delicate expressive pixel eyebrows with outer taper
+      // Delicate expressive eyebrows with outer taper
       this.drawPixel(ctx, leftEyeX, eyeY - 3, 3, 1, defaultBrow);
       this.drawPixel(ctx, leftEyeX + 3, eyeY - 4, 1, 1, defaultBrow);
       this.drawPixel(ctx, rightEyeX + 1, eyeY - 3, 3, 1, defaultBrow);
       this.drawPixel(ctx, rightEyeX - 1, eyeY - 4, 1, 1, defaultBrow);
     }
 
-    // 6. Cute Pixel Nose & Smiling Cupid's Bow Mouth
+    // 6. Cute Nose Bridge & Smiling Cupid's Bow Mouth
     this.drawPixel(ctx, px, py + 1, 1, 1, highlightSkin); // Nose bridge light
-    this.drawPixel(ctx, px, py + 2, 1, 1, shadowSkin);    // Nose shadow
+    this.drawPixel(ctx, px, py + 2, 1, 1, shadowSkin);    // Soft nose shadow
     if (isHappy) {
       this.drawPixel(ctx, px - 1, py + 4, 3, 1, '#8b263e');
-      this.drawPixel(ctx, px, py + 5, 2, 1, '#ff7675');
-      this.drawPixel(ctx, px, py + 4, 1, 1, '#ffffff'); // White smile glint!
+      this.drawPixel(ctx, px, py + 4.8, 2, 1, '#ff7675');
+      this.drawPixel(ctx, px, py + 4, 1, 1, '#ffffff'); // Smile white glint!
     } else {
       this.drawPixel(ctx, px - 1, py + 4, 2, 1, '#a33045');
       this.drawPixel(ctx, px + 1, py + 4, 1, 1, '#d63031');
       this.drawPixel(ctx, px, py + 4, 1, 1, '#ff7675'); // Lip center tone
     }
+    ctx.restore();
   },
 
-  // Standard Pixel Art Neck Pillar connecting head to torso
+  // Standard Smooth 2D & Pixel Art Neck Pillar connecting head to torso
   drawNeck(ctx, cx, y, w = 5, h = 4, skinColor = '#ffe0bd', shadowColor = null) {
     const nx = Math.round(cx - Math.floor(w / 2));
     const ny = Math.round(y);
     const baseSkin = skinColor || '#ffe0bd';
-    const isTanned = (baseSkin === '#e0a96d' || baseSkin === '#d49b61');
+    const isTanned = (baseSkin === '#e0a96d' || baseSkin === '#d49b61' || baseSkin === '#c28456');
     const shadow = shadowColor || (isTanned ? '#b87333' : '#e8a882');
 
-    // Neck column
-    this.drawPixel(ctx, nx, ny, w, h, baseSkin);
-    // Shadow under the jawline
-    this.drawPixel(ctx, nx, ny, w, 2, shadow);
-    // Dark outline on sides of neck for clear silhouette
-    this.drawPixel(ctx, nx - 1, ny + 1, 1, h - 1, '#3a1e28');
-    this.drawPixel(ctx, nx + w, ny + 1, 1, h - 1, '#3a1e28');
+    ctx.save();
+    // Neck base
+    ctx.fillStyle = baseSkin;
+    ctx.fillRect(nx, ny, w, h);
+    // Soft shadow under the jawline
+    ctx.fillStyle = shadow;
+    ctx.fillRect(nx, ny, w, 2);
+    // Soft silhouette side borders
+    ctx.fillStyle = '#3a1e28';
+    ctx.fillRect(nx - 0.8, ny + 0.8, 0.8, h - 0.8);
+    ctx.fillRect(nx + w, ny + 0.8, 0.8, h - 0.8);
     // Collarbone notch / throat contour
     this.drawPixel(ctx, Math.round(cx), ny + h - 1, 1, 1, shadow);
+    ctx.restore();
   },
 
-  // Standard Pixel Art Hand (with palm, fingers, knuckles, grip)
+  // Standard Smooth 2D & Pixel Art Hand (with palm, fingers, knuckles, grip)
   drawHand(ctx, x, y, skinColor = '#ffe0bd', pose = 'relaxed') {
     const hx = Math.round(x);
     const hy = Math.round(y);
     const baseSkin = skinColor || '#ffe0bd';
-    const isTanned = (baseSkin === '#e0a96d' || baseSkin === '#d49b61');
+    const isTanned = (baseSkin === '#e0a96d' || baseSkin === '#d49b61' || baseSkin === '#c28456');
     const shadowSkin = isTanned ? '#b87333' : '#e8a882';
 
+    ctx.save();
     if (pose === 'grip' || pose === 'fist') {
-      // 3x3 curled grip hand around handle/object
-      this.drawPixel(ctx, hx, hy, 3, 3, baseSkin);
-      this.drawPixel(ctx, hx, hy + 2, 3, 1, shadowSkin); // finger creases
-      this.drawPixel(ctx, hx, hy, 1, 2, shadowSkin);     // thumb knuckle
-      this.drawPixel(ctx, hx + 1, hy, 1, 1, '#ffffff');  // knuckle highlight
+      // Smooth 3.5x3.5 curled grip hand around cup handle
+      ctx.fillStyle = baseSkin;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(hx, hy, 3.5, 3.5, 1.2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(hx, hy, 3, 3);
+      }
+      ctx.fillStyle = shadowSkin;
+      ctx.fillRect(hx, hy + 2.2, 3.5, 1); // Finger creases
+      ctx.fillRect(hx, hy, 1, 2);         // Thumb knuckle
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(hx + 1, hy, 1, 1);     // Knuckle light
     } else if (pose === 'peace' || pose === 'v') {
-      this.drawPixel(ctx, hx, hy + 2, 3, 2, baseSkin);
-      this.drawPixel(ctx, hx, hy, 1, 2, baseSkin); // index finger
-      this.drawPixel(ctx, hx + 2, hy, 1, 2, baseSkin); // middle finger
+      ctx.fillStyle = baseSkin;
+      ctx.fillRect(hx, hy + 2, 3, 2);
+      ctx.fillRect(hx, hy, 1, 2); // Index finger
+      ctx.fillRect(hx + 2, hy, 1, 2); // Middle finger
     } else {
-      // Relaxed anime hand
-      this.drawPixel(ctx, hx, hy, 3, 3, baseSkin);
-      this.drawPixel(ctx, hx + 1, hy + 3, 2, 1, baseSkin); // fingers
-      this.drawPixel(ctx, hx + 2, hy + 1, 1, 2, shadowSkin); // palm shadow
-      this.drawPixel(ctx, hx + 1, hy + 1, 1, 1, '#ffffff'); // skin glint
+      // Relaxed organic hand
+      ctx.fillStyle = baseSkin;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(hx, hy, 3.5, 3.5, 1.0);
+        ctx.fill();
+      } else {
+        ctx.fillRect(hx, hy, 3, 3);
+      }
+      ctx.fillRect(hx + 1, hy + 3, 2, 1); // Fingers
+      ctx.fillStyle = shadowSkin;
+      ctx.fillRect(hx + 2, hy + 1, 1, 2); // Palm shadow
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(hx + 1, hy + 1, 1, 1); // Skin glint
     }
+    ctx.restore();
   },
 
-  // Standard Pixel Art Limbs (Arms & Legs with integer grid snapping)
+  // Standard Smooth 2D Limbs (Arms & Legs with rounded joints)
   drawCurvedLimb(ctx, x1, y1, x2, y2, r1, r2, color) {
     const rx1 = Math.round(x1);
     const ry1 = Math.round(y1);
@@ -252,9 +440,16 @@ export const primitiveMethods = {
     const minX = Math.min(rx1, rx2);
     const minY = Math.min(ry1, ry2);
 
+    ctx.save();
     ctx.fillStyle = color;
     if (h >= 1) {
-      ctx.fillRect(minX, minY, w, h);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(minX, minY, w, h, Math.min(2, w / 2));
+        ctx.fill();
+      } else {
+        ctx.fillRect(minX, minY, w, h);
+      }
       // Outer shadow strip
       ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
       ctx.fillRect(minX + w - 1, minY, 1, h);
@@ -262,27 +457,36 @@ export const primitiveMethods = {
       const len = Math.abs(rx2 - rx1);
       ctx.fillRect(minX, minY, Math.max(w, len), w);
     }
+    ctx.restore();
   },
 
-  // Standard Pixel Art Shoes & Footwear (with clean soles & highlights)
+  // Standard Smooth 2D Shoes & Footwear (with curved toe & clean sole)
   drawCurvedShoe(ctx, x, y, len, h, color, soleColor = '#ffffff') {
     const sx = Math.round(x - len * 0.4);
     const sy = Math.round(y);
     const sw = Math.round(len);
     const sh = Math.max(3, Math.round(h));
 
-    // Upper shoe vamp
+    ctx.save();
+    // Upper shoe vamp with smooth curved toe
     ctx.fillStyle = color;
-    ctx.fillRect(sx, sy, sw, sh - 1);
-    ctx.fillRect(sx + 1, sy - 1, sw - 2, 1);
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(sx, sy - 0.5, sw, sh - 0.5, [1.5, 2, 0, 0]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(sx, sy, sw, sh - 1);
+      ctx.fillRect(sx + 1, sy - 1, sw - 2, 1);
+    }
 
     // Sole
     ctx.fillStyle = soleColor;
-    ctx.fillRect(sx, sy + sh - 1, sw + 1, 1);
+    ctx.fillRect(sx, sy + sh - 1, sw + 1, 1.2);
 
-    // Gloss highlight pixel
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.fillRect(sx + sw - 2, sy, 1, 1);
+    // Gloss highlight
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.fillRect(sx + sw - 2, sy, 1.2, 1);
+    ctx.restore();
   },
 
   // Standard Pixel Art Fabric Creases & Shading
@@ -327,15 +531,17 @@ export const primitiveMethods = {
   drawHyhy(ctx) {
     const hx = 78;
     const hy = 78;
-    const bob = Math.round(Math.sin(this.tick * 0.1) * 1); // Crisp integer breathing bob
-    const isBlinking = (this.tick % 80) < 4;
+    // Natural Idle Breathing Curve (T = 2.4s = 144 ticks at 60fps, deltaY = sin(t*2*PI/2.4) * 1.25px)
+    const bob = Math.sin((this.tick * Math.PI * 2) / 144) * 1.25;
+    // Natural blink every ~3.5s (210 ticks)
+    const isBlinking = (this.tick % 210) < 4;
 
     const outfit = this.currentOutfit || (window.activeOutfitRender) || null;
 
     const fnDrawBarista = (typeof drawOwnerBarista === 'function') ? drawOwnerBarista : (typeof window !== 'undefined' ? window.drawOwnerBarista : null);
     if (typeof fnDrawBarista === 'function') {
       const isTalking = !!(this.customerQuote && this.bubbleType === 'dialogue');
-      fnDrawBarista(ctx, hx, hy, bob, isBlinking, outfit, this.tick, isTalking, this.isShaking);
+      fnDrawBarista(ctx, hx, hy, Math.round(bob), isBlinking, outfit, this.tick, isTalking, this.isShaking);
     }
   },
 
@@ -343,7 +549,7 @@ export const primitiveMethods = {
   drawHyhyForearms(ctx) {
     const hx = 78;
     const hy = 78;
-    const bob = Math.round(Math.sin(this.tick * 0.1) * 1);
+    const bob = Math.round(Math.sin((this.tick * Math.PI * 2) / 144) * 1.25);
 
     const fnDrawForearms = (typeof drawOwnerForearms === 'function') ? drawOwnerForearms : (typeof window !== 'undefined' ? window.drawOwnerForearms : null);
     if (typeof fnDrawForearms === 'function') {
@@ -360,9 +566,22 @@ export const primitiveMethods = {
     const isTalking = !!(this.staffActionText);
     const skin = '#FFE0BD';
 
-    const pR = (x, y, w, h, col) => {
+    const pR = (x, y, w, h, col, radius) => {
+      if (!col) return;
       ctx.fillStyle = col;
-      ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+      const rx = Math.round(x);
+      const ry = Math.round(y);
+      const rw = Math.max(1, Math.round(w));
+      const rh = Math.max(1, Math.round(h));
+      if (rw >= 3 && rh >= 3) {
+        const r = (radius !== undefined) ? radius : (Math.min(rw, rh) >= 5 ? 1.5 : 0.85);
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, r);
+        else ctx.rect(rx, ry, rw, rh);
+        ctx.fill();
+      } else {
+        ctx.fillRect(rx, ry, rw, rh);
+      }
     };
     const pD = (x, y, col) => {
       ctx.fillStyle = col;
@@ -474,9 +693,22 @@ export const primitiveMethods = {
     const isTalking = !!(this.staffActionText);
     const skin = '#FCD7B0';
 
-    const pR = (x, y, w, h, col) => {
+    const pR = (x, y, w, h, col, radius) => {
+      if (!col) return;
       ctx.fillStyle = col;
-      ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+      const rx = Math.round(x);
+      const ry = Math.round(y);
+      const rw = Math.max(1, Math.round(w));
+      const rh = Math.max(1, Math.round(h));
+      if (rw >= 3 && rh >= 3) {
+        const r = (radius !== undefined) ? radius : (Math.min(rw, rh) >= 5 ? 1.5 : 0.85);
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, r);
+        else ctx.rect(rx, ry, rw, rh);
+        ctx.fill();
+      } else {
+        ctx.fillRect(rx, ry, rw, rh);
+      }
     };
     const pD = (x, y, col) => {
       ctx.fillStyle = col;
@@ -563,9 +795,22 @@ export const primitiveMethods = {
     const isTalking = !!(this.staffActionText);
     const skin = '#FED7AA';
 
-    const pR = (x, y, w, h, col) => {
+    const pR = (x, y, w, h, col, radius) => {
+      if (!col) return;
       ctx.fillStyle = col;
-      ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+      const rx = Math.round(x);
+      const ry = Math.round(y);
+      const rw = Math.max(1, Math.round(w));
+      const rh = Math.max(1, Math.round(h));
+      if (rw >= 3 && rh >= 3) {
+        const r = (radius !== undefined) ? radius : (Math.min(rw, rh) >= 5 ? 1.5 : 0.85);
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, r);
+        else ctx.rect(rx, ry, rw, rh);
+        ctx.fill();
+      } else {
+        ctx.fillRect(rx, ry, rw, rh);
+      }
     };
     const pD = (x, y, col) => {
       ctx.fillStyle = col;
@@ -646,9 +891,22 @@ export const primitiveMethods = {
     const bob = Math.round(Math.sin(this.tick * 0.16) * 1);
     const pulseLed = (Math.sin(this.tick * 0.25) + 1) * 0.5;
 
-    const pR = (x, y, w, h, col) => {
+    const pR = (x, y, w, h, col, radius) => {
+      if (!col) return;
       ctx.fillStyle = col;
-      ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+      const rx = Math.round(x);
+      const ry = Math.round(y);
+      const rw = Math.max(1, Math.round(w));
+      const rh = Math.max(1, Math.round(h));
+      if (rw >= 3 && rh >= 3) {
+        const r = (radius !== undefined) ? radius : (Math.min(rw, rh) >= 5 ? 1.5 : 0.85);
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, r);
+        else ctx.rect(rx, ry, rw, rh);
+        ctx.fill();
+      } else {
+        ctx.fillRect(rx, ry, rw, rh);
+      }
     };
     const pD = (x, y, col) => {
       ctx.fillStyle = col;

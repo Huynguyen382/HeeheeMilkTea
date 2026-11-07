@@ -152,8 +152,24 @@ const API = {
     return await this.request('/game/friends/remove', 'POST', { friendshipId });
   },
 
-  async sendFriendGift(friendshipId) {
-    return await this.request('/game/friends/gift', 'POST', { friendshipId });
+  async sendFriendGift(friendshipId, giftType = 'friendship_box', message = '') {
+    return await this.request('/game/friends/gift', 'POST', { friendshipId, giftType, message });
+  },
+
+  async sendAllFriendGifts() {
+    return await this.request('/game/friends/gift-all', 'POST');
+  },
+
+  async getGifts() {
+    return await this.request('/game/friends/gifts');
+  },
+
+  async claimFriendGift(giftId) {
+    return await this.request('/game/friends/claim-gift', 'POST', { giftId });
+  },
+
+  async claimAllAndSendBackGifts() {
+    return await this.request('/game/friends/claim-all-gifts', 'POST');
   },
 
   async payDebt(amount) {
@@ -294,6 +310,11 @@ const API = {
   // Chapter 4, Franchise & Auction System
   async unlockChapter4() {
     return await this.request('/game/unlock-chapter-4', 'POST');
+  },
+
+  // Chapter 5: Cosmic Boba Kingdom
+  async unlockChapter5() {
+    return await this.request('/game/unlock-chapter-5', 'POST');
   },
 
   async getFranchise() {

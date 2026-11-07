@@ -164,6 +164,24 @@ export function handleLiveEvent(eventType, data, eventId) {
       break;
     }
 
+    case 'friend_gift_received': {
+      if (window.sound && window.sound.coin) window.sound.coin();
+      showToast(`🎁 [${data.senderName || 'Bạn bè'}] vừa gửi tặng bạn: ${data.giftIcon || '🎁'} ${data.giftName || 'Hộp Quà Tình Bạn'}!`, 6000);
+      const giftBadge = document.getElementById('friend-gifts-badge');
+      const giftsPendingBadge = document.getElementById('gifts-pending-badge');
+      if (giftBadge) {
+        const cur = parseInt(giftBadge.innerText || '0', 10);
+        giftBadge.innerText = cur + 1;
+        giftBadge.style.display = 'inline-block';
+      }
+      if (giftsPendingBadge) {
+        const cur = parseInt(giftsPendingBadge.innerText || '0', 10);
+        giftsPendingBadge.innerText = cur + 1;
+        giftsPendingBadge.style.display = 'inline-block';
+      }
+      break;
+    }
+
     default:
       console.log(`[LiveSync] Unhandled event type: ${eventType}`, data);
       break;
@@ -230,6 +248,13 @@ export function connectSSE() {
       try {
         const data = JSON.parse(e.data);
         handleLiveEvent('sabotaged', data);
+      } catch (err) {}
+    });
+
+    sseSource.addEventListener('friend_gift_received', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        handleLiveEvent('friend_gift_received', data);
       } catch (err) {}
     });
 

@@ -45,18 +45,35 @@ export async function initStore() {
         localStorage.setItem(storySeenKey, 'true');
       }
 
-      // Periodic Collab Online Presence Sync
-      if (!window.__collabSyncInterval) {
-        window.__collabSyncInterval = setInterval(async () => {
-          if (!state.isGamePaused && window.API && window.API.token) {
-            try {
-              const collabsRes = await window.API.getCollabs();
-              if (collabsRes && collabsRes.activeCollabs && state.canvas && state.canvas.setCollabs) {
-                state.canvas.setCollabs(collabsRes.activeCollabs);
+      // Periodic Collab Online Presence & Gifts Badge Sync
+      const syncGiftsAndCollabs = async () => {
+        if (!state.isGamePaused && window.API && window.API.token) {
+          try {
+            const collabsRes = await window.API.getCollabs();
+            if (collabsRes && collabsRes.activeCollabs && state.canvas && state.canvas.setCollabs) {
+              state.canvas.setCollabs(collabsRes.activeCollabs);
+            }
+            const giftsRes = await window.API.getGifts();
+            if (giftsRes && giftsRes.success) {
+              const count = giftsRes.totalPending || (giftsRes.pendingGifts ? giftsRes.pendingGifts.length : 0);
+              const navBadge = document.getElementById('friend-gifts-badge');
+              const tabBadge = document.getElementById('gifts-pending-badge');
+              if (navBadge) {
+                if (count > 0) {
+                  navBadge.innerText = count > 99 ? '99+' : count;
+                  navBadge.style.display = 'inline-block';
+                } else {
+                  navBadge.style.display = 'none';
+                }
               }
-            } catch (e) {}
-          }
-        }, 12000);
+              if (tabBadge) tabBadge.innerText = count;
+            }
+          } catch (e) {}
+        }
+      };
+      syncGiftsAndCollabs();
+      if (!window.__collabSyncInterval) {
+        window.__collabSyncInterval = setInterval(syncGiftsAndCollabs, 12000);
       }
 
       scheduleNextOrder(1500);

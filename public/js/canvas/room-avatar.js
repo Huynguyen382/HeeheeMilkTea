@@ -145,53 +145,111 @@ export const RoomAvatar = {
 
     const drawY = -bob;
 
-    // 4. Shoes & Socks Walk Cycle Animation
+    // 4. Shoes & Socks Walk Cycle Animation (Smooth 2D Curves)
     if (state === 'sitting') {
-      // Sitting pose: feet tucked comfortably
+      // Sitting pose: feet tucked comfortably with smooth rounded shoes
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(-7, drawY - 4, 14, 3);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-7, drawY - 4, 14, 3, [1.5, 1.5, 0, 0]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-7, drawY - 4, 14, 3);
+      }
       ctx.fillStyle = '#2d3436';
-      ctx.fillRect(-8, drawY - 2, 16, 4);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-8, drawY - 2, 16, 4, [1, 1, 2, 2]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-8, drawY - 2, 16, 4);
+      }
     } else if (isMoving) {
       const legSwing = Math.sin(player.stepTick * 2.2) * 5.5;
       const legLift1 = Math.max(0, -Math.sin(player.stepTick * 2.2)) * 3.5;
       const legLift2 = Math.max(0, Math.sin(player.stepTick * 2.2)) * 3.5;
 
-      // Left Leg: White sock + Mary Jane Shoe
+      // Left Leg: White sock + Mary Jane Shoe with rounded toe & glossy sole
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(-7 + legSwing, drawY - 8 - legLift1, 5, 5);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-7 + legSwing, drawY - 8 - legLift1, 5, 5, [2, 2, 0, 0]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-7 + legSwing, drawY - 8 - legLift1, 5, 5);
+      }
       ctx.fillStyle = '#2d3436';
-      ctx.fillRect(-8 + legSwing, drawY - 4 - legLift1, 6.5, 4.5);
-      // Buckle detail
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-8 + legSwing, drawY - 4 - legLift1, 6.5, 4.5, [1, 2.5, 1, 1]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-8 + legSwing, drawY - 4 - legLift1, 6.5, 4.5);
+      }
+      // Golden buckle detail
       ctx.fillStyle = '#fdcb6e';
       ctx.fillRect(-6 + legSwing, drawY - 3.5 - legLift1, 1.5, 1.5);
+      // Patent leather shine
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.fillRect(-7 + legSwing, drawY - 3.5 - legLift1, 1.2, 1.2);
 
       // Right Leg: White sock + Mary Jane Shoe
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(2 - legSwing, drawY - 8 - legLift2, 5, 5);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(2 - legSwing, drawY - 8 - legLift2, 5, 5, [2, 2, 0, 0]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(2 - legSwing, drawY - 8 - legLift2, 5, 5);
+      }
       ctx.fillStyle = '#2d3436';
-      ctx.fillRect(1.5 - legSwing, drawY - 4 - legLift2, 6.5, 4.5);
-      // Buckle detail
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(1.5 - legSwing, drawY - 4 - legLift2, 6.5, 4.5, [1, 2.5, 1, 1]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(1.5 - legSwing, drawY - 4 - legLift2, 6.5, 4.5);
+      }
+      // Golden buckle detail
       ctx.fillStyle = '#fdcb6e';
       ctx.fillRect(3.5 - legSwing, drawY - 3.5 - legLift2, 1.5, 1.5);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.fillRect(2.5 - legSwing, drawY - 3.5 - legLift2, 1.2, 1.2);
     } else {
-      // Idle standing feet
+      // Idle standing feet with smooth rounded Mary Jane shoes
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(-6.5, drawY - 8, 5, 5);
-      ctx.fillRect(1.5, drawY - 8, 5, 5);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-6.5, drawY - 8, 5, 5, [2, 2, 0, 0]);
+        ctx.roundRect(1.5, drawY - 8, 5, 5, [2, 2, 0, 0]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-6.5, drawY - 8, 5, 5);
+        ctx.fillRect(1.5, drawY - 8, 5, 5);
+      }
       ctx.fillStyle = '#2d3436';
-      ctx.fillRect(-7, drawY - 4, 6, 4.5);
-      ctx.fillRect(1, drawY - 4, 6, 4.5);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-7, drawY - 4, 6, 4.5, [1, 2.5, 1, 1]);
+        ctx.roundRect(1, drawY - 4, 6, 4.5, [1, 2.5, 1, 1]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-7, drawY - 4, 6, 4.5);
+        ctx.fillRect(1, drawY - 4, 6, 4.5);
+      }
       // Buckles
       ctx.fillStyle = '#fdcb6e';
       ctx.fillRect(-5.5, drawY - 3.5, 1.5, 1.5);
       ctx.fillRect(2.5, drawY - 3.5, 1.5, 1.5);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.fillRect(-6.5, drawY - 3.5, 1.2, 1.2);
+      ctx.fillRect(1.5, drawY - 3.5, 1.2, 1.2);
     }
 
-    // 5. Voluminous Brown Hair (Back Layer)
+    // 5. Voluminous Brown Hair (Back Layer with smooth silhouette)
     ctx.fillStyle = '#5c3317';
     ctx.beginPath();
-    ctx.ellipse(0, drawY - 26, 17, 21, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, drawY - 26, 17.5, 21.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // 6. Arms & Dress System with dynamic Outfit customization
@@ -199,7 +257,6 @@ export const RoomAvatar = {
     const skirtTilt = isMoving ? Math.sin(player.stepTick * 2.2) * 1.8 : 0;
 
     // Resolve outfit colors: default Lolita Pastel or equipped outfit skin
-    // Resolve outfit details: barista, lolita, ao dai, chef
     const outfit = player.outfit || {};
     const outfitId = (outfit.id || outfit.type || '').toLowerCase();
     const isAoDai = outfitId.includes('ao_dai') || outfitId.includes('sen') || (outfit.dressColor === '#00d2d3');
@@ -212,31 +269,53 @@ export const RoomAvatar = {
     const collarColor = outfit.collarColor || (isChef ? '#DC2626' : '#FFFFFF');
     const sleeveColor = outfit.sleeveColor || dressColor;
 
-    // Left Arm (swings opposite)
+    // Left Arm (smooth rounded sleeve & cute hand)
     ctx.fillStyle = sleeveColor;
-    ctx.fillRect(-14 - armSwing * 0.4, drawY - 25 + armSwing * 0.3, 5, 10);
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(-14 - armSwing * 0.4, drawY - 25 + armSwing * 0.3, 5, 10, [2.5, 2.5, 1.5, 1.5]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(-14 - armSwing * 0.4, drawY - 25 + armSwing * 0.3, 5, 10);
+    }
     ctx.fillStyle = '#ffeaa7'; // hand
-    ctx.fillRect(-14 - armSwing * 0.4, drawY - 15 + armSwing * 0.3, 4, 4);
+    ctx.beginPath();
+    ctx.arc(-11.5 - armSwing * 0.4, drawY - 13.5 + armSwing * 0.3, 2.2, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Right Arm (swings opposite)
+    // Right Arm (smooth rounded sleeve & cute hand)
     ctx.fillStyle = sleeveColor;
-    ctx.fillRect(9 + armSwing * 0.4, drawY - 25 - armSwing * 0.3, 5, 10);
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(9 + armSwing * 0.4, drawY - 25 - armSwing * 0.3, 5, 10, [2.5, 2.5, 1.5, 1.5]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(9 + armSwing * 0.4, drawY - 25 - armSwing * 0.3, 5, 10);
+    }
     ctx.fillStyle = '#ffeaa7'; // hand
-    ctx.fillRect(10 + armSwing * 0.4, drawY - 15 - armSwing * 0.3, 4, 4);
+    ctx.beginPath();
+    ctx.arc(11.5 + armSwing * 0.4, drawY - 13.5 - armSwing * 0.3, 2.2, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Flared A-Line Dress / Robe
+    // Flared A-Line Dress / Robe with smooth undulating hem
     ctx.fillStyle = dressColor;
     ctx.beginPath();
     ctx.moveTo(-12 + skirtTilt, drawY - 8);
-    ctx.lineTo(12 + skirtTilt, drawY - 8);
+    ctx.quadraticCurveTo(0 + skirtTilt, drawY - 7, 12 + skirtTilt, drawY - 8);
     ctx.lineTo(8, drawY - 25);
     ctx.lineTo(-8, drawY - 25);
     ctx.closePath();
     ctx.fill();
 
-    // Dress hemline lace / gold trim
+    // Dress hemline lace / gold trim with smooth curves
     ctx.fillStyle = trimColor;
-    ctx.fillRect(-12 + skirtTilt, drawY - 9, 24, 2.5);
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(-12 + skirtTilt, drawY - 9, 24, 2.5, [1, 1, 1, 1]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(-12 + skirtTilt, drawY - 9, 24, 2.5);
+    }
 
     // Signature Chest Accents
     if (isAoDai) {
@@ -245,7 +324,9 @@ export const RoomAvatar = {
       ctx.fillRect(2, drawY - 22, 2, 2);
       ctx.fillRect(4, drawY - 20, 2, 2);
       ctx.fillStyle = '#F472B6';
-      ctx.fillRect(-4, drawY - 18, 3, 3); // lotus bud
+      ctx.beginPath();
+      ctx.arc(-2.5, drawY - 17, 2, 0, Math.PI * 2); // lotus bud
+      ctx.fill();
       ctx.fillStyle = '#FDE047';
       ctx.fillRect(-3, drawY - 17, 1.5, 1.5);
     } else if (isChef) {
@@ -261,7 +342,13 @@ export const RoomAvatar = {
     } else if (isBarista) {
       // Canvas apron pocket & pen
       ctx.fillStyle = '#78350F';
-      ctx.fillRect(-5, drawY - 20, 10, 10);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-5, drawY - 20, 10, 10, [0, 0, 2, 2]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-5, drawY - 20, 10, 10);
+      }
       ctx.fillStyle = '#FACC15';
       ctx.fillRect(1, drawY - 19, 1.5, 3); // brass pen
       ctx.fillStyle = '#FFFFFF';
@@ -272,7 +359,13 @@ export const RoomAvatar = {
     ctx.fillStyle = collarColor;
     if (isChef) {
       // French ruby neckerchief
-      ctx.fillRect(-6, drawY - 26, 12, 3.5);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-6, drawY - 26, 12, 3.5, 1.5);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-6, drawY - 26, 12, 3.5);
+      }
       ctx.fillStyle = '#B91C1C';
       ctx.fillRect(-2, drawY - 23, 4, 3);
     } else {
@@ -293,6 +386,13 @@ export const RoomAvatar = {
     ctx.beginPath();
     ctx.arc(0, drawY - 36, 13.5, Math.PI, 0);
     ctx.fill();
+
+    // Angel Ring / Hair Sheen Glow
+    ctx.fillStyle = 'rgba(253, 224, 71, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(0, drawY - 40, 8.5, 2.0, 0, 0, Math.PI * 2);
+    ctx.fill();
+
     // Warm hair highlight
     ctx.fillStyle = '#7a4b33';
     ctx.beginPath();
@@ -302,19 +402,32 @@ export const RoomAvatar = {
     // Rounded soft bangs
     ctx.fillStyle = '#5c3317';
     ctx.beginPath();
-    ctx.arc(0, drawY - 38, 11, 0.2, Math.PI - 0.2);
+    ctx.arc(0, drawY - 38, 11.2, 0.2, Math.PI - 0.2);
     ctx.fill();
 
-    // Twin wavy side locks framing face with subtle secondary bounce
+    // Twin wavy side locks framing face with smooth curved flow
     const hairBounce = isMoving ? Math.sin(player.stepTick * 2.2 - 0.5) * 1.8 : 0;
-    ctx.fillRect(-14, drawY - 35, 5, 23 + hairBounce);
-    ctx.fillRect(9, drawY - 35, 5, 23 - hairBounce);
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(-14, drawY - 35, 5, 23 + hairBounce, [0, 0, 2.5, 2.5]);
+      ctx.roundRect(9, drawY - 35, 5, 23 - hairBounce, [0, 0, 2.5, 2.5]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(-14, drawY - 35, 5, 23 + hairBounce);
+      ctx.fillRect(9, drawY - 35, 5, 23 - hairBounce);
+    }
 
     // Headpiece Accessories by Outfit
     if (isChef) {
       // Tall Pleated Chef Hat (Toque Blanche)
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(-9, drawY - 58, 18, 15);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-9, drawY - 58, 18, 15, [4, 4, 1, 1]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-9, drawY - 58, 18, 15);
+      }
       ctx.fillStyle = '#E2E8F0';
       for (let cx = -7; cx <= 7; cx += 3.5) {
         ctx.fillRect(cx, drawY - 58, 1.5, 15);
@@ -329,13 +442,22 @@ export const RoomAvatar = {
       ctx.fill();
       ctx.fillStyle = '#FACC15';
       for (let mx = -10; mx <= 10; mx += 4) {
-        ctx.fillRect(mx, drawY - 45, 2, 2);
+        ctx.beginPath();
+        ctx.arc(mx + 1, drawY - 44, 1.2, 0, Math.PI * 2);
+        ctx.fill();
       }
     } else if (isLolita) {
       // Bunny-Ear Rose Lace Headband
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(-10, drawY - 54, 4, 10);
-      ctx.fillRect(6, drawY - 54, 4, 10);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(-10, drawY - 54, 4, 10, 2);
+        ctx.roundRect(6, drawY - 54, 4, 10, 2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-10, drawY - 54, 4, 10);
+        ctx.fillRect(6, drawY - 54, 4, 10);
+      }
       ctx.fillStyle = '#F472B6';
       ctx.fillRect(-9, drawY - 53, 2, 8);
       ctx.fillRect(7, drawY - 53, 2, 8);
@@ -348,51 +470,67 @@ export const RoomAvatar = {
       ctx.fill();
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(10, drawY - 39, 1.5, 0, Math.PI * 2);
+      ctx.arc(10, drawY - 39, 1.6, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 9. Facial Features
+    // 9. Facial Features (Smooth 2D Anime Quality)
     if (facing !== 'up') {
-      // Rosy Cheeks Blush with cozy dithering
-      ctx.fillStyle = '#FF79C6';
-      ctx.fillRect(-9, drawY - 30, 4.5, 2.5);
-      ctx.fillRect(4.5, drawY - 30, 4.5, 2.5);
-      ctx.fillStyle = '#FFAAA6';
-      ctx.fillRect(-8, drawY - 29, 2.5, 1.5);
-      ctx.fillRect(5.5, drawY - 29, 2.5, 1.5);
+      // Rosy Cheeks Blush with delicate radial glow
+      ctx.fillStyle = 'rgba(255, 121, 198, 0.55)';
+      ctx.beginPath();
+      ctx.ellipse(-7, drawY - 29, 3.5, 2.0, 0, 0, Math.PI * 2);
+      ctx.ellipse(7, drawY - 29, 3.5, 2.0, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Cheek sparkle stars
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-6.5, drawY - 29.5, 1.2, 1.2);
+      ctx.fillRect(6.5, drawY - 29.5, 1.2, 1.2);
 
-      // Sweet tiny mouth
+      // Sweet smiling Cupid's bow mouth
       ctx.fillStyle = '#e17055';
-      ctx.fillRect(-1, drawY - 27, 2, 1.2);
+      ctx.beginPath();
+      ctx.arc(0, drawY - 26.5, 1.5, 0, Math.PI);
+      ctx.fill();
 
       // Expressive Anime Eyes
       const isBlinking = (!isMoving && tick % 160 > 152) || state === 'sleeping';
       if (isBlinking) {
         // Cute happy closed eyes (^ ^)
         ctx.strokeStyle = '#2d3436';
-        ctx.lineWidth = 1.4;
+        ctx.lineWidth = 1.6;
         ctx.beginPath();
-        ctx.arc(-5, drawY - 32, 2.5, Math.PI, 0);
-        ctx.arc(5, drawY - 32, 2.5, Math.PI, 0);
+        ctx.arc(-5, drawY - 32, 2.8, Math.PI, 0);
+        ctx.arc(5, drawY - 32, 2.8, Math.PI, 0);
         ctx.stroke();
       } else {
         // Big open anime eyes with 3-tier iris gradient & specular sparkles
         ctx.fillStyle = '#1E293B';
-        ctx.fillRect(-7, drawY - 35, 4, 5.5);
-        ctx.fillRect(3.5, drawY - 35, 4, 5.5);
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(-7, drawY - 35, 4.2, 5.8, 1.5);
+          ctx.roundRect(3.5, drawY - 35, 4.2, 5.8, 1.5);
+          ctx.fill();
+        } else {
+          ctx.fillRect(-7, drawY - 35, 4, 5.5);
+          ctx.fillRect(3.5, drawY - 35, 4, 5.5);
+        }
         // Mid iris amber / jade
         ctx.fillStyle = isAoDai ? '#0D9488' : '#B45309';
-        ctx.fillRect(-6.5, drawY - 33, 3, 2.5);
-        ctx.fillRect(4, drawY - 33, 3, 2.5);
+        ctx.fillRect(-6.5, drawY - 33, 3.2, 2.8);
+        ctx.fillRect(4, drawY - 33, 3.2, 2.8);
         // Golden sparkle iris
         ctx.fillStyle = isAoDai ? '#34D399' : '#FDE047';
-        ctx.fillRect(-6, drawY - 31.5, 2, 1.5);
-        ctx.fillRect(4.5, drawY - 31.5, 2, 1.5);
-        // White specular catchlight dot ✦
+        ctx.fillRect(-6, drawY - 31.5, 2.2, 1.8);
+        ctx.fillRect(4.5, drawY - 31.5, 2.2, 1.8);
+        // Primary white specular catchlight dot ✦
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-7, drawY - 35, 2, 2);
-        ctx.fillRect(3.5, drawY - 35, 2, 2);
+        ctx.fillRect(-6.8, drawY - 35, 2.2, 2.2);
+        ctx.fillRect(3.7, drawY - 35, 2.2, 2.2);
+        // Secondary reflection sparkle
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillRect(-5.2, drawY - 31, 1.2, 1.2);
+        ctx.fillRect(5.3, drawY - 31, 1.2, 1.2);
       }
     } else {
       // Facing Up: back of head hair

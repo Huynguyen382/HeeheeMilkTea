@@ -470,6 +470,7 @@ export function updateUI() {
   const debtSec = document.getElementById('chapter-2-unlock-section');
   const chap3Sec = document.getElementById('chapter-3-unlock-section');
   const chap4Sec = document.getElementById('chapter-4-unlock-section');
+  const chap5Sec = document.getElementById('chapter-5-unlock-section');
   const debtPayControls = document.getElementById('debt-pay-controls');
   const navDebtBtn = document.getElementById('nav-debt');
   const menuDebtTitle = document.getElementById('menu-debt-title');
@@ -483,13 +484,18 @@ export function updateUI() {
     const canUnlockChap4 = (save.chapter === 3 && (save.money || 0) >= 100000000);
     if (chap4Sec) chap4Sec.style.display = canUnlockChap4 ? 'block' : 'none';
 
+    const canUnlockChap5 = (save.chapter === 4 && (save.money || 0) >= 200000000);
+    if (chap5Sec) chap5Sec.style.display = canUnlockChap5 ? 'block' : 'none';
+
     if (menuDebtTitle) {
       if (save.chapter === 1) menuDebtTitle.innerText = '🚀 Lên Chương 2';
       else if (canUnlockChap3) menuDebtTitle.innerText = '🏰 Lên Chương 3';
       else if (save.chapter === 2) menuDebtTitle.innerText = '🏆 Mục Tiêu 50Tr';
       else if (canUnlockChap4) menuDebtTitle.innerText = '👑 Lên Chương 4';
       else if (save.chapter === 3) menuDebtTitle.innerText = '👑 Mục Tiêu 100Tr';
-      else menuDebtTitle.innerText = '👑 Đế Chế Toàn Cầu';
+      else if (canUnlockChap5) menuDebtTitle.innerText = '🌌 Lên Chương 5';
+      else if (save.chapter === 4) menuDebtTitle.innerText = '🏆 Mục Tiêu 200Tr';
+      else menuDebtTitle.innerText = '🌌 Vương Triều Vũ Trụ';
     } else if (navDebtBtn) {
       if (save.chapter === 1) {
         navDebtBtn.innerHTML = '🚀 Lên Chương 2';
@@ -506,9 +512,15 @@ export function updateUI() {
       } else if (save.chapter === 3) {
         navDebtBtn.innerHTML = '👑 Mục Tiêu 100Tr';
         navDebtBtn.style.color = '#fdcb6e';
+      } else if (canUnlockChap5) {
+        navDebtBtn.innerHTML = '🌌 Lên Chương 5';
+        navDebtBtn.style.color = '#bd93f9';
+      } else if (save.chapter === 4) {
+        navDebtBtn.innerHTML = '🏆 Mục Tiêu 200Tr';
+        navDebtBtn.style.color = '#bd93f9';
       } else {
-        navDebtBtn.innerHTML = '👑 Đế Chế Toàn Cầu';
-        navDebtBtn.style.color = '#fdcb6e';
+        navDebtBtn.innerHTML = '🌌 Vương Triều Vũ Trụ';
+        navDebtBtn.style.color = '#bd93f9';
       }
     }
   }
@@ -690,6 +702,17 @@ export const SCENE_CATALOG = [
     bgTint: 'rgba(224, 86, 253, 0.14)',
     desc: 'Tòa tháp thương mại rực rỡ ánh đèn neon giữa trung tâm đại lộ.',
     unlockHint: 'Mở khóa ở Chương 4 (Đạt cột mốc vốn 100.000.000đ)'
+  },
+  {
+    id: 'cosmic',
+    icon: '🌌',
+    shortName: 'Vũ Trụ',
+    name: 'Vương Triều Boba Vũ Trụ',
+    chapter: 5,
+    color: '#bd93f9',
+    bgTint: 'rgba(189, 147, 249, 0.18)',
+    desc: 'Trạm không gian tinh vân Ngân Hà rực rỡ hào quang cực quang & ánh sao vương triều boba đỉnh cao.',
+    unlockHint: 'Mở khóa ở Chương 5 (Đạt cột mốc vốn 200.000.000đ & chuỗi nhượng quyền)'
   }
 ];
 

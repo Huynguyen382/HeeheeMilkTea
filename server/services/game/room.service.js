@@ -222,25 +222,75 @@ async function getFriendRoom(identifier) {
 }
 
 /**
+/**
  * Send a cheer / like to a friend's room (awards 50 TeaCoin to friend)
  */
 async function cheerFriendRoom(fromStoreId, toStoreId, message) {
-  const toSave = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(toStoreId);
-  if (!toSave) throw new Error('Không tìm thấy bạn bè!');
+  if (fromStoreId === toStoreId) {
+    throw new Error('Bạn không thể tự thả tim phòng của chính mình!');
+  }
 
-  const fromStore = await db.prepare('SELECT store_name FROM stores WHERE id = ?').get(fromStoreId);
+  const toStore = await db.prepare('SELECT store_name, store_code FROM stores WHERE id = ?').get(toStoreId);
+  if (!toStore) throw new Error('Không tìm thấy căn phòng của người bạn này!');
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  let existing = null;
+  try {
+    existing = await db.prepare(`
+      SELECT id FROM friend_gifts 
+      WHERE sender_store_id = ? AND receiver_store_id = ? AND gift_type = 'room_cheer' AND created_at LIKE ?
+      LIMIT 1
+    `).get(fromStoreId, toStoreId, `${todayStr}%`);
+  } catch (e) {
+    existing = null;
+  }
+
+  if (existing) {
+    return {
+      success: false,
+      message: `Hôm nay bạn đã thả tim căn phòng của [${toStore.store_name}] rồi! Hãy quay lại vào ngày mai nhé!`
+    };
+  }
+
+  const fromStore = await db.prepare('SELECT store_name, store_code FROM stores WHERE id = ?').get(fromStoreId);
   const senderName = fromStore ? fromStore.store_name : 'Một người bạn thân thiết';
+  const senderCode = fromStore ? fromStore.store_code : '';
 
+  const cheerMsg = message ? message.trim().substring(0, 80) : '❤️ Thả tim khen căn phòng siêu xinh xắn & ấm cúng!';
   const bonusTeacoin = 50;
-  const newTeacoin = (toSave.teacoin || 0) + bonusTeacoin;
 
-  await db.prepare('UPDATE game_saves SET teacoin = ? WHERE store_id = ?').run(newTeacoin, toStoreId);
+  // Insert gift into friend_gifts inbox for target friend
+  try {
+    await db.prepare(`
+      INSERT INTO friend_gifts (sender_store_id, receiver_store_id, gift_type, money_amount, teacoin_amount, ingredients, message, claimed, created_at)
+      VALUES (?, ?, 'room_cheer', 0, ?, '{}', ?, 0, ?)
+    `).run(fromStoreId, toStoreId, bonusTeacoin, cheerMsg, new Date().toISOString());
+  } catch (e) {
+    // Fallback if table somehow busy
+    const toSave = await db.prepare('SELECT teacoin FROM game_saves WHERE store_id = ?').get(toStoreId);
+    if (toSave) {
+      await db.prepare('UPDATE game_saves SET teacoin = ? WHERE store_id = ?').run((toSave.teacoin || 0) + bonusTeacoin, toStoreId);
+    }
+  }
+
+  // Real-time notification push to target friend
+  try {
+    const liveSync = require('../live-sync.service');
+    liveSync.pushToStore(toStoreId, 'friend_gift_received', {
+      senderName,
+      senderCode,
+      giftName: 'Thiệp Khen Căn Phòng ❤️',
+      giftIcon: '💌',
+      message: cheerMsg
+    });
+  } catch (e) {}
+
   invalidateStoreCache(toStoreId);
 
   return {
     success: true,
     bonusTeacoin,
-    message: `❤️ Bạn đã thả tim và khen ngợi căn phòng xinh xắn của [${senderName}]! Đã tặng bạn ấy +${bonusTeacoin} TeaCoin!`
+    message: `❤️ Đã thả tim và gửi thiệp khen ngợi tới căn phòng của [${toStore.store_name}]! Bạn ấy sẽ nhận được +${bonusTeacoin} TeaCoin trong Hộp Quà Tặng!`
   };
 }
 

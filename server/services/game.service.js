@@ -58,12 +58,17 @@ const {
 } = require('./game/collab.service');
 
 const {
+  GIFT_CONFIGS,
   getFriends,
+  getGifts,
   sendFriendRequest,
   acceptFriendRequest,
   rejectFriendRequest,
   removeFriend,
-  sendFriendGift
+  sendFriendGift,
+  sendAllFriendGifts,
+  claimFriendGift,
+  claimAllAndSendBackGifts
 } = require('./game/friend.service');
 
 const {
@@ -71,6 +76,7 @@ const {
   unlockChapter2,
   unlockChapter3,
   unlockChapter4,
+  unlockChapter5,
   policeFine
 } = require('./game/progression.service');
 
@@ -143,19 +149,25 @@ module.exports = {
   recordStoreHeartbeat,
   isStoreOnline,
 
-  // Friend System
+  // Friend & Gift System
+  GIFT_CONFIGS,
   getFriends,
+  getGifts,
   sendFriendRequest,
   acceptFriendRequest,
   rejectFriendRequest,
   removeFriend,
   sendFriendGift,
+  sendAllFriendGifts,
+  claimFriendGift,
+  claimAllAndSendBackGifts,
 
   // Progression & Inspection
   payDebt,
   unlockChapter2,
   unlockChapter3,
   unlockChapter4,
+  unlockChapter5,
   policeFine,
 
   // Upgrades, Talismans & Pets

@@ -14,16 +14,51 @@ export const cartMethods = {
     return false;
   },
 
+  _createOffscreenBuffer(w, h, scale = 2) {
+    let canvas;
+    if (typeof OffscreenCanvas !== 'undefined') {
+      canvas = new OffscreenCanvas(Math.ceil(w * scale), Math.ceil(h * scale));
+    } else if (typeof document !== 'undefined') {
+      canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(w * scale);
+      canvas.height = Math.ceil(h * scale);
+    } else {
+      return null;
+    }
+    const octx = canvas.getContext('2d');
+    if (octx) {
+      octx.scale(scale, scale);
+      octx.imageSmoothingEnabled = false;
+    }
+    return { canvas, ctx: octx, w, h, scale };
+  },
+
   drawCart(ctx) {
     this.drawCartBack(ctx);
     this.drawCartFront(ctx);
   },
 
   // --- CART BACK LAYER: REAR PILLARS, ARTISAN SHELVES & PENDANT LIGHT (Behind Hyhy) ---
+  // Pre-rendered to OffscreenCanvas for 60 FPS mobile performance
   drawCartBack(ctx) {
+    const isCosmic = this.isCosmicCartSkin();
+    if (!this.cachedCartBackOffscreen || this._cachedCartBackCosmic !== isCosmic) {
+      const buf = this._createOffscreenBuffer(210, 175, 2);
+      if (buf && buf.ctx) {
+        this._renderCartBackStatic(buf.ctx, isCosmic);
+        this.cachedCartBackOffscreen = buf.canvas;
+        this._cachedCartBackCosmic = isCosmic;
+      } else {
+        this._renderCartBackStatic(ctx, isCosmic);
+        return;
+      }
+    }
+    ctx.drawImage(this.cachedCartBackOffscreen, 0, 0, 210, 175);
+  },
+
+  _renderCartBackStatic(ctx, isCosmic) {
     const cx = 35;
     const cy = 92;
-    const isCosmic = this.isCosmicCartSkin();
 
     // 1. Rear Awning Support Pillars (Brushed Gunmetal & Brass)
     ctx.fillStyle = isCosmic ? '#3b1d54' : '#4b4b5a';
@@ -39,8 +74,14 @@ export const cartMethods = {
     // Dark oak backboard with horizontal wood slat grooves
     ctx.fillStyle = isCosmic ? '#170926' : '#2c160a';
     ctx.beginPath();
-    ctx.roundRect(shelfX, shelfY, shelfW, shelfH, 3);
+    if (ctx.roundRect) ctx.roundRect(shelfX, shelfY, shelfW, shelfH, 3);
+    else ctx.rect(shelfX, shelfY, shelfW, shelfH);
     ctx.fill();
+
+    // Soft 2x2 dithered warm shadow at top of shelving unit
+    if (typeof this.drawDitheredRect === 'function') {
+      this.drawDitheredRect(ctx, shelfX + 2, shelfY + 1, shelfW - 4, 6, isCosmic ? '#170926' : '#2c160a', '#1f1625');
+    }
 
     // Wood slat grooves
     ctx.fillStyle = isCosmic ? '#0e041a' : '#1e0e06';
@@ -51,13 +92,13 @@ export const cartMethods = {
     // Upper Shelf (y = cy - 13 = 79)
     ctx.fillStyle = isCosmic ? '#3b1754' : '#5c2d13';
     ctx.fillRect(shelfX + 4, cy - 13, shelfW - 8, 3);
-    ctx.fillStyle = isCosmic ? '#6b21a8' : '#8a431c';
+    ctx.fillStyle = isCosmic ? '#6b21a8' : '#8a5a36';
     ctx.fillRect(shelfX + 4, cy - 14, shelfW - 8, 1); // shelf highlight
 
     // Lower Shelf (y = cy + 4 = 96)
     ctx.fillStyle = isCosmic ? '#3b1754' : '#5c2d13';
     ctx.fillRect(shelfX + 4, cy + 3, shelfW - 8, 3);
-    ctx.fillStyle = isCosmic ? '#6b21a8' : '#8a431c';
+    ctx.fillStyle = isCosmic ? '#6b21a8' : '#8a5a36';
     ctx.fillRect(shelfX + 4, cy + 2, shelfW - 8, 1);
 
     // Brass / Neon shelf brackets
@@ -68,7 +109,6 @@ export const cartMethods = {
     ctx.fillRect(shelfX + shelfW - 8, cy + 6, 2, 4);
 
     // --- UPPER SHELF ITEMS: ARTISAN SYRUP BOTTLES & TEA CANISTERS ---
-    // 5 Slender glass syrup bottles with colorful glowing translucent syrups
     const syrups = [
       { x: shelfX + 8, color: '#e74c3c' },  // Dâu tây (Strawberry)
       { x: shelfX + 17, color: '#f39c12' }, // Đào vàng (Peach)
@@ -78,71 +118,133 @@ export const cartMethods = {
     ];
 
     syrups.forEach(s => {
-      // Bottle neck & cork
-      ctx.fillStyle = '#d35400';
-      ctx.fillRect(s.x + 2, cy - 24, 2, 2); // cork
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.fillRect(s.x + 2, cy - 22, 2, 2); // glass neck
-      // Bottle glass body
-      ctx.fillRect(s.x, cy - 20, 6, 7);
-      // Colorful syrup liquid
+      // Bottle neck & wooden cork
+      ctx.fillStyle = '#b45309';
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(s.x + 2, cy - 25, 2.2, 2.5, 0.8);
+        ctx.fill();
+      } else {
+        ctx.fillRect(s.x + 2, cy - 25, 2, 2);
+      }
+      // Translucent glass bottle neck with shoulder taper
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.fillRect(s.x + 2, cy - 22.5, 2, 2.5);
+
+      // Glass bottle body with rounded corners
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(s.x, cy - 20, 6.2, 7.5, [1.5, 1.5, 1, 1]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(s.x, cy - 20, 6, 7);
+      }
+
+      // Rich glowing translucent syrup with meniscus
       ctx.fillStyle = s.color;
-      ctx.fillRect(s.x + 0.6, cy - 18, 4.8, 5);
-      // Paper label
-      ctx.fillStyle = '#fff8dc';
-      ctx.fillRect(s.x + 1, cy - 16, 4, 2.5);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(s.x + 0.6, cy - 18.2, 5, 5.5, [0.5, 0.5, 0.8, 0.8]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(s.x + 0.6, cy - 18, 4.8, 5);
+      }
+
+      // Glass specular reflection glare line
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.fillRect(s.x + 1, cy - 19.5, 1, 6);
+
+      // Vintage parchment paper label
+      ctx.fillStyle = '#fffdf0';
+      ctx.fillRect(s.x + 1, cy - 16, 4.2, 2.6);
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(s.x + 1.2, cy - 14.8, 3.8, 0.5);
     });
 
-    // Ceramic Tea Canisters (Hũ trà men sứ trắng cổ truyền)
+    // Ceramic Tea Canisters
     const teaJars = [
-      { x: shelfX + 56, capColor: '#c0392b' }, // Oolong
-      { x: shelfX + 68, capColor: '#27ae60' }, // Lài
-      { x: shelfX + 80, capColor: '#2c3e50' }, // Trà Đen
+      { x: shelfX + 56, capColor: '#c0392b', label: 'Ô' },
+      { x: shelfX + 68, capColor: '#27ae60', label: 'L' },
+      { x: shelfX + 80, capColor: '#2c3e50', label: 'Đ' },
     ];
     teaJars.forEach(tj => {
-      ctx.fillStyle = '#ecf0f1';
+      ctx.fillStyle = '#f8fafc';
       ctx.beginPath();
-      ctx.roundRect(tj.x, cy - 22, 9, 9, 2);
+      if (ctx.roundRect) {
+        ctx.roundRect(tj.x, cy - 22, 9, 9.5, [1.5, 1.5, 2, 2]);
+      } else {
+        ctx.rect(tj.x, cy - 22, 9, 9);
+      }
       ctx.fill();
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.fillRect(tj.x + 1.2, cy - 21, 1.2, 7.5);
+
       ctx.fillStyle = tj.capColor;
-      ctx.fillRect(tj.x + 1, cy - 24, 7, 2);
-      ctx.fillStyle = '#bdc3c7';
-      ctx.fillRect(tj.x + 2, cy - 18, 5, 2);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(tj.x + 0.8, cy - 24.2, 7.4, 2.4, [1.2, 1.2, 0, 0]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(tj.x + 1, cy - 24, 7, 2);
+      }
+
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.arc(tj.x + 4.5, cy - 17.5, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#78350f';
+      ctx.font = 'bold 3.5px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(tj.label, tj.x + 4.5, cy - 17.5);
     });
 
     // Hanging Chalkboard Menu on back wall
     ctx.fillStyle = '#1e272e';
     ctx.beginPath();
-    ctx.roundRect(shelfX + 94, cy - 23, 32, 10, 1.5);
+    if (ctx.roundRect) ctx.roundRect(shelfX + 94, cy - 23, 32, 10, 1.5);
+    else ctx.rect(shelfX + 94, cy - 23, 32, 10);
     ctx.fill();
     ctx.strokeStyle = isCosmic ? '#a855f7' : '#8a431c';
     ctx.lineWidth = 1;
     ctx.strokeRect(shelfX + 94, cy - 23, 32, 10);
     ctx.fillStyle = '#f1f2f6';
     ctx.font = 'bold 5px sans-serif';
+    ctx.textAlign = 'left';
     ctx.fillText(isCosmic ? 'MENU VŨ TRỤ 🌌' : 'MENU HEEHEE 🧋', shelfX + 96, cy - 17);
     ctx.fillStyle = isCosmic ? '#38bdf8' : '#feca57';
     ctx.fillText(isCosmic ? 'COSMIC TEA ⭐' : 'ĐỒNG GIÁ 25k ⭐', shelfX + 96, cy - 14);
 
     // --- LOWER SHELF ITEMS: CUP STACKS & SUCCULENT ---
-    // Stacks of paper cups
     for (let c = 0; c < 3; c++) {
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.roundRect(shelfX + 8 + c * 8, cy - 7, 6, 10, 1);
+      if (ctx.roundRect) ctx.roundRect(shelfX + 8 + c * 8, cy - 7, 6, 10, 1);
+      else ctx.rect(shelfX + 8 + c * 8, cy - 7, 6, 10);
       ctx.fill();
       ctx.fillStyle = isCosmic ? '#c084fc' : '#ff7675';
       ctx.fillRect(shelfX + 9 + c * 8, cy - 3, 4, 3);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(shelfX + 7.5 + c * 8, cy - 7, 7, 1);
     }
 
-    // Mini decorative potted succulent
+    // Mini decorative potted succulent in terracotta pot
     ctx.fillStyle = '#e17055';
     ctx.beginPath();
-    ctx.roundRect(shelfX + 116, cy - 5, 8, 8, 1);
+    if (ctx.roundRect) ctx.roundRect(shelfX + 116, cy - 5, 8, 8, 1.5);
+    else ctx.rect(shelfX + 116, cy - 5, 8, 8);
     ctx.fill();
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(shelfX + 115, cy - 5, 10, 1.5);
     ctx.fillStyle = '#00b894';
     ctx.beginPath();
     ctx.arc(shelfX + 120, cy - 6, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#55efc4';
+    ctx.beginPath();
+    ctx.arc(shelfX + 120, cy - 7, 2, 0, Math.PI * 2);
     ctx.fill();
 
     // Vintage Edison / Cosmic Pendant Bulb hanging from ceiling above Hyhy
@@ -154,26 +256,38 @@ export const cartMethods = {
     ctx.moveTo(lampX, cy - 40);
     ctx.lineTo(lampX, lampY);
     ctx.stroke();
-    ctx.fillStyle = isCosmic ? '#a855f7' : '#f4c430';
+
+    ctx.fillStyle = isCosmic ? '#a855f7' : '#f59e0b';
     ctx.fillRect(lampX - 2, lampY, 4, 3);
-    ctx.fillStyle = isCosmic ? 'rgba(232, 121, 249, 0.95)' : 'rgba(255, 235, 160, 0.95)';
+    ctx.fillStyle = '#d97706';
+    ctx.fillRect(lampX - 2.5, lampY + 1.8, 5, 1);
+
+    ctx.fillStyle = isCosmic ? 'rgba(232, 121, 249, 0.95)' : 'rgba(255, 240, 175, 0.96)';
     ctx.beginPath();
-    ctx.arc(lampX, lampY + 5, 3.5, 0, Math.PI * 2);
+    ctx.arc(lampX, lampY + 5.5, 3.8, 0, Math.PI * 2);
     ctx.fill();
-    // Radial ambient light glow cone
-    const warmPendantGlow = ctx.createRadialGradient(lampX, lampY + 5, 2, lampX, lampY + 16, 42);
+
+    ctx.strokeStyle = isCosmic ? '#f472b6' : '#f97316';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(lampX - 1.2, lampY + 4);
+    ctx.lineTo(lampX, lampY + 6.2);
+    ctx.lineTo(lampX + 1.2, lampY + 4);
+    ctx.stroke();
+
+    const warmPendantGlow = ctx.createRadialGradient(lampX, lampY + 5.5, 2, lampX, lampY + 18, 52);
     if (isCosmic) {
-      warmPendantGlow.addColorStop(0, 'rgba(168, 85, 247, 0.45)');
-      warmPendantGlow.addColorStop(0.6, 'rgba(56, 189, 248, 0.18)');
+      warmPendantGlow.addColorStop(0, 'rgba(168, 85, 247, 0.50)');
+      warmPendantGlow.addColorStop(0.5, 'rgba(56, 189, 248, 0.20)');
       warmPendantGlow.addColorStop(1, 'rgba(56, 189, 248, 0)');
     } else {
-      warmPendantGlow.addColorStop(0, 'rgba(255, 215, 0, 0.38)');
-      warmPendantGlow.addColorStop(0.6, 'rgba(255, 175, 50, 0.14)');
+      warmPendantGlow.addColorStop(0, 'rgba(255, 225, 90, 0.44)');
+      warmPendantGlow.addColorStop(0.55, 'rgba(255, 175, 50, 0.16)');
       warmPendantGlow.addColorStop(1, 'rgba(255, 175, 50, 0)');
     }
     ctx.fillStyle = warmPendantGlow;
     ctx.beginPath();
-    ctx.arc(lampX, lampY + 16, 42, 0, Math.PI * 2);
+    ctx.arc(lampX, lampY + 18, 52, 0, Math.PI * 2);
     ctx.fill();
   },
 
@@ -181,150 +295,78 @@ export const cartMethods = {
   drawCartFront(ctx) {
     const cx = 35;
     const cy = 92;
-
-    // Cart Drop Shadow on street
-    ctx.fillStyle = 'rgba(10, 5, 12, 0.6)';
-    ctx.beginPath();
-    ctx.ellipse(cx + 70, cy + 62, 75, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 1. Heavy Duty Wheel Axle across bottom
-    ctx.fillStyle = '#2d3436';
-    ctx.fillRect(cx + 25, cy + 53, 90, 3);
-
-    // 2. Cart Wheels with Spoke detailing & Gold rim
-    this.drawWheel(ctx, cx + 25, cy + 54);
-    this.drawWheel(ctx, cx + 115, cy + 54);
-
-    // 3. Cart Wooden Chassis (Front Panel with clearance underneath for visible legs)
-    ctx.fillStyle = '#4a2612'; // dark wood border
-    ctx.fillRect(cx, cy + 22, 145, 27);
-
-    ctx.fillStyle = '#783e1d'; // warm polished mahogany
-    ctx.fillRect(cx + 3, cy + 24, 139, 23);
-
-    // Wood panel horizontal bevels
-    ctx.fillStyle = '#5f2f14';
-    ctx.fillRect(cx + 3, cy + 32, 139, 1.5);
-    ctx.fillRect(cx + 3, cy + 40, 139, 1.5);
-
-    // Polished Brass Corner Brackets with rivets
-    ctx.fillStyle = '#f4c430';
-    ctx.fillRect(cx, cy + 22, 6, 6);
-    ctx.fillRect(cx + 139, cy + 22, 6, 6);
-    ctx.fillRect(cx, cy + 43, 6, 6);
-    ctx.fillRect(cx + 139, cy + 43, 6, 6);
-
-    // 4. Modern Glass Pastry & Topping Showcase in Front Panel (Tủ kính trưng bày bánh flan & tart)
-    const glassX = cx + 38;
-    const glassY = cy + 25;
-    const glassW = 68;
-    const glassH = 20;
-
-    // Showcase frame & dark interior
-    ctx.fillStyle = '#1c0f08';
-    ctx.beginPath();
-    ctx.roundRect(glassX, glassY, glassW, glassH, 2);
-    ctx.fill();
-
-    // Showcase interior warm glow
-    ctx.fillStyle = 'rgba(255, 220, 130, 0.2)';
-    ctx.fillRect(glassX + 2, glassY + 2, glassW - 4, glassH - 4);
-
-    // Glass showcase shelf
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.fillRect(glassX + 2, glassY + 11, glassW - 4, 1.5);
-
-    // Showcase Items: Mini Egg Tarts (Bánh tart trứng vàng óng)
-    for (let t = 0; t < 3; t++) {
-      const tx = glassX + 6 + t * 9;
-      ctx.fillStyle = '#e67e22'; // crust
-      ctx.beginPath();
-      ctx.ellipse(tx + 3, glassY + 9, 3.5, 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#f1c40f'; // golden egg custard
-      ctx.beginPath();
-      ctx.ellipse(tx + 3, glassY + 8.5, 2.5, 1.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Showcase Items: Caramel Flan Puddings (Bánh flan caramen)
-    for (let f = 0; f < 3; f++) {
-      const fx = glassX + 38 + f * 9;
-      ctx.fillStyle = '#f5cd79'; // pudding body
-      ctx.beginPath();
-      ctx.roundRect(fx, glassY + 13, 6, 5, 1);
-      ctx.fill();
-      ctx.fillStyle = '#d35400'; // dark caramel syrup top
-      ctx.fillRect(fx, glassY + 13, 6, 1.5);
-    }
-
-    // Glass glare reflection lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(glassX + 4, glassY + glassH - 2);
-    ctx.lineTo(glassX + 16, glassY + 2);
-    ctx.moveTo(glassX + 20, glassY + glassH - 2);
-    ctx.lineTo(glassX + 30, glassY + 2);
-    ctx.stroke();
-
-    // 5. Polished Carrara Marble Countertop with rounded edges & gloss highlight
-    ctx.fillStyle = '#eddcd2';
-    ctx.beginPath();
-    ctx.roundRect(cx - 6, cy + 17, 157, 6, 2);
-    ctx.fill();
-    ctx.fillStyle = '#d6c2b4';
-    ctx.fillRect(cx - 6, cy + 21, 157, 2); // bevel edge
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.fillRect(cx - 5, cy + 18, 155, 1); // specular gloss line
-
-    // Stainless Steel Honeycomb Drainage Tray (Khay Inox Thoát Nước Đục Lỗ Tổ Ong)
-    ctx.fillStyle = '#94A3B8';
-    ctx.fillRect(cx + 25, cy + 17, 44, 4);
-    ctx.fillStyle = '#CBD5E1';
-    ctx.fillRect(cx + 26, cy + 17.5, 42, 3);
-    ctx.fillStyle = '#475569';
-    for (let hx = cx + 28; hx < cx + 66; hx += 3) {
-      ctx.fillRect(hx, cy + 18, 1.5, 1);
-      ctx.fillRect(hx + 1.5, cy + 19, 1.5, 1);
-    }
-
-    // 6. Front Awning Support Pillars (Polished Chrome & Gold Brackets)
-    ctx.fillStyle = '#c5c5d2';
-    ctx.fillRect(cx + 4, cy - 35, 4, 53);
-    ctx.fillRect(cx + 137, cy - 35, 4, 53);
-    ctx.fillStyle = '#f4c430';
-    ctx.fillRect(cx + 3, cy + 13, 6, 4);
-    ctx.fillRect(cx + 136, cy + 13, 6, 4);
-
-    // 7. Fabric Striped Awning Roof with Scalloped Edge & Dynamic Wind Wave
     const isCosmic = this.isCosmicCartSkin();
+
+    // 1. Pre-rendered Offscreen Static Cart Front (Chassis, Marble, Showcase, Equipment, Stool)
+    if (!this.cachedCartFrontOffscreen || this._cachedCartFrontCosmic !== isCosmic) {
+      const buf = this._createOffscreenBuffer(210, 175, 2);
+      if (buf && buf.ctx) {
+        this._renderCartFrontStatic(buf.ctx, isCosmic);
+        this.cachedCartFrontOffscreen = buf.canvas;
+        this._cachedCartFrontCosmic = isCosmic;
+      } else {
+        this._renderCartFrontStatic(ctx, isCosmic);
+      }
+    }
+    if (this.cachedCartFrontOffscreen) {
+      ctx.drawImage(this.cachedCartFrontOffscreen, 0, 0, 210, 175);
+    }
+
+    // If Cosmic skin is active, draw animated cosmic wheel spokes over wheels
+    if (isCosmic) {
+      this.drawWheel(ctx, cx + 25, cy + 54);
+      this.drawWheel(ctx, cx + 115, cy + 54);
+    }
+
+    // 2. Dynamic Fabric Striped Awning Roof with Scalloped Edge & Wind Wave
     const awningY = cy - 42;
     const stripeColors = isCosmic
-      ? ['#581c87', '#38bdf8', '#9333ea', '#c084fc', '#4c1d95', '#38bdf8', '#9333ea', '#c084fc', '#581c87']
-      : ['#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a', '#fff8dc', '#d9383a'];
+      ? (this._cosmicStripeColors || (this._cosmicStripeColors = ['#581c87', '#38bdf8', '#9333ea', '#c084fc', '#4c1d95', '#38bdf8', '#9333ea', '#c084fc', '#581c87']))
+      : (this._classicStripeColors || (this._classicStripeColors = ['#d9383a', '#faedcd', '#d9383a', '#faedcd', '#d9383a', '#faedcd', '#d9383a', '#faedcd', '#d9383a']));
     const sw = 18;
     for (let i = 0; i < stripeColors.length; i++) {
-      ctx.fillStyle = stripeColors[i];
       const sx = cx - 8 + i * sw;
       const wave = Math.sin(this.tick * 0.05 + i * 0.35) * 1.5;
-      ctx.fillRect(sx, awningY, sw, 16 + wave);
+      const sh = 16 + wave;
+
+      // Base stripe fabric
+      ctx.fillStyle = stripeColors[i];
+      ctx.fillRect(sx, awningY, sw, sh);
+
+      // Soft 2x2 Checkerboard Dither Shading at top & bottom seam of awning stripe
+      if (typeof this.drawDitheredRect === 'function') {
+        const ditherShade = (i % 2 === 0)
+          ? (isCosmic ? '#3b0764' : '#991b1b')
+          : (isCosmic ? '#0284c7' : '#d4a373');
+        this.drawDitheredRect(ctx, sx, awningY + sh - 4, sw, 4, stripeColors[i], ditherShade);
+      }
 
       // Scalloped bottom ruffle
+      ctx.fillStyle = stripeColors[i];
       ctx.beginPath();
-      ctx.arc(sx + sw / 2, awningY + 16 + wave, sw / 2, 0, Math.PI);
+      ctx.arc(sx + sw / 2, awningY + sh, sw / 2, 0, Math.PI);
       ctx.fill();
+
+      // Subtle 3D cylindrical fabric highlight
+      ctx.fillStyle = 'rgba(254, 250, 224, 0.16)';
+      ctx.fillRect(sx + 5, awningY, 7, sh);
+
+      // Scalloped highlight & stitched hemline border
+      ctx.strokeStyle = isCosmic ? 'rgba(192, 132, 252, 0.4)' : 'rgba(254, 250, 224, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(sx + sw / 2, awningY + sh, sw / 2, 0, Math.PI);
+      ctx.stroke();
     }
 
-    // Awning shadow underneath
-    ctx.fillStyle = isCosmic ? 'rgba(76, 29, 149, 0.35)' : 'rgba(0, 0, 0, 0.25)';
-    ctx.fillRect(cx - 8, awningY + 17, 162, 3);
+    // Awning soft drop shadow underneath onto cart front
+    ctx.fillStyle = isCosmic ? 'rgba(50, 15, 80, 0.35)' : 'rgba(43, 30, 42, 0.32)';
+    ctx.fillRect(cx - 8, awningY + 17, 162, 4);
 
     // Warm twinkling fairy lights on awning edge
     const fairyColors = isCosmic
-      ? ['#c084fc', '#38bdf8', '#f472b6', '#a855f7', '#67e8f9']
-      : ['#ff7675', '#ffeaa7', '#55efc4', '#a29bfe', '#fd79a8'];
+      ? (this._cosmicFairyColors || (this._cosmicFairyColors = ['#c084fc', '#38bdf8', '#f472b6', '#a855f7', '#67e8f9']))
+      : (this._classicFairyColors || (this._classicFairyColors = ['#ff7675', '#ffeaa7', '#55efc4', '#a29bfe', '#fd79a8']));
     for (let f = 0; f < 8; f++) {
       const fx = cx - 2 + f * 20;
       const fy = awningY + 18 + Math.sin(this.tick * 0.05 + f * 0.35) * 1.5;
@@ -340,22 +382,60 @@ export const cartMethods = {
     // --- SLEEPING CAT ON AWNING ROOF ---
     const catX = cx + 85;
     const catY = awningY - 4;
-    const catBreathe = Math.sin(this.tick * 0.08) * 1;
-    ctx.fillStyle = isCosmic ? '#9333ea' : '#e67e22'; // Cosmic purple or Orange tabby body
+    const catBreathe = Math.sin((this.tick * Math.PI * 2) / 144) * 1.1;
+    ctx.fillStyle = 'rgba(43, 30, 42, 0.32)';
     ctx.beginPath();
-    ctx.ellipse(catX, catY + catBreathe, 7, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(catX, catY + 4 + catBreathe, 8, 3, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#fff'; // White head
+
+    ctx.fillStyle = isCosmic ? '#9333ea' : '#e67e22';
     ctx.beginPath();
-    ctx.arc(catX - 6, catY - 1 + catBreathe, 3.5, 0, Math.PI * 2);
+    ctx.ellipse(catX, catY + catBreathe, 8, 5, -0.1, 0, Math.PI * 2);
     ctx.fill();
-    // Sleeping eyes
-    ctx.fillStyle = '#111';
-    ctx.fillRect(catX - 7, catY - 1 + catBreathe, 2, 1);
-    // Tail twitch
+
+    ctx.fillStyle = isCosmic ? '#c084fc' : '#d35400';
+    ctx.beginPath();
+    ctx.ellipse(catX + 1, catY - 1 + catBreathe, 6, 2.8, -0.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#fefae0';
+    ctx.beginPath();
+    ctx.arc(catX - 6, catY - 0.5 + catBreathe, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = isCosmic ? '#9333ea' : '#e67e22';
+    ctx.beginPath();
+    ctx.moveTo(catX - 8.5, catY - 3 + catBreathe);
+    ctx.lineTo(catX - 7, catY - 6.5 + catBreathe);
+    ctx.lineTo(catX - 5.5, catY - 3 + catBreathe);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(catX - 5, catY - 3 + catBreathe);
+    ctx.lineTo(catX - 3.5, catY - 6.5 + catBreathe);
+    ctx.lineTo(catX - 2, catY - 3 + catBreathe);
+    ctx.fill();
+    ctx.fillStyle = '#fab1a0';
+    ctx.beginPath();
+    ctx.arc(catX - 7, catY - 3.8 + catBreathe, 1, 0, Math.PI * 2);
+    ctx.arc(catX - 3.5, catY - 3.8 + catBreathe, 1, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#2b1e2a';
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    ctx.arc(catX - 7, catY + catBreathe, 1.2, 0, Math.PI);
+    ctx.stroke();
+
     const catTail = Math.sin(this.tick * 0.12) * 2;
-    ctx.fillStyle = isCosmic ? '#c084fc' : '#e67e22';
-    ctx.fillRect(catX + 6, catY + catTail, 4, 2);
+    ctx.fillStyle = isCosmic ? '#9333ea' : '#e67e22';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(catX + 6, catY + 1 + catTail, 5, 2.5, 1);
+    else ctx.rect(catX + 6, catY + 1 + catTail, 5, 2.5);
+    ctx.fill();
+    ctx.fillStyle = '#fefae0';
+    ctx.beginPath();
+    ctx.arc(catX + 11, catY + 2.2 + catTail, 1.3, 0, Math.PI * 2);
+    ctx.fill();
 
     // 8. BĂNG RÔN QUẢNG CÁO TRƯỚC QUẦY: HIỆU ỨNG CHẠY CHỮ TÊN TIỆM (STORE_NAME)
     const neonPulse = (Math.sin(this.tick * 0.1) + 1) * 0.15 + 0.85;
@@ -364,44 +444,19 @@ export const cartMethods = {
     const plaqueW = 112;
     const plaqueH = 17;
 
-    // Plaque body with dark lacquer / LED panel finish
-    ctx.fillStyle = isCosmic ? '#0a0314' : '#140711';
-    ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(plaqueX, plaqueY, plaqueW, plaqueH, 3.5);
-    } else {
-      ctx.rect(plaqueX, plaqueY, plaqueW, plaqueH);
-    }
-    ctx.fill();
-
-    // Subtle LED Matrix Background Grid Pattern (Lưới điểm ảnh LED nền bảng điện tử)
-    ctx.fillStyle = isCosmic ? 'rgba(168, 85, 247, 0.08)' : 'rgba(244, 196, 48, 0.06)';
-    for (let lx = plaqueX + 4; lx < plaqueX + plaqueW - 4; lx += 4) {
-      for (let ly = plaqueY + 3; ly < plaqueY + plaqueH - 3; ly += 3) {
-        ctx.fillRect(lx, ly, 1.5, 1);
-      }
-    }
-
-    // Glowing Neon Golden/Purple Border
     ctx.strokeStyle = isCosmic ? `rgba(168, 85, 247, ${neonPulse})` : `rgba(244, 196, 48, ${neonPulse})`;
     ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(plaqueX, plaqueY, plaqueW, plaqueH, 3.5);
+    else ctx.rect(plaqueX, plaqueY, plaqueW, plaqueH);
     ctx.stroke();
 
-    // Corner rivets (Đinh tán viền)
-    ctx.fillStyle = isCosmic ? '#c084fc' : '#f39c12';
-    ctx.fillRect(plaqueX + 2, plaqueY + 2, 2, 2);
-    ctx.fillRect(plaqueX + plaqueW - 4, plaqueY + 2, 2, 2);
-    ctx.fillRect(plaqueX + 2, plaqueY + plaqueH - 4, 2, 2);
-    ctx.fillRect(plaqueX + plaqueW - 4, plaqueY + plaqueH - 4, 2, 2);
-
-    // Inner marquee clipping viewport
     const innerX = plaqueX + 4;
     const innerY = plaqueY + 2;
     const innerW = plaqueW - 8;
     const innerH = plaqueH - 4;
     const centerY = plaqueY + plaqueH / 2 + 0.5;
 
-    // Lấy tên tiệm người dùng đặt tại cột store_name
     const rawStoreName = (this.storeName || window.state?.storeState?.store_name || window.state?.storeState?.save?.store_name || 'Tiệm Trà Sữa HeeHee').trim();
     const bannerSegment = `🧋 ${rawStoreName.toUpperCase()}   ★   CHÀO MỪNG QUÝ KHÁCH   ★   `;
 
@@ -419,127 +474,456 @@ export const cartMethods = {
     ctx.textBaseline = 'middle';
 
     const segWidth = Math.max(20, ctx.measureText(bannerSegment).width);
-    const scrollSpeed = 0.65; // Tốc độ chạy chữ mượt mà như băng rôn điện tử
+    const scrollSpeed = 0.65;
     const scrollOffset = (this.tick * scrollSpeed) % segWidth;
 
-    // Hiệu ứng chữ Neon phát sáng
     ctx.shadowColor = isCosmic ? 'rgba(192, 132, 252, 0.95)' : 'rgba(251, 191, 36, 0.85)';
     ctx.shadowBlur = (isCosmic ? 5 : 4) * neonPulse;
     ctx.fillStyle = isCosmic ? '#f0abfc' : '#fbbf24';
 
-    // Lặp chuỗi băng rôn qua khung hiển thị
     let drawX = innerX - scrollOffset;
     while (drawX < innerX + innerW + segWidth) {
       ctx.fillText(bannerSegment, drawX, centerY);
       drawX += segWidth;
     }
-
-    // Hiệu ứng mờ viền hai đầu (Vignette) giúp chữ trôi vào/ra mềm mại
-    const edgeGradLeft = ctx.createLinearGradient(innerX, centerY, innerX + 6, centerY);
-    edgeGradLeft.addColorStop(0, isCosmic ? 'rgba(10, 3, 20, 0.92)' : 'rgba(20, 7, 17, 0.92)');
-    edgeGradLeft.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = edgeGradLeft;
-    ctx.fillRect(innerX, innerY, 6, innerH);
-
-    const edgeGradRight = ctx.createLinearGradient(innerX + innerW - 6, centerY, innerX + innerW, centerY);
-    edgeGradRight.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    edgeGradRight.addColorStop(1, isCosmic ? 'rgba(10, 3, 20, 0.92)' : 'rgba(20, 7, 17, 0.92)');
-    ctx.fillStyle = edgeGradRight;
-    ctx.fillRect(innerX + innerW - 6, innerY, 6, innerH);
-
     ctx.restore();
 
-    // 9. EQUIPMENT ON THE COUNTER:
-    // A. Stainless Steel Tea Urn with Sight Glass Gauge
-    ctx.fillStyle = '#bdc3c7';
+    // Dynamic Boiling Boba Pearls & Rising Steam in Pot
+    const potX = cx + 120;
+    const potY = cy + 3;
+    const potTick = this.tick;
+    const bubble1 = Math.sin(potTick * 0.15) * 1.5;
+    const bubble2 = Math.cos(potTick * 0.18) * 1.5;
+    ctx.fillStyle = '#171717';
     ctx.beginPath();
-    ctx.roundRect(cx + 8, cy + 1, 15, 17, 2);
+    ctx.arc(potX + 4.5, potY + 4.5 + bubble1 * 0.5, 1.8, 0, Math.PI * 2);
+    ctx.arc(potX + 9, potY + 4 + bubble2 * 0.5, 1.6, 0, Math.PI * 2);
+    ctx.arc(potX + 13.5, potY + 4.5 - bubble1 * 0.5, 1.8, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#7f8c8d';
-    ctx.fillRect(cx + 9, cy, 13, 3); // lid
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(cx + 13, cy + 13, 5, 3); // red spigot
-    // Clear sight tube on side showing tea level!
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.fillRect(cx + 6, cy + 3, 2, 12);
-    ctx.fillStyle = '#8b4513'; // tea liquid inside gauge
-    ctx.fillRect(cx + 6, cy + 6, 2, 9);
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(potX + 4, potY + 3.8 + bubble1 * 0.5, 1, 0.8);
+    ctx.fillRect(potX + 8.6, potY + 3.4 + bubble2 * 0.5, 0.9, 0.7);
+    ctx.fillRect(potX + 13, potY + 3.8 - bubble1 * 0.5, 1, 0.8);
 
-    // B. Glass Topping Jars with Condensation Sheen
-    this.drawGlassJar(ctx, cx + 26, cy + 7, '#111'); // Tapioca
-    this.drawGlassJar(ctx, cx + 38, cy + 7, '#f39c12'); // Golden pearl
-    this.drawGlassJar(ctx, cx + 50, cy + 7, '#27ae60'); // Matcha jelly
-
-    // C. Stainless Steel Ice Tub with Ice Scoop Handle
-    ctx.fillStyle = '#95a5a6';
-    ctx.beginPath();
-    ctx.roundRect(cx + 62, cy + 8, 12, 9, 1);
-    ctx.fill();
-    ctx.fillStyle = '#ecf0f1'; // ice cubes
-    ctx.fillRect(cx + 64, cy + 7, 8, 4);
-    ctx.fillStyle = '#bdc3c7';
-    ctx.fillRect(cx + 70, cy + 3, 2, 6);
-
-    // D. Cup Sealing Machine (Máy dập nắp - đặt giữa Chị Thảo và Nhân Viên Trực Quầy)
-    const sealX = cx + 76;
-    ctx.fillStyle = '#c0392b';
-    ctx.beginPath();
-    ctx.roundRect(sealX, cy + 2, 15, 16, 2);
-    ctx.fill();
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(sealX + 2, cy + 4, 11, 12);
-    // Film roll
-    ctx.fillStyle = '#f39c12';
-    ctx.fillRect(sealX + 3, cy - 3, 9, 5);
-    // Pull lever
-    ctx.fillStyle = '#34495e';
-    ctx.fillRect(sealX + 12, cy, 2, 7);
-
-    // E. Boiling Pearl Cooker Pot with Animated Brown Sugar Bubbles & Steam
-    ctx.fillStyle = '#2c3e50';
-    ctx.beginPath();
-    ctx.roundRect(cx + 120, cy + 3, 18, 15, 2);
-    ctx.fill();
-    ctx.fillStyle = '#d35400';
-    ctx.fillRect(cx + 121, cy + 4, 16, 4);
-    // Amber bubbles
-    if ((this.tick % 12) < 6) {
-      ctx.fillStyle = '#f39c12';
-      ctx.fillRect(cx + 124, cy + 5, 3, 2);
-      ctx.fillRect(cx + 131, cy + 4, 2, 2);
-    }
-
-    // Steam particles
-    for (let s = 0; s < 4; s++) {
-      const steamProg = ((this.tick * 0.7 + s * 10) % 28);
-      const steamAlpha = 1 - (steamProg / 28);
-      ctx.fillStyle = `rgba(255, 255, 255, ${steamAlpha * 0.45})`;
+    for (let s = 0; s < 5; s++) {
+      const steamProg = ((potTick * 0.6 + s * 8) % 30);
+      const steamAlpha = Math.max(0, 1 - (steamProg / 30));
+      const sway = Math.sin(potTick * 0.08 + s * 1.2) * 3.5;
+      ctx.fillStyle = `rgba(254, 250, 224, ${steamAlpha * 0.42})`;
       ctx.beginPath();
-      ctx.arc(cx + 126 + s * 3 + Math.sin(this.tick * 0.1 + s) * 4, cy + 2 - steamProg, 2 + steamProg * 0.15, 0, Math.PI * 2);
+      ctx.arc(potX + 4 + s * 2.5 + sway, potY + 1 - steamProg, 1.8 + steamProg * 0.16, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // --- SIDE STREET STOOL & ICED TEA SETUP ---
+    // --- PARKED FLEET VEHICLES DISPLAY (HỆ THỐNG XE ĐỖ BÊN QUÁN) ---
+    this.drawParkedVehicles(ctx, cx, cy);
+  },
+
+  _renderCartFrontStatic(ctx, isCosmic) {
+    const cx = 35;
+    const cy = 92;
+
+    // Cart Drop Shadow on street (#2b1e2a diffuse ambient shadow)
+    ctx.fillStyle = 'rgba(20, 10, 15, 0.58)';
+    ctx.beginPath();
+    ctx.ellipse(cx + 70, cy + 62, 75, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 1. Heavy Duty Wheel Axle across bottom
+    ctx.fillStyle = '#2d3436';
+    ctx.fillRect(cx + 25, cy + 53, 90, 3);
+
+    // 2. Cart Wheels with Spoke detailing & Gold rim
+    this.drawWheel(ctx, cx + 25, cy + 54);
+    this.drawWheel(ctx, cx + 115, cy + 54);
+
+    // 3. Cart Wooden Chassis (Warm Oak #8a5a36 & Honey #d4a373 with 2x2 Dither Shading)
+    ctx.fillStyle = '#2b1e2a'; // soft dark contour
+    ctx.fillRect(cx, cy + 22, 145, 27);
+
+    ctx.fillStyle = '#8a5a36'; // warm oak chassis
+    ctx.fillRect(cx + 3, cy + 24, 139, 23);
+
+    if (typeof this.drawDitheredRect === 'function') {
+      this.drawDitheredRect(ctx, cx + 3, cy + 24, 139, 5, '#8a5a36', '#d4a373');
+      this.drawDitheredRect(ctx, cx + 3, cy + 42, 139, 5, '#8a5a36', '#5f2f14');
+    }
+
+    // Wood panel horizontal bevels
+    ctx.fillStyle = '#5f2f14';
+    ctx.fillRect(cx + 3, cy + 32, 139, 1.5);
+    ctx.fillRect(cx + 3, cy + 40, 139, 1.5);
+
+    // Polished Brass Corner Brackets with rivets
+    ctx.fillStyle = '#f4c430';
+    ctx.fillRect(cx, cy + 22, 6, 6);
+    ctx.fillRect(cx + 139, cy + 22, 6, 6);
+    ctx.fillRect(cx, cy + 43, 6, 6);
+    ctx.fillRect(cx + 139, cy + 43, 6, 6);
+
+    // 4. Modern Glass Pastry & Topping Showcase in Front Panel
+    const glassX = cx + 38;
+    const glassY = cy + 25;
+    const glassW = 68;
+    const glassH = 20;
+
+    ctx.fillStyle = '#1f1625';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(glassX, glassY, glassW, glassH, 2);
+    else ctx.rect(glassX, glassY, glassW, glassH);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(254, 250, 224, 0.22)';
+    ctx.fillRect(glassX + 2, glassY + 2, glassW - 4, glassH - 4);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.fillRect(glassX + 2, glassY + 10.5, glassW - 4, 1.5);
+
+    // Mini Egg Tarts
+    for (let t = 0; t < 3; t++) {
+      const tx = glassX + 6 + t * 9.5;
+      ctx.fillStyle = '#c2410c';
+      ctx.beginPath();
+      ctx.ellipse(tx + 3.2, glassY + 8.8, 3.8, 2.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#f97316';
+      ctx.beginPath();
+      ctx.ellipse(tx + 3.2, glassY + 8.5, 3.2, 1.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.ellipse(tx + 3.2, glassY + 8.2, 2.4, 1.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(tx + 2.4, glassY + 7.8, 1.2, 0.8);
+      ctx.fillRect(tx + 3.8, glassY + 8.2, 0.8, 0.6);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(tx + 2.8, glassY + 7.6, 0.6, 0.6);
+    }
+
+    // Caramel Flan Puddings
+    for (let f = 0; f < 3; f++) {
+      const fx = glassX + 38 + f * 9.5;
+      ctx.fillStyle = '#faedcd';
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(fx, glassY + 12.5, 6.5, 5.5, [1, 1, 1.5, 1.5]);
+      } else {
+        ctx.rect(fx, glassY + 13, 6, 5);
+      }
+      ctx.fill();
+
+      ctx.fillStyle = '#9a3412';
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(fx, glassY + 12.2, 6.5, 2.0, [1, 1, 0, 0]);
+        ctx.fill();
+      } else {
+        ctx.fillRect(fx, glassY + 12.5, 6, 1.8);
+      }
+      ctx.fillStyle = '#c2410c';
+      ctx.fillRect(fx + 1.2, glassY + 14, 1, 2.2);
+      ctx.fillRect(fx + 4.8, glassY + 14, 0.8, 1.5);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillRect(fx + 1.8, glassY + 12.6, 1.2, 0.7);
+    }
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(glassX + 4, glassY + glassH - 2);
+    ctx.lineTo(glassX + 16, glassY + 2);
+    ctx.moveTo(glassX + 22, glassY + glassH - 2);
+    ctx.lineTo(glassX + 32, glassY + 2);
+    ctx.stroke();
+
+    // 5. Polished Carrara Marble Countertop
+    ctx.fillStyle = '#fefae0';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(cx - 6, cy + 17, 157, 6, 2.5);
+    else ctx.rect(cx - 6, cy + 17, 157, 6);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(180, 160, 150, 0.35)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(cx + 8, cy + 18);
+    ctx.lineTo(cx + 22, cy + 20);
+    ctx.lineTo(cx + 34, cy + 19);
+    ctx.moveTo(cx + 105, cy + 18.5);
+    ctx.lineTo(cx + 125, cy + 20.5);
+    ctx.stroke();
+
+    ctx.fillStyle = '#d4a373';
+    ctx.fillRect(cx - 6, cy + 21, 157, 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillRect(cx - 5, cy + 17.5, 155, 1);
+
+    // Stainless Steel Honeycomb Drainage Tray
+    ctx.fillStyle = '#94A3B8';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(cx + 25, cy + 17, 44, 4.2, 1);
+    } else {
+      ctx.rect(cx + 25, cy + 17, 44, 4);
+    }
+    ctx.fill();
+    ctx.fillStyle = '#CBD5E1';
+    ctx.fillRect(cx + 26, cy + 17.5, 42, 3);
+    ctx.fillStyle = '#475569';
+    for (let hx = cx + 28; hx < cx + 66; hx += 3) {
+      ctx.fillRect(hx, cy + 18, 1.5, 1);
+      ctx.fillRect(hx + 1.5, cy + 19, 1.5, 1);
+    }
+
+    // 6. Front Awning Support Pillars
+    ctx.fillStyle = '#c5c5d2';
+    ctx.fillRect(cx + 4, cy - 35, 4, 53);
+    ctx.fillRect(cx + 137, cy - 35, 4, 53);
+    ctx.fillStyle = '#f4c430';
+    ctx.fillRect(cx + 3, cy + 13, 6, 4);
+    ctx.fillRect(cx + 136, cy + 13, 6, 4);
+
+    // 8. Static LED Marquee Plaque Base & Grid
+    const plaqueX = cx + 16;
+    const plaqueY = cy + 27;
+    const plaqueW = 112;
+    const plaqueH = 17;
+    ctx.fillStyle = isCosmic ? '#0a0314' : '#140711';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(plaqueX, plaqueY, plaqueW, plaqueH, 3.5);
+    } else {
+      ctx.rect(plaqueX, plaqueY, plaqueW, plaqueH);
+    }
+    ctx.fill();
+
+    ctx.fillStyle = isCosmic ? 'rgba(168, 85, 247, 0.08)' : 'rgba(244, 196, 48, 0.06)';
+    for (let lx = plaqueX + 4; lx < plaqueX + plaqueW - 4; lx += 4) {
+      for (let ly = plaqueY + 3; ly < plaqueY + plaqueH - 3; ly += 3) {
+        ctx.fillRect(lx, ly, 1.5, 1);
+      }
+    }
+
+    ctx.fillStyle = isCosmic ? '#c084fc' : '#f39c12';
+    ctx.fillRect(plaqueX + 2, plaqueY + 2, 2, 2);
+    ctx.fillRect(plaqueX + plaqueW - 4, plaqueY + 2, 2, 2);
+    ctx.fillRect(plaqueX + 2, plaqueY + plaqueH - 4, 2, 2);
+    ctx.fillRect(plaqueX + plaqueW - 4, plaqueY + plaqueH - 4, 2, 2);
+
+    // 9. EQUIPMENT ON THE COUNTER:
+    // A. Stainless Steel Tea Urn
+    const urnX = cx + 8;
+    const urnY = cy + 1;
+    ctx.fillStyle = 'rgba(43, 30, 42, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(urnX + 7.5, urnY + 18, 8, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const urnGrad = ctx.createLinearGradient(urnX, urnY, urnX + 15, urnY);
+    urnGrad.addColorStop(0, '#94a3b8');
+    urnGrad.addColorStop(0.25, '#f1f5f9');
+    urnGrad.addColorStop(0.65, '#cbd5e1');
+    urnGrad.addColorStop(1, '#64748b');
+    ctx.fillStyle = urnGrad;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(urnX, urnY, 15, 17, [2, 2, 1.5, 1.5]);
+    } else {
+      ctx.rect(urnX, urnY, 15, 17);
+    }
+    ctx.fill();
+
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(urnX + 0.5, urnY + 16, 14, 1.5);
+    ctx.fillRect(urnX + 0.5, urnY + 2.5, 14, 1);
+
+    ctx.fillStyle = '#64748b';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(urnX + 1, urnY - 1, 13, 3, [2, 2, 0, 0]);
+    } else {
+      ctx.rect(urnX + 1, urnY - 1, 13, 3);
+    }
+    ctx.fill();
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(urnX + 2, urnY - 0.5, 11, 0.8);
+    ctx.fillStyle = '#334155';
+    ctx.beginPath();
+    ctx.arc(urnX + 7.5, urnY - 2, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillRect(urnX + 13, cy + 13, 3, 2);
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(urnX + 14.5, cy + 11.5, 2.5, 4, 1);
+    } else {
+      ctx.rect(urnX + 14.5, cy + 11.5, 2.5, 4);
+    }
+    ctx.fill();
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(urnX + 14.5, cy + 15, 2, 1);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.fillRect(urnX - 2, urnY + 3, 2.2, 12);
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(urnX - 1.8, urnY + 6, 1.8, 9);
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(urnX - 2, urnY + 7, 1, 0.6);
+    ctx.fillRect(urnX - 2, urnY + 10, 1, 0.6);
+    ctx.fillRect(urnX - 2, urnY + 13, 1, 0.6);
+
+    // B. Glass Topping Jars
+    this.drawGlassJar(ctx, cx + 26, cy + 7, '#111');
+    this.drawGlassJar(ctx, cx + 38, cy + 7, '#f39c12');
+    this.drawGlassJar(ctx, cx + 50, cy + 7, '#27ae60');
+
+    // C. Stainless Steel Ice Tub
+    const iceX = cx + 62;
+    const iceY = cy + 8;
+    ctx.fillStyle = 'rgba(43, 30, 42, 0.3)';
+    ctx.beginPath();
+    ctx.ellipse(iceX + 6, iceY + 10, 7, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#64748b';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(iceX, iceY, 12, 9.5, 1.5);
+    } else {
+      ctx.rect(iceX, iceY, 12, 9.5);
+    }
+    ctx.fill();
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(iceX + 0.8, iceY + 1, 10.4, 8);
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillRect(iceX - 0.5, iceY - 0.5, 13, 1.5);
+
+    ctx.fillStyle = '#e0f2fe';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(iceX + 1.5, iceY - 1.5, 9, 5, 1);
+    } else {
+      ctx.rect(iceX + 1.5, iceY - 1.5, 9, 5);
+    }
+    ctx.fill();
+    ctx.fillStyle = '#bae6fd';
+    ctx.fillRect(iceX + 2, iceY, 3, 2.5);
+    ctx.fillRect(iceX + 6.5, iceY - 0.5, 3.5, 2.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(iceX + 2.5, iceY - 1, 1.5, 1);
+    ctx.fillRect(iceX + 7.5, iceY - 1.2, 1.5, 1);
+
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillRect(iceX + 9, iceY - 5, 2, 6);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(iceX + 9, iceY - 5, 1, 6);
+
+    // D. Cup Sealing Machine
+    const sealX = cx + 76;
+    const sealY = cy + 2;
+    ctx.fillStyle = '#991b1b';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(sealX, sealY, 15, 16.5, [2, 2, 1, 1]);
+    } else {
+      ctx.rect(sealX, sealY, 15, 16.5);
+    }
+    ctx.fill();
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(sealX + 1.5, sealY + 2.5, 12, 13, 1);
+    } else {
+      ctx.rect(sealX + 1.5, sealY + 2.5, 12, 13);
+    }
+    ctx.fill();
+
+    ctx.fillStyle = '#1c1917';
+    ctx.fillRect(sealX + 2.5, sealY + 10, 10, 4);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(sealX + 3, sealY + 4, 7, 3.5);
+    ctx.fillStyle = '#4ade80';
+    ctx.font = 'bold 3.2px monospace';
+    ctx.fillText('185', sealX + 3.5, sealY + 6.8);
+
+    ctx.fillStyle = '#22c55e';
+    ctx.beginPath();
+    ctx.arc(sealX + 11.5, sealY + 5.5, 1, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(sealX + 2.5, sealY - 4, 10, 5, 1.5);
+    } else {
+      ctx.rect(sealX + 2.5, sealY - 4, 10, 5);
+    }
+    ctx.fill();
+    ctx.fillStyle = '#fef08a';
+    ctx.fillRect(sealX + 4, sealY - 3, 2, 3);
+    ctx.fillRect(sealX + 8, sealY - 3, 2, 3);
+
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(sealX + 13, sealY - 1, 1.8, 8);
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.arc(sealX + 13.9, sealY - 1.5, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // E. Boiling Pearl Cooker Pot Base
+    const potX = cx + 120;
+    const potY = cy + 3;
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(potX - 1, potY + 14.5, 20, 3, 1);
+    } else {
+      ctx.rect(potX - 1, potY + 14.5, 20, 3);
+    }
+    ctx.fill();
+    ctx.fillStyle = '#f97316';
+    ctx.fillRect(potX + 2, potY + 15, 14, 1);
+
+    ctx.fillStyle = '#334155';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(potX, potY, 18, 14.5, [1.5, 1.5, 2.5, 2.5]);
+    } else {
+      ctx.rect(potX, potY, 18, 14.5);
+    }
+    ctx.fill();
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(potX + 1, potY + 2, 16, 12);
+
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(potX, potY + 5, 2, Math.PI * 0.5, Math.PI * 1.5);
+    ctx.arc(potX + 18, potY + 5, 2, Math.PI * 1.5, Math.PI * 0.5);
+    ctx.stroke();
+
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(potX + 1.5, potY + 3, 15, 5);
+
+    // Side Street Stool & Iced Tea Setup
     const stoolX = cx - 22;
     const stoolY = cy + 45;
-    // Blue plastic stool (Ghế nhựa xanh vỉa hè)
     ctx.fillStyle = '#2980b9';
-    ctx.fillRect(stoolX, stoolY, 14, 3); // seat
-    ctx.fillRect(stoolX + 1, stoolY + 3, 2, 10); // legs
+    ctx.fillRect(stoolX, stoolY, 14, 3);
+    ctx.fillRect(stoolX + 1, stoolY + 3, 2, 10);
     ctx.fillRect(stoolX + 11, stoolY + 3, 2, 10);
-    // Low table with iced tea (Trà đá) and sunflower seeds
     ctx.fillStyle = '#e67e22';
     ctx.fillRect(stoolX + 2, stoolY - 3, 5, 2);
     ctx.fillStyle = '#111';
     ctx.fillRect(stoolX + 3, stoolY - 4, 3, 1);
-    // Tall glass of iced tea with lemon slice!
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.fillRect(stoolX + 8, stoolY - 7, 4, 7);
     ctx.fillStyle = '#f1c40f';
     ctx.fillRect(stoolX + 9, stoolY - 5, 2, 4);
-
-    // --- PARKED FLEET VEHICLES DISPLAY (HỆ THỐNG XE ĐỖ BÊN QUÁN) ---
-    this.drawParkedVehicles(ctx, cx, cy);
   },
 
   drawParkedVehicles(ctx, cx, cy) {

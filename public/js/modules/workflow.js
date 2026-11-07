@@ -16,6 +16,17 @@ let elMixSugar = null;
 let elMixIce = null;
 let elMixTop = null;
 
+// Tactile Web Vibration API helper for mobile ergonomics
+function triggerHaptic(ms = 10) {
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(ms);
+    }
+  } catch (_) {
+    // Ignore on unsupported devices
+  }
+}
+
 // Step indicators and button states
 export function updateWorkflowButtons() {
   const hasOrder = !!state.currentOrder;
@@ -496,6 +507,7 @@ export function initWorkflow() {
   if (elBtnShaker) {
     elBtnShaker.addEventListener('click', () => {
       if (elBtnShaker.disabled) return;
+      triggerHaptic(15);
       elBtnShaker.disabled = true;
       if (window.sound) window.sound.shake();
       if (state.canvas) state.canvas.setShaking(true);
@@ -521,6 +533,7 @@ export function initWorkflow() {
         showToast('Hãy bấm [1. Lắc Bình] trước!');
         return;
       }
+      triggerHaptic(12);
       elBtnPourCup.disabled = true;
       if (window.sound) {
         window.sound.pour();
@@ -553,6 +566,7 @@ export function initWorkflow() {
         showToast('Hãy bấm [2. Rót Cốc] trước!');
         return;
       }
+      triggerHaptic(15);
       elBtnSealCup.disabled = true;
       if (window.sound) window.sound.seal();
       if (state.workstation) {
@@ -573,6 +587,7 @@ export function initWorkflow() {
   if (elBtnServe) {
     elBtnServe.addEventListener('click', async () => {
       if (!state.currentOrder) return;
+      triggerHaptic(18);
       if (!state.isShaken) {
         showToast('Hãy bấm [1. Lắc Bình] để trộn đều nguyên liệu!');
         return;
@@ -858,6 +873,7 @@ export function initWorkflow() {
         return;
       }
       const teaKey = btn.getAttribute('data-tea');
+      triggerHaptic(10);
       if (window.sound) window.sound.pour();
       state.selectedTea = teaKey;
       if (state.workstation) {
@@ -872,6 +888,7 @@ export function initWorkflow() {
   document.querySelectorAll('[data-sugar]').forEach(btn => {
     btn.addEventListener('click', () => {
       const val = btn.getAttribute('data-sugar');
+      triggerHaptic(8);
       if (window.sound) window.sound.pour();
       state.selectedSugar = val;
       if (state.workstation) {
@@ -885,6 +902,7 @@ export function initWorkflow() {
   document.querySelectorAll('[data-ice]').forEach(btn => {
     btn.addEventListener('click', () => {
       const val = btn.getAttribute('data-ice');
+      triggerHaptic(8);
       if (window.sound) window.sound.ice();
       state.selectedIce = val;
       if (state.workstation) {
@@ -900,6 +918,7 @@ export function initWorkflow() {
       const top = btn.getAttribute('data-topping');
       if (btn.disabled || btn.classList.contains('out-of-stock')) {
         if (state.selectedToppings.includes(top)) {
+          triggerHaptic(8);
           state.selectedToppings = state.selectedToppings.filter(t => t !== top);
           if (state.workstation) state.workstation.toggleTopping(top);
           updateMixingButtonsState();
@@ -910,6 +929,7 @@ export function initWorkflow() {
         showToast('❌ Topping này đã hết trong kho! Vui lòng vào Chợ Đầu Mối để nhập thêm!', 3500);
         return;
       }
+      triggerHaptic(10);
       if (window.sound) window.sound.pour();
       if (state.workstation) {
         state.workstation.toggleTopping(top);

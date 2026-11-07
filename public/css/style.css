@@ -434,13 +434,14 @@ canvas#scene {
   transition: width 0.1s linear, background-color 0.3s;
 }
 
-/* MIXING COUNTER */
+/* MIXING COUNTER (Đồng bộ tông gỗ sồi ấm & đồng thau với Xe Trà Sữa & Bàn Pha Chế) */
 .mixing-counter {
-  padding: 4px 8px;
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  background: #241520;
+  gap: 5px;
+  background: linear-gradient(180deg, #2b191d 0%, #24151c 100%);
+  border-top: 2px solid #8a5a36;
 }
 
 /* FIRST-PERSON BARISTA WORKSTATION */
@@ -452,9 +453,9 @@ canvas#scene {
   max-height: 225px;
   border-radius: 8px;
   overflow: hidden;
-  border: 2px solid var(--panel-border);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 0 16px rgba(0, 0, 0, 0.5);
-  background: #190d16;
+  border: 2px solid #d4a373;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65), inset 0 0 16px rgba(0, 0, 0, 0.45);
+  background: #1c1119;
 }
 
 #workstation-canvas {
@@ -467,7 +468,11 @@ canvas#scene {
 .barista-shelf {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  background: rgba(43, 24, 20, 0.55);
+  border: 1px solid rgba(212, 163, 115, 0.28);
+  border-radius: 7px;
+  padding: 4px 6px;
 }
 
 .shelf-header {
@@ -478,7 +483,7 @@ canvas#scene {
 
 .shelf-hint {
   font-size: 0.74rem;
-  color: var(--text-muted);
+  color: #d4a373;
   font-style: italic;
 }
 
@@ -494,13 +499,14 @@ canvas#scene {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: #311c2c;
-  border: 1.5px solid #57334d;
+  background: linear-gradient(180deg, #3d2420, #2b1817);
+  border: 1.5px solid #8a5a36;
   border-radius: 6px;
   padding: 3px 6px;
-  min-height: 32px;
+  min-height: 34px;
   cursor: pointer;
-  color: var(--text-main);
+  color: #fefae0;
+  box-shadow: 0 2px 0 #1b0d07;
   transition: all 0.15s ease;
   user-select: none;
 }
@@ -616,24 +622,55 @@ canvas#scene {
 
 .options-row {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
   padding-bottom: 2px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.options-row::-webkit-scrollbar {
+  display: none;
 }
 
 .btn-select {
-  background: #3a2233;
-  border: 1.5px solid #57334d;
-  color: var(--text-main);
-  padding: 3px 6px;
+  background: linear-gradient(180deg, #422722, #2e1a18);
+  border: 1.5px solid #8a5a36;
+  color: #fefae0;
+  padding: 4px 8px;
   font-size: 0.88rem;
-  min-height: 32px;
-  border-radius: 5px;
+  min-height: 36px;
+  border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s;
+  scroll-snap-align: start;
+  box-shadow: 0 2px 0 #1b0d07;
+  transition: transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.12s ease, border-color 0.12s ease;
+}
+
+/* TACTILE MOBILE TOUCH ERGONOMICS & ZERO TAP DELAY */
+.btn-workflow,
+.btn-select,
+.btn-pill,
+.nav-btn,
+.btn-serve-cup,
+.btn-market-buy {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.btn-workflow:active:not(:disabled),
+.btn-select:active:not(:disabled),
+.btn-pill:active:not(:disabled),
+.nav-btn:active:not(:disabled),
+.btn-serve-cup:active:not(:disabled),
+.btn-market-buy:active:not(:disabled) {
+  transform: translateY(2px) scale(0.98);
+  filter: brightness(0.92);
 }
 
 .btn-select:hover {
@@ -686,11 +723,12 @@ canvas#scene {
   align-items: center;
   justify-content: center;
   padding: 4px 2px;
-  min-height: 38px;
-  background: #311c2c;
-  color: var(--text-main);
-  border: 1.5px solid #57334d;
+  min-height: 40px;
+  background: linear-gradient(180deg, #3d2422, #291718);
+  color: #fefae0;
+  border: 1.5px solid #8a5a36;
   border-radius: 6px;
+  box-shadow: 0 2px 0 #1b0d07;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s ease;
@@ -814,14 +852,14 @@ body.dev-mode .dev-only {
   display: block !important;
 }
 
-/* BOTTOM NAVIGATION TOOLBAR (Tối giản 4 mục trọng tâm) */
+/* BOTTOM NAVIGATION TOOLBAR (Đồng bộ 5 nút trên 1 hàng ngang) */
 .bottom-nav {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   padding: 5px 6px;
-  background: #180d15;
-  border-top: 2px solid var(--panel-border);
+  background: #1c1015;
+  border-top: 2px solid #8a5a36;
 }
 
 .nav-btn {
@@ -1851,10 +1889,10 @@ button,
   }
 
   .btn-select {
-    min-height: 30px;
-    font-size: 0.82rem;
-    padding: 2px 6px;
-    border-radius: 5px;
+    min-height: 40px;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: 6px;
   }
 
   #cup-status-bar {
@@ -1866,48 +1904,48 @@ button,
     -webkit-overflow-scrolling: touch;
   }
 
-  /* WORKFLOW ACTION BUTTONS */
+  /* WORKFLOW ACTION BUTTONS (WCAG AAA Thumb-Zone 48px Height) */
   .action-box.workflow-grid {
     grid-template-columns: 1fr 1fr 1fr 1.35fr;
-    gap: 3px;
-    margin-top: 2px;
+    gap: 5px;
+    margin-top: 3px;
   }
 
   .btn-workflow {
-    padding: 3px 2px;
-    min-height: 35px;
-    border-radius: 5px;
+    padding: 4px 3px;
+    min-height: 48px;
+    border-radius: 7px;
   }
 
   .btn-workflow .wf-icon {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 
   .btn-workflow .wf-text {
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     letter-spacing: -0.2px;
   }
 
   .btn-serve-cup {
-    font-size: 0.8rem;
-    padding: 3px 4px;
-    min-height: 35px;
-    border-radius: 5px;
+    font-size: 0.86rem;
+    padding: 4px 6px;
+    min-height: 48px;
+    border-radius: 7px;
   }
 
   /* BOTTOM NAVIGATION BAR */
   .bottom-nav {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 3px;
-    padding: 3px 4px max(5px, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 4px 5px max(6px, env(safe-area-inset-bottom));
   }
 
   .nav-btn {
-    min-height: 38px;
-    padding: 3px 2px;
-    font-size: 0.72rem;
-    border-radius: 6px;
+    min-height: 44px;
+    padding: 4px 2px;
+    font-size: 0.74rem;
+    border-radius: 7px;
     white-space: nowrap;
   }
 

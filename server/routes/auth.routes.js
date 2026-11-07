@@ -20,7 +20,8 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { account, password } = req.body;
+    const account = req.body.account || req.body.username || req.body.store_code;
+    const { password } = req.body;
     const result = await auth.login(account, password);
     if (!result.success) return res.status(400).json(result);
     res.json(result);

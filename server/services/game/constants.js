@@ -8,7 +8,8 @@ const CHAPTER_CUP_PRICE_CAPS = {
   1: 50000, // Chương 1 tối đa 50.000đ
   2: 60000, // Chương 2 tối đa 60.000đ
   3: 70000, // Chương 3 tối đa 70.000đ
-  4: 80000  // Chương 4 tối đa 80.000đ
+  4: 80000, // Chương 4 tối đa 80.000đ
+  5: 100000 // Chương 5 tối đa 100.000đ (Vương Triều Vũ Trụ)
 };
 
 // Drink Recipes Database (Chỉ 'tra_sua_truyen_thong' mở sẵn, toàn bộ các món còn lại phải mua công thức bằng tiền)
@@ -272,6 +273,19 @@ const RECIPES = {
     tea: 'sua_tuoi',
     toppings: ['tranchau_duongden', 'suong_sao'],
     desc: '🇰🇷 Cốt trà: [Sữa Tươi] • Sâm núi Geumsan 6 năm tuổi bồi bổ nguyên khí kết hợp mật mía đường đen béo ngậy'
+  },
+  tra_sua_vu_tru_ngan_ha: {
+    id: 'tra_sua_vu_tru_ngan_ha',
+    name: 'Trà Sữa Ngân Hà Vũ Trụ Cosmic Boba',
+    icon: '🌌',
+    chapter: 5,
+    basePrice: 99000,
+    cost: 65000,
+    unlockCost: 0,
+    upgradeId: null,
+    tea: 'olong_nuong',
+    toppings: ['tranchau_den', 'tranchau_duongden', 'thach_la_dua'],
+    desc: '🌌 Cốt trà: [Ô Long Nướng Ngân Hà] • Cực phẩm trà sữa vũ trụ hòa quyện ánh sao Starlight và lớp kem ngân hà bồng bềnh'
   }
 };
 
@@ -312,7 +326,7 @@ function resolveUnlockedRecipes(save) {
   const unlocked = [...CORE_RECIPES];
   for (const key of Object.keys(RECIPES)) {
     if (CORE_RECIPES.includes(key)) continue;
-    if (upgrades[`recipe_${key}`]) {
+    if (upgrades[`recipe_${key}`] || (key === 'tra_sua_vu_tru_ngan_ha' && (save?.chapter || 1) >= 5)) {
       unlocked.push(key);
     }
   }

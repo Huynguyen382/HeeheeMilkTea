@@ -126,6 +126,11 @@ class BaristaWorkstation {
       (this.tea === 'sua_tuoi' && this.toppings.includes('tranchau_duongden') && this.toppings.includes('suong_sao'));
   }
 
+  isCosmicRecipe() {
+    return this.currentRecipe === 'tra_sua_vu_tru_ngan_ha' ||
+      (this.tea === 'olong_nuong' && this.toppings.includes('tranchau_den') && this.toppings.includes('tranchau_duongden') && this.toppings.includes('thach_la_dua'));
+  }
+
   initCupContents() {
     // Generate ice cubes based on ice level
     this.iceCubes = [];
@@ -1462,6 +1467,34 @@ class BaristaWorkstation {
         ctx.restore();
       }
 
+      // Special Drink FX: Trà Sữa Ngân Hà Vũ Trụ Cosmic Boba (Swirling Galaxy Core & Starlight Glints)
+      if (this.isCosmicRecipe()) {
+        ctx.save();
+        const cosX = cupX;
+        const cosY = liquidTop + 1;
+        ctx.translate(cosX, cosY);
+        // Swirling Nebula Core on liquid surface
+        const cosGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, 10);
+        cosGrad.addColorStop(0, 'rgba(255, 121, 198, 0.7)');
+        cosGrad.addColorStop(0.5, 'rgba(189, 147, 249, 0.45)');
+        cosGrad.addColorStop(0.85, 'rgba(0, 206, 201, 0.3)');
+        cosGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = cosGrad;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 10, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3 Orbiting Starlight Sparkles
+        for (let s = 0; s < 3; s++) {
+          const sAng = this.tick * 0.08 + s * (Math.PI * 2 / 3);
+          const sx = Math.cos(sAng) * 6.5;
+          const sy = Math.sin(sAng) * 2.8;
+          ctx.fillStyle = s % 2 === 0 ? '#ffffff' : '#81ecec';
+          ctx.fillRect(sx - 0.8, sy - 0.8, 1.6, 1.6);
+        }
+        ctx.restore();
+      }
+
       // Ice cubes in cup
       if (this.ice !== 'Nóng' && fillRatio > 0.4) {
         const iceCount = this.ice === 'Ít đá' ? 1 : (this.ice === 'Vừa đá' ? 2 : 3);
@@ -2423,6 +2456,22 @@ class BaristaWorkstation {
             const ginY = (1 - t) * (1 - t) * spoutY + 2 * (1 - t) * t * ((spoutY + cupTopY) * 0.5) + t * t * (cupTopY + 2);
             ctx.beginPath();
             ctx.ellipse(ginX, ginY, 3.5, 1.8, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      // Cosmic Boba starlight stream cascading down into cup
+      if (this.isCosmicRecipe()) {
+        for (let cs = 0; cs < 3; cs++) {
+          const cosP = ((p * 3.6 + cs * 0.33) % 1.0);
+          if (cosP > 0.08 && cosP < 0.92) {
+            const t = cosP;
+            const cX = (1 - t) * (1 - t) * spoutX + 2 * (1 - t) * t * (spoutX + 20) + t * t * cupX;
+            const cY = (1 - t) * (1 - t) * spoutY + 2 * (1 - t) * t * ((spoutY + cupTopY) * 0.5) + t * t * (cupTopY + 2);
+            ctx.fillStyle = cs === 0 ? '#ff79c6' : (cs === 1 ? '#bd93f9' : '#81ecec');
+            ctx.beginPath();
+            ctx.arc(cX, cY, 1.8, 0, Math.PI * 2);
             ctx.fill();
           }
         }

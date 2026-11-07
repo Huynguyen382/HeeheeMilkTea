@@ -22,10 +22,22 @@ export const npcMethods = {
   },
 
   drawNPCHair(ctx, baseX, headTop, hairId, hairColor, sway = 0, subColor = '#f472b6') {
-    const pR = (x, y, w, h, col) => {
+    const pR = (x, y, w, h, col, radius) => {
       if (!col) return;
       ctx.fillStyle = col;
-      ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+      const rx = Math.round(x);
+      const ry = Math.round(y);
+      const rw = Math.max(1, Math.round(w));
+      const rh = Math.max(1, Math.round(h));
+      if (rw >= 3 && rh >= 3) {
+        const r = (radius !== undefined) ? radius : (Math.min(rw, rh) >= 5 ? 1.5 : 0.85);
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, r);
+        else ctx.rect(rx, ry, rw, rh);
+        ctx.fill();
+      } else {
+        ctx.fillRect(rx, ry, rw, rh);
+      }
     };
     const pD = (x, y, col) => {
       if (!col) return;
@@ -236,10 +248,22 @@ export const npcMethods = {
   },
 
   drawNPCOutfit(ctx, baseX, torsoTop, pantsTop, shoeTop, torsoH, legLength, outfitId, palette, gender = 'female', sway = 0) {
-    const pR = (x, y, w, h, col) => {
+    const pR = (x, y, w, h, col, radius) => {
       if (!col) return;
       ctx.fillStyle = col;
-      ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+      const rx = Math.round(x);
+      const ry = Math.round(y);
+      const rw = Math.max(1, Math.round(w));
+      const rh = Math.max(1, Math.round(h));
+      if (rw >= 3 && rh >= 3) {
+        const r = (radius !== undefined) ? radius : (Math.min(rw, rh) >= 5 ? 1.5 : 0.85);
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, r);
+        else ctx.rect(rx, ry, rw, rh);
+        ctx.fill();
+      } else {
+        ctx.fillRect(rx, ry, rw, rh);
+      }
     };
     const pD = (x, y, col) => {
       if (!col) return;
@@ -497,10 +521,22 @@ export const npcMethods = {
   },
 
   drawModularNPC(ctx, npc, baseX, baseY, sway = 0, isFront = false, isHappy = false, isBlinking = false) {
-    const pR = (x, y, w, h, col) => {
+    const pR = (x, y, w, h, col, radius) => {
       if (!col) return;
       ctx.fillStyle = col;
-      ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+      const rx = Math.round(x);
+      const ry = Math.round(y);
+      const rw = Math.max(1, Math.round(w));
+      const rh = Math.max(1, Math.round(h));
+      if (rw >= 3 && rh >= 3) {
+        const r = (radius !== undefined) ? radius : (Math.min(rw, rh) >= 5 ? 1.5 : 0.85);
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, r);
+        else ctx.rect(rx, ry, rw, rh);
+        ctx.fill();
+      } else {
+        ctx.fillRect(rx, ry, rw, rh);
+      }
     };
 
     const palette = npc.palette || {};
@@ -528,6 +564,14 @@ export const npcMethods = {
     // 3. Front hair & Bangs layer
     this.drawNPCHair(ctx, baseX, headTop, npc.hairStyle, hair, sway, sub);
 
+    // Hair gloss / Angel ring highlight band
+    if (typeof this.drawHairGloss === 'function') {
+      this.drawHairGloss(ctx, baseX + 11, headTop + 1, 0.9);
+    } else {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.fillRect(baseX + 7, headTop + 1, 8, 1);
+    }
+
     // 4. Neck Column
     this.drawNeck(ctx, baseX + 11, torsoTop - 2, 4, 3, skin, skinShadow);
 
@@ -536,12 +580,12 @@ export const npcMethods = {
 
     // 6. Arms & Boba Cup
     const armColor = palette.clothes || '#ffffff';
-    pR(baseX + 3, torsoTop + 2, 3, 10, armColor);
-    pR(baseX + 16, torsoTop + 2, 3, 10, armColor);
+    pR(baseX + 2.5, torsoTop + 2, 3.5, 10, armColor, 1.2);
+    pR(baseX + 16, torsoTop + 2, 3.5, 10, armColor, 1.2);
 
     if (npc.prop === 'boba' || isFront) {
-      this.drawHand(ctx, baseX + 7, torsoTop + 9, skin, 'grip');
-      this.drawHand(ctx, baseX + 13, torsoTop + 9, skin, 'grip');
+      this.drawHand(ctx, baseX + 6.5, torsoTop + 9, skin, 'grip');
+      this.drawHand(ctx, baseX + 13.5, torsoTop + 9, skin, 'grip');
       const fnDrawCup = (typeof drawBobaCup === 'function') ? drawBobaCup : (typeof window !== 'undefined' ? window.drawBobaCup : null);
       if (typeof fnDrawCup === 'function') {
         fnDrawCup(ctx, baseX + 8, torsoTop + 7, '#ffedd5', '#b45309', '#f43f5e', true);
@@ -667,34 +711,53 @@ export const npcMethods = {
     const fnGetHeight = (typeof getCharacterHeight === 'function') ? getCharacterHeight : (typeof window !== 'undefined' ? window.getCharacterHeight : null);
     const char = (typeof fnGetChar === 'function') ? (fnGetChar(customerName) || fnGetChar(type)) : null;
     const isMoving = isFront ? (x < this.targetCustomerX) : false;
-    const idleBob = Math.round(Math.sin(this.tick * 0.16) * 1.2);
+    const phaseSeed = (typeof type === 'number' ? type : 0) * 17;
+
+    // Idle Breathing Curve: T = 2.4s (144 ticks at 60fps), deltaY = sin(t * 2*PI / 2.4) * 1.25px
+    const idleBob = Math.round(Math.sin(((this.tick + phaseSeed) * Math.PI * 2) / 144) * 1.25);
+    const walkSin = Math.sin(this.tick * 0.45 + phaseSeed);
     const walkBob = (this.customerState === 'waiting' && isMoving)
-      ? Math.round(Math.sin(this.tick * 0.45) * 2)
+      ? Math.round(walkSin * 2)
       : idleBob;
 
     const height = (char && char.height) ? char.height : ((typeof fnGetHeight === 'function') ? fnGetHeight(char) : 54);
     const baseX = Math.round(x) - 1;
     const baseY = Math.round(148 - height + walkBob);
     const sway = isMoving
-      ? (Math.sin(this.tick * 0.45) > 0 ? 1 : 0)
-      : (Math.sin(this.tick * 0.18) > 0 ? 1 : 0);
+      ? (walkSin > 0 ? 1 : 0)
+      : (Math.sin((this.tick + phaseSeed) * 0.12) > 0 ? 1 : 0);
 
-    // 1. Soft Multi-layer Pixel Shadow (Faithfully matching ModelNPC.html)
+    // 1. Contact Ambient Occlusion & Diffuse Ground Shadow (rgba(20, 10, 15, 0.45) -> rgba(20, 10, 15, 0))
     const shadowX = Math.round(baseX + 12);
     const shadowY = 148;
-    ctx.fillStyle = 'rgba(25, 15, 10, 0.10)';
+    const aoGrad = ctx.createRadialGradient(shadowX, shadowY, 2, shadowX, shadowY, 14);
+    aoGrad.addColorStop(0, 'rgba(20, 10, 15, 0.45)');
+    aoGrad.addColorStop(0.55, 'rgba(20, 10, 15, 0.22)');
+    aoGrad.addColorStop(1, 'rgba(20, 10, 15, 0)');
+    ctx.save();
+    ctx.fillStyle = aoGrad;
     ctx.beginPath();
-    ctx.ellipse(shadowX, shadowY, 14, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(shadowX, shadowY, 14, 4.2, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = 'rgba(20, 10, 5, 0.22)';
-    ctx.beginPath();
-    ctx.ellipse(shadowX, shadowY, 9, 2.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.restore();
 
-    const isBlinking = (this.tick % 90) < 4;
+    // Natural eye blink every 3 - 5s (180 - 300 ticks depending on character seed)
+    const blinkPeriod = 190 + ((phaseSeed * 7) % 100);
+    const isBlinking = ((this.tick + phaseSeed) % blinkPeriod) < 4;
     const isHappy = isFront && this.isDrinking;
 
-    // 2. Master NPC Character Pipeline (Supports both classic 50 NPCs & Modular NPC generator)
+    // 2. Walk Cycle Squash & Stretch + Master NPC Character Pipeline
+    ctx.save();
+    if (isMoving) {
+      // When foot touches ground (walkSin > 0.5): Squash (-1px height, +1px width); when stepping up: Stretch
+      const squashFactor = walkSin * 0.022;
+      const pivotX = baseX + 11;
+      const pivotY = 148;
+      ctx.translate(pivotX, pivotY);
+      ctx.scale(1 + squashFactor, 1 - squashFactor);
+      ctx.translate(-pivotX, -pivotY);
+    }
+
     const fnDrawNPC = (typeof drawNPCCharacter === 'function') ? drawNPCCharacter : (typeof window !== 'undefined' ? window.drawNPCCharacter : null);
     if (char && char.isModular) {
       this.drawModularNPC(ctx, char, baseX, baseY, sway, isFront, isHappy, isBlinking);
@@ -704,6 +767,7 @@ export const npcMethods = {
       const autoNpc = this.getOrCreateModularNPC(customerName || type);
       this.drawModularNPC(ctx, autoNpc, baseX, baseY, sway, isFront, isHappy, isBlinking);
     }
+    ctx.restore();
 
     // 3. Floating Pixel Pink Hearts when happily drinking boba
     if (isHappy) {

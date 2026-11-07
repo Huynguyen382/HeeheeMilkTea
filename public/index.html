@@ -453,9 +453,10 @@
           <button class="menu-item-btn" id="nav-collab">
             <span class="m-icon">👥</span>
             <div class="m-info">
-              <span class="m-title">Bạn Bè & Collab</span>
-              <span class="m-desc">Kết bạn, tặng quà & liên minh (+30%)</span>
+              <span class="m-title">Bạn Bè &amp; Hộp Quà</span>
+              <span class="m-desc">Tặng quà, kết bạn &amp; liên minh (+30%)</span>
             </div>
+            <span class="nav-menu-badge" id="friend-gifts-badge" style="display: none; top: 6px; right: 6px; background: #ff79c6; color: #000; font-weight: bold; border-radius: 10px; padding: 1px 7px; font-size: 0.75rem;">0</span>
           </button>
           <button class="menu-item-btn" id="nav-story">
             <span class="m-icon">📖</span>
@@ -618,13 +619,16 @@
         <button class="btn-close" id="close-collab">&times;</button>
       </div>
 
-      <!-- TABS: BẠN BÈ & LIÊN MINH COLLAB -->
+      <!-- TABS: BẠN BÈ, HỘP QUÀ & LIÊN MINH COLLAB -->
       <div style="display: flex; gap: 4px; border-bottom: 2px solid var(--panel-border); margin-bottom: 10px;">
-        <button id="tab-btn-friends" class="story-tab-btn active" style="flex: 1; padding: 6px; font-weight: bold;">
+        <button id="tab-btn-friends" class="story-tab-btn active" style="flex: 1; padding: 6px; font-weight: bold; font-size: 0.88rem;">
           👥 Bạn Bè (<span id="friends-count-num">0</span>)
         </button>
-        <button id="tab-btn-collabs" class="story-tab-btn" style="flex: 1; padding: 6px;">
-          📈 Liên Minh Collab (<span id="collab-tab-count">0/3</span>)
+        <button id="tab-btn-gifts" class="story-tab-btn" style="flex: 1; padding: 6px; font-size: 0.88rem; color: #ff79c6;">
+          🎁 Hộp Quà (<span id="gifts-pending-badge" style="font-weight: bold;">0</span>)
+        </button>
+        <button id="tab-btn-collabs" class="story-tab-btn" style="flex: 1; padding: 6px; font-size: 0.88rem;">
+          📈 Liên Minh (<span id="collab-tab-count">0/3</span>)
         </button>
       </div>
 
@@ -661,9 +665,14 @@
 
         <!-- ACTIVE FRIENDS LIST -->
         <div style="margin-bottom: 12px;">
-          <div style="font-weight: bold; color: var(--gold); font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-            <span>👥 Danh Sách Bạn Bè Thân Thiết:</span>
-            <span id="friends-total-badge" style="font-size: 0.82rem; color: var(--text-muted);">0 bạn bè</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="font-weight: bold; color: var(--gold); font-size: 0.95rem;">
+              <span>👥 Bạn Bè: </span>
+              <span id="friends-total-badge" style="font-size: 0.82rem; color: var(--text-muted); font-weight: normal;">0 bạn bè</span>
+            </div>
+            <button id="btn-gift-all-friends" class="btn-action-sm" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff; font-weight: bold; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Gửi quà tình bạn cho tất cả bạn bè hôm nay chưa gửi">
+              <span>🚀 Tặng Tất Cả</span>
+            </button>
           </div>
           <div id="friends-active-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto;">
             <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Chưa có bạn bè nào. Hãy nhập mã quán bạn bè để kết bạn nhé!</div>
@@ -681,7 +690,53 @@
         </div>
       </div>
 
-      <!-- TAB 2: LIÊN MINH COLLAB (DOANH THU BOOST) -->
+      <!-- TAB 2: HỘP THƯ QUÀ TẶNG (GIFT INBOX) -->
+      <div id="tab-content-gifts" style="display: none;">
+        <!-- BANNER & BULK ACTIONS -->
+        <div style="background: linear-gradient(135deg, rgba(255, 121, 198, 0.15), rgba(189, 147, 249, 0.15)); border: 1px solid #ff79c6; border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div>
+              <div style="font-weight: bold; color: #ff79c6; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
+                <span>🎁 HỘP QUÀ TÌNH BẠN</span>
+                <span id="gifts-inbox-counter" style="background: #ff79c6; color: #000; border-radius: 10px; padding: 1px 7px; font-size: 0.78rem; font-weight: bold;">0 quà</span>
+              </div>
+              <div style="font-size: 0.8rem; color: #f5ebe6; margin-top: 2px;">
+                Mỗi hộp quà chứa <b>10.000đ</b>, <b>5 TeaCoin</b> &amp; <b>nguyên liệu pha chế</b> miễn phí!
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button id="btn-claim-all-gifts" class="btn-action-wide" style="flex: 2; margin: 0; background: linear-gradient(135deg, #50fa7b, #2ecc71); color: #000; font-weight: bold; font-size: 0.88rem; padding: 7px 10px;">
+              🎁 Nhận Tất Cả &amp; Tặng Lại 🔄
+            </button>
+            <button id="btn-send-all-gifts-tab" class="btn-action-wide" style="flex: 1; margin: 0; background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #fff; font-weight: bold; font-size: 0.88rem; padding: 7px 10px;">
+              🚀 Tặng Tất Cả
+            </button>
+          </div>
+        </div>
+
+        <!-- PENDING GIFTS LIST -->
+        <div style="margin-bottom: 14px;">
+          <div style="font-weight: bold; color: #50fa7b; font-size: 0.92rem; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span>📬 Quà Đang Chờ Bạn Mở:</span>
+          </div>
+          <div id="gifts-incoming-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 10px; text-align: center;">Chưa có hộp quà nào. Hãy kết bạn và tặng quà để bạn bè gửi lại nhé!</div>
+          </div>
+        </div>
+
+        <!-- CLAIMED GIFTS HISTORY -->
+        <div>
+          <div style="font-weight: bold; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 6px;">
+            📜 Quà Đã Nhận Gần Đây:
+          </div>
+          <div id="gifts-claimed-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;">
+            <div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; padding: 6px; text-align: center;">Chưa có lịch sử nhận quà.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: LIÊN MINH COLLAB (DOANH THU BOOST) -->
       <div id="tab-content-collabs" style="display: none;">
         <!-- STATUS BANNER -->
         <div style="background: rgba(255, 121, 198, 0.12); border: 1px solid #ff79c6; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center;">
@@ -827,6 +882,12 @@
         <div style="color: #fdcb6e; font-weight: bold; font-size: 1.05rem;">👑 VƯƠN TẦM ĐẾ CHẾ TOÀN CẦU!</div>
         <div style="color: #dfe6e9; font-size: 0.9rem; margin: 5px 0;">Đã tích lũy đủ 100.000.000đ! Vươn ra khỏi Phố Đi Bộ để thành lập Chuỗi Nhượng Quyền HeeHee Toàn Cầu (Sài Gòn, Đà Nẵng, Tokyo, Seoul) & Sàn Đấu Giá Trà Quý!</div>
         <button id="btn-unlock-chapter-4-debt" class="btn-action-wide" style="background: linear-gradient(135deg, #fdcb6e, #e17055); color: #111; font-weight: bold; font-size: 0.98rem; padding: 9px; margin-top: 4px;">👑 MỞ KHÓA CHƯƠNG 4: ĐẾ CHẾ NHƯỢNG QUYỀN</button>
+      </div>
+      <!-- CHAPTER 5 UNLOCK SECTION (Sau khi hoàn thành Chương 4 và tích lũy đủ 200.000.000đ) -->
+      <div id="chapter-5-unlock-section" style="display: none; margin-top: 10px; padding: 10px; background: rgba(189, 147, 249, 0.15); border: 2px solid #bd93f9; border-radius: 6px; text-align: center;">
+        <div style="color: #bd93f9; font-weight: bold; font-size: 1.05rem;">🌌 VƯƠNG TRIỀU TRÀ SỮA VŨ TRỤ (COSMIC BOBA LEGEND)!</div>
+        <div style="color: #dfe6e9; font-size: 0.9rem; margin: 5px 0;">Đã tích lũy đủ 200.000.000đ! Chinh phục đỉnh cao danh vọng toàn cầu, nhận Skin Xe Đẩy Vũ Trụ Ngân Hà &amp; mở khóa Hồng Trà Vương Triều Thập Cẩm!</div>
+        <button id="btn-unlock-chapter-5-debt" class="btn-action-wide" style="background: linear-gradient(135deg, #bd93f9, #ff79c6); color: #111; font-weight: bold; font-size: 0.98rem; padding: 9px; margin-top: 4px;">🌌 MỞ KHÓA CHƯƠNG 5: VƯƠNG TRIỀU VŨ TRỤ</button>
       </div>
     </div>
   </div>

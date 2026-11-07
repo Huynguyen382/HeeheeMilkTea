@@ -35,13 +35,17 @@ router.post('/collab/accept', authStore, handle('Accept collab', req => gameServ
 router.post('/collab/decline', authStore, handle('Decline collab', req => gameService.declineCollab(req.store.id, req.body.collabId)));
 router.post('/collab/cancel', authStore, handle('Cancel collab', req => gameService.cancelCollab(req.store.id, req.body.collabId)));
 
-// Friend System Routes
+// Friend & Gift System Routes
 router.get('/friends', authStore, handle('Get friends', req => gameService.getFriends(req.store.id)));
+router.get('/friends/gifts', authStore, handle('Get gifts mailbox', req => gameService.getGifts(req.store.id)));
 router.post('/friends/request', authStore, handle('Send friend request', req => gameService.sendFriendRequest(req.store.id, req.body.friendCode)));
 router.post('/friends/accept', authStore, handle('Accept friend request', req => gameService.acceptFriendRequest(req.store.id, req.body.requestId)));
 router.post('/friends/reject', authStore, handle('Reject friend request', req => gameService.rejectFriendRequest(req.store.id, req.body.requestId)));
 router.post('/friends/remove', authStore, handle('Remove friend', req => gameService.removeFriend(req.store.id, req.body.friendshipId)));
-router.post('/friends/gift', authStore, handle('Send friend gift', req => gameService.sendFriendGift(req.store.id, req.body.friendshipId)));
+router.post('/friends/gift', authStore, handle('Send friend gift', req => gameService.sendFriendGift(req.store.id, req.body.friendshipId, req.body.giftType, req.body.message)));
+router.post('/friends/gift-all', authStore, handle('Send gifts to all friends', req => gameService.sendAllFriendGifts(req.store.id)));
+router.post('/friends/claim-gift', authStore, handle('Claim friend gift', req => gameService.claimFriendGift(req.store.id, req.body.giftId)));
+router.post('/friends/claim-all-gifts', authStore, handle('Claim all and send back gifts', req => gameService.claimAllAndSendBackGifts(req.store.id)));
 router.post('/pay-debt', authStore, async (req, res) => {
   if (!req.body.amount || req.body.amount <= 0) return res.status(400).json({ error: 'Số tiền không hợp lệ' });
   try { res.json(await gameService.payDebt(req.store.id, Number(req.body.amount))); }
@@ -60,6 +64,7 @@ router.post('/advance-day', authStore, handle('Advance day', req => gameService.
 router.post('/end-shift', authStore, handle('End shift', req => gameService.endShift(req.store.id)));
 router.post('/unlock-chapter-3', authStore, handle('Unlock Chapter 3', req => gameService.unlockChapter3(req.store.id)));
 router.post('/unlock-chapter-4', authStore, handle('Unlock Chapter 4', req => gameService.unlockChapter4(req.store.id)));
+router.post('/unlock-chapter-5', authStore, handle('Unlock Chapter 5', req => gameService.unlockChapter5(req.store.id)));
 router.post('/negotiate', authStore, handle('Negotiate order', req => gameService.negotiateOrder(req.store.id, req.body.orderId, !!req.body.accept)));
 router.post('/custom-prices', authStore, handle('Custom prices', req => gameService.setCustomPrices(req.store.id, req.body.customPrices)));
 router.post('/use-sabotage', authStore, handle('Use sabotage card', req => gameService.useSabotageCard(req.store.id, req.body.cardId, req.body.targetStoreCode)));

@@ -106,7 +106,7 @@ export function renderStoryScene(idx) {
   // Render chapter selector pills if multiple chapters unlocked
   const selectorEl = document.getElementById('story-chapter-selector');
   if (selectorEl) {
-    const maxChap = Math.min(4, Math.max(1, state.storeState?.save?.chapter || 1));
+    const maxChap = Math.min(5, Math.max(1, state.storeState?.save?.chapter || 1));
     if (maxChap > 1) {
       let html = '';
       for (let c = 1; c <= maxChap; c++) {
@@ -171,7 +171,7 @@ export function renderStoryQuests() {
   }
 
   const currentChapter = save.chapter || 1;
-  const maxChap = Math.min(4, Math.max(1, currentChapter));
+  const maxChap = Math.min(5, Math.max(1, currentChapter));
   if (!storyQuestChapter || storyQuestChapter > maxChap) {
     storyQuestChapter = currentChapter;
   }
@@ -353,13 +353,14 @@ export function renderStoryQuests() {
         progressText: isChap3Passed ? '100Tr / 100Tr (Hoàn tất)' : `${(money / 1000000).toFixed(1)}Tr / 100Tr`
       }
     ];
-  } else if (viewingChapter >= 4) {
+  } else if (viewingChapter === 4) {
     let franchises = [];
     try {
       franchises = typeof save.franchises === 'string' ? JSON.parse(save.franchises) : (save.franchises || []);
     } catch (e) {
       franchises = [];
     }
+    const isChap4Passed = currentChapter > 4;
     const targetC4Money = 200000000;
     quests = [
       {
@@ -373,29 +374,74 @@ export function renderStoryQuests() {
         id: 'c4_q2', icon: '🍵', title: 'Công Thức Matcha Thượng Hạng',
         desc: 'Mở khóa công thức Matcha Kyoto Dát Bạc.',
         reward: 'Món trà hoàng gia',
-        isDone: recipes.includes('matcha_kyoto_dat_bac'),
-        progressText: recipes.includes('matcha_kyoto_dat_bac') ? 'Đã sở hữu' : 'Chưa mở khóa'
+        isDone: isChap4Passed || recipes.includes('matcha_kyoto_dat_bac'),
+        progressText: (isChap4Passed || recipes.includes('matcha_kyoto_dat_bac')) ? 'Đã sở hữu' : 'Chưa mở khóa'
       },
       {
         id: 'c4_q3', icon: '🔨', title: 'Sàn Đấu Giá Trà Cổ Thụ',
         desc: 'Tham gia đấu giá ít nhất 1 mẻ trà quý trên Sàn Đấu Giá Quốc Tế.',
         reward: 'Hào quang bảo vật',
-        isDone: !!(save.auction_won_count && save.auction_won_count > 0) || !!(upgrades.auction_won && upgrades.auction_won > 0),
-        progressText: (save.auction_won_count || upgrades.auction_won) ? 'Đã sở hữu báu vật' : '0/1 mẻ'
+        isDone: isChap4Passed || !!(save.auction_won_count && save.auction_won_count > 0) || !!(upgrades.auction_won && upgrades.auction_won > 0),
+        progressText: (isChap4Passed || save.auction_won_count || upgrades.auction_won) ? 'Đã sở hữu báu vật' : '0/1 mẻ'
       },
       {
         id: 'c4_q4', icon: '⭐', title: 'Nâng Cấp Chi Nhánh 5 Sao',
         desc: 'Nâng cấp ít nhất 1 chi nhánh nhượng quyền lên Cấp 2 trở lên.',
         reward: '+100% Doanh thu thụ động',
-        isDone: franchises.some(f => f.level >= 2),
-        progressText: franchises.some(f => f.level >= 2) ? 'Đã đạt' : 'Cấp 1/2'
+        isDone: isChap4Passed || franchises.some(f => f.level >= 2),
+        progressText: (isChap4Passed || franchises.some(f => f.level >= 2)) ? 'Đã đạt' : 'Cấp 1/2'
       },
       {
         id: 'c4_q5', icon: '👑', title: 'Vua Trà Sữa Đô Thị (Endgame Toàn Cầu)',
         desc: 'Tích lũy 200.000.000đ tài sản để ghi tên vào Bảng Vàng Boba Tycoon Legend.',
         reward: 'Vua Trà Sữa Bất Bại 🏆',
-        isDone: money >= targetC4Money,
-        progressText: `${(money / 1000000).toFixed(1)}Tr / 200Tr`
+        isDone: isChap4Passed || money >= targetC4Money,
+        progressText: isChap4Passed ? '200Tr / 200Tr (Hoàn tất)' : `${(money / 1000000).toFixed(1)}Tr / 200Tr`
+      }
+    ];
+  } else if (viewingChapter >= 5) {
+    let franchises = [];
+    try {
+      franchises = typeof save.franchises === 'string' ? JSON.parse(save.franchises) : (save.franchises || []);
+    } catch (e) {
+      franchises = [];
+    }
+    const targetC5Money = 300000000;
+    quests = [
+      {
+        id: 'c5_q1', icon: '👑', title: 'Đăng Quang Nữ Hoàng Vũ Trụ',
+        desc: 'Bước lên ngai vàng Vua Trà Sữa Vũ Trụ và hoàn thành đại nghiệp.',
+        reward: '+500 TeaCoin Hoàng Gia',
+        isDone: currentChapter >= 5,
+        progressText: currentChapter >= 5 ? 'Đã đăng quang 👑' : 'Chưa đạt'
+      },
+      {
+        id: 'c5_q2', icon: '🌌', title: 'Siêu Xe Đẩy Ngân Hà',
+        desc: 'Trang bị Skin Xe Đẩy Vũ Trụ Ngân Hà (Cosmic Coffee Cart) tỏa sáng rực rỡ.',
+        reward: 'Hào quang ánh sao',
+        isDone: save.cart_skin === 'cosmic_coffee_cart' || currentChapter >= 5,
+        progressText: (save.cart_skin === 'cosmic_coffee_cart' || currentChapter >= 5) ? 'Đã trang bị' : 'Chưa có'
+      },
+      {
+        id: 'c5_q3', icon: '💎', title: 'Tuyệt Phẩm Hoàng Gia',
+        desc: 'Sở hữu công thức Hồng Trà Vương Triều Thập Cẩm hoặc Trà Sữa Ngân Hà.',
+        reward: 'Đỉnh cao ẩm thực',
+        isDone: recipes.includes('hong_tra_vuong_trieu_thap_cam') || recipes.includes('tra_sua_vu_tru_ngan_ha'),
+        progressText: (recipes.includes('hong_tra_vuong_trieu_thap_cam') || recipes.includes('tra_sua_vu_tru_ngan_ha')) ? 'Đã mở khóa' : 'Chưa có'
+      },
+      {
+        id: 'c5_q4', icon: '⭐', title: 'Đế Chế Toàn Thiên Hà',
+        desc: 'Mở rộng ít nhất 3 chi nhánh nhượng quyền (Sài Gòn, Đà Nẵng, Tokyo...).',
+        reward: 'Dòng tiền bất tận',
+        isDone: franchises.length >= 3,
+        progressText: `${franchises.length}/3 chi nhánh`
+      },
+      {
+        id: 'c5_q5', icon: '🏆', title: 'Huyền Thoại Bất Tử (Eternal Legend)',
+        desc: 'Tích lũy 300.000.000đ tài sản ròng và giữ vững 5.0⭐ uy tín đỉnh cao.',
+        reward: 'Ngai Vàng Bất Diệt 👑',
+        isDone: money >= targetC5Money,
+        progressText: `${(money / 1000000).toFixed(1)}Tr / 300Tr`
       }
     ];
   }
@@ -412,11 +458,13 @@ export function renderStoryQuests() {
       pct = Math.min(100, Math.max(0, (money / 100000000) * 100));
     } else if (q.id === 'c4_q5') {
       pct = Math.min(100, Math.max(0, (money / 200000000) * 100));
+    } else if (q.id === 'c5_q5') {
+      pct = Math.min(100, Math.max(0, (money / 300000000) * 100));
     } else if (q.id === 'c2_q1') {
       pct = Math.min(100, Math.max(0, ((daily.earned_today || 0) / 80000) * 100));
     }
 
-    const progressBarHtml = (q.id === 'q5' || q.id === 'c2_q7' || q.id === 'c3_q6' || q.id === 'c4_q5' || q.id === 'c2_q1') ? `
+    const progressBarHtml = (q.id === 'q5' || q.id === 'c2_q7' || q.id === 'c3_q6' || q.id === 'c4_q5' || q.id === 'c5_q5' || q.id === 'c2_q1') ? `
       <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.4); border-radius: 4px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
         <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #f4c430, #ff9f43); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 8px rgba(244,196,48,0.5);"></div>
       </div>

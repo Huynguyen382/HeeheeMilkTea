@@ -25,16 +25,20 @@ export const fxMethods = {
       color: '#50fa7b'
     });
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 24; i++) {
+      const pType = i < 8 ? 'coin' : (i < 16 ? 'star' : 'ribbon');
       this.particles.push({
-        x: currentX + 15 + (Math.random() * 24 - 12),
-        y: 105 + (Math.random() * 24 - 12),
-        vx: (Math.random() - 0.5) * 3,
-        vy: -Math.random() * 2.5 - 1,
+        x: currentX + 15 + (Math.random() * 20 - 10),
+        y: 102 + (Math.random() * 20 - 10),
+        vx: (Math.random() - 0.5) * 3.2,
+        vy: -Math.random() * 2.8 - 1.2,
         life: 45,
         maxLife: 45,
-        color: ['#f4c430', '#ff79c6', '#8be9fd', '#50fa7b', '#ffb86c'][Math.floor(Math.random() * 5)],
-        size: Math.random() > 0.5 ? 3 : 2
+        type: pType,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.2,
+        color: ['#f4c430', '#ff79c6', '#8be9fd', '#50fa7b', '#ffb86c', '#a29bfe'][Math.floor(Math.random() * 6)],
+        size: pType === 'coin' ? 3.5 : (pType === 'star' ? 4 : 2.5)
       });
     }
 
@@ -360,20 +364,89 @@ export const fxMethods = {
   },
 
   drawParticles(ctx) {
-    // Sparkle particles
+    // Sparkle, coin & confetti particles
     this.particles.forEach(p => {
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = p.life / p.maxLife;
-      ctx.fillRect(p.x, p.y, p.size, p.size);
+      ctx.save();
+      const alpha = Math.max(0, p.life / p.maxLife);
+      ctx.globalAlpha = alpha;
+      ctx.translate(p.x, p.y);
+      if (p.rot !== undefined) {
+        if (p.vRot) p.rot += p.vRot;
+        ctx.rotate(p.rot);
+      }
+
+      if (p.type === 'coin') {
+        // Golden shiny spinning coin with bevel & dollar sign
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size || 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath();
+        ctx.arc(0, 0, (p.size || 3.5) * 0.72, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#b45309';
+        ctx.font = 'bold 3.5px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$', 0, 0.4);
+      } else if (p.type === 'star') {
+        // 4-pointed diamond sparkle star
+        const s = p.size || 3.5;
+        ctx.fillStyle = p.color || '#fde047';
+        ctx.beginPath();
+        ctx.moveTo(0, -s);
+        ctx.lineTo(s * 0.3, -s * 0.3);
+        ctx.lineTo(s, 0);
+        ctx.lineTo(s * 0.3, s * 0.3);
+        ctx.lineTo(0, s);
+        ctx.lineTo(-s * 0.3, s * 0.3);
+        ctx.lineTo(-s, 0);
+        ctx.lineTo(-s * 0.3, -s * 0.3);
+        ctx.closePath();
+        ctx.fill();
+        // Inner white spark
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, s * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.type === 'ribbon') {
+        // Fluttering confetti ribbon
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(-2.5, -1, 5, 2, 0.6);
+        else ctx.rect(-2.5, -1, 5, 2);
+        ctx.fill();
+      } else {
+        // Rounded soft spark
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, Math.max(1, (p.size || 2) * 0.75), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     });
     ctx.globalAlpha = 1.0;
 
-    // Floating text numbers (+15.000đ ⭐)
+    // Floating text numbers (+15.000đ ⭐) with clean outline & shadow
     this.floatingTexts.forEach(ft => {
-      ctx.fillStyle = ft.color;
-      ctx.globalAlpha = Math.max(0, ft.alpha);
-      ctx.font = 'bold 14px monospace';
+      ctx.save();
+      const alpha = Math.max(0, ft.alpha);
+      ctx.globalAlpha = alpha;
+      ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+
+      // Crisp dark text outline
+      ctx.strokeStyle = 'rgba(10, 5, 12, 0.85)';
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(ft.text, ft.x, ft.y);
+
+      // Bright vibrant text fill
+      ctx.fillStyle = ft.color || '#50fa7b';
       ctx.fillText(ft.text, ft.x, ft.y);
+      ctx.restore();
     });
     ctx.globalAlpha = 1.0;
   },

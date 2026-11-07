@@ -751,12 +751,35 @@
   }
 
   // ==========================================
-  // 2. RETRO PIXEL RENDERING PRIMITIVES
+  // 2. RETRO PIXEL & SMOOTH 2D RENDERING PRIMITIVES
   // ==========================================
-  function pRect(ctx, x, y, w, h, color) {
+  function pRect(ctx, x, y, w, h, color, radius) {
     if (!color) return;
     ctx.fillStyle = color;
-    ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+    var rx = Math.round(x);
+    var ry = Math.round(y);
+    var rw = Math.max(1, Math.round(w));
+    var rh = Math.max(1, Math.round(h));
+
+    // When shape has volume (rw >= 3 && rh >= 3), apply subtle smooth corner rounding
+    // to render soft, organic 2D anime curves instead of harsh blocky square edges
+    if (rw >= 3 && rh >= 3) {
+      var r = (radius !== undefined) ? radius : (Math.min(rw, rh) >= 5 ? 1.5 : 0.85);
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(rx, ry, rw, rh, r);
+      } else {
+        ctx.moveTo(rx + r, ry);
+        ctx.arcTo(rx + rw, ry, rx + rw, ry + rh, r);
+        ctx.arcTo(rx + rw, ry + rh, rx, ry + rh, r);
+        ctx.arcTo(rx, ry + rh, rx, ry, r);
+        ctx.arcTo(rx, ry, rx + rw, ry, r);
+        ctx.closePath();
+      }
+      ctx.fill();
+    } else {
+      ctx.fillRect(rx, ry, rw, rh);
+    }
   }
 
   function pDot(ctx, x, y, color) {
@@ -767,26 +790,85 @@
 
   function drawBobaCup(ctx, cx, cy, cupColor, teaColor, strawColor, cream) {
     if (cream === undefined) cream = true;
-    pRect(ctx, cx, cy + 2, 6, 8, '#FFFFFF33');
-    pRect(ctx, cx, cy + 3, 6, 7, cupColor || '#FFFFFF');
-    pRect(ctx, cx + 1, cy + 4, 4, 5, teaColor || '#78350F');
-    // Ice cubes
-    pDot(ctx, cx + 1, cy + 4, '#FFFFFF88');
-    pDot(ctx, cx + 3, cy + 5, '#FFFFFF88');
-    // Cream foam layer
-    if (cream) {
-      pRect(ctx, cx + 1, cy + 3, 4, 2, '#FFFDF0');
+    var x = Math.round(cx);
+    var y = Math.round(cy);
+
+    // Cup shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+    ctx.beginPath();
+    ctx.ellipse(x + 3, y + 10, 3.5, 1.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Translucent cup rim & body (smooth tapered silhouette)
+    ctx.fillStyle = cupColor || 'rgba(255, 255, 255, 0.95)';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x, y + 2, 6, 8, [0, 0, 1.8, 1.8]);
+    } else {
+      ctx.rect(x, y + 2, 6, 8);
     }
-    // Boba pearls at bottom with shine
-    pDot(ctx, cx + 1, cy + 7, '#1E1B18');
-    pDot(ctx, cx + 2, cy + 8, '#0A0A0A');
-    pDot(ctx, cx + 3, cy + 7, '#1E1B18');
-    pDot(ctx, cx + 4, cy + 8, '#0A0A0A');
-    pDot(ctx, cx + 2, cy + 7, '#FCD34D'); // shine
-    // Lid & Angled Straw
-    pRect(ctx, cx - 1, cy + 2, 8, 1, '#ECEFF1');
-    pRect(ctx, cx + 2, cy - 2, 2, 4, strawColor || '#EC4899');
-    pDot(ctx, cx + 3, cy - 3, '#BE185D');
+    ctx.fill();
+
+    // Rich tea fill with rounded bottom
+    ctx.fillStyle = teaColor || '#78350F';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x + 0.6, y + 3.8, 4.8, 5.8, [0, 0, 1.5, 1.5]);
+    } else {
+      ctx.rect(x + 1, y + 4, 4, 5);
+    }
+    ctx.fill();
+
+    // Ice cube crystal reflections
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.fillRect(x + 1.2, y + 4.2, 1.6, 1.6);
+    ctx.fillRect(x + 3.2, y + 5.4, 1.5, 1.5);
+
+    // Cream foam layer (fluffy organic cloud top)
+    if (cream) {
+      ctx.fillStyle = '#FFFDF0';
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(x + 0.6, y + 2.8, 4.8, 2.2, [1.2, 1.2, 0.6, 0.6]);
+      } else {
+        ctx.rect(x + 1, y + 3, 4, 2);
+      }
+      ctx.fill();
+      // Foam froth bubbles
+      ctx.fillStyle = 'rgba(251, 191, 36, 0.4)';
+      ctx.fillRect(x + 2, y + 3.2, 1.2, 1);
+    }
+
+    // Boba pearls at bottom with 3D spherical gloss
+    var pearls = [
+      { px: x + 1.4, py: y + 7.8, r: 1.1 },
+      { px: x + 3.2, py: y + 8.4, r: 1.1 },
+      { px: x + 4.5, py: y + 7.7, r: 1.0 },
+      { px: x + 2.4, py: y + 7.0, r: 0.9 }
+    ];
+    pearls.forEach(function (p) {
+      ctx.fillStyle = '#18181B';
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, p.r, 0, Math.PI * 2);
+      ctx.fill();
+      // Amber/Gold specular glint
+      ctx.fillStyle = '#FCD34D';
+      ctx.fillRect(p.px - 0.4, p.py - 0.5, 0.7, 0.7);
+    });
+
+    // Sleek Dome Lid
+    ctx.fillStyle = '#ECEFF1';
+    ctx.beginPath();
+    ctx.ellipse(x + 3, y + 2, 4.2, 1.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Angled boba straw with dual-tone shading
+    ctx.fillStyle = strawColor || '#EC4899';
+    ctx.fillRect(x + 2, y - 3, 1.8, 5.5);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.fillRect(x + 2, y - 3, 0.6, 5.5);
+    ctx.fillStyle = '#BE185D';
+    ctx.fillRect(x + 3, y - 3.5, 1, 1.2);
   }
 
   // ==========================================
@@ -1978,12 +2060,15 @@
     }
 
     // 7. ANIME HEAD & PEACH SKIN
-    pRect(ctx, headX - 6, faceTop, 14, 10, skin);
-    pRect(ctx, headX - 5, faceTop + 8, 12, 2, '#F6C8A6'); // Jawline
-    pRect(ctx, headX - 4, faceTop + 9, 10, 1, '#E5B88A'); // Chin shadow
-    pRect(ctx, headX - 7, faceTop + 2, 2, 4, skin); // Ears
-    pRect(ctx, headX + 7, faceTop + 2, 2, 4, skin);
-    // Gold hoop earrings
+    pRect(ctx, headX - 6, faceTop, 14, 10, skin, 2.5);
+    pRect(ctx, headX - 5, faceTop + 7, 12, 3, '#F6C8A6', 2.0); // Smooth Jawline
+    pRect(ctx, headX - 4, faceTop + 9, 10, 1.5, '#E5B88A', 1.0); // Chin shadow
+    // Delicate rounded ears with gold hoop earrings
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.arc(headX - 6.5, faceTop + 4.5, 1.8, 0, Math.PI * 2);
+    ctx.arc(headX + 7.5, faceTop + 4.5, 1.8, 0, Math.PI * 2);
+    ctx.fill();
     pDot(ctx, headX - 7, faceTop + 5, '#FACC15');
     pDot(ctx, headX + 8, faceTop + 5, '#FACC15');
 
@@ -1999,74 +2084,89 @@
     }
 
     if (blinkStage === 2) {
-      // Closed Eye (Curved feminine lashline)
-      pRect(ctx, headX - 4, faceTop + 3, 4, 1, '#1E293B');
+      // Closed Eye (Curved feminine lashline with soft bezier arc)
+      ctx.strokeStyle = '#1E293B';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.arc(headX - 2.5, faceTop + 3.5, 2.2, Math.PI, 0);
+      ctx.arc(headX + 4.5, faceTop + 3.5, 2.2, Math.PI, 0);
+      ctx.stroke();
       pDot(ctx, headX - 5, faceTop + 2, '#1E293B'); // Upcurled eyelash
-      pRect(ctx, headX + 2, faceTop + 3, 4, 1, '#1E293B');
       pDot(ctx, headX + 6, faceTop + 2, '#1E293B');
     } else if (blinkStage === 1) {
       // Half-closed eyelid
-      pRect(ctx, headX - 4, faceTop + 2, 4, 2, '#1E293B');
+      pRect(ctx, headX - 4, faceTop + 2, 4, 2, '#1E293B', 1.0);
       pDot(ctx, headX - 3, faceTop + 3, '#B45309');
-      pRect(ctx, headX + 2, faceTop + 2, 4, 2, '#1E293B');
+      pRect(ctx, headX + 2, faceTop + 2, 4, 2, '#1E293B', 1.0);
       pDot(ctx, headX + 3, faceTop + 3, '#B45309');
     } else {
       // OPEN EYE: Upper Lashline + 3-Tier Iris Gradient + Specular Catchlight ✦
       // Left Eye
-      pRect(ctx, headX - 5, faceTop + 1, 4, 1, '#1E293B'); // Lashline
+      pRect(ctx, headX - 5, faceTop + 1, 4.5, 1.2, '#1E293B', 0.6); // Winged lashline
       pDot(ctx, headX - 5, faceTop + 0, '#1E293B'); // Winged tip
-      pRect(ctx, headX - 4, faceTop + 2, 3, 3, '#1E293B'); // Eye socket
+      pRect(ctx, headX - 4, faceTop + 2, 3.2, 3.2, '#1E293B', 1.2); // Eye socket
       pDot(ctx, headX - 4, faceTop + 2, '#FFFFFF'); // Specular Sparkle ✦ (10 o'clock)
       pDot(ctx, headX - 3, faceTop + 3, isAoDai ? '#0D9488' : '#B45309'); // Mid tone
       pDot(ctx, headX - 3, faceTop + 4, isAoDai ? '#34D399' : '#FDE047'); // Golden light tone
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.fillRect(headX - 2, faceTop + 4, 0.8, 0.8); // Secondary reflection
 
       // Right Eye
-      pRect(ctx, headX + 3, faceTop + 1, 4, 1, '#1E293B'); // Lashline
+      pRect(ctx, headX + 2.5, faceTop + 1, 4.5, 1.2, '#1E293B', 0.6); // Winged lashline
       pDot(ctx, headX + 6, faceTop + 0, '#1E293B');
-      pRect(ctx, headX + 3, faceTop + 2, 3, 3, '#1E293B');
+      pRect(ctx, headX + 3, faceTop + 2, 3.2, 3.2, '#1E293B', 1.2);
       pDot(ctx, headX + 3, faceTop + 2, '#FFFFFF');
       pDot(ctx, headX + 4, faceTop + 3, isAoDai ? '#0D9488' : '#B45309');
       pDot(ctx, headX + 4, faceTop + 4, isAoDai ? '#34D399' : '#FDE047');
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.fillRect(headX + 5, faceTop + 4, 0.8, 0.8);
     }
 
-    // 9. COZY BLUSH (Má hồng 2-tone kẻ sọc dithering mềm #FF79C6 & #FFAAA6)
-    pRect(ctx, headX - 6, faceTop + 5, 3, 1, '#FF79C6');
-    pDot(ctx, headX - 5, faceTop + 6, '#FFAAA6');
-    pRect(ctx, headX + 5, faceTop + 5, 3, 1, '#FF79C6');
-    pDot(ctx, headX + 5, faceTop + 6, '#FFAAA6');
+    // 9. COZY BLUSH (Má hồng phủ phấn mịn màng với đốm lấp lánh)
+    ctx.fillStyle = 'rgba(255, 121, 198, 0.55)';
+    ctx.beginPath();
+    ctx.ellipse(headX - 4.5, faceTop + 5.5, 2.2, 1.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(headX + 5.5, faceTop + 5.5, 2.2, 1.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    pDot(ctx, headX - 4, faceTop + 5, '#FFFFFF'); // Cheek twinkle sparkle
+    pDot(ctx, headX + 5, faceTop + 5, '#FFFFFF');
 
     // 10. EXPRESSIVE MOUTH (Chúm chím, Cử động trò chuyện, Mím môi tập trung)
     if (isShaking) {
       // Concentrated pursed lips while shaking shaker
-      pRect(ctx, headX - 1, faceTop + 7, 3, 1, '#E11D48');
-      pDot(ctx, headX, faceTop + 6, '#F43F5E');
+      pRect(ctx, headX - 1, faceTop + 7, 3, 1.2, '#E11D48', 0.6);
+      pDot(ctx, headX, faceTop + 6.5, '#F43F5E');
     } else if (isTalking) {
       // Animated speaking mouth cycle (2 frames)
       var talkFrame = (Math.floor(tick / 6) % 2);
       if (talkFrame === 0) {
-        pRect(ctx, headX - 1, faceTop + 6, 4, 2, '#DC2626');
+        pRect(ctx, headX - 1, faceTop + 6, 4, 2.2, '#DC2626', 1.0);
         pRect(ctx, headX, faceTop + 6, 2, 1, '#FFF1F2'); // teeth/tongue
       } else {
-        pRect(ctx, headX, faceTop + 6, 2, 2, '#B91C1C');
+        pRect(ctx, headX, faceTop + 6, 2.2, 2, '#B91C1C', 0.8);
       }
     } else {
       // Sweet charming smile with specular light
-      pRect(ctx, headX - 1, faceTop + 6, 4, 1, '#F43F5E');
+      pRect(ctx, headX - 1, faceTop + 6, 4, 1.2, '#F43F5E', 0.6);
       pDot(ctx, headX, faceTop + 6, '#FFFFFF');
-      pDot(ctx, headX + 2, faceTop + 5, '#F43F5E'); // Dimple curl
+      pDot(ctx, headX + 2, faceTop + 5.5, '#F43F5E'); // Dimple curl
     }
 
     // 11. FRONT HAIR BANGS, SIDE LOCKS & ANGEL RING HIGHLIGHT
-    pRect(ctx, headX - 7, headTop - 4, 16, 5, '#4E2A16');
-    pRect(ctx, headX - 5, headTop - 5, 12, 2, '#67391F');
+    pRect(ctx, headX - 7, headTop - 4, 16, 5, '#4E2A16', 2.0);
+    pRect(ctx, headX - 5, headTop - 5, 12, 2.5, '#67391F', 1.2);
     // Angel Ring Highlight (Dải hào quang ngà óng ả trên đỉnh đầu)
+    ctx.fillStyle = 'rgba(253, 224, 71, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(headX + 0.5, headTop - 4.5, 4.5, 1.0, 0, 0, Math.PI * 2);
+    ctx.fill();
     pRect(ctx, headX - 3, headTop - 5, 8, 1, '#8C4D2A');
     pDot(ctx, headX, headTop - 5, '#FDE047');
     pDot(ctx, headX + 1, headTop - 5, '#FFFFFF');
 
     // Side Locks with idle breath & wind sway
-    pRect(ctx, headX - 7 + hairSway, headTop + 1, 2, 8, '#4E2A16');
-    pRect(ctx, headX + 7 - hairSway, headTop + 1, 2, 8, '#4E2A16');
+    pRect(ctx, headX - 7 + hairSway, headTop + 1, 2.2, 8, '#4E2A16', 1.0);
+    pRect(ctx, headX + 7 - hairSway, headTop + 1, 2.2, 8, '#4E2A16', 1.0);
 
     // 12. UPPER ARMS (Behind counter)
     var armSleeveColor = isAoDai ? '#0D9488' : (isLolita ? '#F472B6' : (isChef ? '#F8FAFC' : skin));

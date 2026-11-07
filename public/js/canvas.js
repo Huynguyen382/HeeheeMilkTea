@@ -20,11 +20,13 @@ class GameCanvas {
       validScenes.push('moc_chau');
     }
     if (chap >= 4) validScenes.push('franchise');
+    if (chap >= 5) validScenes.push('cosmic');
 
     if (this.sceneSetting && validScenes.includes(this.sceneSetting)) {
       return this.sceneSetting;
     }
 
+    if (chap >= 5) return 'cosmic';
     if (chap >= 4) return 'franchise';
     if (chap >= 3) return 'walking_street';
     if (chap >= 2) return 'hust';
@@ -50,7 +52,8 @@ class GameCanvas {
 
     if (newChap > oldChapter) {
       // Advance automatically to the new chapter's scene when unlocking a new chapter
-      if (newChap >= 4) this.sceneSetting = 'franchise';
+      if (newChap >= 5) this.sceneSetting = 'cosmic';
+      else if (newChap === 4) this.sceneSetting = 'franchise';
       else if (newChap === 3) this.sceneSetting = 'walking_street';
       else if (newChap === 2) this.sceneSetting = 'hust';
       else this.sceneSetting = 'town';
@@ -91,12 +94,26 @@ class GameCanvas {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
     
-    // Set high-fidelity canvas resolution (2x for super smooth pixel graphics)
+    // Set high-fidelity canvas resolution with Adaptive DPR Clamping (<= 2.0x for 60 FPS mobile)
     // Extended scene width (720px) to accommodate up to 4 stalls (1 main + 3 collabs)
-    this.canvas.width = 1440;
-    this.canvas.height = 400;
     this.width = 720;
     this.height = 200;
+    this.dpr = this.getOptimalDPR();
+    this.canvas.width = Math.floor(this.width * this.dpr);
+    this.canvas.height = Math.floor(this.height * this.dpr);
+
+    // Smart Idle Throttling & Visibility API state
+    this.lastInteractionTime = Date.now();
+    this.isDocumentHidden = typeof document !== 'undefined' ? !!document.hidden : false;
+    this._idleFrameToggle = false;
+    this._lampCoordsMap = {
+      cosmic: [120, 360, 600],
+      walking_street: [95],
+      franchise: [120, 480, 680],
+      town: [188, 528, 705],
+      empty: []
+    };
+    this._initPerformanceListeners();
     
     // Chapter & Setting
     this.chapter = 1;
@@ -251,6 +268,7 @@ class GameCanvas {
       validScenes.push('moc_chau');
     }
     if (chap >= 4) validScenes.push('franchise');
+    if (chap >= 5) validScenes.push('cosmic');
     return validScenes;
   }
 
@@ -283,13 +301,21 @@ class GameCanvas {
       else if (current === 'moc_chau') next = 'hust';
       else if (current === 'hust') next = 'town';
       else next = 'walking_street';
-    } else if (chap >= 4) {
+    } else if (chap === 4) {
       // Cycle: franchise -> walking_street -> moc_chau -> hust -> town -> franchise
       if (current === 'franchise') next = 'walking_street';
       else if (current === 'walking_street') next = 'moc_chau';
       else if (current === 'moc_chau') next = 'hust';
       else if (current === 'hust') next = 'town';
       else next = 'franchise';
+    } else if (chap >= 5) {
+      // Cycle: cosmic -> franchise -> walking_street -> moc_chau -> hust -> town -> cosmic
+      if (current === 'cosmic') next = 'franchise';
+      else if (current === 'franchise') next = 'walking_street';
+      else if (current === 'walking_street') next = 'moc_chau';
+      else if (current === 'moc_chau') next = 'hust';
+      else if (current === 'hust') next = 'town';
+      else next = 'cosmic';
     }
 
     this.sceneSetting = next;
@@ -297,13 +323,80 @@ class GameCanvas {
     return next;
   }
 
+  getOptimalDPR() {
+    const rawDPR = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test((typeof navigator !== 'undefined' && navigator.userAgent) || '') ||
+                     (typeof window !== 'undefined' && window.innerWidth <= 768);
+    if (isMobile) {
+      return Math.min(Math.max(rawDPR, 1.5), 2.0);
+    }
+    return Math.min(Math.max(rawDPR, 2.0), 2.0);
+  }
+
+  _initPerformanceListeners() {
+    if (typeof window === 'undefined') return;
+    const markActive = () => {
+      this.lastInteractionTime = Date.now();
+    };
+    window.addEventListener('pointerdown', markActive, { passive: true });
+    window.addEventListener('touchstart', markActive, { passive: true });
+    window.addEventListener('keydown', markActive, { passive: true });
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        this.isDocumentHidden = !!document.hidden;
+        if (!this.isDocumentHidden) {
+          this.lastInteractionTime = Date.now();
+        }
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      const newDpr = this.getOptimalDPR();
+      if (Math.abs(newDpr - this.dpr) > 0.05 && this.canvas) {
+        this.dpr = newDpr;
+        this.canvas.width = Math.floor(this.width * this.dpr);
+        this.canvas.height = Math.floor(this.height * this.dpr);
+      }
+    }, { passive: true });
+  }
+
+  isSceneIdle() {
+    const modalOpen = typeof document !== 'undefined' && document.body && document.body.classList.contains('modal-open');
+    if (modalOpen) return true;
+    const hasActiveActors = this.customerActive ||
+      (this.queue && this.queue.length > 0) ||
+      (this.leavingCustomers && this.leavingCustomers.length > 0) ||
+      (this.motorbikeShipper && this.motorbikeShipper.active) ||
+      (this.policePatrol && this.policePatrol.state !== 'idle') ||
+      !!this.thief ||
+      !!this.slipper ||
+      this.isShaking;
+    if (hasActiveActors) return false;
+    return (Date.now() - (this.lastInteractionTime || 0)) > 10000;
+  }
+
   initLoop() {
     const loop = () => {
-      try {
-        this.update();
-        this.render();
-      } catch (err) {
-        console.error('GameCanvas loop error:', err);
+      if (!this.isDocumentHidden) {
+        if (this.isSceneIdle()) {
+          this._idleFrameToggle = !this._idleFrameToggle;
+          if (this._idleFrameToggle) {
+            try {
+              this.update();
+              this.render();
+            } catch (err) {
+              console.error('GameCanvas loop error:', err);
+            }
+          }
+        } else {
+          try {
+            this.update();
+            this.render();
+          } catch (err) {
+            console.error('GameCanvas loop error:', err);
+          }
+        }
       }
       requestAnimationFrame(loop);
     };
@@ -1037,7 +1130,8 @@ class GameCanvas {
       const shakeY = (Math.random() - 0.5) * 4;
       ctx.translate(shakeX, shakeY);
     }
-    ctx.scale(2, 2);
+    const dpr = this.dpr || 2;
+    ctx.scale(dpr, dpr);
     ctx.imageSmoothingEnabled = false;
 
     // 1. SKY & DISTANT STREET BACKGROUND WITH NEON SIGNS (HUST PARABOL or CHAPTER 1 PHỐ NHỎ)
@@ -1149,14 +1243,10 @@ class GameCanvas {
     if (shouldLightLamps) {
       ctx.globalCompositeOperation = 'screen';
       const curScene = (typeof this.getEffectiveScene === 'function') ? this.getEffectiveScene() : (this.sceneSetting || 'town');
-      const lampLxs = (curScene === 'walking_street') 
-        ? [95] 
-        : (curScene === 'franchise') 
-          ? [120, 480, 680] 
-          : (curScene === 'town')
-            ? [188, 528, 705]
-            : []; // HUST & moc_chau have their own specialized ambient & illuminated elements
-      lampLxs.forEach(lx => {
+      const lampMap = this._lampCoordsMap;
+      const lampLxs = (lampMap && lampMap[curScene]) ? lampMap[curScene] : (lampMap ? lampMap.empty : []);
+      for (let li = 0; li < lampLxs.length; li++) {
+        const lx = lampLxs[li];
         const ly = 55;
         const radGrad = ctx.createRadialGradient(lx - 9, ly + 60, 10, lx - 9, ly + 90, 120);
         const lampAlpha = tod === 'night' ? 0.45 : (isStorm ? 0.38 : (isRain ? 0.28 : 0.2));
@@ -1164,7 +1254,7 @@ class GameCanvas {
         radGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = radGrad;
         ctx.fillRect(0, 0, this.width, this.height);
-      });
+      }
       ctx.globalCompositeOperation = 'source-over';
     }
 

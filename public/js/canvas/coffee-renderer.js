@@ -1166,24 +1166,80 @@ export class CoffeeRenderer {
   }
 
   drawBaristaNPC(ctx, x, y) {
-    // Hair
+    ctx.save();
+    // 1. Back hair & Volume
     ctx.fillStyle = '#3f2212';
-    ctx.fillRect(x + 3, y - 2, 14, 8);
-    // Face
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(x + 2, y - 3, 16, 12, [5, 5, 2, 2]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(x + 2, y - 3, 16, 12);
+    }
+
+    // 2. Face & Complexion
     ctx.fillStyle = '#fed7aa';
-    ctx.fillRect(x + 4, y + 4, 12, 10);
-    // Eyes
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(x + 4, y + 4, 12, 10, [2, 2, 4, 4]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(x + 4, y + 4, 12, 10);
+    }
+
+    // 3. Front Bangs & Angel Ring Sheen
+    ctx.fillStyle = '#3f2212';
+    ctx.beginPath();
+    ctx.arc(x + 10, y + 4, 7, Math.PI, 0);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(253, 224, 71, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(x + 10, y + 1, 5, 1.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4. Rosy Blush
+    ctx.fillStyle = 'rgba(255, 121, 198, 0.55)';
+    ctx.beginPath();
+    ctx.arc(x + 6, y + 10.5, 1.5, 0, Math.PI * 2);
+    ctx.arc(x + 14, y + 10.5, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. Expressive Anime Eyes
     ctx.fillStyle = '#18181b';
-    ctx.fillRect(x + 6, y + 8, 2, 2);
-    ctx.fillRect(x + 12, y + 8, 2, 2);
-    // Smile
+    ctx.fillRect(x + 6, y + 7, 2.5, 2.8);
+    ctx.fillRect(x + 11.5, y + 7, 2.5, 2.8);
+    // Specular sparkles
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x + 6, y + 7, 1.2, 1.2);
+    ctx.fillRect(x + 11.5, y + 7, 1.2, 1.2);
+
+    // 6. Sweet Smile
     ctx.fillStyle = '#f43f5e';
-    ctx.fillRect(x + 8, y + 11, 4, 1);
-    // Green Apron
+    ctx.beginPath();
+    ctx.arc(x + 10, y + 11.5, 1.5, 0, Math.PI);
+    ctx.fill();
+
+    // 7. Green Barista Apron with Golden Nametag & Pockets
     ctx.fillStyle = '#15803d';
-    ctx.fillRect(x + 2, y + 14, 16, 16);
-    ctx.fillStyle = '#fef08a';
-    ctx.fillRect(x + 8, y + 18, 4, 2); // Nametag
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(x + 2, y + 14, 16, 16, [3, 3, 2, 2]);
+      ctx.fill();
+    } else {
+      ctx.fillRect(x + 2, y + 14, 16, 16);
+    }
+    // Apron straps
+    ctx.fillStyle = '#166534';
+    ctx.fillRect(x + 4, y + 14, 2, 8);
+    ctx.fillRect(x + 14, y + 14, 2, 8);
+
+    // Golden Nametag & Mini Boba Badge
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(x + 8, y + 17, 5, 2.2);
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(x + 9, y + 18, 3, 0.8);
+    ctx.restore();
   }
 
   /**

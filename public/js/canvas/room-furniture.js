@@ -190,60 +190,135 @@ export const RoomFurniture = {
     const sh = 65;
 
     // Drop shadow
-    ctx.fillStyle = 'rgba(15, 8, 5, 0.4)';
-    ctx.fillRect(x + 4, y + sh - 4, sw - 8, 8);
-
-    // Wooden feet
-    ctx.fillStyle = '#3a2016';
-    ctx.fillRect(x + 12, y + sh, 8, 6);
-    ctx.fillRect(x + sw - 20, y + sh, 8, 6);
-
-    // Backrest Cushion
-    ctx.fillStyle = '#f78da7';
+    ctx.fillStyle = 'rgba(15, 8, 5, 0.35)';
     ctx.beginPath();
-    ctx.roundRect(x + 6, y, sw - 12, 38, 8);
+    ctx.ellipse(x + sw / 2, y + sh + 2, sw / 2 - 2, 7, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Tufting lines
-    ctx.fillStyle = '#e8728f';
-    ctx.fillRect(x + Math.floor(sw * 0.35), y + 6, 2, 28);
-    ctx.fillRect(x + Math.floor(sw * 0.65), y + 6, 2, 28);
 
-    // Base Seat Cushion
-    ctx.fillStyle = '#ff9eb5';
-    ctx.beginPath();
-    ctx.roundRect(x + 4, y + 30, sw - 8, 28, 6);
-    ctx.fill();
-    ctx.fillStyle = '#e8728f';
-    ctx.fillRect(x + 4, y + 44, sw - 8, 2);
+    // Turned wooden feet with brass caps
+    [-1, 1].forEach(side => {
+      const legX = side === -1 ? x + 16 : x + sw - 24;
+      ctx.fillStyle = '#4a2810';
+      ctx.fillRect(legX, y + sh - 2, 7, 8);
+      ctx.fillStyle = '#f59e0b'; // brass cap
+      ctx.fillRect(legX, y + sh + 4, 7, 2);
+    });
 
-    // Rounded Armrests
-    ctx.fillStyle = '#f78da7';
+    // Backrest Cushion with velvet depth gradient
+    const backGrad = ctx.createLinearGradient(0, y, 0, y + 38);
+    backGrad.addColorStop(0, '#f9a8d4');
+    backGrad.addColorStop(1, '#f472b6');
+    ctx.fillStyle = backGrad;
     ctx.beginPath();
-    ctx.roundRect(x - 6, y + 16, 18, 42, 7);
-    ctx.roundRect(x + sw - 12, y + 16, 18, 42, 7);
+    if (ctx.roundRect) {
+      ctx.roundRect(x + 6, y, sw - 12, 38, [10, 10, 4, 4]);
+    } else {
+      ctx.rect(x + 6, y, sw - 12, 38);
+    }
     ctx.fill();
-    ctx.strokeStyle = '#e8728f';
-    ctx.lineWidth = 1.2;
+
+    // Diamond Button-Tufting creases & buttons
+    const tuftXCols = [x + 28, x + 52, x + 76, x + 100, x + 122];
+    ctx.fillStyle = '#db2777';
+    tuftXCols.forEach((tx, idx) => {
+      const ty = (idx % 2 === 0) ? y + 14 : y + 24;
+      // Button
+      ctx.beginPath();
+      ctx.arc(tx, ty, 2, 0, Math.PI * 2);
+      ctx.fill();
+      // Crease lines
+      ctx.strokeStyle = 'rgba(219, 39, 119, 0.4)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(tx - 6, ty - 6); ctx.lineTo(tx + 6, ty + 6);
+      ctx.moveTo(tx + 6, ty - 6); ctx.lineTo(tx - 6, ty + 6);
+      ctx.stroke();
+    });
+
+    // Base Seat Cushion with velvet plush volume
+    const seatGrad = ctx.createLinearGradient(0, y + 28, 0, y + 58);
+    seatGrad.addColorStop(0, '#fbcfe8');
+    seatGrad.addColorStop(1, '#f472b6');
+    ctx.fillStyle = seatGrad;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x + 4, y + 28, sw - 8, 30, [6, 6, 8, 8]);
+    } else {
+      ctx.rect(x + 4, y + 28, sw - 8, 30);
+    }
+    ctx.fill();
+
+    // Piped cushion seam
+    ctx.strokeStyle = '#f43f5e';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + 5, y + 43);
+    ctx.lineTo(x + sw - 5, y + 43);
     ctx.stroke();
 
-    // 3 Pastel Throw Pillows
-    // Pillow 1 (Left): Pastel Mint Green
-    ctx.fillStyle = '#a8e6cf';
+    // Rounded Plush Armrests
+    [-1, 1].forEach(side => {
+      const armX = side === -1 ? x - 6 : x + sw - 12;
+      const armGrad = ctx.createLinearGradient(armX, y + 14, armX + 18, y + 14);
+      armGrad.addColorStop(0, side === -1 ? '#fbcfe8' : '#ec4899');
+      armGrad.addColorStop(1, side === -1 ? '#ec4899' : '#fbcfe8');
+      ctx.fillStyle = armGrad;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(armX, y + 14, 18, 44, 9);
+      } else {
+        ctx.rect(armX, y + 14, 18, 44);
+      }
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(225, 29, 72, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    // 3 Pastel Throw Pillows with plush shadows
+    // Pillow 1 (Left): Pastel Mint Green (slight rotation)
+    ctx.save();
+    ctx.translate(x + 24, y + 24);
+    ctx.rotate(-0.1);
+    ctx.fillStyle = '#a7f3d0';
     ctx.beginPath();
-    ctx.roundRect(x + 15, y + 15, 20, 20, 4);
+    if (ctx.roundRect) ctx.roundRect(-10, -10, 20, 20, 5);
+    else ctx.rect(-10, -10, 20, 20);
     ctx.fill();
+    ctx.fillStyle = '#34d399';
+    ctx.beginPath();
+    ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     // Pillow 2 (Middle): Pastel Lavender
-    ctx.fillStyle = '#dcd6f7';
+    ctx.save();
+    ctx.translate(x + 54, y + 26);
+    ctx.fillStyle = '#e9d5ff';
     ctx.beginPath();
-    ctx.roundRect(x + 36, y + 18, 22, 20, 4);
+    if (ctx.roundRect) ctx.roundRect(-11, -10, 22, 20, 5);
+    else ctx.rect(-11, -10, 22, 20);
     ctx.fill();
+    ctx.fillStyle = '#c084fc';
+    ctx.beginPath();
+    ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     // Pillow 3 (Right): Pastel Butter Yellow
-    ctx.fillStyle = '#ffeaa7';
+    ctx.save();
+    ctx.translate(x + sw - 28, y + 24);
+    ctx.rotate(0.12);
+    ctx.fillStyle = '#fef08a';
     ctx.beginPath();
-    ctx.roundRect(x + sw - 36, y + 16, 22, 20, 4);
+    if (ctx.roundRect) ctx.roundRect(-11, -10, 22, 20, 5);
+    else ctx.rect(-11, -10, 22, 20);
     ctx.fill();
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     ctx.restore();
   },
@@ -362,123 +437,176 @@ export const RoomFurniture = {
     const ph = 22;
 
     // Drop shadow
-    ctx.fillStyle = 'rgba(15, 8, 5, 0.4)';
+    ctx.fillStyle = 'rgba(15, 8, 5, 0.35)';
     ctx.beginPath();
-    ctx.ellipse(x + pw, y + ph + 2, pw + 3, ph + 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + pw, y + ph + 3, pw + 3, ph + 1.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Wooden rim bed
-    ctx.fillStyle = '#d35400';
+    // Natural woven wicker basket bed rim
+    ctx.fillStyle = '#b45309';
     ctx.beginPath();
     ctx.ellipse(x + pw, y + ph, pw, ph, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    // Turquoise plush cushion with tufting stitches
-    ctx.fillStyle = '#00cec9';
+    ctx.fillStyle = '#d97706';
     ctx.beginPath();
-    ctx.ellipse(x + pw, y + ph, pw - 8, ph - 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + pw, y + ph - 1, pw - 2, ph - 2, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cushion stitch tufts
-    ctx.fillStyle = '#00a8a8';
-    [-14, 0, 14].forEach(ox => {
-      ctx.fillRect(x + pw + ox - 1, y + ph + 2, 2, 2);
+    // Plush Sherpa fleece cloud cushion
+    const fleeceGrad = ctx.createRadialGradient(x + pw, y + ph, 2, x + pw, y + ph, pw - 6);
+    fleeceGrad.addColorStop(0, '#e0f2fe');
+    fleeceGrad.addColorStop(0.7, '#bae6fd');
+    fleeceGrad.addColorStop(1, '#7dd3fc');
+    ctx.fillStyle = fleeceGrad;
+    ctx.beginPath();
+    ctx.ellipse(x + pw, y + ph, pw - 7, ph - 4.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cushion stitch tufts with tiny star indentations
+    ctx.fillStyle = '#0284c7';
+    [-15, 0, 15].forEach(ox => {
+      ctx.beginPath();
+      ctx.arc(x + pw + ox, y + ph + 2, 1.5, 0, Math.PI * 2);
+      ctx.fill();
     });
 
-    // Sleeping Shiba Inu / Tabby curled up
+    // Sleeping Shiba Inu curled up
     const shibaX = x + pw;
     const shibaY = y + ph - 2;
 
     // Gentle breathing rhythm
     const breath = Math.sin(tick * 0.08) * 1.2;
 
-    // Body shadow underneath
-    ctx.fillStyle = 'rgba(0, 80, 80, 0.35)';
+    // Body shadow underneath curled dog
+    ctx.fillStyle = 'rgba(2, 132, 199, 0.35)';
     ctx.beginPath();
     ctx.ellipse(shibaX + 2, shibaY + 7, 16, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Shiba body (warm amber orange fur)
-    ctx.fillStyle = '#e67e22';
+    // Shiba body (warm amber-chestnut coat)
+    const bodyGrad = ctx.createLinearGradient(shibaX - 16, shibaY - 10, shibaX + 16, shibaY + 10);
+    bodyGrad.addColorStop(0, '#f97316');
+    bodyGrad.addColorStop(0.6, '#ea580c');
+    bodyGrad.addColorStop(1, '#c2410c');
+    ctx.fillStyle = bodyGrad;
     ctx.beginPath();
-    ctx.ellipse(shibaX, shibaY + breath, 18, 11, 0, 0, Math.PI * 2);
+    ctx.ellipse(shibaX, shibaY + breath, 18.5, 11.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Fur tone gradient / back stripe
-    ctx.fillStyle = '#d35400';
+    // Fur tone highlight stripe along the spine
+    ctx.fillStyle = '#fb923c';
     ctx.beginPath();
-    ctx.ellipse(shibaX + 2, shibaY - 3 + breath, 13, 5, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(shibaX + 1, shibaY - 3 + breath, 14, 5, -0.15, 0, Math.PI * 2);
     ctx.fill();
 
-    // White chest & belly
+    // Soft white belly and chest fur
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.ellipse(shibaX + 4, shibaY + 2 + breath, 10, 6, 0.4, 0, Math.PI * 2);
+    ctx.ellipse(shibaX + 4, shibaY + 2 + breath, 11, 6.5, 0.35, 0, Math.PI * 2);
     ctx.fill();
 
-    // Curled bushy tail with white tip and twitch
-    const tailTwitch = Math.sin(tick * 0.1) * 1.5;
-    ctx.fillStyle = '#d35400';
+    // Curled bushy tail with white tip and gentle twitch
+    const tailTwitch = Math.sin(tick * 0.1) * 1.6;
+    ctx.fillStyle = '#ea580c';
     ctx.beginPath();
-    ctx.ellipse(shibaX + 16, shibaY - 2 + breath + tailTwitch, 6, 6, 0.3, 0, Math.PI * 2);
+    ctx.ellipse(shibaX + 16, shibaY - 2 + breath + tailTwitch, 6.5, 6.5, 0.3, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(shibaX + 18, shibaY - 4 + breath + tailTwitch, 3, 0, Math.PI * 2);
+    ctx.arc(shibaX + 18.5, shibaY - 4 + breath + tailTwitch, 3.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Front tucked paws (white socks)
+    // Front tucked white paws (socks)
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.ellipse(shibaX - 4, shibaY + 5 + breath, 3.5, 2.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(shibaX - 4, shibaY + 5.5 + breath, 3.8, 2.5, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(shibaX - 5, shibaY + 6.2 + breath, 1, 1.2); // toe separation
 
     // Shiba Head
-    ctx.fillStyle = '#e67e22';
+    ctx.fillStyle = '#ea580c';
     ctx.beginPath();
-    ctx.arc(shibaX - 10, shibaY - 3 + breath, 9, 0, Math.PI * 2);
+    ctx.arc(shibaX - 10, shibaY - 3 + breath, 9.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // White snout & cheeks
+    // Fluffy cheek fur tufts
+    ctx.beginPath();
+    ctx.moveTo(shibaX - 17, shibaY - 1 + breath);
+    ctx.lineTo(shibaX - 19, shibaY + 2 + breath);
+    ctx.lineTo(shibaX - 16, shibaY + 3.5 + breath);
+    ctx.fill();
+
+    // White muzzle, cheeks & eyebrows
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.ellipse(shibaX - 13, shibaY + breath, 5, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(shibaX - 13, shibaY + breath, 5.5, 4.2, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Black nose
+
+    // Cute tan eyebrow dots (Maro spots)
+    ctx.fillStyle = '#fed7aa';
+    ctx.beginPath();
+    ctx.arc(shibaX - 12, shibaY - 6.5 + breath, 1.2, 0, Math.PI * 2);
+    ctx.arc(shibaX - 7, shibaY - 6.5 + breath, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Shiny black button nose & mouth
     ctx.fillStyle = '#1c0f0a';
-    ctx.fillRect(shibaX - 16, shibaY - 1 + breath, 3, 2.5);
+    ctx.beginPath();
+    ctx.ellipse(shibaX - 16.5, shibaY - 1 + breath, 2, 1.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(shibaX - 17, shibaY - 1.5 + breath, 0.8, 0.8); // nose shine
 
     // Pointy Shiba Ears with inner pink
-    ctx.fillStyle = '#d35400';
+    ctx.fillStyle = '#c2410c';
     ctx.beginPath();
     ctx.moveTo(shibaX - 14, shibaY - 10 + breath);
     ctx.lineTo(shibaX - 11, y - 17 + breath);
     ctx.lineTo(shibaX - 7, shibaY - 9 + breath);
     ctx.fill();
-    ctx.fillStyle = '#fab1a0';
+    ctx.fillStyle = '#fecdd3';
     ctx.beginPath();
     ctx.moveTo(shibaX - 13, shibaY - 11 + breath);
     ctx.lineTo(shibaX - 11, y - 15 + breath);
     ctx.lineTo(shibaX - 9, shibaY - 10 + breath);
     ctx.fill();
 
-    // Peaceful sleeping eye curve
+    // Peaceful sleeping eye curve with tiny lashes
     ctx.strokeStyle = '#1c0f0a';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.arc(shibaX - 9, shibaY - 3 + breath, 2.5, 0, Math.PI);
     ctx.stroke();
 
-    // Sleep Zzz bubbles if not cheered
+    // Soft pink cheek blush
+    ctx.fillStyle = 'rgba(244, 63, 94, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(shibaX - 10, shibaY + 0.5 + breath, 2.5, 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Dream bubbles / Sleep Zzz bubbles
     if (petHappyTimer <= 0) {
-      ctx.fillStyle = '#a29bfe';
-      ctx.font = 'bold 9px monospace';
-      const zPhase = (tick * 0.05) % 3;
-      const zY1 = ((tick * 0.3) % 18);
-      const zY2 = ((tick * 0.3 + 9) % 18);
-      ctx.fillText('z', shibaX + 13, shibaY - 6 - zY1);
-      ctx.font = 'bold 11px monospace';
-      ctx.fillText('Z', shibaX + 18, shibaY - 12 - zY2);
+      const zPhase = (tick * 0.05);
+      const zY1 = ((tick * 0.35) % 22);
+      const zY2 = ((tick * 0.35 + 11) % 22);
+      const sway1 = Math.sin(zPhase) * 2;
+      const sway2 = Math.cos(zPhase) * 2;
+
+      // Soft dream bubbles with glow
+      ctx.fillStyle = 'rgba(167, 139, 250, 0.85)';
+      ctx.font = 'bold 8px "Segoe UI", sans-serif';
+      ctx.fillText('z', shibaX + 12 + sway1, shibaY - 4 - zY1);
+
+      ctx.fillStyle = 'rgba(192, 132, 252, 0.95)';
+      ctx.font = 'bold 11px "Segoe UI", sans-serif';
+      ctx.fillText('Z', shibaX + 17 + sway2, shibaY - 8 - zY2);
+    } else {
+      // Pet happy floating heart
+      const heartBob = Math.sin(tick * 0.15) * 2;
+      ctx.fillStyle = '#f43f5e';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('💖', shibaX - 12, shibaY - 18 + heartBob);
     }
 
     ctx.restore();

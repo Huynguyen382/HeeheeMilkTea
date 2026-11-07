@@ -195,6 +195,53 @@ export const STORY_DATA = {
         hint: { icon: '🏆', text: 'Chinh phục ngôi vị Vua Trà Sữa Đô Thị Toàn Cầu!' }
       }
     ]
+  },
+  5: {
+    title: 'Chương 5: Vương Triều Trà Sữa Vũ Trụ (The Cosmic Boba Legend)',
+    scenes: [
+      {
+        avatar: '👑',
+        speaker: 'HeeHee (Nữ Hoàng Trà Sữa Vũ Trụ)',
+        role: 'Boba Tycoon Legend',
+        text: 'Hôm nay, một ngày lịch sử thiêng liêng của Tiệm Trà Sữa HeeHee!\n\nTừ chiếc xe đẩy inox ọp ẹp bên vỉa hè nợ ngập đầu 3 triệu đồng của Anh Bảnh... hôm nay chúng ta đã chính thức vượt mốc 200.000.000đ tài sản và được Tổ chức F&B Toàn cầu trao tặng vương miện:\n\n👑 VUA TRÀ SỮA VŨ TRỤ (BOBA TYCOON LEGEND)!\n\nChiếc xe đẩy thân thương ngày nào giờ đây đã khoác lên mình ánh sáng Ngân Hà lấp lánh, sẵn sàng phục vụ thực khách từ khắp năm châu bốn biển!',
+        hint: { icon: '🌌', text: 'Chào mừng bạn đến với Chương 5: Vương Triều Trà Sữa Vũ Trụ!' }
+      },
+      {
+        avatar: '🦈',
+        speaker: 'Shark Hưng (Chủ Tịch Quỹ F&B Toàn Cầu)',
+        role: 'Nhà Đầu Tư Huyền Thoại',
+        text: 'Chúc mừng Nữ Hoàng HeeHee! Quỹ đầu tư mạo hiểm quốc tế của chúng tôi đã theo dõi từng bước đi kiên cường của cô từ ngõ hẻm sinh viên Bách Khoa đến các đại lộ phồn hoa.\n\nHội đồng đầu tư chính thức định giá thương hiệu HEEHEE ở mức 100 TRIỆU USD, trao tặng tiệm 500 TeaCoin hoàng gia cùng bản thiết kế Độc Quyền [Cosmic Coffee Cart] lộng lẫy nhất thiên hà!',
+        hint: { icon: '💎', text: 'Nhận 500 TeaCoin hoàng gia và kích hoạt Skin Xe Đẩy Vũ Trụ Ngân Hà!' }
+      },
+      {
+        avatar: '🌽',
+        speaker: 'Bé Bắp (Tổng Giám Đốc Điều Hành)',
+        role: 'Công Nghệ Pha Chế Vũ Trụ',
+        text: 'Chị HeeHee ơi! Em đã nâng cấp toàn bộ quầy pha chế sang công nghệ [Nano Cold-Seal Hút Chân Không]!\n\nMỗi ly trà rót ra đều được niêm phong lượng tử hoàn hảo, giữ trọn 100% hương hoa nhài tinh khiết và vị béo ngậy của sữa tươi cao nguyên! Tốc độ dập nắp và ra món đã đạt cảnh giới siêu thanh!',
+        hint: { icon: '⚡', text: 'Bé Bắp kích hoạt công nghệ dập nắp siêu tốc giữ trọn độ tươi mát của trà!' }
+      },
+      {
+        avatar: '🚀',
+        speaker: 'Anh Lâm (Hạm Trưởng Logistics Vũ Trụ)',
+        role: 'Vận Tải Tốc Độ Ánh Sáng',
+        text: 'Chiếc xe Wave chiến năm xưa của anh giờ đã trở thành Hạm Đội Vận Tải Siêu Thanh liên lục địa!\n\nLá trà Shan tuyết cổ thụ ngàn năm và sữa non Mộc Châu chỉ mất đúng 15 phút để vận chuyển thẳng tới quầy bar. Khách đặt hàng ở bất kỳ đâu cũng nhận được ly trà mát lạnh tê tái và đậm đà nhất!',
+        hint: { icon: '🚀', text: 'Mạng lưới logistics vận chuyển nguyên liệu siêu tốc không giới hạn!' }
+      },
+      {
+        avatar: '🕶️',
+        speaker: 'Anh Bảnh & Lão Ba (Hội Đồng Trưởng Lão)',
+        role: 'Tâm Phục Khẩu Phục',
+        text: 'Ha ha ha! Nhìn mày hôm nay, tao - Anh Bảnh đầu gấu khu phố năm xưa cũng phải ngả mũ kính phục sát đất!\n\nAi mà tin được một cô bé từng khóc ròng vì khoản nợ 3 triệu hôm nay lại trở thành Nữ Hoàng Trà Sữa quyền lực đến thế! Còn Lão Ba ta xin kính cẩn dâng tặng công thức bí truyền [Hồng Trà Vương Triều Full Topping] cho tiệm!',
+        hint: { icon: '👑', text: 'Anh Bảnh & Lão Ba chính thức công nhận ngôi vị Đệ Nhất Trà Sữa Bất Khả Chiến Bại!' }
+      },
+      {
+        avatar: '💖',
+        speaker: 'HeeHee (Lời Cảm Ơn Tri Ân)',
+        role: 'Từ Đáy Trái Tim',
+        text: 'Nhưng thành tựu kỳ diệu nhất của ngày hôm nay... chính là nhờ có BẠN - người cộng sự tận tụy đã sát cánh cùng HeeHee qua từng ca bán vất vả, từng cơn mưa rào và từng đợt bão đơn hàng!\n\nCảm ơn bạn đã biến ước mơ vỉa hè nhỏ bé thành một Huyền Thoại Vũ Trụ rực rỡ! Hãy tiếp tục tận hưởng niềm vui làm chủ tiệm và cùng HeeHee viết tiếp những câu chuyện tuyệt vời nhé! 🧋✨',
+        hint: { icon: '💖', text: 'Cảm ơn bạn đã đồng hành và hoàn thành trọn vẹn Cốt Truyện HeeHee Boba Tycoon!' }
+      }
+    ]
   }
 };
 
