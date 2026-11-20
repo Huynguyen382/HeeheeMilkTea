@@ -11,9 +11,26 @@ const sseClients = new Map();
 // In-memory queue of pending events for stores (for polling fallback / quick pickup)
 // storeId -> Array of events { id, type, payload, timestamp }
 const pendingEvents = new Map();
+const lastActivity = new Map(); // storeId -> timestamp
 
 // Global broadcast queue (for events that target all stores)
 let globalEvents = [];
+
+// Periodic cleanup of stale pending queues to prevent 512MB RAM exhaustion
+const CLEANUP_INTERVAL_MS = 60000;
+const STORE_IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes idle
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [sid, q] of pendingEvents.entries()) {
+    const hasSSE = sseClients.has(sid) && sseClients.get(sid).size > 0;
+    const lastActive = lastActivity.get(sid) || 0;
+    if (!hasSSE && (now - lastActive > STORE_IDLE_TIMEOUT_MS || q.length === 0)) {
+      pendingEvents.delete(sid);
+      lastActivity.delete(sid);
+    }
+  }
+}, CLEANUP_INTERVAL_MS).unref();
 
 /**
  * Register an SSE connection for a store
@@ -81,13 +98,14 @@ function pushToStore(storeId, type, payload = {}) {
   }
 
   // 2. Also keep in pending queue for poll retrieval (fallback / backup)
+  lastActivity.set(sid, ts);
   if (!pendingEvents.has(sid)) {
     pendingEvents.set(sid, []);
   }
   const q = pendingEvents.get(sid);
   q.push(eventData);
-  // Keep only last 20 events
-  if (q.length > 20) {
+  // Keep only last 10 events (reduced from 20 for memory conservation)
+  if (q.length > 10) {
     q.shift();
   }
 }
@@ -120,9 +138,9 @@ function broadcast(type, payload = {}) {
     }
   }
 
-  // 2. Add to globalEvents ring buffer (last 30)
+  // 2. Add to globalEvents ring buffer (last 15, reduced from 30)
   globalEvents.push(eventData);
-  if (globalEvents.length > 30) {
+  if (globalEvents.length > 15) {
     globalEvents.shift();
   }
 }
@@ -134,6 +152,7 @@ function broadcast(type, payload = {}) {
  */
 function pullEvents(storeId, sinceTimestamp = 0) {
   const sid = Number(storeId);
+  lastActivity.set(sid, Date.now());
   const results = [];
 
   // Store-specific events

@@ -67,6 +67,10 @@ const API = {
     return await this.request('/store/state');
   },
 
+  async syncState(dirtyPayload) {
+    return await this.request('/store/sync', 'POST', dirtyPayload);
+  },
+
   async getOrder(isShipper = false) {
     const endpoint = isShipper ? '/game/order?isShipper=true' : '/game/order';
     return await this.request(endpoint);

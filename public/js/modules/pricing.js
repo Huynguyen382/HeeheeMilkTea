@@ -1,6 +1,7 @@
 import { state, TOPPING_LABELS, TEA_LABELS } from './state.js';
 import { showToast } from './toast.js';
 import { updateUI } from './ui.js';
+import { patchLocalSave } from './save-sync.js';
 
 export function getRiskInfo(currentPrice, basePrice) {
   const ratio = currentPrice / basePrice;
@@ -209,7 +210,13 @@ export function openPricingModal() {
         if (res && res.success) {
           if (window.sound && window.sound.coin) window.sound.coin();
           showToast(res.message || '🎉 Đã mở khóa công thức mới vào Menu!', 3500);
-          state.storeState = await window.API.getState();
+          if (state.storeState && state.storeState.save) {
+            patchLocalSave({
+              money: res.money !== undefined ? res.money : state.storeState.save.money,
+              upgrades: res.upgrades || state.storeState.save.upgrades,
+              recipes: res.recipes || state.storeState.save.recipes
+            });
+          }
           updateUI();
           openPricingModal();
         } else {
@@ -308,7 +315,7 @@ export async function savePricing() {
     const res = await window.API.setCustomPrices(customPrices);
     if (res && res.success) {
       if (state.storeState && state.storeState.save) {
-        state.storeState.save.custom_prices = res.customPrices;
+        patchLocalSave({ custom_prices: res.customPrices });
       }
       showToast('✅ Đã lưu bảng giá trà sữa thành công!', 3500);
       if (window.sound && window.sound.bell) window.sound.bell();

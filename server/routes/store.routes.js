@@ -26,4 +26,44 @@ router.get('/state', authStore, async (req, res) => {
   }
 });
 
+// Batched state synchronization and delta save endpoint
+router.post('/sync', authStore, async (req, res) => {
+  try {
+    const result = await gameService.syncStoreState(req.store.id, req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('Sync state error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/save', authStore, async (req, res) => {
+  try {
+    const result = await gameService.syncStoreState(req.store.id, req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('Save state error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get store state by ID (supports load-test simulations and external state queries)
+router.get('/:id/state', async (req, res) => {
+  try {
+    let storeId = req.params.id;
+    if (typeof storeId === 'string' && isNaN(Number(storeId))) {
+      const storeProfile = await gameService.getOrCreateStore(storeId, storeId);
+      storeId = storeProfile.store_id || storeProfile.id;
+    } else {
+      storeId = Number(storeId);
+    }
+    const state = await gameService.getStoreState(storeId);
+    if (!state) return res.status(404).json({ error: 'Store not found' });
+    res.json(state);
+  } catch (err) {
+    console.error('Get store by id state error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

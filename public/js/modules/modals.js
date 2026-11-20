@@ -6,6 +6,7 @@ import { openStoryModal } from './story.js';
 import { scheduleNextOrder } from './order-manager.js';
 import { openEndShiftModal } from './shift.js';
 import { visitFriendRoom } from './room.js';
+import { patchLocalSave } from './save-sync.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -854,7 +855,12 @@ export function initModals() {
       if (window.sound) window.sound.coin();
       showToast(res.message, 4500);
       const oldChapter = state.storeState?.save ? state.storeState.save.chapter : 1;
-      state.storeState = await window.API.getState();
+      if (state.storeState && state.storeState.save) {
+        patchLocalSave({
+          money: res.money !== undefined ? res.money : state.storeState.save.money,
+          debt_remaining: res.debt_remaining !== undefined ? res.debt_remaining : state.storeState.save.debt_remaining
+        });
+      }
       updateUI();
 
       if (res.debt_remaining === 0 && oldChapter === 1) {
@@ -1102,7 +1108,13 @@ export function initModals() {
         if (res.success) {
           if (window.sound) window.sound.coin();
           showToast(res.message);
-          state.storeState = await window.API.getState();
+          if (state.storeState && state.storeState.save) {
+            patchLocalSave({
+              money: res.money !== undefined ? res.money : state.storeState.save.money,
+              upgrades: res.upgrades || state.storeState.save.upgrades,
+              recipes: res.recipes || state.storeState.save.recipes
+            });
+          }
           updateUI();
           updateSabotageCardsBadgeUI();
           if (upId !== 'bua_an_than' && !upId.startsWith('the_')) {
@@ -1221,7 +1233,12 @@ export function initModals() {
             window.sound.bell();
           }
           showToast(`✨ ${res.message}`, 6000);
-          state.storeState = await window.API.getState();
+          if (state.storeState && state.storeState.save) {
+            patchLocalSave({
+              upgrades: res.upgrades || state.storeState.save.upgrades,
+              active_buffs: res.activeBuffs || state.storeState.save.active_buffs
+            });
+          }
           updateUI();
           updateSabotageCardsBadgeUI();
 
@@ -1284,7 +1301,9 @@ export function initModals() {
           }
 
           showToast(`🎉 ${res.message}`, 7000);
-          state.storeState = await window.API.getState();
+          if (state.storeState && state.storeState.save && res.upgrades) {
+            patchLocalSave({ upgrades: res.upgrades });
+          }
           updateUI();
           updateSabotageCardsBadgeUI();
           if (modalUseSabotage) modalUseSabotage.style.display = 'none';

@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { drawIngredientPixelArt } from './pixel-art.js';
 import { updateUI } from './ui.js';
 import { showToast } from './toast.js';
+import { patchLocalSave } from './save-sync.js';
 
 let modalMarket = null;
 let btnNavMarket = null;
@@ -71,7 +72,12 @@ export function renderMarketItems() {
         if (res && res.success) {
           if (window.sound) window.sound.coin();
           showToast(res.message, 3000);
-          state.storeState = await window.API.getState();
+          if (state.storeState && state.storeState.save) {
+            patchLocalSave({
+              money: res.newMoney,
+              inventory: res.inventory
+            });
+          }
           updateUI();
           renderMarketItems();
         } else {

@@ -23,7 +23,8 @@ const {
   getStaticData,
   getOrCreateStore,
   getStoreState,
-  getCacheStats
+  getCacheStats,
+  syncStoreState
 } = require('./game/store.service');
 
 const {
@@ -120,6 +121,7 @@ module.exports = {
   // Store Management
   getOrCreateStore,
   getStoreState,
+  syncStoreState,
 
   // Order & Customer System
   generateOrder,

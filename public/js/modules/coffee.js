@@ -703,6 +703,8 @@ function startMovementListeners() {
 
 let targetWalkX = null;
 let targetWalkY = null;
+let lastMoveEmitTime = 0;
+const MOVE_EMIT_INTERVAL_MS = 100;
 
 function stopMovementListeners() {
   window.removeEventListener('keydown', handleKeyDown);
@@ -907,8 +909,10 @@ function updatePlayerPosition() {
     p.state = 'walk';
     if (dx !== 0) p.direction = dx > 0 ? 1 : -1;
 
-    // Send coordinates to socket
-    if (socket && socket.connected) {
+    // Send coordinates to socket (throttled to 100ms)
+    const now = Date.now();
+    if (socket && socket.connected && (now - lastMoveEmitTime >= MOVE_EMIT_INTERVAL_MS)) {
+      lastMoveEmitTime = now;
       socket.emit('coffee:move', {
         x: p.x,
         y: p.y,
@@ -920,6 +924,7 @@ function updatePlayerPosition() {
   } else if (p.state === 'walk') {
     p.state = 'idle';
     if (socket && socket.connected) {
+      lastMoveEmitTime = Date.now();
       socket.emit('coffee:move', {
         x: p.x,
         y: p.y,

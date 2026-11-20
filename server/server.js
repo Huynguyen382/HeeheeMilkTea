@@ -26,6 +26,7 @@ const { buildFrontendBundles } = require('./scripts/build');
 const circuitBreaker = require('./services/circuit-breaker');
 const dbWrapper = require('./services/db-wrapper');
 const { initCoffeeSocketGateway } = require('./services/game/coffee-socket.gateway');
+const { compressionMiddleware } = require('./middleware/compression.middleware');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -39,11 +40,19 @@ const coffeeRoutes = require('./routes/coffee.routes');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*' }
+  cors: { origin: '*' },
+  pingInterval: 25000,
+  pingTimeout: 20000,
+  upgradeTimeout: 10000,
+  maxHttpBufferSize: 1e5, // 100KB
+  transports: ['websocket', 'polling']
 });
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+// Apply native gzip/deflate compression for all API and static responses
+app.use(compressionMiddleware());
+
+app.use(express.json({ limit: '500kb' }));
 
 // Block direct browser/DevTools access to raw unminified source folders (/js/*, /css/*) and source maps
 app.use((req, res, next) => {
@@ -53,7 +62,20 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// Static assets with optimized HTTP caching for Render Free Tier
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+  maxAge: '1d',
+  etag: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    } else if (filePath.match(/\.(png|jpg|jpeg|gif|webp|svg|ico|mp3|ogg|wav|woff2?|ttf|eot)$/i)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+    } else if (filePath.includes('dist') || filePath.match(/\.(js|css)$/i)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
+    }
+  }
+}));
 
 // Admin Webpage Route
 app.get('/admin', (req, res) => {

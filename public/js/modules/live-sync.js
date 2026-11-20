@@ -20,6 +20,7 @@ let sseSource = null;
 let heartbeatInterval = null;
 let lastSyncTimestamp = Date.now();
 let isConnecting = false;
+let isSseConnected = false;
 const processedEventIds = new Set();
 
 /**
@@ -207,6 +208,8 @@ export function connectSSE() {
     sseSource.addEventListener('connected', (e) => {
       console.log('[LiveSync] SSE Connected to server!');
       isConnecting = false;
+      isSseConnected = true;
+      scheduleAdaptiveHeartbeat();
     });
 
     sseSource.addEventListener('event_triggered', (e) => {
@@ -259,21 +262,45 @@ export function connectSSE() {
     });
 
     sseSource.onerror = (err) => {
-      console.warn('[LiveSync] SSE connection interrupted, will retry. Polling fallback active.', err);
+      console.warn('[LiveSync] SSE connection interrupted, will retry. Fallback polling active.', err);
       if (sseSource) {
         sseSource.close();
         sseSource = null;
       }
       isConnecting = false;
+      isSseConnected = false;
+      scheduleAdaptiveHeartbeat();
     };
   } catch (err) {
-    console.warn('[LiveSync] Failed to initialize SSE, relying on polling heartbeat:', err);
+    console.warn('[LiveSync] Failed to initialize SSE, relying on fallback polling:', err);
     isConnecting = false;
+    isSseConnected = false;
+    scheduleAdaptiveHeartbeat();
   }
 }
 
 /**
- * Fast polling heartbeat fallback (checks every 2.5 seconds)
+ * Schedule adaptive heartbeat polling:
+ * - Tab hidden: 0 polls (completely paused)
+ * - SSE connected: 60s relaxed keepalive
+ * - SSE disconnected: 15s fallback poll
+ */
+export function scheduleAdaptiveHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+
+  if (document.visibilityState === 'hidden') {
+    return; // Completely paused when backgrounded
+  }
+
+  const intervalMs = isSseConnected ? 60000 : 15000;
+  heartbeatInterval = setInterval(pollHeartbeat, intervalMs);
+}
+
+/**
+ * Lightweight heartbeat poll
  */
 async function pollHeartbeat() {
   if (!state.storeState) return;
@@ -312,18 +339,23 @@ export function initLiveSync() {
   console.log('[LiveSync] Starting real-time admin sync subsystem...');
   lastSyncTimestamp = Date.now() - 5000;
 
-  // 1. Try initial SSE connection
+  // 1. Initial SSE connection
   connectSSE();
 
-  // 2. Continuous 2.5-second heartbeat poll for ultra-reliable instant delivery
-  if (heartbeatInterval) clearInterval(heartbeatInterval);
-  heartbeatInterval = setInterval(pollHeartbeat, 2500);
+  // 2. Start adaptive heartbeat (60s if SSE connected, 15s if disconnected, 0 if hidden)
+  scheduleAdaptiveHeartbeat();
 
-  // 3. Reconnect SSE if tab becomes visible
+  // 3. Tab visibility controller
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       pollHeartbeat();
       if (!sseSource) connectSSE();
+      scheduleAdaptiveHeartbeat();
+    } else {
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
     }
   });
 }

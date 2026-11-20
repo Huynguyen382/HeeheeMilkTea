@@ -8,6 +8,7 @@ import { scheduleNextOrder } from './order-manager.js';
 import { showJailModal } from './modals.js';
 import { renderOrderTicket } from './workflow.js';
 import { connectSSE } from './live-sync.js';
+import { saveLocalGameState, loadLocalGameState } from './save-sync.js';
 
 let modalAuth = null;
 let formLogin = null;
@@ -24,6 +25,7 @@ export async function initStore() {
     const res = await window.API.getMe();
     if (res && res.success && res.state) {
       state.storeState = res.state;
+      saveLocalGameState();
       if (modalAuth) modalAuth.style.display = 'none';
       updateUI();
       if (window.checkStaffOnLoad) window.checkStaffOnLoad();
@@ -45,8 +47,9 @@ export async function initStore() {
         localStorage.setItem(storySeenKey, 'true');
       }
 
-      // Periodic Collab Online Presence & Gifts Badge Sync
+      // Periodic Collab Online Presence & Gifts Badge Sync (Relaxed to 60s, paused when hidden)
       const syncGiftsAndCollabs = async () => {
+        if (document.visibilityState === 'hidden') return;
         if (!state.isGamePaused && window.API && window.API.token) {
           try {
             const collabsRes = await window.API.getCollabs();
@@ -73,7 +76,10 @@ export async function initStore() {
       };
       syncGiftsAndCollabs();
       if (!window.__collabSyncInterval) {
-        window.__collabSyncInterval = setInterval(syncGiftsAndCollabs, 12000);
+        window.__collabSyncInterval = setInterval(syncGiftsAndCollabs, 60000);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') syncGiftsAndCollabs();
+        });
       }
 
       scheduleNextOrder(1500);

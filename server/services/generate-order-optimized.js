@@ -293,7 +293,7 @@ async function generateOrderOptimized(db, storeId) {
   };
 
   // Release order objects back to pool
-  orders.forEach(orderPool.release);
+  orders.forEach(o => orderPool.release(o));
 
   return result;
 }

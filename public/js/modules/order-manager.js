@@ -5,6 +5,7 @@ import { updateUI, updateBuffsUI } from './ui.js';
 import { renderOrderTicket, updateWorkflowButtons } from './workflow.js';
 import { startRestCountdown } from './rest.js';
 import { checkThiefEncounter, showSnackModal } from './events.js';
+import { patchLocalSave } from './save-sync.js';
 
 export async function scheduleNextOrder(delay = 4000) {
   if (state.nextOrderTimeout) clearTimeout(state.nextOrderTimeout);
@@ -169,7 +170,15 @@ export async function handleOrderTimeout() {
     const failRes = await window.API.reportOrderFail(failedCust.orderId, isTiktoker);
     if (failRes && failRes.tiktokerFlop) {
       showToast(failRes.message, 6000);
-      state.storeState = await window.API.getState();
+      if (state.storeState && state.storeState.save) {
+        const curBuffs = state.storeState.save.active_buffs || {};
+        curBuffs.tiktoker_status = 'flop';
+        curBuffs.tiktoker_waves = 5;
+        patchLocalSave({
+          reputation: failRes.reputation !== undefined ? failRes.reputation : state.storeState.save.reputation,
+          active_buffs: curBuffs
+        });
+      }
       updateUI();
     }
   }

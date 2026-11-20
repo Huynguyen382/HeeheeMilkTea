@@ -4,6 +4,7 @@ import { showToast } from './toast.js';
 import { updateUI } from './ui.js';
 import { scheduleNextOrder } from './order-manager.js';
 import { startRestCountdown } from './rest.js';
+import { patchLocalSave } from './save-sync.js';
 
 // --- 1. THIEF ENCOUNTER & PET SYSTEM ---
 export function checkThiefEncounter() {
@@ -36,7 +37,12 @@ export async function handleRedeemPet() {
       showToast(res.message, 4500);
       const modalPetStolen = document.getElementById('modal-pet-stolen');
       if (modalPetStolen) modalPetStolen.style.display = 'none';
-      state.storeState = await window.API.getState();
+      if (state.storeState && state.storeState.save) {
+        patchLocalSave({
+          money: res.money !== undefined ? res.money : state.storeState.save.money,
+          upgrades: res.upgrades || state.storeState.save.upgrades
+        });
+      }
       updateUI();
     } else {
       showToast('❌ ' + (res.message || 'Không đủ tiền chuộc bé!'));
@@ -137,12 +143,16 @@ export function showSnackModal(snackEvent) {
       if (res.outcome === 'good') {
         if (window.sound) window.sound.coin();
         showToast(res.message, 5000);
-        state.storeState = await window.API.getState();
+        if (state.storeState && state.storeState.save && res.activeBuffs) {
+          patchLocalSave({ active_buffs: res.activeBuffs });
+        }
         updateUI();
       } else if (res.outcome === 'bad') {
         if (window.sound) window.sound.fail();
         showToast(res.message, 6000);
-        state.storeState = await window.API.getState();
+        if (state.storeState && state.storeState.save && res.activeBuffs) {
+          patchLocalSave({ active_buffs: res.activeBuffs });
+        }
         updateUI();
         startRestCountdown(res.restUntil);
       }
@@ -189,7 +199,9 @@ export function initEvents() {
             try {
               const res = await window.API.useTalisman();
               if (res && res.success) {
-                state.storeState = await window.API.getState();
+                if (state.storeState && state.storeState.save && res.upgrades) {
+                  patchLocalSave({ upgrades: res.upgrades });
+                }
                 updateUI();
                 showToast(`🔮 ĐÃ DÙNG 1 BÙA ẨN THÂN (Còn ${res.talismanCount}/3 tấm)! Cả quán tàng hình 60s để né cảnh sát!`, 4500);
               } else {
@@ -215,7 +227,14 @@ export function initEvents() {
           const res = await window.API.shooThief();
           if (res && res.success) {
             showToast(`⚡ NÉM DÉP TỔ ONG TRÚNG ĐẦU TÊN TRỘM! Thưởng cảnh giác: +${(res.reward || 10000).toLocaleString('vi-VN')}đ! 🎉`, 4500);
-            state.storeState = await window.API.getState();
+            if (state.storeState && state.storeState.save) {
+              const curUps = state.storeState.save.upgrades || {};
+              patchLocalSave({
+                money: res.money !== undefined ? res.money : state.storeState.save.money,
+                reputation: res.reputation !== undefined ? res.reputation : state.storeState.save.reputation,
+                upgrades: { ...curUps, thieves_caught: res.thievesCaught }
+              });
+            }
             updateUI();
           }
         } catch (err) {
@@ -278,7 +297,9 @@ export function initEvents() {
           } else {
             showToast(res.message || '👮 CÔNG AN NHẮC NHỞ: Lần này bạn không bị phạt tiền!', 5000);
           }
-          state.storeState = await window.API.getState();
+          if (state.storeState && state.storeState.save && typeof res.money === 'number') {
+            patchLocalSave({ money: res.money });
+          }
           updateUI();
         }
       } catch (err) {
@@ -292,7 +313,12 @@ export function initEvents() {
       try {
         const res = await window.API.stealPet();
         if (res && res.success) {
-          state.storeState = await window.API.getState();
+          if (state.storeState && state.storeState.save) {
+            patchLocalSave({
+              reputation: res.reputation !== undefined ? res.reputation : state.storeState.save.reputation,
+              upgrades: res.upgrades || state.storeState.save.upgrades
+            });
+          }
           updateUI();
           const modalPetStolen = document.getElementById('modal-pet-stolen');
           if (modalPetStolen) modalPetStolen.style.display = 'flex';
@@ -360,7 +386,12 @@ export function initEvents() {
           if (window.sound) window.sound.coin();
           showToast(res.message, 5000);
           if (modalTiktoker) modalTiktoker.style.display = 'none';
-          state.storeState = await window.API.getState();
+          if (state.storeState && state.storeState.save) {
+            patchLocalSave({
+              money: res.newMoney !== undefined ? res.newMoney : state.storeState.save.money,
+              active_buffs: res.activeBuffs || state.storeState.save.active_buffs
+            });
+          }
           updateUI();
           renderTiktokerModal();
           // Schedule immediate arrival of Tú (TikToker)!

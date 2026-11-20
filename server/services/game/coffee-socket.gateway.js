@@ -107,7 +107,7 @@ class CoffeeSocketGateway {
         }
       });
 
-      // 2. Player Move
+      // 2. Player Move (throttled to 80ms per player to prevent socket flooding)
       socket.on('coffee:move', (data) => {
         const roomName = this.socketToRoom.get(socket.id);
         if (!roomName) return;
@@ -124,6 +124,12 @@ class CoffeeSocketGateway {
         player.state = data.state || 'idle';
         player.direction = data.direction !== undefined ? data.direction : player.direction;
         player.sitting = !!data.sitting;
+
+        const now = Date.now();
+        if (now - (player.lastBroadcastMove || 0) < 80) {
+          return;
+        }
+        player.lastBroadcastMove = now;
 
         socket.to(roomName).emit('coffee:player_moved', {
           socketId: socket.id,

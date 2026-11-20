@@ -218,10 +218,125 @@ async function getCacheStats() {
   };
 }
 
+/**
+ * Batched state synchronization and delta save endpoint
+ * Allows client to sync pending dirty changes in a single atomic database operation,
+ * dramatically reducing API calls and database write contention on Render free tier.
+ */
+async function syncStoreState(storeId, syncData = {}) {
+  const id = Number(storeId);
+  if (!id || isNaN(id)) throw new Error('Mã cửa hàng không hợp lệ');
+
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(id);
+  if (!save) throw new Error('Cửa hàng không tồn tại');
+  if (save.is_jailed === 1) {
+    return { success: false, isJailed: true, jailReason: save.jail_reason };
+  }
+
+  let currentInv = null;
+  let customPrices = null;
+  let dailyQuests = null;
+  let decorations = null;
+  let properties = null;
+  let farmData = null;
+
+  if (syncData.inventory && typeof syncData.inventory === 'object') {
+    currentInv = { ...DEFAULT_INVENTORY, ...JSON.parse(save.inventory || '{}') };
+    for (const [key, val] of Object.entries(syncData.inventory)) {
+      if (typeof val === 'number' && !isNaN(val)) {
+        currentInv[key] = Math.max(0, Math.floor(val));
+      }
+    }
+  }
+
+  if (syncData.customPrices && typeof syncData.customPrices === 'object') {
+    try {
+      customPrices = JSON.parse(save.custom_prices || '{}');
+      for (const [key, val] of Object.entries(syncData.customPrices)) {
+        if (typeof val === 'number' && val >= 0 && val <= 1000000) {
+          customPrices[key] = Math.floor(val);
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (syncData.dailyQuests && typeof syncData.dailyQuests === 'object') {
+    dailyQuests = syncData.dailyQuests;
+  }
+
+  if (Array.isArray(syncData.decorations)) {
+    decorations = syncData.decorations;
+  }
+
+  if (syncData.farmData && typeof syncData.farmData === 'object') {
+    farmData = syncData.farmData;
+  }
+
+  if (syncData.properties && typeof syncData.properties === 'object') {
+    properties = syncData.properties;
+  }
+
+  // Recalculate save hash
+  const updatedSaveForHash = {
+    store_id: id,
+    chapter: save.chapter,
+    day_in_game: save.day_in_game,
+    money: save.money,
+    debt_remaining: save.debt_remaining,
+    reputation: save.reputation,
+    teacoin: save.teacoin || 0
+  };
+  const saveHash = anticheat.generateSaveHash(updatedSaveForHash);
+
+  // Single optimized dynamic UPDATE
+  const setClauses = ['save_hash = ?', 'updated_at = ?'];
+  const values = [saveHash, new Date().toISOString()];
+
+  if (currentInv !== null) {
+    setClauses.push('inventory = ?');
+    values.push(JSON.stringify(currentInv));
+  }
+  if (customPrices !== null) {
+    setClauses.push('custom_prices = ?');
+    values.push(JSON.stringify(customPrices));
+  }
+  if (dailyQuests !== null) {
+    setClauses.push('daily_quests = ?');
+    values.push(JSON.stringify(dailyQuests));
+  }
+  if (decorations !== null) {
+    setClauses.push('decorations = ?');
+    values.push(JSON.stringify(decorations));
+  }
+  if (farmData !== null) {
+    setClauses.push('farm_data = ?');
+    values.push(JSON.stringify(farmData));
+  }
+  if (properties !== null) {
+    setClauses.push('properties = ?');
+    values.push(JSON.stringify(properties));
+  }
+
+  values.push(id);
+  const sql = `UPDATE game_saves SET ${setClauses.join(', ')} WHERE store_id = ?`;
+  await db.prepare(sql).run(...values);
+
+  // Invalidate in-memory cache
+  invalidateStoreCache(id);
+
+  const state = await getStoreState(id);
+  return {
+    success: true,
+    state,
+    timestamp: Date.now()
+  };
+}
+
 module.exports = {
   generateStoreCode,
   getStaticData,
   getOrCreateStore,
   getStoreState,
-  getCacheStats
+  getCacheStats,
+  syncStoreState
 };

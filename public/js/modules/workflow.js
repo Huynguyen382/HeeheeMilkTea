@@ -4,6 +4,7 @@ import { showToast } from './toast.js';
 import { updateUI } from './ui.js';
 import { scheduleNextOrder, startNextOrderInQueue, handleOrderTimeout } from './order-manager.js';
 import { showJailModal } from './modals.js';
+import { patchLocalSave } from './save-sync.js';
 
 let elOrderSection = null;
 let elBtnShaker = null;
@@ -750,7 +751,37 @@ export function initWorkflow() {
             }, 900);
           }
 
-          state.storeState = await window.API.getState();
+          // Authoritative state update without redundant GET /store/state roundtrip
+          if (state.storeState && state.storeState.save) {
+            const updates = {};
+            if (typeof res.newMoney === 'number') updates.money = res.newMoney;
+            else if (typeof res.money === 'number') updates.money = res.money;
+            if (typeof res.reputation === 'number') updates.reputation = res.reputation;
+            if (res.activeBuffs) updates.active_buffs = res.activeBuffs;
+            if (res.inventory) {
+              updates.inventory = res.inventory;
+            } else {
+              // Optimistically deduct consumed ingredients locally
+              let curInv = state.storeState.save.inventory;
+              if (typeof curInv === 'string') {
+                try { curInv = JSON.parse(curInv); } catch(e) { curInv = {}; }
+              }
+              if (curInv && typeof curInv === 'object') {
+                const teaKey = TEA_INV_MAP[state.selectedTea] || 'tra_den';
+                if (curInv[teaKey] !== undefined) curInv[teaKey] = Math.max(0, curInv[teaKey] - 1);
+                if (curInv['ly_nap'] !== undefined) curInv['ly_nap'] = Math.max(0, curInv['ly_nap'] - 1);
+                (state.selectedToppings || []).forEach(top => {
+                  if (curInv[top] !== undefined) curInv[top] = Math.max(0, curInv[top] - 1);
+                });
+                updates.inventory = curInv;
+              }
+            }
+            patchLocalSave(updates);
+          }
+          if (state.storeState && state.storeState.daily_stats) {
+            if (typeof res.dailyEarned === 'number') state.storeState.daily_stats.earned_today = res.dailyEarned;
+            state.storeState.daily_stats.orders_served = (state.storeState.daily_stats.orders_served || 0) + 1;
+          }
           updateUI();
 
           state.currentOrder = null;

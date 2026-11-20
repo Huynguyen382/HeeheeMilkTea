@@ -483,6 +483,12 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     WHERE store_id = ?
   `).run(newMoney, newRep, JSON.stringify(currentInv), JSON.stringify(activeBuffs), JSON.stringify(dailyQuests), newHash, new Date().toISOString(), storeId);
 
+  // Invalidate in-memory cache to keep state fresh across CCU
+  try {
+    const { invalidateStoreCache } = require('./game/cache.helper');
+    invalidateStoreCache(storeId);
+  } catch (e) {}
+
   return {
     success: true,
     payout,
@@ -496,6 +502,9 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     isOrganic,
     organicRemaining: activeBuffs.organic_signature || 0,
     newMoney,
+    money: newMoney,
+    inventory: currentInv,
+    dailyQuests,
     reputation: newRep,
     repGain,
     isOverloaded: isOverloadedNow,

@@ -22,18 +22,21 @@ const db = {
       types.setTypeParser(20, (val) => (val === null ? null : parseInt(val, 10)));
 
       // Neon PostgreSQL Free Tier Optimized Pool Configuration:
+      // Render Free Tier has 512MB RAM and 1 shared vCPU. Neon Free Tier has connection limits (~20).
+      // max: 10 prevents connection exhaustion and excessive memory per connection.
       // min: 0 allows connections to drain to 0 when idle, enabling Neon compute auto-suspend
-      // idleTimeoutMillis: 15000 closes idle connections quickly
-      // connectionTimeoutMillis: 10000 handles Neon serverless cold-start smoothly
+      // idleTimeoutMillis: 10000 closes idle connections quickly (10s)
+      // connectionTimeoutMillis: 5000 handles connection timeouts promptly
       pgPool = new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
-        max: process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX) : 20,
-        min: 0, // CRITICAL: 0 connections when idle allows Neon to auto-suspend and save compute hours
-        idleTimeoutMillis: 15000, // Close idle connections after 15s so Neon compute sleeps
-        connectionTimeoutMillis: 10000, // 10s timeout allows Neon to wake up from cold start
-        maxUses: 2000,
-        statement_timeout: 8000
+        max: process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX, 10) : 10,
+        min: 0,
+        idleTimeoutMillis: 10000,
+        connectionTimeoutMillis: 5000,
+        maxUses: 1000,
+        statement_timeout: 8000,
+        allowExitOnIdle: true
       });
 
       // Handle pool errors

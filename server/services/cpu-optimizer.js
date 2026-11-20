@@ -199,6 +199,8 @@ class ObjectPool {
         this.factory = factory;
         this.reset = reset;
         this.pool = [];
+        this.release = this.release.bind(this);
+        this.acquire = this.acquire.bind(this);
         
         for (let i = 0; i < initialSize; i++) {
             this.pool.push(factory());

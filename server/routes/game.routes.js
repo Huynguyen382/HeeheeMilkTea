@@ -16,6 +16,47 @@ router.get('/order', authStore, handle('Generate order', req => {
   const isShipper = req.query.isShipper === 'true' || req.query.isShipper === '1';
   return gameService.generateOrder(req.store.id, { isShipper }).then(order => ({ order }));
 }));
+
+// Optimized generate-order endpoint for load-testing simulations & headless order requests
+router.post('/generate-order', async (req, res) => {
+  try {
+    let storeId = req.body.storeId || (req.store && req.store.id);
+    if (!storeId) {
+      return res.status(400).json({ error: 'Thiếu storeId' });
+    }
+    if (typeof storeId === 'string' && isNaN(Number(storeId))) {
+      const storeProfile = await gameService.getOrCreateStore(storeId, storeId);
+      storeId = storeProfile.store_id || storeProfile.id;
+    } else {
+      storeId = Number(storeId);
+    }
+    const { generateOrderOptimized } = require('../services/generate-order-optimized');
+    const order = await generateOrderOptimized(db, storeId);
+    res.json({ success: true, order });
+  } catch (err) {
+    console.error('generate-order error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Batched state synchronization and delta save endpoint (alias to /api/store/sync)
+router.post('/sync', authStore, async (req, res) => {
+  try {
+    res.json(await gameService.syncStoreState(req.store.id, req.body));
+  } catch (err) {
+    console.error('Game sync error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/save', authStore, async (req, res) => {
+  try {
+    res.json(await gameService.syncStoreState(req.store.id, req.body));
+  } catch (err) {
+    console.error('Game save error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 router.post('/serve', authStore, async (req, res) => {
   try {
     const { orderId, timeTaken, recipeId, sugar, ice, toppings, pausedTimeMs } = req.body;
