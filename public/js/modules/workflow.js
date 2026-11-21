@@ -4,7 +4,7 @@ import { showToast } from './toast.js';
 import { updateUI } from './ui.js';
 import { scheduleNextOrder, startNextOrderInQueue, handleOrderTimeout } from './order-manager.js';
 import { showJailModal } from './modals.js';
-import { patchLocalSave } from './save-sync.js';
+import { patchLocalSave, queueServedOrder } from './save-sync.js';
 
 let elOrderSection = null;
 let elBtnShaker = null;
@@ -676,118 +676,111 @@ export function initWorkflow() {
       if (window.sound) window.sound.bell();
 
       try {
-        const res = await window.API.serveOrder(
-          state.currentOrder.orderId,
-          timeTaken,
-          chosenRecipeId,
-          state.selectedSugar,
-          state.selectedIce,
-          state.selectedToppings,
-          state.totalWavePausedTime
-        );
+        // Local-first calculation & immediate response (0ms latency, zero server blocking)
+      const save = state.storeState?.save || {};
+      const customPrices = save.custom_prices || {};
+      const recipesDb = state.storeState?.recipes_db || {};
+      const recipeDef = recipesDb[chosenRecipeId] || { basePrice: 25000 };
+      const rawPrice = customPrices[chosenRecipeId] ? Number(customPrices[chosenRecipeId]) : (recipeDef.basePrice || 25000);
+      const toppingBonus = (state.selectedToppings || []).length * 7000;
+      let calculatedPayout = rawPrice + toppingBonus;
 
-        if (res && res.isJailed) {
-          showJailModal(res.jailReason);
-          return;
+      // Collab bonus check
+      let collabBonusPercent = 0;
+      if (state.canvas?.activeCollabs) {
+        collabBonusPercent = Math.min(3, state.canvas.activeCollabs.length || 0) * 10;
+        calculatedPayout += Math.round(rawPrice * (collabBonusPercent / 100));
+      }
+
+      // Deduct inventory ingredients locally
+      let curInv = save.inventory;
+      if (typeof curInv === 'string') {
+        try { curInv = JSON.parse(curInv); } catch(e) { curInv = {}; }
+      }
+      if (curInv && typeof curInv === 'object') {
+        const teaKey = TEA_INV_MAP[state.selectedTea] || 'tra_den';
+        if (curInv[teaKey] !== undefined) curInv[teaKey] = Math.max(0, curInv[teaKey] - 1);
+        if (curInv['ly_nap'] !== undefined) curInv['ly_nap'] = Math.max(0, curInv['ly_nap'] - 1);
+        (state.selectedToppings || []).forEach(top => {
+          if (curInv[top] !== undefined) curInv[top] = Math.max(0, curInv[top] - 1);
+        });
+      }
+
+      const newMoney = (Number(save.money) || 0) + calculatedPayout;
+      const newRep = Math.min(5.0, (Number(save.reputation) || 4.0) + 0.02);
+
+      patchLocalSave({
+        money: newMoney,
+        reputation: newRep,
+        inventory: curInv
+      });
+
+      if (state.storeState && state.storeState.daily_stats) {
+        state.storeState.daily_stats.earned_today = (Number(state.storeState.daily_stats.earned_today) || 0) + calculatedPayout;
+        state.storeState.daily_stats.orders_served = (Number(state.storeState.daily_stats.orders_served) || 0) + 1;
+      }
+
+      // Queue for background batch sync (zero API calls during active mixing!)
+      queueServedOrder({
+        orderId: state.currentOrder.orderId,
+        timeTaken,
+        recipeId: chosenRecipeId,
+        sugar: state.selectedSugar,
+        ice: state.selectedIce,
+        toppings: state.selectedToppings,
+        clientPayout: calculatedPayout,
+        servedAt: Date.now()
+      });
+
+      if (window.sound) window.sound.coin();
+      clearInterval(state.orderTimerInterval);
+      if (state.canvas) state.canvas.triggerSuccessEffects(calculatedPayout);
+
+      const collabExtra = collabBonusPercent > 0 
+        ? ` (+${collabBonusPercent}% Collab)` 
+        : '';
+
+      if (state.workstation) {
+        state.workstation.triggerHandAction('serve');
+        state.workstation.addFloatingText(`✨ +${calculatedPayout.toLocaleString('vi-VN')}đ${collabExtra}!`, '#50fa7b');
+      }
+
+      const currentOrderObj = state.currentOrder;
+      const isShipperOrder = !!(currentOrderObj && (currentOrderObj.isShipper || currentOrderObj.orderId === state.canvas?.motorbikeShipper?.orderId));
+      const isAutoStaffActive = !!(state.activeStaff && !state.activeStaff.expired);
+
+      state.orderQueue.shift();
+      if (state.canvas && state.canvas.advanceQueue) {
+        state.canvas.advanceQueue();
+      }
+
+      if (isShipperOrder) {
+        const remainingShipperOrders = state.orderQueue.filter(o => o.isShipper).length;
+        if (state.canvas && state.canvas.onShipperOrderServed) {
+          state.canvas.onShipperOrderServed(currentOrderObj.orderId, remainingShipperOrders);
         }
-
-        if (res && res.success) {
-          if (window.sound) window.sound.coin();
-          clearInterval(state.orderTimerInterval);
-          if (state.canvas) state.canvas.triggerSuccessEffects(res.payout);
-
-          const collabExtra = res.collabBonus > 0 
-            ? ` (+${res.collabBonusPercent}% Collab: ${res.activeCollabs} quán)` 
-            : '';
-          const organicExtra = res.isOrganic && res.organicBonus > 0
-            ? ` (🍃 +${res.organicBonus.toLocaleString('vi-VN')}đ Organic 5⭐)`
-            : '';
-
-          if (state.workstation) {
-            state.workstation.triggerHandAction('serve');
-            state.workstation.addFloatingText(`✨ +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}!`, res.isOrganic ? '#2ed573' : '#50fa7b');
+        if (!isAutoStaffActive) {
+          const ms = state.canvas?.motorbikeShipper;
+          const totalCount = ms?.totalCount || 1;
+          const servedCount = ms?.servedCount || 1;
+          if (remainingShipperOrders > 0) {
+            showToast(`📦 Đã giao đơn ${servedCount}/${totalCount} cho Shipper (còn ${remainingShipperOrders} đơn)! +${calculatedPayout.toLocaleString('vi-VN')}đ${collabExtra}`, 1900);
+          } else if (totalCount > 1) {
+            showToast(`🛵 Đã giao đủ ${servedCount}/${totalCount} đơn — Shipper đi giao hàng! +${calculatedPayout.toLocaleString('vi-VN')}đ${collabExtra}`, 2200);
+          } else {
+            showToast(`📦 Đã giao đơn — Shipper đi giao hàng! +${calculatedPayout.toLocaleString('vi-VN')}đ${collabExtra}`, 1800);
           }
+        }
+      } else if (!isAutoStaffActive) {
+        showToast(`🎉 Giao thành công! +${calculatedPayout.toLocaleString('vi-VN')}đ${collabExtra}`, 1800);
+      }
 
-          const currentOrderObj = state.currentOrder;
-          const isShipperOrder = !!(currentOrderObj && (currentOrderObj.isShipper || currentOrderObj.orderId === state.canvas?.motorbikeShipper?.orderId));
-          const isAutoStaffActive = !!(state.activeStaff && !state.activeStaff.expired);
+      updateUI();
 
-          state.orderQueue.shift();
-          if (state.canvas && state.canvas.advanceQueue) {
-            state.canvas.advanceQueue();
-          }
-
-          if (isShipperOrder) {
-            const remainingShipperOrders = state.orderQueue.filter(o => o.isShipper).length;
-            if (state.canvas && state.canvas.onShipperOrderServed) {
-              state.canvas.onShipperOrderServed(currentOrderObj.orderId, remainingShipperOrders);
-            }
-            if (!isAutoStaffActive) {
-              const ms = state.canvas?.motorbikeShipper;
-              const totalCount = ms?.totalCount || 1;
-              const servedCount = ms?.servedCount || 1;
-              if (remainingShipperOrders > 0) {
-                showToast(`📦 Đã giao đơn ${servedCount}/${totalCount} cho Shipper (còn ${remainingShipperOrders} đơn)! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 1900);
-              } else if (totalCount > 1) {
-                showToast(`🛵 Đã giao đủ ${servedCount}/${totalCount} đơn — Shipper đi giao hàng! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 2200);
-              } else {
-                showToast(`📦 Đã giao đơn — Shipper đi giao hàng! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 1800);
-              }
-            }
-          } else if (!isAutoStaffActive) {
-            showToast(`🎉 Giao thành công! +${res.payout.toLocaleString('vi-VN')}đ${collabExtra}${organicExtra}`, 1800);
-          }
-
-          if (res.tiktokerViral) {
-            setTimeout(() => {
-              showToast(`🔥 VIDEO TIKTOK CỦA TÚ VIRAL TRIỆU VIEW! Lượng khách kéo đến nườm nượp!`, 4000);
-            }, 600);
-          }
-
-          if (res.tiktokerGoalReached) {
-            setTimeout(() => {
-              if (window.sound) window.sound.coin();
-              showToast(res.message || `🎉 CHÚC MỪNG! Quán đã đạt doanh thu gấp 3 LẦN vốn từ chiến dịch TikToker!`, 4500);
-            }, 900);
-          }
-
-          // Authoritative state update without redundant GET /store/state roundtrip
-          if (state.storeState && state.storeState.save) {
-            const updates = {};
-            if (typeof res.newMoney === 'number') updates.money = res.newMoney;
-            else if (typeof res.money === 'number') updates.money = res.money;
-            if (typeof res.reputation === 'number') updates.reputation = res.reputation;
-            if (res.activeBuffs) updates.active_buffs = res.activeBuffs;
-            if (res.inventory) {
-              updates.inventory = res.inventory;
-            } else {
-              // Optimistically deduct consumed ingredients locally
-              let curInv = state.storeState.save.inventory;
-              if (typeof curInv === 'string') {
-                try { curInv = JSON.parse(curInv); } catch(e) { curInv = {}; }
-              }
-              if (curInv && typeof curInv === 'object') {
-                const teaKey = TEA_INV_MAP[state.selectedTea] || 'tra_den';
-                if (curInv[teaKey] !== undefined) curInv[teaKey] = Math.max(0, curInv[teaKey] - 1);
-                if (curInv['ly_nap'] !== undefined) curInv['ly_nap'] = Math.max(0, curInv['ly_nap'] - 1);
-                (state.selectedToppings || []).forEach(top => {
-                  if (curInv[top] !== undefined) curInv[top] = Math.max(0, curInv[top] - 1);
-                });
-                updates.inventory = curInv;
-              }
-            }
-            patchLocalSave(updates);
-          }
-          if (state.storeState && state.storeState.daily_stats) {
-            if (typeof res.dailyEarned === 'number') state.storeState.daily_stats.earned_today = res.dailyEarned;
-            state.storeState.daily_stats.orders_served = (state.storeState.daily_stats.orders_served || 0) + 1;
-          }
-          updateUI();
-
-          state.currentOrder = null;
-          state.isShaken = false;
-          state.isPoured = false;
-          state.isSealed = false;
+      state.currentOrder = null;
+      state.isShaken = false;
+      state.isPoured = false;
+      state.isSealed = false;
           if (state.workstation) {
             state.workstation.resetCup(false);
           } else {
@@ -812,17 +805,6 @@ export function initWorkflow() {
               scheduleNextOrder(nextDelay);
             }
           }, 1200);
-        } else {
-          if (res && res.message) {
-            showToast(`❌ ${res.message}`, 4000);
-          }
-          state.isShaken = false;
-          state.isPoured = false;
-          state.isSealed = false;
-          if (state.workstation) state.workstation.resetCupState();
-          updateWorkflowButtons();
-          handleOrderTimeout();
-        }
       } catch (err) {
         console.error('Serve order error:', err);
         elBtnServe.disabled = false;

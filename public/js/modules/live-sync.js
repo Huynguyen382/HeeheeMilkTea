@@ -295,8 +295,13 @@ export function scheduleAdaptiveHeartbeat() {
     return; // Completely paused when backgrounded
   }
 
-  const intervalMs = isSseConnected ? 60000 : 15000;
-  heartbeatInterval = setInterval(pollHeartbeat, intervalMs);
+  // When SSE is connected, do NOT poll at all (zero HTTP requests!).
+  // Only activate fallback poll when SSE connection drops.
+  if (isSseConnected) {
+    return;
+  }
+
+  heartbeatInterval = setInterval(pollHeartbeat, 15000);
 }
 
 /**

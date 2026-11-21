@@ -92,6 +92,10 @@ const API = {
     });
   },
 
+  async serveBatchOrders(orders = []) {
+    return await this.request('/game/serve-batch', 'POST', { orders });
+  },
+
   async snackDecision(accept) {
     return await this.request('/game/snack-decision', 'POST', { accept });
   },

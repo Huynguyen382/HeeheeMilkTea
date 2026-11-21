@@ -15,6 +15,7 @@ const SYNC_DEBOUNCE_MS = 30000; // 30 seconds debounce
 const PERIODIC_SYNC_MS = 60000; // 60 seconds periodic sync check
 
 let dirtyFields = {};
+let pendingServedOrders = [];
 let syncTimeout = null;
 let periodicInterval = null;
 let isSyncing = false;
@@ -96,7 +97,21 @@ export function markDirty(fieldName, value) {
 }
 
 /**
- * Schedule a debounced flush of all pending dirty fields
+ * Queue a completed drink order for batched settlement
+ * @param {object} orderData
+ */
+export function queueServedOrder(orderData) {
+  pendingServedOrders.push(orderData);
+  // Auto-flush when batch hits 6 orders or debounce 20s
+  if (pendingServedOrders.length >= 6) {
+    flushSync();
+  } else {
+    scheduleDebouncedSync(20000);
+  }
+}
+
+/**
+ * Schedule a debounced flush of all pending dirty fields and orders
  */
 export function scheduleDebouncedSync(delay = SYNC_DEBOUNCE_MS) {
   if (syncTimeout) clearTimeout(syncTimeout);
@@ -106,14 +121,15 @@ export function scheduleDebouncedSync(delay = SYNC_DEBOUNCE_MS) {
 }
 
 /**
- * Flush all dirty changes to the server
+ * Flush all dirty changes and served orders to the server
  * @param {object} options
  * @param {boolean} [options.keepalive=false] - For beforeunload/visibilitychange
  */
 export async function flushSync({ keepalive = false } = {}) {
   const fieldsToSync = { ...dirtyFields };
+  const ordersToSync = [...pendingServedOrders];
   const keys = Object.keys(fieldsToSync);
-  if (keys.length === 0) return;
+  if (keys.length === 0 && ordersToSync.length === 0) return;
 
   if (isSyncing && !keepalive) {
     // Already in flight; reschedule after current finishes
@@ -126,47 +142,86 @@ export async function flushSync({ keepalive = false } = {}) {
     syncTimeout = null;
   }
 
-  // Clear dirtyFields so new mutations during in-flight request can accumulate
+  // Clear in-memory queues so mutations during in-flight request can accumulate
   for (const k of keys) {
     delete dirtyFields[k];
   }
+  pendingServedOrders = [];
 
   const token = localStorage.getItem('hyhy_session_token') || (window.API && window.API.token);
   if (!token) return;
 
   if (keepalive) {
     // Modern browser keepalive fetch during tab unload
-    try {
-      fetch('/api/store/sync', {
-        method: 'POST',
-        keepalive: true,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-session-token': token
-        },
-        body: JSON.stringify(fieldsToSync)
-      });
-      console.log('[SaveSync] Sent keepalive sync on unload:', keys);
-    } catch (err) {
-      console.warn('[SaveSync] Keepalive sync failed:', err);
+    if (ordersToSync.length > 0) {
+      try {
+        fetch('/api/game/serve-batch', {
+          method: 'POST',
+          keepalive: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-session-token': token
+          },
+          body: JSON.stringify({ orders: ordersToSync })
+        });
+        console.log('[SaveSync] Sent keepalive served orders batch:', ordersToSync.length);
+      } catch (err) {
+        console.warn('[SaveSync] Keepalive batch serve failed:', err);
+      }
+    }
+    if (keys.length > 0) {
+      try {
+        fetch('/api/store/sync', {
+          method: 'POST',
+          keepalive: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-session-token': token
+          },
+          body: JSON.stringify(fieldsToSync)
+        });
+        console.log('[SaveSync] Sent keepalive state sync on unload:', keys);
+      } catch (err) {
+        console.warn('[SaveSync] Keepalive state sync failed:', err);
+      }
     }
     return;
   }
 
   isSyncing = true;
   try {
-    if (window.API && typeof window.API.syncState === 'function') {
+    // 1. Sync Batched Orders
+    if (ordersToSync.length > 0 && window.API && typeof window.API.serveBatchOrders === 'function') {
+      const orderRes = await window.API.serveBatchOrders(ordersToSync);
+      if (orderRes && orderRes.success) {
+        console.log('[SaveSync] Batched served orders settled:', ordersToSync.length, orderRes);
+        if (state.storeState && state.storeState.save) {
+          const updates = {};
+          if (typeof orderRes.newMoney === 'number') updates.money = orderRes.newMoney;
+          if (typeof orderRes.reputation === 'number') updates.reputation = orderRes.reputation;
+          if (orderRes.inventory) updates.inventory = orderRes.inventory;
+          patchLocalSave(updates);
+        }
+        if (state.storeState && state.storeState.daily_stats) {
+          if (typeof orderRes.dailyEarned === 'number') state.storeState.daily_stats.earned_today = orderRes.dailyEarned;
+          if (typeof orderRes.ordersServed === 'number') state.storeState.daily_stats.orders_served = orderRes.ordersServed;
+        }
+      } else {
+        // Re-queue failed orders
+        pendingServedOrders.unshift(...ordersToSync);
+        scheduleDebouncedSync(15000);
+      }
+    }
+
+    // 2. Sync Dirty Fields
+    if (keys.length > 0 && window.API && typeof window.API.syncState === 'function') {
       const res = await window.API.syncState(fieldsToSync);
       if (res && res.success) {
         console.log('[SaveSync] Batched state sync completed successfully:', keys);
-        if (res.state && state.storeState) {
-          // Merge authoritative timestamp/state if returned
-          if (res.state.save) {
-            patchLocalSave(res.state.save);
-          }
+        if (res.state && state.storeState && res.state.save) {
+          patchLocalSave(res.state.save);
         }
       } else {
-        // Re-queue fields that failed to sync
         for (const [k, v] of Object.entries(fieldsToSync)) {
           if (!dirtyFields[k]) dirtyFields[k] = v;
         }
@@ -174,7 +229,8 @@ export async function flushSync({ keepalive = false } = {}) {
       }
     }
   } catch (err) {
-    console.warn('[SaveSync] Network error during batch sync, re-queueing:', err);
+    console.warn('[SaveSync] Network error during sync, re-queueing:', err);
+    pendingServedOrders.unshift(...ordersToSync);
     for (const [k, v] of Object.entries(fieldsToSync)) {
       if (!dirtyFields[k]) dirtyFields[k] = v;
     }
@@ -220,7 +276,8 @@ export function initSaveSync() {
       flushSync,
       patchLocalSave,
       saveLocalGameState,
-      loadLocalGameState
+      loadLocalGameState,
+      queueServedOrder
     };
   }
 }

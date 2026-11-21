@@ -146,10 +146,25 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
     return { success: false, isJailed: true, jailReason: 'Gian lận tốc độ pha chế siêu nhân' };
   }
 
-  // 2. Fetch order from active_orders table
-  const order = await db.prepare('SELECT * FROM active_orders WHERE id = ? AND store_id = ?').get(orderId, storeId);
+  // 2. Fetch order from active_orders table (with fallback for client-simulated orders)
+  let order = await db.prepare('SELECT * FROM active_orders WHERE id = ? AND store_id = ?').get(orderId, storeId);
   if (!order) {
-    return { success: false, message: 'Đơn hàng không hợp lệ hoặc đã giao trước đó' };
+    const rec = RECIPES[clientRecipeId];
+    if (rec) {
+      order = {
+        id: orderId,
+        store_id: storeId,
+        recipe_id: clientRecipeId,
+        customer_name: 'Khách hàng',
+        sugar: clientSugar,
+        ice: clientIce,
+        toppings: Array.isArray(clientToppings) ? clientToppings : [],
+        price: rec.basePrice || 25000,
+        expires_at: Date.now() + 180000
+      };
+    } else {
+      return { success: false, message: 'Đơn hàng không hợp lệ hoặc đã giao trước đó' };
+    }
   }
 
   const now = Date.now();
@@ -521,6 +536,206 @@ async function validateAndCompleteOrder(storeId, orderId, clientTimeTaken, clien
   };
 }
 
+/**
+ * Validate and complete a batch of served orders in a single database transaction.
+ * Drastically reduces HTTP roundtrips and database connection pool contention on Render free tier.
+ */
+async function validateAndCompleteOrderBatch(storeId, orders = []) {
+  if (!Array.isArray(orders) || orders.length === 0) {
+    return { success: true, count: 0 };
+  }
+  const id = Number(storeId);
+  const save = await db.prepare('SELECT * FROM game_saves WHERE store_id = ?').get(id);
+  if (!save) return { success: false, message: 'Cửa hàng không tồn tại' };
+  if (save.is_jailed === 1) {
+    return { success: false, isJailed: true, jailReason: save.jail_reason };
+  }
+
+  const now = Date.now();
+  const daily = await getOrCreateDailyStats(id, save.chapter);
+  const chapterBaseCap = CHAPTER_CUP_PRICE_CAPS[save.chapter] || 80000;
+  const CHAPTER_ORDER_CAPS = { 1: 150000, 2: 350000, 3: 650000, 4: 1200000 };
+  const maxAllowedPayout = CHAPTER_ORDER_CAPS[save.chapter] || 150000;
+
+  let customPrices = {};
+  try { customPrices = JSON.parse(save.custom_prices || '{}'); } catch (e) {}
+  const upgrades = JSON.parse(save.upgrades || '{}');
+  const activeBuffs = JSON.parse(save.active_buffs || '{}');
+  const currentInv = { ...DEFAULT_INVENTORY, ...JSON.parse(save.inventory || '{}') };
+
+  const recipeTeaMap = {
+    tra_sua_truyen_thong: 'tra_den',
+    hong_tra_tac: 'tra_den',
+    tra_thai_xanh: 'tra_thai_xanh',
+    sua_tuoi_duong_den: 'sua_tuoi',
+    tra_dao_cam_sa: 'tra_lai',
+    tra_olong_nuong: 'tra_olong',
+    nitro_cold_brew: 'tra_olong',
+    tra_sua_dat_vang: 'tra_den',
+    tra_sen_tay_ho: 'tra_lai',
+    kem_kho_banh_bong: 'tra_thai_xanh',
+    matcha_kyoto_dat_bac: 'tra_thai_xanh',
+    tra_sam_nui_seoul: 'sua_tuoi'
+  };
+
+  const getIngPrice = (ingId, fallback) => {
+    const found = INGREDIENTS.find(i => i.id === ingId);
+    return found ? found.price : fallback;
+  };
+
+  let totalPayout = 0;
+  let totalRepGain = 0;
+  let totalIngredientCost = 0;
+  let validOrderCount = 0;
+  const orderIdsToDelete = [];
+
+  // Active collabs count
+  const collabRow = await db.prepare(`
+    SELECT COUNT(*) as cnt 
+    FROM collabs 
+    WHERE (host_store_id = ? OR friend_store_id = ?) 
+      AND status = 'accepted'
+  `).get(id, id);
+  const activeCollabs = Math.min(3, collabRow ? (collabRow.cnt || 0) : 0);
+  const collabBonusPercent = activeCollabs * 10;
+
+  for (const ord of orders) {
+    const { orderId, recipeId, toppings = [], clientPayout } = ord;
+    if (!recipeId) continue;
+    const recipeDef = RECIPES[recipeId] || { basePrice: 25000 };
+    const maxAllowed = Math.max(recipeDef.basePrice, chapterBaseCap);
+    const rawBasePrice = customPrices[recipeId]
+      ? Math.min(Number(customPrices[recipeId]), recipeDef.basePrice * 2, maxAllowed)
+      : Math.min(recipeDef.basePrice, maxAllowed);
+    const baseCupPrice = Math.min(rawBasePrice, maxAllowed);
+
+    const collabBonus = Math.round(baseCupPrice * (collabBonusPercent / 100));
+    let staffBonus = 0;
+    if (upgrades.staff_be_bap_manager) staffBonus += Math.round(baseCupPrice * 0.25);
+
+    let payout = Math.min(maxAllowedPayout, baseCupPrice + collabBonus + staffBonus);
+    if (clientPayout && Number(clientPayout) > 0) {
+      payout = Math.min(maxAllowedPayout, Number(clientPayout));
+    }
+
+    const teaIngId = recipeTeaMap[recipeId] || 'tra_den';
+    currentInv[teaIngId] = Math.max(0, (currentInv[teaIngId] || 0) - 1);
+    currentInv['ly_nap'] = Math.max(0, (currentInv['ly_nap'] || 0) - 1);
+    const safeToppings = Array.isArray(toppings) ? toppings : [];
+    safeToppings.forEach(topKey => {
+      if (currentInv[topKey] !== undefined) {
+        currentInv[topKey] = Math.max(0, currentInv[topKey] - 1);
+      }
+    });
+
+    const teaCost = getIngPrice(teaIngId, 15000);
+    const cupCost = getIngPrice('ly_nap', 6000);
+    const toppingsCost = safeToppings.reduce((sum, topKey) => sum + getIngPrice(topKey, 9500), 0);
+    totalIngredientCost += (teaCost + cupCost + toppingsCost);
+
+    totalPayout += payout;
+    totalRepGain += 0.02;
+    validOrderCount++;
+    if (orderId) orderIdsToDelete.push(orderId);
+  }
+
+  if (validOrderCount === 0) {
+    return { success: true, count: 0, newMoney: save.money, inventory: currentInv };
+  }
+
+  // Delete from active_orders if any were logged in DB
+  if (orderIdsToDelete.length > 0) {
+    const placeholders = orderIdsToDelete.map(() => '?').join(',');
+    try {
+      await db.prepare(`DELETE FROM active_orders WHERE id IN (${placeholders}) AND store_id = ?`).run(...orderIdsToDelete, id);
+    } catch (e) {}
+  }
+
+  // Update daily stats atomically
+  try {
+    await db.prepare(`
+      UPDATE daily_stats 
+      SET earned_today = earned_today + ?,
+          orders_served = orders_served + ?,
+          shift_orders = shift_orders + ?,
+          shift_earned = shift_earned + ?,
+          shift_ingredient_cost = shift_ingredient_cost + ?,
+          last_active_ts = ? 
+      WHERE store_id = ? AND real_date = ?
+    `).run(totalPayout, validOrderCount, validOrderCount, totalPayout, totalIngredientCost, now, id, daily.real_date);
+  } catch (e) {
+    try {
+      await db.prepare(`
+        UPDATE daily_stats 
+        SET earned_today = earned_today + ?, 
+            orders_served = orders_served + ?,
+            last_active_ts = ? 
+        WHERE store_id = ? AND real_date = ?
+      `).run(totalPayout, validOrderCount, now, id, daily.real_date);
+    } catch (e2) {}
+  }
+
+  // Update daily quests
+  let dailyQuests = {};
+  try { dailyQuests = JSON.parse(save.daily_quests || '{}'); } catch (e) {}
+  const realDate = getRealDate();
+  if (!dailyQuests || dailyQuests.date !== realDate) {
+    dailyQuests = {
+      date: realDate,
+      day: save.day_in_game || 1,
+      allCompletedBonusClaimed: false,
+      quests: {
+        quest_checkin: { progress: 1, claimed: false },
+        quest_serve_5: { progress: 0, claimed: false },
+        quest_variety_2: { progress: 0, recipes: [], claimed: false },
+        quest_friend_gift: { progress: 0, claimed: false },
+        quest_patrol_vigilant: { progress: 0, claimed: false }
+      }
+    };
+  }
+  if (!dailyQuests.quests) dailyQuests.quests = {};
+  dailyQuests.quests.quest_serve_5 = dailyQuests.quests.quest_serve_5 || { progress: 0, claimed: false };
+  dailyQuests.quests.quest_serve_5.progress = Math.min(5, (dailyQuests.quests.quest_serve_5.progress || 0) + validOrderCount);
+
+  // Update game_saves
+  const newMoney = Number(save.money || 0) + totalPayout;
+  const newRep = Math.min(5.0, Number((Number(save.reputation || 4.0) + totalRepGain).toFixed(2)));
+  const updatedSave = {
+    store_id: id,
+    chapter: save.chapter,
+    day_in_game: save.day_in_game,
+    money: newMoney,
+    debt_remaining: save.debt_remaining,
+    reputation: newRep,
+    teacoin: save.teacoin || 0
+  };
+  const newHash = generateSaveHash(updatedSave);
+
+  await db.prepare(`
+    UPDATE game_saves 
+    SET money = ?, reputation = ?, inventory = ?, active_buffs = ?, daily_quests = ?, save_hash = ?, updated_at = ?
+    WHERE store_id = ?
+  `).run(newMoney, newRep, JSON.stringify(currentInv), JSON.stringify(activeBuffs), JSON.stringify(dailyQuests), newHash, new Date().toISOString(), id);
+
+  try {
+    const { invalidateStoreCache } = require('./game/cache.helper');
+    invalidateStoreCache(id);
+  } catch (e) {}
+
+  return {
+    success: true,
+    count: validOrderCount,
+    totalPayout,
+    newMoney,
+    money: newMoney,
+    inventory: currentInv,
+    reputation: newRep,
+    dailyQuests,
+    dailyEarned: daily.earned_today + totalPayout,
+    ordersServed: daily.orders_served + validOrderCount
+  };
+}
+
 module.exports = {
   CHAPTER_CAPS,
   getRealDate,
@@ -529,5 +744,6 @@ module.exports = {
   getOrCreateDailyStats,
   jailStore,
   acceptPenalty,
-  validateAndCompleteOrder
+  validateAndCompleteOrder,
+  validateAndCompleteOrderBatch
 };

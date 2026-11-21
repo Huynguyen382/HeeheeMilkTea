@@ -7,6 +7,94 @@ import { startRestCountdown } from './rest.js';
 import { checkThiefEncounter, showSnackModal } from './events.js';
 import { patchLocalSave } from './save-sync.js';
 
+/**
+ * Generate a local customer wave (Client-Authoritative)
+ * Zero network requests, 0ms latency, runs at 60 FPS.
+ */
+export function generateLocalCustomerWave(options = {}) {
+  const save = state.storeState ? (state.storeState.save || state.storeState) : {};
+  const buffs = save.active_buffs || {};
+  const chapter = Number(save.chapter || 1);
+  const recipesDb = state.storeState?.recipes_db || {};
+  
+  let unlockedKeys = Array.isArray(save.recipes) ? save.recipes : ['tra_sua_truyen_thong'];
+  unlockedKeys = unlockedKeys.filter(k => recipesDb[k]);
+  if (unlockedKeys.length === 0) unlockedKeys = ['tra_sua_truyen_thong'];
+
+  let waveSize = 1;
+  const randWave = Math.random();
+  if (options.isShipper) {
+    waveSize = randWave < 0.35 ? 1 : (randWave < 0.70 ? 2 : 3);
+  } else if (buffs.idol_viral) {
+    waveSize = Math.floor(Math.random() * 4) + 6;
+  } else if (chapter >= 3) {
+    waveSize = Math.floor(Math.random() * 4) + 4;
+  } else if (chapter >= 2) {
+    waveSize = Math.floor(Math.random() * 3) + 2;
+  } else {
+    waveSize = randWave < 0.4 ? 1 : (randWave < 0.8 ? 2 : 3);
+  }
+
+  const customersList = (window.CUSTOMERS_LIST && window.CUSTOMERS_LIST.length > 0)
+    ? window.CUSTOMERS_LIST
+    : [
+        { id: 1, type: 1, name: 'Học Sinh Bách Khoa', dialogues: ['Cho mình 1 ly trà sữa nhiều trân châu nhé!'], fav: ['tra_sua_truyen_thong'] },
+        { id: 2, type: 2, name: 'Cô Mai Công Sở', dialogues: ['Làm cho cô 1 ly trà hoa lài ít ngọt nhé!'], fav: ['luc_tra_lai_suong_sao'] }
+      ];
+
+  const sugars = ['0%', '30%', '50%', '70%', '100%'];
+  const ices = ['Nóng', 'Ít đá', 'Vừa đá', 'Đầy đá'];
+  const toppingPool = ['tranchau_den', 'thach_la_dua', 'tranchau_duongden', 'dao_mieng', 'suong_sao'];
+
+  const orders = [];
+  for (let i = 0; i < waveSize; i++) {
+    let cust = customersList[Math.floor(Math.random() * customersList.length)];
+    if (options.isShipper) {
+      const shipper = customersList.find(c => c.isShipper);
+      if (shipper) cust = shipper;
+      else cust = { id: 23, type: 23, name: 'Huy Shipper Bất Bại', isShipper: true, dialogues: ['Đơn app hỏa tốc nè chị ơi!'] };
+    }
+
+    const recipeId = unlockedKeys[Math.floor(Math.random() * unlockedKeys.length)];
+    const recipe = recipesDb[recipeId] || { name: 'Trà Sữa Truyền Thống', basePrice: 25000, tea: 'den' };
+    const sugar = sugars[Math.floor(Math.random() * sugars.length)];
+    const ice = ices[Math.floor(Math.random() * ices.length)];
+
+    const numTops = Math.random() < 0.45 ? 1 : (Math.random() < 0.75 ? 2 : 0);
+    const shuffledTops = [...toppingPool].sort(() => 0.5 - Math.random());
+    const orderToppings = shuffledTops.slice(0, numTops);
+
+    const customPrices = save.custom_prices || {};
+    let price = customPrices[recipeId] ? Number(customPrices[recipeId]) : (recipe.basePrice || 25000);
+    if (orderToppings.length > 0) price += orderToppings.length * 7000;
+
+    const dialogues = cust.dialogues || ['Cho mình 1 ly nha quán ơi!'];
+    const quote = dialogues[Math.floor(Math.random() * dialogues.length)];
+
+    orders.push({
+      orderId: 'ORD-L' + Math.random().toString(36).substring(2, 8),
+      customerType: cust.type || 1,
+      customerName: cust.name || 'Khách Hàng',
+      quote,
+      isTiktoker: !!cust.isTiktoker,
+      isShipper: !!cust.isShipper || !!options.isShipper,
+      recipeId,
+      recipeName: recipe.name,
+      tea: recipe.tea || 'den',
+      recipeDesc: recipe.desc || '',
+      sugar,
+      ice,
+      toppings: orderToppings,
+      price,
+      originalPrice: price,
+      patienceMs: 40000,
+      expiresAt: Date.now() + 180000
+    });
+  }
+
+  return orders;
+}
+
 export async function scheduleNextOrder(delay = 4000) {
   if (state.nextOrderTimeout) clearTimeout(state.nextOrderTimeout);
   if (state.isGamePaused) return;
@@ -15,45 +103,34 @@ export async function scheduleNextOrder(delay = 4000) {
     if (state.isGamePaused) return;
     if (state.currentOrder || (state.orderQueue && state.orderQueue.length > 0)) return;
 
-    const res = await window.API.getOrder();
-    if (!res || !res.order) {
-      scheduleNextOrder(4500);
+    const save = state.storeState ? (state.storeState.save || state.storeState) : {};
+    const now = Date.now();
+
+    // Check rest condition locally
+    if (save.rest_until_ts && now < save.rest_until_ts) {
+      const isEndShift = save.active_buffs?.rest_reason === 'end_shift';
+      startRestCountdown(save.rest_until_ts, isEndShift ? 'end_shift' : 'snack_sick');
       return;
     }
 
-    if (res.order.resting) {
-      startRestCountdown(res.order.restUntil, res.order.restReason || 'snack_sick');
-      return;
+    // Local wave generation (zero network roundtrips)
+    let generatedOrders = [];
+    if (state.storeState && (state.storeState.recipes_db || state.storeState.save)) {
+      generatedOrders = generateLocalCustomerWave();
     }
 
-    if (res.order.isOverloaded) {
-      showToast('🛑 Quán đang chạm hạn mức! Khách hàng vãng lai thưa thớt...', 4000);
-      scheduleNextOrder(12000);
-      return;
+    // Fallback to server API if local store state not yet ready
+    if (!generatedOrders || generatedOrders.length === 0) {
+      const res = await window.API.getOrder();
+      if (res && res.order && res.order.orders) {
+        generatedOrders = res.order.orders;
+      }
     }
 
-    if (res.order.isLowReputation) {
-      showToast(res.order.message || '⚠️ Đánh giá tiệm < 3⭐! Khách hàng e ngại chất lượng, lượng khách giảm 50%... Hãy chủ động mời TikToker review để kéo lại sao!', 5000);
-      scheduleNextOrder(9000);
-      return;
-    }
-
-    // Update active buffs if returned
-    if (res.order.activeBuffs) {
-      updateBuffsUI(res.order.activeBuffs);
-    }
-
-    // Shipper snack offer event
-    if (res.order.snackEvent) {
-      showSnackModal(res.order.snackEvent);
-    }
-
-    // Wave with up to 14 customers queueing
-    if (res.order.orders && res.order.orders.length > 0) {
+    if (generatedOrders.length > 0) {
       state.totalWavePausedTime = 0;
-      // Keep unserved pending orders and append new ones up to max 14 customers
       const pendingQueue = state.orderQueue.filter(o => o.orderId !== (state.currentOrder && state.currentOrder.orderId));
-      state.orderQueue = [...pendingQueue, ...res.order.orders].slice(0, 14);
+      state.orderQueue = [...pendingQueue, ...generatedOrders].slice(0, 14);
 
       const shipperOrders = state.orderQueue.filter(o => o.isShipper);
       if (shipperOrders.length > 0 && state.canvas) {
@@ -211,16 +288,17 @@ export async function handleShipperOrderArrival() {
   if (state.orderQueue && state.orderQueue.length >= 14) return null;
 
   try {
-    const res = await window.API.getOrder(true);
-    if (!res || !res.order) return null;
-
-    if (res.order.resting) {
-      startRestCountdown(res.order.restUntil, res.order.restReason || 'snack_sick');
-      return null;
+    let newOrders = [];
+    if (state.storeState && (state.storeState.recipes_db || state.storeState.save)) {
+      newOrders = generateLocalCustomerWave({ isShipper: true });
     }
-
-    const newOrders = res.order.orders || [];
-    if (newOrders.length === 0) return null;
+    if (!newOrders || newOrders.length === 0) {
+      const res = await window.API.getOrder(true);
+      if (res && res.order && res.order.orders) {
+        newOrders = res.order.orders;
+      }
+    }
+    if (!newOrders || newOrders.length === 0) return null;
 
     newOrders.forEach(o => { o.isShipper = true; });
 

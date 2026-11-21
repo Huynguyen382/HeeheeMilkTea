@@ -47,9 +47,8 @@ export async function initStore() {
         localStorage.setItem(storySeenKey, 'true');
       }
 
-      // Periodic Collab Online Presence & Gifts Badge Sync (Relaxed to 60s, paused when hidden)
+      // On-demand Collab & Gifts Sync (Runs once on startup, and when opening modals - zero polling overhead)
       const syncGiftsAndCollabs = async () => {
-        if (document.visibilityState === 'hidden') return;
         if (!state.isGamePaused && window.API && window.API.token) {
           try {
             const collabsRes = await window.API.getCollabs();
@@ -74,13 +73,8 @@ export async function initStore() {
           } catch (e) {}
         }
       };
+      window.refreshCollabsAndGifts = syncGiftsAndCollabs;
       syncGiftsAndCollabs();
-      if (!window.__collabSyncInterval) {
-        window.__collabSyncInterval = setInterval(syncGiftsAndCollabs, 60000);
-        document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') syncGiftsAndCollabs();
-        });
-      }
 
       scheduleNextOrder(1500);
       return;

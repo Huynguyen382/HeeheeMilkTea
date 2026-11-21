@@ -64,6 +64,21 @@ router.post('/serve', authStore, async (req, res) => {
     res.json(await anticheat.validateAndCompleteOrder(req.store.id, orderId, Number(timeTaken), recipeId, sugar, ice, toppings, Number(pausedTimeMs || 0)));
   } catch (err) { console.error('Serve order error:', err); res.status(500).json({ error: err.message }); }
 });
+
+const handleServeBatch = async (req, res) => {
+  try {
+    const orders = req.body.orders || req.body;
+    if (!Array.isArray(orders) || orders.length === 0) {
+      return res.status(400).json({ error: 'Danh sách đơn rỗng' });
+    }
+    res.json(await anticheat.validateAndCompleteOrderBatch(req.store.id, orders));
+  } catch (err) {
+    console.error('Serve batch error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+router.post('/serve-batch', authStore, handleServeBatch);
+router.post('/order/serve-batch', authStore, handleServeBatch);
 router.post('/snack-decision', authStore, handle('Snack decision', req => gameService.handleSnackDecision(req.store.id, !!req.body.accept)));
 router.post('/order-fail', authStore, handle('Order fail', req => gameService.recordOrderFailure(req.store.id, req.body.orderId, !!req.body.isTiktoker)));
 router.get('/collabs', authStore, handle('Get collabs', req => gameService.getCollabData(req.store.id)));
