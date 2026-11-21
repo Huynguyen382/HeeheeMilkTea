@@ -4,6 +4,7 @@ import { updateMixingButtonsState } from './workflow.js';
 import { renderTiktokerModal } from './events.js';
 import { showToast } from './toast.js';
 import { updateWeatherUI } from './weather.js';
+import { updateHUDStoryQuestTracker, initHUDStoryQuestTracker, checkDynamicMilestones } from './story-tracker.js';
 
 // DOM Element cache
 const elStoreName = document.getElementById('store-name');
@@ -210,6 +211,10 @@ export function updateUI() {
 
   // Update Dynamic Weather HUD badge & sync Canvas
   updateWeatherUI(state.storeState.weather);
+
+  // Update Main Story Quest Tracker & Check Dynamic Story Milestones
+  updateHUDStoryQuestTracker();
+  checkDynamicMilestones();
 
   // Debt warning hint in HUD
   const hudDebtWrap = document.getElementById('hud-debt-wrap');
@@ -997,6 +1002,9 @@ export function initUIControls() {
       }
     }, true);
   }
+
+  // Initialize HUD Story Quest Tracker Widget
+  initHUDStoryQuestTracker();
 }
 
 

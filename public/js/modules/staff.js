@@ -559,7 +559,18 @@ function renderStaffModalContent(data) {
     </div>
 
     <div class="staff-candidates-grid">
-      ${data.candidates.map(c => `
+      ${data.candidates.map(c => {
+        const upgrades = state.storeState?.save?.upgrades || {};
+        const isPromoted = (c.id === 'be_bap' && upgrades.staff_be_bap_manager) || (c.id === 'anh_lam' && upgrades.staff_anh_lam_captain);
+        const certBtnHtml = isPromoted ? `
+          <div style="margin: 4px 0 2px 0;">
+            <button type="button" class="btn-view-cert" data-cert-npc="${c.id}" style="background: rgba(244, 196, 48, 0.18); border: 1px solid #f4c430; color: #f4c430; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font-weight: bold;">
+              📜 Xem Bằng Khen Bổ Nhiệm
+            </button>
+          </div>
+        ` : '';
+
+        return `
         <div class="candidate-card ${selectedNpcId === c.id ? 'selected' : ''}" data-card-npc="${c.id}" style="${selectedNpcId === c.id ? 'border-color: #00cec9; box-shadow: 0 0 10px rgba(0,206,201,0.3);' : ''}">
           <div class="candidate-header">
             <div class="staff-avatar-circle">${c.avatar}</div>
@@ -569,6 +580,7 @@ function renderStaffModalContent(data) {
             </div>
           </div>
           <div class="candidate-trait">✨ <b>${c.trait}:</b> ${c.desc}</div>
+          ${certBtnHtml}
           <div class="candidate-quote">"${c.quote}"</div>
           <div class="candidate-footer">
             <span class="candidate-rate">⚡ ${c.baseRate} ly/h • <span class="hire-cost-label">${selectedHours * hourlyRate} TC (${selectedHours}h)</span></span>
@@ -577,7 +589,8 @@ function renderStaffModalContent(data) {
             </button>
           </div>
         </div>
-      `).join('')}
+      `;
+      }).join('')}
     </div>
   `;
 
@@ -612,7 +625,7 @@ function setupStaffModalEvents(data) {
   // Chọn thẻ ứng viên
   document.querySelectorAll('.candidate-card[data-card-npc]').forEach(card => {
     card.addEventListener('click', (e) => {
-      if (e.target.closest('.btn-hire-action')) return;
+      if (e.target.closest('.btn-hire-action') || e.target.closest('.btn-view-cert')) return;
       selectedNpcId = card.getAttribute('data-card-npc') || 'be_bap';
       document.querySelectorAll('.candidate-card[data-card-npc]').forEach(c => {
         const isSel = c.getAttribute('data-card-npc') === selectedNpcId;
@@ -620,6 +633,17 @@ function setupStaffModalEvents(data) {
         c.style.borderColor = isSel ? '#00cec9' : '';
         c.style.boxShadow = isSel ? '0 0 10px rgba(0,206,201,0.3)' : '';
       });
+    });
+  });
+
+  // Xem bằng khen bổ nhiệm
+  document.querySelectorAll('.btn-view-cert[data-cert-npc]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const npc = btn.getAttribute('data-cert-npc');
+      if (typeof window.showStaffPromotionCertificate === 'function') {
+        window.showStaffPromotionCertificate(npc);
+      }
     });
   });
 

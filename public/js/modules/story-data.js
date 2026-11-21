@@ -1,4 +1,5 @@
 // Narrative & Story Tutorial Script Data for Chapters
+// Includes Chapter Openings, Tutorials, and Story Milestone Cutscenes
 
 export const STORY_DATA = {
   1: {
@@ -59,6 +60,17 @@ export const STORY_DATA = {
         role: 'Mục Tiêu Trả Nợ & Lên Chương',
         text: 'Và điều quan trọng nhất: Hãy bấm vào nút [Trả Nợ] bất cứ khi nào có dư tiền mặt!\n\nTrả dần từng khoản 500.000đ hoặc gom đủ 3.000.000đ trả sạch nợ cho Anh Bảnh để xóa sổ nợ, chính thức làm chủ tiệm và MỞ KHÓA CHƯƠNG 2: GÓC HẺM SINH VIÊN!\n\nKhách hàng đầu tiên đang tới rồi, cùng chiến thôi nào!',
         hint: { icon: '🚀', text: 'Chúc bạn buôn may bán đắt và sớm trở thành Vua Trà Sữa!' }
+      },
+      // CHAPTER 1 SCENE 9: MID-CHAPTER MILESTONE CUTSCENE
+      {
+        id: 'c1_milestone_1_5m',
+        isMilestone: true,
+        milestoneTitle: 'Cột Mốc 1.5 Triệu: Anh Bảnh Bất Ngờ',
+        avatar: '🕶️',
+        speaker: 'Anh Bảnh (Bất Ngờ & Kính Nể)',
+        role: 'Cột Mốc 1.5 Triệu: Anh Bảnh Bất Ngờ',
+        text: 'Này con bé HeeHee! Hôm nay tao tạt qua góc phố định kiểm tra xem mày có tính bùng nợ bỏ trốn không...\n\nThế quái nào mà tao thấy mày đứng pha trà thoăn thoắt, khách xếp hàng dài từ đầu ngõ đến cuối phố thế kia?! Quan trọng hơn: Cuốn sổ nợ của tao báo mày đã trả được đúng 1.500.000đ — TRÒN MỘT NỬA SỐ NỢ!\n\nTao cho vay ở cái đất này mười mấy năm rồi, đứa nào vay nợ vỉa hè đa phần ngày thứ ba là dẹp tiệm trốn chui trốn lủi. Vậy mà mày và hai đứa nhóc kia lại kiên cường thế này... Tao Anh Bảnh đầu gấu nhưng cũng biết nể người có chí khí! Cố lên con bé, tao chờ ngày xé giấy nợ cho mày!\n\nÀ mà... cho tao một ly Trà Đen Đậm trân châu đen, 30% đường, nhiều đá nhé! Tiền tươi đây, không trừ vào nợ đâu!',
+        hint: { icon: '🕶️', text: 'Cột mốc 1.5 Triệu: Anh Bảnh ngạc nhiên trước sự kiên cường của HeeHee và dặn dò cố lên!' }
       }
     ]
   },
@@ -113,6 +125,17 @@ export const STORY_DATA = {
         role: 'Chinh phục Phố Thương Mại',
         text: 'Tuyệt vời! Chúng ta vừa phục vụ khách tận tâm bằng những ly trà hảo hạng, vừa vận dụng chiến thuật thông minh để bảo vệ thị phần!\n\nMục tiêu lớn nhất của Chương 2: Gom đủ 50.000.000đ để thuê mặt bằng lớn tại Phố Thương Mại sầm uất!\n\nCả đội cùng cố gắng nào!',
         hint: { icon: '🏆', text: 'Tích lũy 50.000.000đ để hoàn thành Chương 2 và tiến vào Phố Thương Mại!' }
+      },
+      // CHAPTER 2 SCENE 8: MID-CHAPTER MILESTONE CUTSCENE
+      {
+        id: 'c2_milestone_25m',
+        isMilestone: true,
+        milestoneTitle: 'Cột Mốc 25 Triệu: Lão Ba Tung Đòn Hiểm',
+        avatar: '🦹‍♂️',
+        speaker: 'Lão Ba & Đội Phản Ứng Nhanh',
+        role: 'Cột Mốc 25 Triệu: Lão Ba Tung Đòn Hiểm',
+        text: 'Lão Ba (Chủ Trâu Vàng đập bàn nghiến răng): "25 TRIỆU ĐỒNG?! Một con bé xe đẩy vỉa hè mà dám cán mốc doanh thu 25 triệu ngay trước mũi quán Trâu Vàng của tao à? Mày ép tao phải tung đòn hiểm rồi!"\n\n🚨 CÒI BÁO ĐỘNG VANG LÊN!\nLão Ba vừa thuê tài khoản TikTok triệu view tung tin giật gân bôi nhọ chất lượng trà, đồng thời bấm số gọi đường dây nóng Quản Lý Thị Trường ập tới kiểm tra đột xuất hòng niêm phong quầy xe HeeHee!\n\n🌽 Bé Bắp bình tĩnh chìa ngay hồ sơ: "Chị HeeHee kích hoạt [🛡️ Giấy Chứng Nhận ATTP 5 Sao] để hóa giải ngay lệnh kiểm tra!"\n🛵 Anh Lâm mở camera điện thoại: "Anh cũng livestream trực tiếp quy trình pha chế sạch bằng [🎥 Video Đính Chính & Phỏng Vấn]! Toàn bộ sinh viên Bách Khoa đang rầm rộ đứng về phía tiệm mình!"\n\n🧋 HeeHee: "Đòn hiểm đã bị bẻ gãy hoàn toàn! Hãy luôn chuẩn bị sẵn Thẻ Phòng Thủ trong mục Nâng Cấp để bảo vệ tiệm và vững bước cán mốc 50 triệu nào!"',
+        hint: { icon: '🛡️', text: 'Cột mốc 25 Triệu: Lão Ba tung đòn hiểm! Hãy dùng Thẻ Phòng Thủ để bảo vệ thương hiệu và bứt phá!' }
       }
     ]
   },
@@ -153,6 +176,17 @@ export const STORY_DATA = {
         role: 'Menu Thượng Lưu & Nhượng Quyền',
         text: 'Tại Flagship Store, chúng ta mở khóa thực đơn thượng lưu: Trà Sữa Dát Vàng 24K, Nitro Cold Brew, Trà Sen Tây Hồ Thượng Hạng, Kem Khò Bánh Bỏng!\n\nKhách VIP ngồi lại còn hào phóng bo thêm tiền Tip siêu khủng từ 15k - 30k mỗi ly!\n\nMục tiêu tiếp theo: Tích lũy 100.000.000đ để tiến tới Chương 4 - Nhượng quyền toàn cầu!',
         hint: { icon: '🚀', text: 'Khai phá thực đơn thượng lưu, thu tiền tip Dine-In và chuẩn bị cho Đế Chế Nhượng Quyền!' }
+      },
+      // CHAPTER 3 SCENE 6: MID-CHAPTER MILESTONE CUTSCENE
+      {
+        id: 'c3_milestone_moc_chau',
+        isMilestone: true,
+        milestoneTitle: 'Khủng Hoảng Nguyên Liệu & Bước Ngoặt Nông Trại Mộc Châu',
+        avatar: '🍃',
+        speaker: 'Bé Bắp & Anh Lâm (Hội Nghị Khẩn)',
+        role: 'Khủng Hoảng Nguyên Liệu & Bước Ngoặt Mộc Châu',
+        text: '🏛️ Flagship Store 2 tầng Phố Đi Bộ đang bùng nổ: Ban công tầng 2 chật kín khách VIP, đơn app nổ liên thanh! Nhưng một cơn khủng hoảng nghiêm trọng bất ngờ ập đến:\n\n🌽 Bé Bắp (Cửa Hàng Trưởng hớt hải): "Chị HeeHee ơi nguy to rồi! Các sạp buôn ở Chợ Đầu Mối thấy tiệm mình phát đạt nên bắt tay nhau ép giá cốt trà lên gấp 3 lần, lại còn tuồn trà cũ ẩm mốc không đảm bảo vệ sinh!"\n\n🛵 Anh Lâm (Đội Trưởng Logistics đập bàn): "Tuyệt đối không thể để chất lượng ly trà HeeHee phụ thuộc vào tay đám gian thương ép giá! Đội xe của anh sẵn sàng vượt đèo Tây Bắc xuyên đêm! Anh đề xuất chúng ta tự chủ nguồn cung: [🌱 KHAI PHÁ ĐỒI CHÈ MỘC CHÂU HỮU CƠ]!"\n\n🧋 HeeHee: "Một bước đi chiến lược chuẩn xác! Tự trồng búp trà sạch không chỉ giảm 40% chi phí nguyên liệu mà còn tạo nên dòng trà Signature Organic 5⭐ chuẩn vị thượng lưu! Chúng ta lập tức xuất phát lên Mộc Châu nào!"',
+        hint: { icon: '🌱', text: 'Bước ngoặt Nông Trại Mộc Châu: Quán 2 tầng tự chủ nguồn cung búp trà Organic 5⭐!' }
       }
     ]
   },
@@ -193,6 +227,17 @@ export const STORY_DATA = {
         role: 'Mục tiêu tối thượng',
         text: 'Mục tiêu tối thượng của Chương 4:\n\n• Nâng cấp các chi nhánh lên cấp độ 5 sao!\n• Sở hữu công thức Matcha Kyoto Dát Bạc và các bảo vật trà quý!\n• Tích lũy khối tài sản 200.000.000đ để bước lên ngôi vị VUA TRÀ SỮA ĐÔ THỊ TOÀN CẦU (Boba Tycoon Legend)!\n\nCùng viết tiếp trang sử huy hoàng cho Tiệm Trà Sữa HeeHee nào!',
         hint: { icon: '🏆', text: 'Chinh phục ngôi vị Vua Trà Sữa Đô Thị Toàn Cầu!' }
+      },
+      // CHAPTER 4 SCENE 6: MID-CHAPTER MILESTONE CUTSCENE
+      {
+        id: 'c4_milestone_auction',
+        isMilestone: true,
+        milestoneTitle: 'Đại Chiến Đấu Giá Quốc Tế',
+        avatar: '🔨',
+        speaker: 'Chủ Tịch HeeHee & Sàn Đấu Giá',
+        role: 'Đại Chiến Đấu Giá Quốc Tế',
+        text: '🌐 Sàn Đấu Giá Quốc Tế Tokyo & Seoul — Nơi hội tụ các tập đoàn F&B đa quốc gia hùng mạnh nhất châu Á:\n\n🔨 Đấu Giá Viên: "Và sau đây là mẻ trà báu vật của phiên đấu giá: [TRÀ CỔ THỤ TÀ XÙA 300 NĂM NGẬM SƯƠNG] từ đỉnh non cao Việt Nam! Giá khởi điểm: 50.000 USD!"\n\n🏢 Tập Đoàn Tokyo Shibuya: "75.000 USD! Mẻ trà này phải về tay chuỗi trà đạo Nhật Bản!"\n🏢 Tập Đoàn Seoul Myeongdong: "95.000 USD! Chúng tôi sẽ biến nó thành biểu tượng trà hoàng gia!"\n\n👑 Chủ Tịch HeeHee hiên ngang giơ bảng số 88: "130.000 USD! Tinh hoa trà ngàn năm của non sông Việt Nam phải do chính người Việt nâng niu và tự hào mang ra đãi bạn bè quốc tế!"\n\n[KENG! KENG! KENG!] Tiếng búa chốt giá vang dội cả hội trường! Toàn bộ đại diện quốc tế đồng loạt đứng dậy vỗ tay thán phục khí phách của HeeHee Global! Trà Cổ Thụ Việt Nam chính thức bước lên đỉnh vinh quang!',
+        hint: { icon: '🏆', text: 'Đại chiến Đấu Giá Quốc Tế: Tranh đoạt mẻ trà Cổ Thụ Tà Xùa 300 năm trước Tokyo & Seoul!' }
       }
     ]
   },
@@ -240,8 +285,119 @@ export const STORY_DATA = {
         role: 'Từ Đáy Trái Tim',
         text: 'Nhưng thành tựu kỳ diệu nhất của ngày hôm nay... chính là nhờ có BẠN - người cộng sự tận tụy đã sát cánh cùng HeeHee qua từng ca bán vất vả, từng cơn mưa rào và từng đợt bão đơn hàng!\n\nCảm ơn bạn đã biến ước mơ vỉa hè nhỏ bé thành một Huyền Thoại Vũ Trụ rực rỡ! Hãy tiếp tục tận hưởng niềm vui làm chủ tiệm và cùng HeeHee viết tiếp những câu chuyện tuyệt vời nhé! 🧋✨',
         hint: { icon: '💖', text: 'Cảm ơn bạn đã đồng hành và hoàn thành trọn vẹn Cốt Truyện HeeHee Boba Tycoon!' }
+      },
+      // CHAPTER 5 SCENE 7: GRAND EPILOGUE MILESTONE CUTSCENE
+      {
+        id: 'c5_milestone_grand_epilogue',
+        isMilestone: true,
+        milestoneTitle: 'Đại Tiệc Tri Ân Thiên Hà (Grand Epilogue)',
+        avatar: '🌌',
+        speaker: 'Đại Gia Đình Tiệm Trà Sữa HeeHee',
+        role: 'Đại Tiệc Tri Ân Thiên Hà (Grand Epilogue)',
+        text: '✨ Dưới bầu trời Trạm Không Gian lung linh ngàn tinh tú, ánh sáng neon tím thạch anh của chiếc Siêu Xe Đẩy [Cosmic Coffee Cart] chiếu rọi khắp quảng trường Ngân Hà rực rỡ!\n\n🕶️ Anh Bảnh (khoác vest bảnh bao, cụng ly): "Ai mà tin được con bé rụt rè vay nóng 3 triệu năm xưa giờ đã thành Nữ Hoàng Vũ Trụ! Đời tao chỉ tự hào nhất một điều: Năm đó tao đã cho đúng người vay!"\n🦹‍♂️ Lão Ba (cười sảng khoái): "Ta cũng tự hào vì đã chuyển giao xưởng trân châu nghệ nhân cho cháu! Hương vị trà sữa HeeHee mãi mãi là số một!"\n👵 Cô Mai & Bo Sao Đỏ: "Cả khu phố và trường Bách Khoa hôm nay rộn ràng mở tiệc theo dõi lễ phát sóng trực tiếp từ vũ trụ đấy cháu ơi!"\n🎒 Bé Hạnh (bán vé số năm xưa): "Chị HeeHee ơi, nhờ có Quỹ Học Bổng HeeHee mà hôm nay em đã được bước chân vào giảng đường đại học rồi nè!"\n\n🌽 Bé Bắp & 🛵 Anh Lâm (đồng thanh): "Chúc mừng Chị Cả! Mọi giọt mồ hôi, mọi chuyến xe đêm vượt đèo đều đã đơm hoa kết trái rực rỡ!"\n\n🧋 HeeHee (rưng rưng nước mắt, hướng về màn hình): "Và người đặc biệt nhất... chính là BẠN! Cảm ơn bạn đã luôn tin tưởng, đồng hành và cùng HeeHee biến giấc mơ nhỏ bé bên vỉa hè thành một Huyền Thoại Vĩnh Cửu giữa các vì sao! Nào mọi người... 1, 2, 3... CÙNG NÂNG LY HEEHEE NÀO! 🧋🎉👑"',
+        hint: { icon: '👑', text: 'Grand Epilogue: Tất cả nhân vật hội tụ, nâng ly chúc mừng đại kết cục hoàn mỹ của HeeHee!' }
       }
     ]
   }
 };
 
+// Story Milestone & Memory Album Badges Catalog
+export const STORY_MILESTONES = [
+  {
+    id: 'c1_milestone_1_5m',
+    chapter: 1,
+    sceneIdx: 8,
+    title: 'Cột Mốc 1.5 Triệu: Anh Bảnh Bất Ngờ',
+    shortDesc: 'Anh Bảnh ghé quầy kiểm tra, ngạc nhiên vì sự kiên cường của HeeHee và dặn dò cố lên.',
+    badgeId: 'badge_banh_respect',
+    badgeName: '🏅 Trượng Nghĩa Phố Cũ',
+    badgeIcon: '🕶️',
+    badgeDesc: 'Đạt mốc trả nợ 1.500.000đ và khiến gã chủ nợ Anh Bảnh nể phục mua ủng hộ ly trà đen.',
+    reward: 'Mở khóa Hồi Ức & Huy Hiệu 🏅',
+    checkUnlocked: (save) => {
+      if (!save) return false;
+      const chapter = save.chapter || 1;
+      const debt = save.debt_remaining !== undefined ? save.debt_remaining : 3000000;
+      return chapter > 1 || debt <= 1500000;
+    }
+  },
+  {
+    id: 'c2_milestone_25m',
+    chapter: 2,
+    sceneIdx: 7,
+    title: 'Cột Mốc 25 Triệu: Lão Ba Tung Đòn Hiểm',
+    shortDesc: 'Lão Ba giở trò bóc phốt và gọi quản lý thị trường, khích lệ người chơi dùng thẻ phòng thủ và bứt phá.',
+    badgeId: 'badge_lao_ba_counter',
+    badgeName: '🛡️ Bản Lĩnh Doanh Nhân',
+    badgeIcon: '🦹‍♂️',
+    badgeDesc: 'Đạt doanh thu 25.000.000đ tại Cổng Phụ Bách Khoa và hóa giải đòn bẩn cạnh tranh.',
+    reward: 'Mở khóa Hồi Ức & Huy Hiệu 🛡️',
+    checkUnlocked: (save) => {
+      if (!save) return false;
+      const chapter = save.chapter || 1;
+      const money = save.money !== undefined ? save.money : (save.cash || 0);
+      return chapter > 2 || (chapter >= 2 && money >= 25000000);
+    }
+  },
+  {
+    id: 'c3_milestone_moc_chau',
+    chapter: 3,
+    sceneIdx: 5,
+    title: 'Khủng Hoảng Nguyên Liệu & Bước Ngoặt Nông Trại Mộc Châu',
+    shortDesc: 'Quán 2 tầng quá tải, thiếu lá trà sạch, Bé Bắp và Anh Lâm đề xuất khai phá đồi chè Mộc Châu.',
+    badgeId: 'badge_moc_chau_farm',
+    badgeName: '🌱 Nông Trại Đồi Chè 5⭐',
+    badgeIcon: '🍃',
+    badgeDesc: 'Vượt qua khủng hoảng nguyên liệu bằng chiến lược tự chủ Đồi Chè Mộc Châu Organic.',
+    reward: 'Mở khóa Hồi Ức & Huy Hiệu 🌱',
+    checkUnlocked: (save) => {
+      if (!save) return false;
+      const chapter = save.chapter || 1;
+      let upgrades = {};
+      try {
+        upgrades = typeof save.upgrades === 'string' ? JSON.parse(save.upgrades || '{}') : (save.upgrades || {});
+      } catch (e) {}
+      const money = save.money !== undefined ? save.money : (save.cash || 0);
+      return chapter > 3 || (chapter >= 3 && (upgrades.staff_be_bap_manager || upgrades.staff_anh_lam_captain || money >= 60000000));
+    }
+  },
+  {
+    id: 'c4_milestone_auction',
+    chapter: 4,
+    sceneIdx: 5,
+    title: 'Đại Chiến Đấu Giá Quốc Tế',
+    shortDesc: 'Tranh đoạt mẻ trà cổ thụ Tà Xùa trước các tập đoàn ngoại quốc tại Tokyo & Seoul.',
+    badgeId: 'badge_auction_victory',
+    badgeName: '🏆 Vang Danh Trà Cổ Thụ',
+    badgeIcon: '🔨',
+    badgeDesc: 'Chiến thắng phiên đấu giá quốc tế, đưa báu vật Trà Cổ Thụ Tà Xùa vươn tầm năm châu.',
+    reward: 'Mở khóa Hồi Ức & Huy Hiệu 🏆',
+    checkUnlocked: (save) => {
+      if (!save) return false;
+      const chapter = save.chapter || 1;
+      let upgrades = {};
+      try {
+        upgrades = typeof save.upgrades === 'string' ? JSON.parse(save.upgrades || '{}') : (save.upgrades || {});
+      } catch (e) {}
+      const money = save.money !== undefined ? save.money : (save.cash || 0);
+      return chapter > 4 || (chapter >= 4 && (save.auction_won_count > 0 || upgrades.auction_won > 0 || money >= 120000000));
+    }
+  },
+  {
+    id: 'c5_milestone_grand_epilogue',
+    chapter: 5,
+    sceneIdx: 6,
+    title: 'Đại Tiệc Tri Ân Thiên Hà (Grand Epilogue)',
+    shortDesc: 'Tất cả nhân vật: HeeHee, Bé Bắp, Anh Lâm, Anh Bảnh, Lão Ba, Cô Mai, Bé Hạnh vé số, Bo Sao Đỏ cùng nâng ly chúc mừng.',
+    badgeId: 'badge_grand_epilogue',
+    badgeName: '👑 Vua Trà Sữa Vũ Trụ',
+    badgeIcon: '🌌',
+    badgeDesc: 'Hội tụ tất cả nhân vật trong đêm tiệc Tri Ân Thiên Hà, hoàn thành toàn bộ cốt truyện!',
+    reward: 'Danh Hiệu Vua Vũ Trụ 👑',
+    checkUnlocked: (save) => {
+      if (!save) return false;
+      const chapter = save.chapter || 1;
+      return chapter >= 5;
+    }
+  }
+];

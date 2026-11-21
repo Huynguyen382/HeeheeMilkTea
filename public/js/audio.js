@@ -795,6 +795,31 @@ class SoundManager {
     } catch (e) {}
   }
 
+  // Tiếng ăn mừng chiến thắng / thăng chức / vượt cột mốc (Celebration fanfare)
+  celebration() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00];
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+        gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.36);
+      });
+      setTimeout(() => {
+        if (typeof this.bell === 'function') this.bell();
+      }, 350);
+    } catch (e) {}
+  }
+
   // --- BACKGROUND MUSIC CONTROLLER ---
   // Cycles through tracks: Track 0 -> Track 1 -> Track 2 -> Track 3 -> Mute -> Track 0
   cycleBGM() {

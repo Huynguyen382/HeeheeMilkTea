@@ -132,6 +132,28 @@
       <span>⚠️ <b>Đánh giá tiệm < 3⭐:</b> Khách e ngại, lượng khách giảm 50%!</span>
       <button id="btn-invite-tiktoker-banner" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); border: none; border-radius: 4px; padding: 2px 6px; color: #fff; font-weight: bold; cursor: pointer; font-size: 0.82rem; margin-left: 6px; white-space: nowrap;">📣 Mời TikToker (25k)</button>
     </div>
+
+    <!-- MAIN STORY QUEST TRACKER (HUD WIDGET) -->
+    <div id="hud-story-quest-tracker" class="hud-story-tracker" title="Bấm để mở Cột Mốc Chương">
+      <div class="tracker-inner" id="hud-quest-tracker-click-area">
+        <div class="tracker-left">
+          <div class="tracker-icon-badge" id="tracker-icon-badge">🎯</div>
+          <div class="tracker-body">
+            <div class="tracker-headline">
+              <span class="tracker-chap-tag" id="tracker-chap-tag">Chương 1</span>
+              <span class="tracker-objective" id="tracker-objective">🎯 Nhiệm vụ: Trả nợ cho Anh Bảnh (1.500.000đ / 3.000.000đ)</span>
+              <span class="tracker-progress-tag" id="tracker-progress-tag">1.5M / 3M</span>
+            </div>
+            <div class="tracker-bar-wrap" id="tracker-bar-wrap">
+              <div class="tracker-bar-fill" id="tracker-bar-fill" style="width: 50%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="tracker-right">
+          <button id="btn-collapse-tracker" class="btn-tracker-toggle" title="Thu gọn / Mở rộng" aria-label="Toggle Quest Tracker">▾</button>
+        </div>
+      </div>
+    </div>
   </header>
 
   <!-- CANVAS SCENE -->
@@ -1602,6 +1624,7 @@
         <button id="story-tab-dialogue" class="story-tab-btn active">🎭 Cốt Truyện</button>
         <button id="story-tab-daily-quests" class="story-tab-btn" style="color: #00cec9;">📋 Nhiệm Vụ Ngày</button>
         <button id="story-tab-quests" class="story-tab-btn">🎯 Cột Mốc Chương</button>
+        <button id="story-tab-album" class="story-tab-btn" style="color: #ff79c6;">📸 Album Hồi Ức</button>
         <button id="story-tab-guide" class="story-tab-btn">📜 Sổ Tay Pha Chế</button>
       </div>
 
@@ -1699,6 +1722,20 @@
               Khoản nợ 3.000.000đ của Anh Bảnh là gông cùm ban đầu. Hãy vào mục <b>Trả Nợ</b> để trả góp (mỗi lần 500k hoặc trả hết). Trả sạch nợ sẽ lập tức <b>Mở Khóa Chương 2: Góc Hẻm Sinh Viên</b>!
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: ALBUM HỒI ỨC & HUY HIỆU CỘT MỐC (MEMORY ALBUM) -->
+      <div id="story-view-album" style="display: none; max-height: 65vh; overflow-y: auto; padding-right: 4px;">
+        <div style="font-size: 0.92rem; color: #ff79c6; margin-bottom: 8px; font-weight: bold; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,121,198,0.3); padding-bottom: 4px;">
+          <span>📸 ALBUM HỒI ỨC & HUY HIỆU CỘT MỐC</span>
+          <span id="story-album-unlocked-count" style="font-size: 0.8rem; background: rgba(255,121,198,0.2); border: 1px solid #ff79c6; padding: 2px 8px; border-radius: 10px; color: #fff;">0 / 5</span>
+        </div>
+        <div style="font-size: 0.82rem; color: #cbd5e1; margin-bottom: 12px; line-height: 1.45;">
+          Những cột mốc và bước ngoặt cảm xúc định hình nên hành trình Tiệm Trà Sữa HeeHee. Nhấn <b>[🎬 Xem Lại Cắt Cảnh]</b> để thưởng thức lại câu chuyện và chiêm ngưỡng các huy hiệu kỷ niệm đã mở khóa!
+        </div>
+        <div id="story-album-list" class="album-badge-list" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Dynamically rendered via story.js -->
         </div>
       </div>
     </div>
@@ -2209,6 +2246,79 @@
       </div>
       <div id="staff-offline-summary-body">
         <!-- Rendered by staff.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BẰNG KHEN & QUYẾT ĐỊNH BỔ NHIỆM CHỨC DANH NHÂN VIÊN (RETRO CERTIFICATE) -->
+  <div class="modal-overlay" id="modal-staff-certificate" style="z-index: 100010; display: none;">
+    <div class="modal-content staff-cert-modal-content">
+      <div class="cert-outer-frame">
+        <div class="cert-inner-border">
+          <div class="cert-header">
+            <div class="cert-seal-star">⭐ ⭐ ⭐</div>
+            <div class="cert-corp-name">TIỆM TRÀ SỮA HEEHEE ENTERPRISE</div>
+            <h1 class="cert-main-title">📜 QUYẾT ĐỊNH BỔ NHIỆM CHỨC DANH</h1>
+            <div class="cert-ref-no" id="cert-ref-no">Số: 03/QĐ-BN-HEEHEE/2026</div>
+          </div>
+
+          <div class="cert-body">
+            <div class="cert-profile-section">
+              <div class="cert-avatar-wrapper">
+                <div class="cert-avatar" id="cert-avatar">👩‍💼</div>
+                <div class="cert-badge-tag" id="cert-badge-tag">HUY HIỆU VÀNG</div>
+              </div>
+              <div class="cert-recipient-info">
+                <div class="cert-sub-label">Trân trọng trao tặng:</div>
+                <div class="cert-recipient-name" id="cert-recipient-name">NGUYỄN THỊ BÉ BẮP</div>
+                <div class="cert-promoted-title" id="cert-promoted-title">CỬA HÀNG TRƯỞNG (STORE MANAGER)</div>
+              </div>
+            </div>
+
+            <div class="cert-text-content" id="cert-text-content">
+              Ghi nhận những đóng góp và sự cống hiến kiên cường cùng HeeHee từ những ngày đầu xe đẩy vỉa hè nợ 3 triệu.
+            </div>
+
+            <div class="cert-perks-box">
+              <div class="cert-perks-title">✨ ĐẶC QUYỀN & NĂNG LỰC ĐƯỢC TRAO QUYỀN:</div>
+              <ul class="cert-perks-list" id="cert-perks-list">
+                <li><b>Tự động dập nắp ly 100%</b>: Tốc độ pha chế x2 siêu tốc.</li>
+                <li><b>Tăng +25% Doanh thu toàn tiệm</b>: Quản lý quầy chuyên nghiệp chuẩn 5⭐.</li>
+              </ul>
+            </div>
+
+            <div class="cert-quote-box" id="cert-quote-box">
+              <span class="cert-quote-icon">“</span>
+              <span id="cert-quote-text">Chúc mừng người cộng sự tuyệt vời nhất của tiệm!</span>
+              <span class="cert-quote-icon">”</span>
+            </div>
+
+            <div class="cert-signatures-row">
+              <div class="cert-sign-left">
+                <div class="cert-sign-role">Ban Điều Hành</div>
+                <div class="cert-sign-name">HeeHee Studio</div>
+              </div>
+              <div class="cert-stamp-wrap">
+                <div class="cert-red-seal" id="cert-red-seal">
+                  <div class="seal-inner">
+                    <span>ĐÃ PHÊ DUYỆT</span>
+                    <span style="font-size: 1.2rem;">💮</span>
+                    <span>HEEHEE TRÀ SỮA</span>
+                  </div>
+                </div>
+              </div>
+              <div class="cert-sign-right">
+                <div class="cert-sign-role">Nhà Sáng Lập & Chủ Quán</div>
+                <div class="cert-sign-sign">HeeHee</div>
+                <div class="cert-sign-name">(Ký & Đóng Dấu)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cert-footer">
+            <button id="btn-close-certificate" class="btn-cert-accept">🎉 TIẾP NHẬN BỔ NHIỆM & BẮT ĐẦU CA LÀM</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -22,6 +22,87 @@ export function showJailModal(reason) {
   if (modal) modal.style.display = 'flex';
 }
 
+// 2. Staff Appointment Certificate Dialog Modal
+export function showStaffPromotionCertificate(staffId) {
+  const modalCert = document.getElementById('modal-staff-certificate');
+  if (!modalCert) return;
+
+  const isBeBap = (staffId === 'staff_be_bap_manager' || staffId === 'be_bap');
+  
+  const elAvatar = document.getElementById('cert-avatar');
+  const elBadgeTag = document.getElementById('cert-badge-tag');
+  const elName = document.getElementById('cert-recipient-name');
+  const elTitle = document.getElementById('cert-promoted-title');
+  const elText = document.getElementById('cert-text-content');
+  const elPerks = document.getElementById('cert-perks-list');
+  const elQuote = document.getElementById('cert-quote-text');
+  const elRefNo = document.getElementById('cert-ref-no');
+
+  if (isBeBap) {
+    if (elAvatar) elAvatar.innerText = '👩‍💼';
+    if (elBadgeTag) elBadgeTag.innerText = '⭐ HUY HIỆU VÀNG QUẢN LÝ ⭐';
+    if (elName) elName.innerText = 'NGUYỄN THỊ BÉ BẮP';
+    if (elTitle) elTitle.innerText = 'CỬA HÀNG TRƯỞNG (STORE MANAGER)';
+    if (elRefNo) elRefNo.innerText = 'Số: 01/QĐ-BN-HEEHEE/CHƯƠNG-3';
+    if (elText) {
+      elText.innerHTML = 'Ghi nhận sự kiên cường và lòng tận tụy không ngừng nghỉ của <b>Bé Bắp</b> từ những ngày đầu xe đẩy vỉa hè nợ 3 triệu cho đến Flagship Store 2 tầng hôm nay.<br>Hội Đồng Sáng Lập quyết định trao toàn quyền điều hành quầy bar và quy trình pha chế cho đồng chí!';
+    }
+    if (elPerks) {
+      elPerks.innerHTML = `
+        <li><b>Tự động dập nắp ly 100%</b>: Tự động niêm phong nắp ngay khi rót cốc xong, tăng tốc độ phục vụ x2.</li>
+        <li><b>Tăng +25% Giá trị mọi đơn hàng</b>: Kỹ năng quản lý tài chính & upsell chuẩn Barista 5 sao.</li>
+        <li><b>Mở khóa danh hiệu</b>: Cửa Hàng Trưởng Xuất Sắc Nhất Chuỗi Tiệm HeeHee!</li>
+      `;
+    }
+    if (elQuote) {
+      elQuote.innerText = 'Từ nay quầy pha chế chị HeeHee cứ yên tâm giao cho em! Em sẽ dập nắp thoăn thoắt không để khách đợi 1 giây nào!';
+    }
+  } else {
+    // Anh Lâm
+    if (elAvatar) elAvatar.innerText = '🏍️';
+    if (elBadgeTag) elBadgeTag.innerText = '⚡ HUY HIỆU TỐC ĐỘ LOGISTICS ⚡';
+    if (elName) elName.innerText = 'TRẦN VĂN ANH LÂM';
+    if (elTitle) elTitle.innerText = 'ĐỘI TRƯỞNG LOGISTICS & VẬN TẢI (SUPPLY CHAIN CAPTAIN)';
+    if (elRefNo) elRefNo.innerText = 'Số: 02/QĐ-BN-HEEHEE/CHƯƠNG-3';
+    if (elText) {
+      elText.innerHTML = 'Tuyên dương tinh thần trách nhiệm bất kể mưa giông bão táp của <b>Anh Lâm Shipper</b>.<br>Nay chính thức bổ nhiệm làm Tổng Chỉ Huy Hạm Đội Xe Vận Tải, bao quát toàn bộ mạng lưới giao hàng và chuỗi cung ứng nguyên liệu đồi chè Mộc Châu!';
+    }
+    if (elPerks) {
+      elPerks.innerHTML = `
+        <li><b>Chỉ huy hạm đội xe Wave & Dream chiến</b>: Phủ sóng giao hàng thần tốc khắp các quận đô thị.</li>
+        <li><b>Tăng +35% Doanh thu mọi đơn shipper</b>: Tối ưu hóa lộ trình giao hàng và nhận bão tiền tip thưởng.</li>
+        <li><b>Mở khóa danh hiệu</b>: Bàn Tay Vàng Vận Tải Đô Thị Chuỗi Tiệm HeeHee!</li>
+      `;
+    }
+    if (elQuote) {
+      elQuote.innerText = 'Đội xe Dream chiến của anh đã nổ máy sẵn sàng! Bất kể đơn xa tới đâu cũng ship nóng hổi tận tay khách!';
+    }
+  }
+
+  // Play celebration sound
+  if (window.sound && typeof window.sound.celebration === 'function') {
+    window.sound.celebration();
+  } else if (window.sound && typeof window.sound.bossVictory === 'function') {
+    window.sound.bossVictory();
+  }
+
+  modalCert.style.display = 'flex';
+
+  const btnClose = document.getElementById('btn-close-certificate');
+  if (btnClose) {
+    btnClose.onclick = () => {
+      modalCert.style.display = 'none';
+      showToast('🎉 Chúc mừng đồng chí đã nhận nhiệm vụ mới!', 3000);
+    };
+  }
+  modalCert.onclick = (e) => {
+    if (e.target === modalCert) {
+      modalCert.style.display = 'none';
+    }
+  };
+}
+window.showStaffPromotionCertificate = showStaffPromotionCertificate;
+
 export function initModals() {
   // Jail button handler
   const btnCloseJail = document.getElementById('btn-close-jail');
@@ -1084,11 +1165,60 @@ export function initModals() {
     if (badgeMua) badgeMua.innerText = `Sở hữu: ${countMua}/5 thẻ`;
   }
 
+  function refreshUpgradesUI() {
+    const save = state.storeState?.save || {};
+    let upgrades = {};
+    try {
+      upgrades = typeof save.upgrades === 'string' ? JSON.parse(save.upgrades) : (save.upgrades || {});
+    } catch (e) {
+      upgrades = {};
+    }
+
+    let recipes = [];
+    try {
+      recipes = typeof save.recipes === 'string' ? JSON.parse(save.recipes) : (save.recipes || []);
+    } catch (e) {
+      recipes = [];
+    }
+
+    document.querySelectorAll('[data-buy-upgrade]').forEach(btn => {
+      const upId = btn.getAttribute('data-buy-upgrade');
+      if (upId === 'staff_be_bap_manager' && upgrades.staff_be_bap_manager) {
+        btn.innerText = 'Đã Thăng Chức ✅ (Xem Bằng Khen 📜)';
+        btn.style.background = 'linear-gradient(135deg, #f4c430, #27ae60)';
+        btn.disabled = false;
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          showStaffPromotionCertificate('staff_be_bap_manager');
+        };
+      } else if (upId === 'staff_anh_lam_captain' && upgrades.staff_anh_lam_captain) {
+        btn.innerText = 'Đã Thăng Chức ✅ (Xem Bằng Khen 📜)';
+        btn.style.background = 'linear-gradient(135deg, #ff79c6, #27ae60)';
+        btn.disabled = false;
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          showStaffPromotionCertificate('staff_anh_lam_captain');
+        };
+      } else if (upId.startsWith('recipe_')) {
+        const recipeKey = upId.replace('recipe_', '');
+        if (recipes.includes(recipeKey)) {
+          btn.innerText = 'Đã Thêm Vào Menu ✅';
+          btn.style.background = '#27ae60';
+          btn.disabled = true;
+        }
+      } else if (upgrades[upId] && upId !== 'bua_an_than' && !upId.startsWith('the_')) {
+        btn.innerText = 'Đã Sở Hữu ✅';
+        btn.disabled = true;
+      }
+    });
+  }
+
   if (navUpgrades) {
     navUpgrades.addEventListener('click', () => {
       if (modalUpgrades) {
         modalUpgrades.style.display = 'flex';
         updateSabotageCardsBadgeUI();
+        refreshUpgradesUI();
       }
     });
   }
@@ -1102,6 +1232,14 @@ export function initModals() {
   document.querySelectorAll('[data-buy-upgrade]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const upId = btn.getAttribute('data-buy-upgrade');
+      // If already upgraded staff, clicking opens certificate
+      const upgradesObj = state.storeState?.save?.upgrades || {};
+      if ((upId === 'staff_be_bap_manager' && upgradesObj.staff_be_bap_manager) ||
+          (upId === 'staff_anh_lam_captain' && upgradesObj.staff_anh_lam_captain)) {
+        showStaffPromotionCertificate(upId);
+        return;
+      }
+
       btn.disabled = true;
       try {
         const res = await window.API.buyUpgrade(upId);
@@ -1117,7 +1255,14 @@ export function initModals() {
           }
           updateUI();
           updateSabotageCardsBadgeUI();
-          if (upId !== 'bua_an_than' && !upId.startsWith('the_')) {
+          refreshUpgradesUI();
+
+          // Feature 3: Staff Promotion Letters / Certificates Dialog
+          if (upId === 'staff_be_bap_manager' || upId === 'staff_anh_lam_captain') {
+            setTimeout(() => {
+              showStaffPromotionCertificate(upId);
+            }, 300);
+          } else if (upId !== 'bua_an_than' && !upId.startsWith('the_')) {
             btn.innerText = upId.startsWith('recipe_') ? 'Đã Thêm Vào Menu ✅' : 'Đã Sở Hữu ✅';
             if (upId.startsWith('recipe_')) btn.style.background = '#27ae60';
             btn.disabled = true;

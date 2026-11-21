@@ -1,6 +1,6 @@
-// Story & Narrative Guided Tutorial System
+// Story & Narrative Guided Tutorial System & Memory Album Badges
 import { state } from './state.js';
-import { STORY_DATA } from './story-data.js';
+import { STORY_DATA, STORY_MILESTONES } from './story-data.js';
 import { showToast } from './toast.js';
 
 let storyChapter = 1;
@@ -13,10 +13,12 @@ let navStory = null;
 
 let tabDialogue = null;
 let tabQuests = null;
+let tabAlbum = null;
 let tabGuide = null;
 
 let viewDialogue = null;
 let viewQuests = null;
+let viewAlbum = null;
 let viewGuide = null;
 
 let storyTitleEl = null;
@@ -34,12 +36,15 @@ let btnStoryReplay = null;
 let storyStepIndicator = null;
 let storyQuestList = null;
 
+let storyAlbumList = null;
+let storyAlbumUnlockedCount = null;
+
 export function openStoryModal(sceneIdx = 0, chapterNum = null) {
   const currentChapter = state.storeState?.save?.chapter || 1;
   const debt = state.storeState?.save?.debt_remaining ?? 3000000;
 
   if (chapterNum && chapterNum >= 2) {
-    if (currentChapter < 2 && debt > 0) {
+    if (currentChapter < chapterNum && debt > 0 && currentChapter === 1) {
       showToast('🔒 Bạn chưa trả hết nợ! Cần trả sạch 3.000.000đ nợ mới có thể mở Chương 2!', 3500);
       storyChapter = 1;
     } else {
@@ -63,9 +68,10 @@ export function closeStoryModal() {
 }
 
 export function switchStoryTab(tabName) {
-  [tabDialogue, tabQuests, tabGuide].forEach(t => t && t.classList.remove('active'));
+  [tabDialogue, tabQuests, tabAlbum, tabGuide].forEach(t => t && t.classList.remove('active'));
   if (viewDialogue) viewDialogue.style.display = 'none';
   if (viewQuests) viewQuests.style.display = 'none';
+  if (viewAlbum) viewAlbum.style.display = 'none';
   if (viewGuide) viewGuide.style.display = 'none';
 
   if (tabName === 'dialogue') {
@@ -75,6 +81,10 @@ export function switchStoryTab(tabName) {
     if (tabQuests) tabQuests.classList.add('active');
     if (viewQuests) viewQuests.style.display = 'block';
     renderStoryQuests();
+  } else if (tabName === 'album') {
+    if (tabAlbum) tabAlbum.classList.add('active');
+    if (viewAlbum) viewAlbum.style.display = 'block';
+    renderMemoryAlbum();
   } else if (tabName === 'guide') {
     if (tabGuide) tabGuide.classList.add('active');
     if (viewGuide) viewGuide.style.display = 'block';
@@ -89,7 +99,23 @@ export function renderStoryScene(idx) {
   storySceneIdx = idx;
 
   const sc = scenes[storySceneIdx];
-  if (storyTitleEl) storyTitleEl.innerText = chap.title;
+
+  // If this is a milestone scene, record it as unlocked
+  if (sc.isMilestone && sc.id) {
+    try {
+      localStorage.setItem('heehee_milestone_' + sc.id, 'unlocked');
+      localStorage.setItem('heehee_milestone_seen_' + sc.id, 'true');
+    } catch (e) {}
+  }
+
+  if (storyTitleEl) {
+    if (sc.isMilestone) {
+      storyTitleEl.innerHTML = `<span style="color: #ff79c6; font-weight: bold;">⭐ [CỘT MỐC]: ${sc.milestoneTitle || chap.title}</span>`;
+    } else {
+      storyTitleEl.innerText = chap.title;
+    }
+  }
+
   if (storyAvatarEl) storyAvatarEl.innerText = sc.avatar || '🧋';
   if (storyNameEl) storyNameEl.innerText = sc.speaker || 'HeeHee';
   if (storyRoleEl) storyRoleEl.innerText = sc.role || 'Cô Chủ Nhỏ';
@@ -137,7 +163,7 @@ export function renderStoryScene(idx) {
 
   if (btnStoryNext) {
     if (storySceneIdx === scenes.length - 1) {
-      btnStoryNext.innerText = '🚀 BẮT ĐẦU PHA CHẾ NGAY!';
+      btnStoryNext.innerText = sc.isMilestone ? '✨ ĐÃ HIỂU & TIẾP TỤC!' : '🚀 BẮT ĐẦU PHA CHẾ NGAY!';
       btnStoryNext.style.background = 'linear-gradient(180deg, #50fa7b, #2e8b57)';
     } else {
       btnStoryNext.innerText = 'Tiếp tục ▶';
@@ -247,7 +273,7 @@ export function renderStoryQuests() {
     ];
   } else if (viewingChapter === 2) {
     const isChap2Passed = currentChapter > 2;
-    const targetMoney = 50000000; // Mục tiêu Endgame Chương 2
+    const targetMoney = 50000000;
     quests = [
       {
         id: 'c2_q1', icon: '📦', title: 'Bài Toán Chi Phí',
@@ -503,6 +529,179 @@ export function renderStoryQuests() {
   }).join('');
 }
 
+// Check if a milestone is unlocked in save or localStorage
+export function isMilestoneUnlocked(milestoneId, save = null) {
+  if (!save) save = state.storeState?.save || {};
+  try {
+    if (typeof localStorage !== 'undefined') {
+      if (localStorage.getItem('heehee_milestone_' + milestoneId) === 'unlocked' ||
+          localStorage.getItem('heehee_milestone_seen_' + milestoneId) === 'true') {
+        return true;
+      }
+    }
+  } catch (e) {}
+  const m = STORY_MILESTONES.find(item => item.id === milestoneId);
+  if (m && typeof m.checkUnlocked === 'function') {
+    const passed = m.checkUnlocked(save);
+    if (passed) {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('heehee_milestone_' + milestoneId, 'unlocked');
+        }
+      } catch (e) {}
+      return true;
+    }
+  }
+  return false;
+}
+
+// Render Memory Album Badges & Replay Buttons
+export function renderMemoryAlbum() {
+  if (!storyAlbumList) storyAlbumList = document.getElementById('story-album-list');
+  if (!storyAlbumList) return;
+  if (!storyAlbumUnlockedCount) storyAlbumUnlockedCount = document.getElementById('story-album-unlocked-count');
+
+  const save = state.storeState?.save || {};
+  let unlockedCount = 0;
+
+  const html = STORY_MILESTONES.map(m => {
+    const isUnlocked = isMilestoneUnlocked(m.id, save);
+    if (isUnlocked) unlockedCount++;
+
+    const borderStyle = isUnlocked ? '1px solid #ff79c6' : '1px solid #4a2635';
+    const bgStyle = isUnlocked ? 'linear-gradient(135deg, rgba(255, 121, 198, 0.12), rgba(34, 18, 32, 0.85))' : 'rgba(25, 14, 24, 0.6)';
+    const iconFilter = isUnlocked ? 'none' : 'grayscale(1) opacity(0.5)';
+    const statusBadge = isUnlocked
+      ? '<span style="background: #50fa7b; color: #111; font-weight: bold; font-size: 0.72rem; padding: 2px 7px; border-radius: 10px;">🏅 ĐÃ MỞ KHÓA</span>'
+      : '<span style="background: #44475a; color: #cbd5e1; font-weight: bold; font-size: 0.72rem; padding: 2px 7px; border-radius: 10px;">🔒 CHƯA ĐẠT</span>';
+
+    const actionBtn = isUnlocked
+      ? `<button type="button" class="btn-replay-milestone" data-milestone-id="${m.id}" data-chap="${m.chapter}" data-scene="${m.sceneIdx}" style="background: linear-gradient(180deg, #ff79c6, #bd93f9); color: #111; border: none; border-radius: 6px; padding: 5px 10px; font-size: 0.82rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(255,121,198,0.3); transition: transform 0.15s ease;">
+          <span>🎬 Xem Lại Cắt Cảnh</span>
+        </button>`
+      : `<span style="font-size: 0.75rem; color: #6272a4; font-style: italic;">Chưa thể xem lại</span>`;
+
+    return `
+      <div class="album-badge-card" style="background: ${bgStyle}; border: ${borderStyle}; border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: ${isUnlocked ? '0 3px 10px rgba(255, 121, 198, 0.15)' : 'none'};">
+        <div style="font-size: 2.2rem; min-width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); filter: ${iconFilter};">
+          ${m.badgeIcon}
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <div style="font-weight: bold; font-size: 0.95rem; color: ${isUnlocked ? '#ff79c6' : '#94a3b8'};">
+              ${m.badgeName}
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+          <div style="font-size: 0.84rem; color: ${isUnlocked ? '#f1fa8c' : '#64748b'}; font-weight: 600; margin-top: 2px;">
+            ${m.title}
+          </div>
+          <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 4px; line-height: 1.35;">
+            ${m.badgeDesc}
+          </div>
+          <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <span style="font-size: 0.73rem; color: #50fa7b; background: rgba(80, 250, 123, 0.1); border: 1px solid rgba(80, 250, 123, 0.25); padding: 2px 6px; border-radius: 4px;">
+              🎁 ${m.reward}
+            </span>
+            <div>${actionBtn}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  storyAlbumList.innerHTML = html;
+  if (storyAlbumUnlockedCount) {
+    storyAlbumUnlockedCount.innerText = `${unlockedCount} / ${STORY_MILESTONES.length}`;
+  }
+
+  // Bind replay buttons to jump straight to cutscenes
+  storyAlbumList.querySelectorAll('.btn-replay-milestone').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const chap = parseInt(btn.dataset.chap, 10);
+      const scene = parseInt(btn.dataset.scene, 10);
+      openStoryModal(scene, chap);
+      if (window.sound && window.sound.bell) window.sound.bell();
+    });
+  });
+}
+
+// Trigger a specific milestone cutscene automatically (e.g. from gameplay events)
+export function triggerMilestoneCutscene(milestoneId, force = true) {
+  const m = STORY_MILESTONES.find(item => item.id === milestoneId);
+  if (!m) {
+    console.warn('Unknown milestoneId:', milestoneId);
+    return false;
+  }
+
+  const seenKey = 'heehee_milestone_seen_' + milestoneId;
+  let alreadySeen = false;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      alreadySeen = localStorage.getItem(seenKey) === 'true';
+    }
+  } catch (e) {}
+
+  if (alreadySeen && !force) {
+    return false;
+  }
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(seenKey, 'true');
+      localStorage.setItem('heehee_milestone_' + milestoneId, 'unlocked');
+    }
+  } catch (e) {}
+
+  if (window.sound) {
+    if (typeof window.sound.celebration === 'function') {
+      window.sound.celebration();
+    } else if (typeof window.sound.bossVictory === 'function') {
+      window.sound.bossVictory();
+    } else if (typeof window.sound.bell === 'function') {
+      window.sound.bell();
+    }
+  }
+
+  showToast(`🎉 MỞ KHÓA HỒI ỨC: ${m.title}! Nhận huy hiệu ${m.badgeName}!`, 4500);
+  openStoryModal(m.sceneIdx, m.chapter);
+  return true;
+}
+
+// Direct jump to milestone cutscene
+export function openStoryModalAtMilestone(milestoneId) {
+  const m = STORY_MILESTONES.find(item => item.id === milestoneId);
+  if (m) {
+    openStoryModal(m.sceneIdx, m.chapter);
+  }
+}
+
+// Check newly unlocked milestones based on current save
+export function checkAndUnlockMilestones() {
+  const save = state.storeState?.save;
+  if (!save) return [];
+  const newlyUnlocked = [];
+
+  STORY_MILESTONES.forEach(m => {
+    const seenKey = 'heehee_milestone_seen_' + m.id;
+    let isSeen = false;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        isSeen = localStorage.getItem(seenKey) === 'true';
+      }
+    } catch (e) {}
+    if (!isSeen && m.checkUnlocked(save)) {
+      newlyUnlocked.push(m);
+    }
+  });
+
+  return newlyUnlocked;
+}
+
+export function getStoryMilestones() {
+  return STORY_MILESTONES;
+}
+
 export function initStory() {
   modalStory = document.getElementById('modal-story');
   closeStory = document.getElementById('close-story');
@@ -511,10 +710,12 @@ export function initStory() {
 
   tabDialogue = document.getElementById('story-tab-dialogue');
   tabQuests = document.getElementById('story-tab-quests');
+  tabAlbum = document.getElementById('story-tab-album');
   tabGuide = document.getElementById('story-tab-guide');
 
   viewDialogue = document.getElementById('story-view-dialogue');
   viewQuests = document.getElementById('story-view-quests');
+  viewAlbum = document.getElementById('story-view-album');
   viewGuide = document.getElementById('story-view-guide');
 
   storyTitleEl = document.getElementById('story-chapter-title');
@@ -532,8 +733,17 @@ export function initStory() {
   storyStepIndicator = document.getElementById('story-step-indicator');
   storyQuestList = document.getElementById('story-quest-list');
 
-  // Attach global for backwards compatibility
+  storyAlbumList = document.getElementById('story-album-list');
+  storyAlbumUnlockedCount = document.getElementById('story-album-unlocked-count');
+
+  // Attach global functions for backwards compatibility and cross-module calls
   window.openStoryModal = openStoryModal;
+  window.triggerMilestoneCutscene = triggerMilestoneCutscene;
+  window.openStoryModalAtMilestone = openStoryModalAtMilestone;
+  window.isMilestoneUnlocked = isMilestoneUnlocked;
+  window.checkAndUnlockMilestones = checkAndUnlockMilestones;
+  window.renderMemoryAlbum = renderMemoryAlbum;
+  window.getStoryMilestones = getStoryMilestones;
 
   if (btnStoryHeader) btnStoryHeader.addEventListener('click', () => openStoryModal());
   if (navStory) navStory.addEventListener('click', () => openStoryModal());
@@ -541,6 +751,7 @@ export function initStory() {
 
   if (tabDialogue) tabDialogue.addEventListener('click', () => switchStoryTab('dialogue'));
   if (tabQuests) tabQuests.addEventListener('click', () => switchStoryTab('quests'));
+  if (tabAlbum) tabAlbum.addEventListener('click', () => switchStoryTab('album'));
   if (tabGuide) tabGuide.addEventListener('click', () => switchStoryTab('guide'));
 
   const tabDailyQuests = document.getElementById('story-tab-daily-quests');
@@ -582,4 +793,3 @@ export function initStory() {
     });
   }
 }
-
