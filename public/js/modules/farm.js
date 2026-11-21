@@ -442,6 +442,24 @@ export async function handleFertilize(plotId) {
 }
 
 /**
+ * Story milestone check for first organic harvest
+ */
+function checkFarmStoryMilestone() {
+  if (typeof localStorage === 'undefined') return;
+  const key = 'heehee_farm_first_harvest_done';
+  if (!localStorage.getItem(key)) {
+    localStorage.setItem(key, 'true');
+    setTimeout(() => {
+      if (window.sound && typeof window.sound.bell === 'function') window.sound.bell();
+      const save = state.storeState?.save || {};
+      save.teacoin = (save.teacoin || 0) + 20;
+      updateTeaCoinDisplay(save.teacoin);
+      alert('🌿 [BƯỚC NGOẶT CỐT TRUYỆN: ĐỒI CHÈ MỘC CHÂU]\n\nBà Trùm Trà Tiên Nhi (Nghệ Nhân Mộc Châu):\n"Khen cho cô bé HeeHee! Nhờ bàn tay chăm sóc cần mẫn của cháu mà những búp trà Shan tuyết và sen Tây Hồ đã đơm chồi nảy lộc trở lại!\n\nThay mặt bà con nông dân đồi chè, ta trao tặng tiệm BẰNG CHỨNG NHẬN TRÀ HỮU CƠ OCOP 5 SAO cùng 20 TeaCoin khích lệ! Từ nay các ly trà của cháu sẽ luôn mang hương vị thanh khiết tự nhiên nhất!"\n\n🎁 Thưởng: +20 TeaCoin & Chứng nhận Nông trại 5⭐');
+    }, 400);
+  }
+}
+
+/**
  * Xử lý thu hoạch 1 ô đất
  */
 export async function handleHarvest(plotId) {
@@ -457,6 +475,7 @@ export async function handleHarvest(plotId) {
     if (res.inventory && state.storeState) {
       state.storeState.save.inventory = res.inventory;
     }
+    checkFarmStoryMilestone();
     await refreshFarmData();
   } catch (err) {
     console.error('handleHarvest error:', err);
@@ -480,6 +499,7 @@ export async function handleHarvestAll() {
     if (res.inventory && state.storeState) {
       state.storeState.save.inventory = res.inventory;
     }
+    checkFarmStoryMilestone();
     await refreshFarmData();
   } catch (err) {
     console.error('handleHarvestAll error:', err);

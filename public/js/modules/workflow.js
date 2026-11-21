@@ -180,7 +180,12 @@ export function renderOrderTicket() {
   const charObj = (typeof window.getCharacter === 'function')
     ? window.getCharacter(state.currentOrder.customerName || state.currentOrder.customerType)
     : null;
-  const roleBadge = charObj && charObj.role
+  const isVIPOrder = !!state.currentOrder.isStoryVIP;
+  const vipBadge = isVIPOrder
+    ? `<span style="font-size: 0.72rem; background: linear-gradient(90deg, #f59e0b, #ef4444); color: #fff; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: bold; border: 1px solid #fde047; box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);">${state.currentOrder.vipRole || '👑 VIP CỐT TRUYỆN'}</span>`
+    : '';
+
+  const roleBadge = charObj && charObj.role && !isVIPOrder
     ? `<span style="font-size: 0.68rem; background: #3b2d54; color: #f4c430; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: bold; border: 1px solid #f4c43055;">${charObj.role}</span>`
     : '';
   const isShipperOrder = !!(state.currentOrder.isShipper || state.currentOrder.orderId === state.canvas?.motorbikeShipper?.orderId);
@@ -191,9 +196,11 @@ export function renderOrderTicket() {
   const shipperBadge = isShipperOrder
     ? `<span style="font-size: 0.68rem; background: #14532d; color: #86efac; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: bold; border: 1px solid #22c55e;">${shipperBadgeText}</span>`
     : '';
-  const orderBoxStyle = isShipperOrder
-    ? 'border: 1.5px solid #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);'
-    : '';
+  const orderBoxStyle = isVIPOrder
+    ? 'border: 2px solid #f59e0b; box-shadow: 0 0 14px rgba(245, 158, 11, 0.45); background: linear-gradient(180deg, rgba(30, 20, 45, 0.95), rgba(20, 10, 30, 0.95));'
+    : (isShipperOrder
+      ? 'border: 1.5px solid #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);'
+      : '');
 
   let negotiationHtml = '';
   const neg = state.currentOrder.negotiation;
@@ -240,7 +247,7 @@ export function renderOrderTicket() {
   elOrderSection.innerHTML = `
     <div class="order-box" style="${orderBoxStyle}">
       <div class="order-header" style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-        <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 <b>${state.currentOrder.customerName}</b>${roleBadge}${shipperBadge}</span>
+        <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 <b>${state.currentOrder.customerName}</b>${vipBadge}${roleBadge}${shipperBadge}</span>
         <span style="color: #2e8b57; font-weight: bold; flex-shrink: 0;">+${state.currentOrder.price.toLocaleString('vi-VN')}đ</span>
       </div>
       <div id="order-dialogue" style="font-style: italic; color: #f1fa8c; font-size: 0.78rem; margin: 1px 0; background: #1c0e1a; border-left: 2.5px solid var(--gold); padding: 1px 6px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${(state.currentOrder.quote || '').replace(/"/g, '&quot;')}">
@@ -706,11 +713,29 @@ export function initWorkflow() {
         });
       }
 
+      const isVIPOrder = !!(state.currentOrder && state.currentOrder.isStoryVIP);
+      if (isVIPOrder && state.currentOrder.vipTip) {
+        calculatedPayout += Number(state.currentOrder.vipTip);
+      }
+
+      let newDebt = save.debt_remaining !== undefined ? save.debt_remaining : 3000000;
+      if (isVIPOrder && state.currentOrder.debtRelief && save.chapter === 1 && newDebt > 0) {
+        const relief = Math.min(newDebt, Number(state.currentOrder.debtRelief));
+        newDebt = Math.max(0, newDebt - relief);
+      }
+
+      let newTeaCoin = save.teacoin || 0;
+      if (isVIPOrder && state.currentOrder.vipTeaCoin) {
+        newTeaCoin += Number(state.currentOrder.vipTeaCoin);
+      }
+
       const newMoney = (Number(save.money) || 0) + calculatedPayout;
-      const newRep = Math.min(5.0, (Number(save.reputation) || 4.0) + 0.02);
+      const newRep = Math.min(5.0, (Number(save.reputation) || 4.0) + (isVIPOrder ? 0.05 : 0.02));
 
       patchLocalSave({
         money: newMoney,
+        debt_remaining: newDebt,
+        teacoin: newTeaCoin,
         reputation: newRep,
         inventory: curInv
       });
@@ -754,7 +779,37 @@ export function initWorkflow() {
         state.canvas.advanceQueue();
       }
 
-      if (isShipperOrder) {
+      if (isVIPOrder) {
+        if (window.sound && typeof window.sound.bell === 'function') window.sound.bell();
+        const vipTip = Number(currentOrderObj.vipTip || 0);
+        let vipSpeechToast = '';
+        const custName = currentOrderObj.customerName || '';
+
+        if (custName.includes('Bảnh')) {
+          const relief = Math.min(save.debt_remaining || 0, Number(currentOrderObj.debtRelief || 100000));
+          const debtNote = (save.chapter === 1 && relief > 0) ? ` Giảm ngay -${relief.toLocaleString('vi-VN')}đ tiền nợ!` : '';
+          vipSpeechToast = `🕶️ Anh Bảnh: "Trà ngon đấy con bé! Đậm đà chuẩn chỉ. Tao boa thêm +${vipTip.toLocaleString('vi-VN')}đ!${debtNote}"`;
+        } else if (custName.includes('Lão Ba')) {
+          vipSpeechToast = `🦹‍♂️ Lão Ba: "Hừm... Vị trà này... sao lại thơm và trân châu lại mềm dẻo thế này?! Lần này ta chịu phục! +${vipTip.toLocaleString('vi-VN')}đ Tip"`;
+        } else if (custName.includes('Gordon')) {
+          vipSpeechToast = `🌟 Gordon R.: "Superb! Trà sữa đạt chuẩn nghệ thuật 5 sao Michelin! +${vipTip.toLocaleString('vi-VN')}đ Tip"`;
+        } else if (custName.includes('Shark')) {
+          vipSpeechToast = `🦈 Shark Hưng: "Xuất sắc! Tôi sẽ đẩy mạnh đầu tư mở chuỗi nhượng quyền! +${vipTip.toLocaleString('vi-VN')}đ Tip"`;
+        } else {
+          vipSpeechToast = `🌌 Sứ Giả Ngân Hà: "Vương triều trà sữa vũ trụ vạn tuế! +${vipTip.toLocaleString('vi-VN')}đ & +${currentOrderObj.vipTeaCoin || 10} TeaCoin!"`;
+        }
+
+        if (state.canvas && state.canvas.floatingTexts) {
+          state.canvas.floatingTexts.push({
+            text: `👑 VIP +${vipTip.toLocaleString('vi-VN')}đ!`,
+            x: 185,
+            y: 65,
+            alpha: 1.0,
+            color: '#f1c40f'
+          });
+        }
+        showToast(vipSpeechToast, 4500);
+      } else if (isShipperOrder) {
         const remainingShipperOrders = state.orderQueue.filter(o => o.isShipper).length;
         if (state.canvas && state.canvas.onShipperOrderServed) {
           state.canvas.onShipperOrderServed(currentOrderObj.orderId, remainingShipperOrders);

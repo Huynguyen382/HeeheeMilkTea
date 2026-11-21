@@ -668,12 +668,42 @@
       ],
       palette: { hair: '#292524', skin: '#FCD7B0', clothes: '#991B1B', sub: '#78350F', pants: '#3F3F46' },
       style: 'laoba_rival', prop: 'iron_ladle'
+    },
+
+    // --- ANH BẢNH (CHỦ NỢ NGHĨA KHÍ) & GORDON R. (GIÁM KHẢO MICHELIN) (59 -> 60) ---
+    {
+      id: 59, name: 'Anh Bảnh (Chủ Nợ Nghĩa Khí)', role: 'CHỦ NỢ KHU PHỐ & ĐẠI CA NGHĨA KHÍ', cat: 'story',
+      age: '30 tuổi', personality: 'Ngoại hình bặm trợn ngầu lòi nhưng sống nghĩa tình, hảo ngọt, mê trân châu đường đen',
+      favoriteDrink: 'Trà Sữa Truyền Thống (Đậm Trà Nhiều Trân Châu)',
+      desc: 'Gã chủ nợ khét tiếng cho HeeHee vay 3 triệu khởi nghiệp. Tóc undercut cạo sát vuốt gel bóng bẩy, đeo kính râm đen ngầu lòi, cổ đeo dây chuyền vàng lấp lánh, khoác áo jacket biker đen, tay cầm ví da dầy cộp sẵn sàng rút tiền boa tươi nếu trà ngon.',
+      tags: ['#AnhBảnh', '#ChủNợNghĩaKhí', '#KínhRâmNgầu', '#MêTrânChâuĐườngĐen', '#BênNgoàiBặmTrợnBênTrongNgọtNgào'],
+      dialogues: [
+        "Hôm nay tao đích thân qua kiểm tra sổ nợ... Nhân tiện làm cho tao 1 ly Trà Đen Đậm trân châu đen ngọt lịm vào, đừng để thằng nào thấy tao uống đấy!",
+        "Con bé làm ăn khá đấy! Khách xếp hàng dài thế này thì sớm muộn cũng thành bà chủ lớn thôi!",
+        "Trà ngon đấy! Tao cho mày thư thả thêm vài ngày, cầm lấy tiền boa này mà ăn bát phở cho có sức!"
+      ],
+      palette: { hair: '#18181B', skin: '#FCD7B0', clothes: '#0F172A', sub: '#FACC15', pants: '#1E293B' },
+      style: 'anhbanh_debt_boss', prop: 'sunglasses_goldchain'
+    },
+    {
+      id: 60, name: 'Chef Gordon (Giám Khảo Michelin)', role: 'CHUYÊN GIA ẨM THỰC QUỐC TẾ', cat: 'vip',
+      age: '52 tuổi', personality: 'Khắt khe, tinh tế, tôn sùng nghệ thuật ẩm thực nguyên bản',
+      favoriteDrink: 'Trà Sen Tây Hồ (Thanh Tao Ít Đường)',
+      desc: 'Chuyên gia ẩm thực hàng đầu thế giới ghé thăm phố trà sữa Việt Nam. Mặc áo bếp trưởng trắng tinh có cổ thêu cờ quốc tế, mắt sáng sắc bén, cầm cuốn sổ ghi chú thẩm định sao Michelin danh giá.',
+      tags: ['#GordonMichelin', '#GiámKhảoẨmThực', '#SaoMichelin', '#TràSenTâyHồ', '#KhắtKheĐẳngCấp'],
+      dialogues: [
+        "Tôi nghe danh tiệm trà sữa này khắp các trang ẩm thực. Hãy làm cho tôi 1 ly trà thanh khiết nhất xem nào!",
+        "Nếu trà đắng ngắt hay trân châu bị sượng, tôi sẽ trừ điểm vệ sinh và hương vị ngay lập tức!",
+        "Cuối cùng cũng có một ly trà sữa đạt chuẩn nghệ thuật! Tinh tế và đậm đà tuyệt đối!"
+      ],
+      palette: { hair: '#E2E8F0', skin: '#FFE0BD', clothes: '#FFFFFF', sub: '#1E3A8A', pants: '#0F172A' },
+      style: 'chef_critic', prop: 'michelin_notebook'
     }
   ];
 
   // =========================================================================
 
-  // 52 Customer & Story NPCs (excluding Owner at index 0)
+  // 54 Customer & Story NPCs (excluding Owner at index 0)
   var CUSTOMERS_LIST = CHARACTERS.slice(1);
 
   // Character height in logical pixels (Sidewalk Y is 148)
@@ -685,7 +715,7 @@
     if (s === 'kid' || s === 'artist_kid') return 42; // Cute preschool / primary kids
     if (s === 'bebap_assistant') return 48; // Bé Bắp cute teen assistant
     if (s === 'student_girl' || s === 'ballet_girl') return 50; // Middle school students
-    if (s === 'anhlam_shipper' || s === 'laoba_rival') return 56; // Shipper & Rival store owner
+    if (s === 'anhlam_shipper' || s === 'laoba_rival' || s === 'anhbanh_debt_boss' || s === 'chef_critic') return 58; // Shipper, Rival, Debt boss & Michelin critic
     if (s === 'gymer' || s === 'foreigner' || s === 'police' || s === 'pilot' || s === 'firefighter') return 58; // Tall athletic adults
     if (s === 'chef' || s === 'magician') return 58; // Tall hats
     return 54; // Standard adult height
@@ -726,6 +756,8 @@
     if (str.includes('bắp') || str.includes('bé bắp')) return CHARACTERS[55]; // Bé Bắp Trợ Thủ
     if (str.includes('lâm') || str.includes('anh lâm')) return CHARACTERS[56]; // Anh Lâm Shipper
     if (str.includes('lão ba') || str.includes('trâu vàng')) return CHARACTERS[57]; // Lão Ba Trâu Vàng
+    if (str.includes('bảnh') || str.includes('anh bảnh')) return CHARACTERS[58]; // Anh Bảnh Chủ Nợ Nghĩa Khí
+    if (str.includes('gordon') || str.includes('michelin')) return CHARACTERS[59]; // Chef Gordon Michelin
 
     if (str.includes('bà bảy') || str.includes('chè bưởi')) return CHARACTERS[50];
     if (str.includes('shark') || str.includes('đầu tư')) return CHARACTERS[51];
@@ -1172,6 +1204,111 @@
       pDot(ctx, rX + 6, rY + 48, '#CA8A04'); pDot(ctx, rX + 8, rY + 48, '#CA8A04'); pDot(ctx, rX + 10, rY + 48, '#CA8A04');
       pRect(ctx, rX + 13, rY + 47, 6, 4, '#FDE047');
       pDot(ctx, rX + 14, rY + 48, '#CA8A04'); pDot(ctx, rX + 16, rY + 48, '#CA8A04'); pDot(ctx, rX + 18, rY + 48, '#CA8A04');
+      return;
+    }
+
+    // --- SPECIAL 5: ANH BẢNH (CHỦ NỢ NGHĨA KHÍ) ---
+    if (style === 'anhbanh_debt_boss') {
+      var bX = baseX;
+      var bY = baseY + 0;
+
+      // Tóc Undercut Vuốt Sáp Đen Bóng & Cạo Sát 2 Bên
+      pRect(ctx, bX + 6, bY + 1, 12, 4, '#18181B');
+      pRect(ctx, bX + 7, bY + 0, 10, 2, '#3F3F46'); // Highlight bóng tóc
+      pRect(ctx, bX + 4, bY + 4, 3, 4, '#334155'); pRect(ctx, bX + 17, bY + 4, 3, 4, '#334155'); // Fade 2 bên tai
+
+      // Khuôn Mặt Góc Cạnh & Râu Quai Nón Lún Phún
+      pRect(ctx, bX + 6, bY + 4, 12, 10, skin);
+      pRect(ctx, bX + 7, bY + 13, 10, 2, '#94A3B8'); // Râu quai nón mờ
+
+      // Kính Râm Đen Ngầu Lòi
+      pRect(ctx, bX + 5, bY + 6, 6, 4, '#0F172A');
+      pRect(ctx, bX + 13, bY + 6, 6, 4, '#0F172A');
+      pRect(ctx, bX + 11, bY + 7, 2, 1, '#475569'); // Gọng nối
+      pRect(ctx, bX + 6, bY + 7, 2, 1, '#FFFFFF'); pRect(ctx, bX + 14, bY + 7, 2, 1, '#FFFFFF'); // Vệt phản quang kính
+
+      // Nụ Cười Nhếch Mép Hào Sảng
+      pRect(ctx, bX + 10, bY + 11, 4, 1, '#78350F');
+      pDot(ctx, bX + 14, bY + 10, '#78350F');
+
+      // Dây Chuyền Vàng Khủng Cổ Áo
+      pRect(ctx, bX + 8, bY + 14, 8, 2, '#FACC15');
+      pDot(ctx, bX + 10, bY + 15, '#FEF08A'); pDot(ctx, bX + 12, bY + 15, '#FFFFFF');
+
+      // Áo Biker Jacket Da Đen Cổ V & Thun Trắng Bó
+      pRect(ctx, bX + 4, bY + 15, 16, 15, '#0F172A');
+      pRect(ctx, bX + 8, bY + 16, 8, 12, '#F8FAFC'); // Áo thun trắng bên trong
+      pRect(ctx, bX + 5, bY + 16, 3, 14, '#1E293B'); // Ve áo khoác da
+      pRect(ctx, bX + 16, bY + 16, 3, 14, '#1E293B');
+
+      // Tay Trái Cầm Ví Cầm Tay Da Cá Sấu Nâu
+      pRect(ctx, bX + 1, bY + 16 + sway, 4, 8, '#0F172A');
+      pRect(ctx, bX + 1, bY + 23 + sway, 3, 3, skin);
+      pRect(ctx, bX - 2, bY + 22 + sway, 4, 6, '#78350F'); // Ví da dầy cộp
+      pDot(ctx, bX - 1, bY + 24 + sway, '#FACC15'); // Khóa vàng
+
+      // Tay Phải Đeo Nhẫn Vàng To Bản
+      pRect(ctx, bX + 19, bY + 16 - sway, 4, 8, '#0F172A');
+      pRect(ctx, bX + 20, bY + 23 - sway, 3, 3, skin);
+      pDot(ctx, bX + 21, bY + 24 - sway, '#FACC15'); // Nhẫn vàng
+
+      // Quần Jean Rách Gối & Giày Sneaker Biker
+      pRect(ctx, bX + 6, bY + 30, 5, 14, '#1E293B');
+      pRect(ctx, bX + 13, bY + 30, 5, 14, '#1E293B');
+      pRect(ctx, bX + 7, bY + 37, 3, 1, '#F8FAFC'); // Vết rách gối
+      pRect(ctx, bX + 14, bY + 37, 3, 1, '#F8FAFC');
+      // Giày Sneaker High-top
+      pRect(ctx, bX + 5, bY + 44, 6, 4, '#0F172A');
+      pRect(ctx, bX + 5, bY + 47, 7, 2, '#FFFFFF'); // Đế trắng
+      pRect(ctx, bX + 13, bY + 44, 6, 4, '#0F172A');
+      pRect(ctx, bX + 12, bY + 47, 7, 2, '#FFFFFF');
+      return;
+    }
+
+    // --- SPECIAL 6: CHEF GORDON (GIÁM KHẢO MICHELIN) ---
+    if (style === 'chef_critic') {
+      var cX = baseX;
+      var cY = baseY - 2;
+
+      // Mũ Bếp Trưởng Cao Toque Blanche 5 Nếp Gấp
+      pRect(ctx, cX + 6, cY + 0, 12, 10, '#FFFFFF');
+      pRect(ctx, cX + 5, cY + 1, 14, 3, '#F8FAFC');
+      pDot(ctx, cX + 8, cY + 4, '#E2E8F0'); pDot(ctx, cX + 12, cY + 4, '#E2E8F0'); pDot(ctx, cX + 15, cY + 4, '#E2E8F0');
+      pRect(ctx, cX + 7, cY + 9, 10, 2, '#CBD5E1'); // Vành mũ
+
+      // Tóc Xám Lịch Lãm & Khuôn Mặt Tinh Anh
+      pRect(ctx, cX + 5, cY + 11, 14, 8, skin);
+      pRect(ctx, cX + 4, cY + 10, 3, 6, '#E2E8F0'); pRect(ctx, cX + 17, cY + 10, 3, 6, '#E2E8F0'); // Tóc mai hoa râm
+      pRect(ctx, cX + 7, cY + 13, 3, 1, '#334155'); pRect(ctx, cX + 14, cY + 13, 3, 1, '#334155'); // Mắt sắc bén
+      pRect(ctx, cX + 10, cY + 16, 4, 1, '#94A3B8'); // Miệng trầm ngâm
+
+      // Khăn Quàng Cổ Xanh Navy Michelin
+      pRect(ctx, cX + 8, cY + 18, 8, 3, '#1E3A8A');
+      pDot(ctx, cX + 11, cY + 20, '#FACC15'); // Kẹp cà vạt vàng
+
+      // Áo Bếp Trưởng Trắng Đúp Nút
+      pRect(ctx, cX + 4, cY + 20, 16, 14, '#FFFFFF');
+      pRect(ctx, cX + 9, cY + 22, 1, 1, '#1E293B'); pRect(ctx, cX + 14, cY + 22, 1, 1, '#1E293B'); // Cúc áo đúp
+      pRect(ctx, cX + 9, cY + 26, 1, 1, '#1E293B'); pRect(ctx, cX + 14, cY + 26, 1, 1, '#1E293B');
+      pRect(ctx, cX + 9, cY + 30, 1, 1, '#1E293B'); pRect(ctx, cX + 14, cY + 30, 1, 1, '#1E293B');
+
+      // Tay Trái Cầm Sổ Đỏ Michelin Đánh Giá Sao
+      pRect(ctx, cX + 1, cY + 21 + sway, 4, 8, '#FFFFFF');
+      pRect(ctx, cX + 1, cY + 28 + sway, 3, 3, skin);
+      pRect(ctx, cX - 2, cY + 26 + sway, 5, 8, '#DC2626'); // Sổ đỏ Michelin
+      pDot(ctx, cX + 0, cY + 29 + sway, '#FACC15'); // Sao vàng 5 cánh
+
+      // Tay Phải Cầm Bút Thẩm Định
+      pRect(ctx, cX + 19, cY + 21 - sway, 4, 8, '#FFFFFF');
+      pRect(ctx, cX + 20, cY + 28 - sway, 3, 3, skin);
+      pRect(ctx, cX + 22, cY + 26 - sway, 2, 7, '#0F172A'); // Cây bút mực đen
+
+      // Quần Tây Đen & Giày Da Lịch Lãm
+      pRect(ctx, cX + 6, cY + 34, 5, 12, '#18181B');
+      pRect(ctx, cX + 13, cY + 34, 5, 12, '#18181B');
+      // Giày Da
+      pRect(ctx, cX + 5, cY + 46, 6, 3, '#0F172A');
+      pRect(ctx, cX + 13, cY + 46, 6, 3, '#0F172A');
       return;
     }
 

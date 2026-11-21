@@ -208,6 +208,26 @@ export function initRoomModule() {
     });
   }
 
+  // Startup Relics Drawer
+  const btnOpenRelics = document.getElementById('btn-open-relics');
+  const relicsDrawer = document.getElementById('room-relics-section');
+  const btnCloseRelicsDrawer = document.getElementById('btn-close-relics-drawer');
+
+  if (btnOpenRelics && relicsDrawer) {
+    btnOpenRelics.addEventListener('click', () => {
+      renderRoomRelics();
+      relicsDrawer.style.display = (relicsDrawer.style.display === 'flex') ? 'none' : 'flex';
+      relicsDrawer.classList.toggle('open');
+    });
+  }
+
+  if (btnCloseRelicsDrawer && relicsDrawer) {
+    btnCloseRelicsDrawer.addEventListener('click', () => {
+      relicsDrawer.classList.remove('open');
+      relicsDrawer.style.display = 'none';
+    });
+  }
+
   // Friend Items Drawer Toggle
   const btnFriendItemsToggle = document.getElementById('btn-friend-items-toggle');
   const friendItemsDrawer = document.getElementById('friend-room-items-drawer');
@@ -683,5 +703,88 @@ export function syncRoomWeather(weather) {
   if (friendRoomRenderer && typeof friendRoomRenderer.setWeather === 'function') {
     friendRoomRenderer.setWeather(weather);
   }
+}
+
+export const STARTUP_RELICS = [
+  {
+    id: 'relic_spoon',
+    chapter: 1,
+    name: '🥄 Chiếc Thìa Inox Gia Bảo Của Ông Ngoại',
+    badge: 'Kỷ Vật Chương 1',
+    icon: '🥄',
+    lore: 'Chiếc thìa khuấy trà cũ kỹ nhưng sáng loáng ông ngoại trao cho HeeHee khi bắt đầu giấc mơ. Lời dặn: "Pha trà phải bằng cả tấm lòng và sự tận tụy con nhé!"',
+    unlockedText: 'Đã mở khóa từ ngày đầu khởi nghiệp',
+    checkUnlocked: (save) => true
+  },
+  {
+    id: 'relic_debt_paper',
+    chapter: 2,
+    name: '📜 Mảnh Giấy Nợ 3 Triệu Đã Xé Đôi',
+    badge: 'Kỷ Vật Chương 2',
+    icon: '📜',
+    lore: 'Mảnh giấy nợ 3.000.000đ được gã đòi nợ Anh Bảnh xé đôi trước sự nể phục của cả khu phố. Lời dặn: "Có chí thì nên, tao nể phục mày!"',
+    unlockedText: 'Đã xóa sạch 3.000.000đ nợ Anh Bảnh',
+    checkUnlocked: (save) => (save?.chapter || 1) >= 2 || (save?.debt_remaining !== undefined && save.debt_remaining <= 0)
+  },
+  {
+    id: 'relic_iron_ladle',
+    chapter: 3,
+    name: '🥣 Chiếc Muôi Trâu Vàng Giảng Hòa',
+    badge: 'Kỷ Vật Chương 3',
+    icon: '🥣',
+    lore: 'Chiếc muôi múc trân châu inox của Lão Ba trao tặng khi chịu thua và bắt tay làm đối tác cung ứng. Lời dặn: "Vị trà của cháu thực sự làm ta tâm phục khẩu phục!"',
+    unlockedText: 'Chinh phục Cổng Phụ ĐH Bách Khoa',
+    checkUnlocked: (save) => (save?.chapter || 1) >= 3
+  },
+  {
+    id: 'relic_farm_cert',
+    chapter: 4,
+    name: '🌱 Bằng Chứng Nhận Trà Hữu Cơ OCOP 5 Sao',
+    badge: 'Kỷ Vật Chương 4',
+    icon: '🌱',
+    lore: 'Chứng nhận nông nghiệp sạch trao tặng bởi Bà Trùm Trà Tiên Nhi và Hội Nông Dân Mộc Châu, khẳng định chất lượng nguồn trà hữu cơ độc quyền của HeeHee.',
+    unlockedText: 'Khai phá Đồi Chè Mộc Châu Organic',
+    checkUnlocked: (save) => (save?.chapter || 1) >= 4 || (typeof localStorage !== 'undefined' && !!localStorage.getItem('heehee_farm_first_harvest_done'))
+  },
+  {
+    id: 'relic_cosmic_trophy',
+    chapter: 5,
+    name: '👑 Chiếc Cúp Vua Trà Sữa Vũ Trụ (Boba Tycoon Legend)',
+    badge: 'Kỷ Vật Chương 5',
+    icon: '👑',
+    lore: 'Chiếc cúp vàng khắc họa tiết Ngân Hà và ly trà sữa thiên hà lấp lánh, minh chứng cho hành trình khởi nghiệp vĩ đại từ vỉa hè lên đỉnh cao vũ trụ!',
+    unlockedText: 'Đạt vốn 200 Triệu & Đăng quang Nữ Hoàng Vũ Trụ',
+    checkUnlocked: (save) => (save?.chapter || 1) >= 5
+  }
+];
+
+export function renderRoomRelics() {
+  const container = document.getElementById('room-relics-grid');
+  if (!container) return;
+
+  const save = state.storeState?.save || {};
+
+  container.innerHTML = STARTUP_RELICS.map(relic => {
+    const isUnlocked = relic.checkUnlocked(save);
+    return `
+      <div class="relic-item-card" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 8px; background: ${isUnlocked ? 'rgba(124, 58, 237, 0.15)' : 'rgba(30, 41, 59, 0.4)'}; border: 1.5px solid ${isUnlocked ? '#a855f7' : '#475569'}; opacity: ${isUnlocked ? '1' : '0.65'};">
+        <div style="font-size: 2rem; background: rgba(0,0,0,0.3); border-radius: 8px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          ${isUnlocked ? relic.icon : '🔒'}
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 2px;">
+            <span style="font-weight: bold; font-size: 0.92rem; color: ${isUnlocked ? '#fdf2f8' : '#94a3b8'};">${relic.name}</span>
+            <span style="font-size: 0.72rem; padding: 1px 6px; border-radius: 4px; background: ${isUnlocked ? '#9333ea' : '#334155'}; color: #fff; font-weight: bold;">${relic.badge}</span>
+          </div>
+          <div style="font-size: 0.82rem; color: ${isUnlocked ? '#fbcfe8' : '#94a3b8'}; font-style: italic; line-height: 1.4; margin-bottom: 4px;">
+            ${isUnlocked ? relic.lore : 'Chưa mở khóa. Tiếp tục hành trình khởi nghiệp để sưu tầm kỷ vật này!'}
+          </div>
+          <div style="font-size: 0.75rem; color: ${isUnlocked ? '#4ade80' : '#f87171'}; font-weight: bold;">
+            ${isUnlocked ? '✨ ' + relic.unlockedText : '🔒 Điều kiện: Chương ' + relic.chapter}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 

@@ -47,37 +47,104 @@ export function generateLocalCustomerWave(options = {}) {
   const toppingPool = ['tranchau_den', 'thach_la_dua', 'tranchau_duongden', 'dao_mieng', 'suong_sao'];
 
   const orders = [];
+  // Random chance (25%) for a Story VIP Customer to walk in if not a shipper delivery
+  const canSpawnStoryVIP = !options.isShipper && (Math.random() < 0.25);
+  let storyVIPSpawned = false;
+
   for (let i = 0; i < waveSize; i++) {
     let cust = customersList[Math.floor(Math.random() * customersList.length)];
+    let isStoryVIP = false;
+    let vipRole = '';
+    let vipTip = 0;
+    let debtRelief = 0;
+    let vipTeaCoin = 0;
+
     if (options.isShipper) {
       const shipper = customersList.find(c => c.isShipper);
       if (shipper) cust = shipper;
       else cust = { id: 23, type: 23, name: 'Huy Shipper Bất Bại', isShipper: true, dialogues: ['Đơn app hỏa tốc nè chị ơi!'] };
+    } else if (canSpawnStoryVIP && !storyVIPSpawned && i === 0) {
+      // Story VIP Customer Walk-in Encounter
+      storyVIPSpawned = true;
+      isStoryVIP = true;
+
+      if (chapter === 1) {
+        cust = customersList.find(c => c.name && c.name.includes('Bảnh')) || { name: 'Anh Bảnh (Chủ Nợ Nghĩa Khí)', type: 59 };
+        vipRole = 'Chủ Nợ Khu Phố 🕶️';
+        vipTip = 150000;
+        debtRelief = 100000;
+      } else if (chapter === 2) {
+        cust = customersList.find(c => c.name && c.name.includes('Lão Ba')) || { name: 'Lão Ba (Chủ Quán Trâu Vàng)', type: 58 };
+        vipRole = 'Đối Thủ Cạnh Tranh 🦹‍♂️';
+        vipTip = 100000;
+      } else if (chapter === 3) {
+        cust = customersList.find(c => c.name && c.name.includes('Gordon')) || { name: 'Chef Gordon (Giám Khảo Michelin)', type: 60 };
+        vipRole = 'Giám Khảo Michelin 5⭐';
+        vipTip = 250000;
+      } else if (chapter === 4) {
+        cust = customersList.find(c => c.name && c.name.includes('Shark')) || { name: 'Shark Hưng Đầu Tư', type: 52 };
+        vipRole = 'Nhà Đầu Tư Shark Tank 🦈';
+        vipTip = 350000;
+      } else {
+        cust = { id: 77, type: 59, name: 'Sứ Giả Ngân Hà Cosmic' };
+        vipRole = 'Sứ Giả Vũ Trụ 🌌';
+        vipTip = 500000;
+        vipTeaCoin = 10;
+      }
     }
 
-    const recipeId = unlockedKeys[Math.floor(Math.random() * unlockedKeys.length)];
-    const recipe = recipesDb[recipeId] || { name: 'Trà Sữa Truyền Thống', basePrice: 25000, tea: 'den' };
-    const sugar = sugars[Math.floor(Math.random() * sugars.length)];
-    const ice = ices[Math.floor(Math.random() * ices.length)];
+    let recipeId = unlockedKeys[Math.floor(Math.random() * unlockedKeys.length)];
+    if (isStoryVIP) {
+      if (chapter === 1) recipeId = 'tra_sua_truyen_thong';
+      else if (chapter === 2 && unlockedKeys.includes('tra_sua_truyen_thong')) recipeId = 'tra_sua_truyen_thong';
+      else if (chapter === 3 && unlockedKeys.includes('luc_tra_lai_suong_sao')) recipeId = 'luc_tra_lai_suong_sao';
+      else if (chapter === 4 && unlockedKeys.includes('tra_o_long_nuong')) recipeId = 'tra_o_long_nuong';
+    }
 
-    const numTops = Math.random() < 0.45 ? 1 : (Math.random() < 0.75 ? 2 : 0);
-    const shuffledTops = [...toppingPool].sort(() => 0.5 - Math.random());
-    const orderToppings = shuffledTops.slice(0, numTops);
+    const recipe = recipesDb[recipeId] || { name: 'Trà Sữa Truyền Thống', basePrice: 25000, tea: 'den' };
+    let sugar = sugars[Math.floor(Math.random() * sugars.length)];
+    let ice = ices[Math.floor(Math.random() * ices.length)];
+
+    let orderToppings = [];
+    if (isStoryVIP) {
+      if (chapter === 1) { sugar = '30%'; ice = 'Đầy đá'; orderToppings = ['tranchau_den']; }
+      else if (chapter === 2) { sugar = '70%'; ice = 'Vừa đá'; orderToppings = ['tranchau_den', 'thach_la_dua']; }
+      else if (chapter === 3) { sugar = '30%'; ice = 'Ít đá'; orderToppings = ['suong_sao']; }
+      else if (chapter === 4) { sugar = '50%'; ice = 'Vừa đá'; orderToppings = ['tranchau_duongden']; }
+      else { sugar = '50%'; ice = 'Vừa đá'; orderToppings = ['tranchau_duongden', 'thach_la_dua']; }
+    } else {
+      const numTops = Math.random() < 0.45 ? 1 : (Math.random() < 0.75 ? 2 : 0);
+      const shuffledTops = [...toppingPool].sort(() => 0.5 - Math.random());
+      orderToppings = shuffledTops.slice(0, numTops);
+    }
 
     const customPrices = save.custom_prices || {};
     let price = customPrices[recipeId] ? Number(customPrices[recipeId]) : (recipe.basePrice || 25000);
     if (orderToppings.length > 0) price += orderToppings.length * 7000;
 
-    const dialogues = cust.dialogues || ['Cho mình 1 ly nha quán ơi!'];
-    const quote = dialogues[Math.floor(Math.random() * dialogues.length)];
+    let quote = 'Cho mình 1 ly nha quán ơi!';
+    if (isStoryVIP) {
+      if (chapter === 1) quote = 'Hôm nay tao đích thân qua kiểm tra sổ nợ... Làm 1 ly Trà Đen Đậm trân châu đen ngọt lịm vào, đừng để thằng nào thấy tao uống đấy!';
+      else if (chapter === 2) quote = 'Tao sang nếm thử xem ly trà của tụi mày có cái gì mà sinh viên Bách Khoa xếp hàng đông thế này!';
+      else if (chapter === 3) quote = 'Tôi nghe danh tiệm khắp các bài báo ẩm thực. Hãy làm cho tôi 1 ly trà thanh khiết đạt chuẩn 5 sao xem nào!';
+      else if (chapter === 4) quote = 'Tôi đặt 1 ly trà đỉnh cao nhất menu để thẩm định trước phiên mở chi nhánh quốc tế!';
+      else quote = 'Lệnh từ Hội Đồng Vũ Trụ: Thưởng thức 1 ly Trà Sữa Ngân Hà Cosmic Boba tinh hoa!';
+    } else if (cust.dialogues && cust.dialogues.length > 0) {
+      quote = cust.dialogues[Math.floor(Math.random() * cust.dialogues.length)];
+    }
 
     orders.push({
       orderId: 'ORD-L' + Math.random().toString(36).substring(2, 8),
-      customerType: cust.type || 1,
+      customerType: cust.type || (cust.id || 1),
       customerName: cust.name || 'Khách Hàng',
       quote,
       isTiktoker: !!cust.isTiktoker,
       isShipper: !!cust.isShipper || !!options.isShipper,
+      isStoryVIP: !!isStoryVIP,
+      vipRole,
+      vipTip,
+      debtRelief,
+      vipTeaCoin,
       recipeId,
       recipeName: recipe.name,
       tea: recipe.tea || 'den',
@@ -87,7 +154,7 @@ export function generateLocalCustomerWave(options = {}) {
       toppings: orderToppings,
       price,
       originalPrice: price,
-      patienceMs: 40000,
+      patienceMs: isStoryVIP ? 75000 : 40000,
       expiresAt: Date.now() + 180000
     });
   }

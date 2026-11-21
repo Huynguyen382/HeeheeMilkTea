@@ -1807,6 +1807,9 @@
           <button class="btn-room-hud primary" id="btn-open-decor-shop">
             <span>🛍️ Cửa Hàng Nội Thất</span>
           </button>
+          <button class="btn-room-hud" id="btn-open-relics" style="background: linear-gradient(135deg, #7c3aed, #db2777); border-color: #f472b6; color: #fff;">
+            <span>🏺 Kỷ Vật</span>
+          </button>
           <button class="btn-room-hud" id="btn-room-invite-friends">
             <span>👥 Mời Bạn Bè</span>
           </button>
@@ -1863,6 +1866,22 @@
           Mua đồ & bật/tắt đặt vào căn phòng của bạn
         </div>
         <div class="decor-grid" id="room-decor-grid">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Room Relics Drawer: Kỷ Vật Khởi Nghiệp -->
+      <div class="room-decor-drawer" id="room-relics-section" style="display: none; border-top: 2px solid #f472b6;">
+        <div class="room-decor-drawer-header" style="background: linear-gradient(90deg, #4c1d95, #831843);">
+          <div class="room-decor-drawer-title">
+            <span style="color: #fdf2f8;">🏺 KỶ VẬT KHỞI NGHIỆP CỦA HEEHEE</span>
+          </div>
+          <button class="btn-drawer-close" id="btn-close-relics-drawer" title="Đóng">&times;</button>
+        </div>
+        <div style="font-size: 0.8rem; color: #fdf2f8; margin-bottom: 10px; line-height: 1.4;">
+          Những bảo vật gắn liền với từng chặng đường gian khó và vinh quang của HeeHee
+        </div>
+        <div class="decor-grid" id="room-relics-grid" style="display: flex; flex-direction: column; gap: 8px;">
           <!-- Rendered dynamically -->
         </div>
       </div>
