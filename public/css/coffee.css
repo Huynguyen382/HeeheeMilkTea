@@ -1,22 +1,46 @@
-/* Coffee Lounge & World Boss Styles */
+/* ==========================================================================
+   COFFEE LOUNGE & WORLD BOSS BATTLE SYSTEM - RETRO PIXEL ART & VINTAGE BRASS UI
+   ========================================================================== */
+
+/* Hidden entry points while coffee feature is transitioning */
 #btn-coffee-header,
 #hud-coffee-badge,
 #btn-open-coffee-menu {
   display: none !important;
 }
 
+:root {
+  --coffee-mahogany-dark: #12050e;
+  --coffee-mahogany-mid: #1d0917;
+  --coffee-mahogany-warm: #2a0f21;
+  --coffee-walnut-base: #24111c;
+  --coffee-brass-light: #fef08a;
+  --coffee-brass-mid: #d97706;
+  --coffee-brass-dark: #78350f;
+  --coffee-brass-edge: #451a03;
+  --coffee-gold-bright: #fde047;
+  --coffee-gold-leaf: #f59e0b;
+  --coffee-ruby-glow: #f43f5e;
+  --coffee-amethyst-glow: #9333ea;
+  --coffee-cyan-glow: #00cec9;
+}
+
+/* --------------------------------------------------------------------------
+   FULLSCREEN LOUNGE MODAL & CONTAINER
+   -------------------------------------------------------------------------- */
 #modal-coffee-lounge {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
-  background: #09030a;
+  background: #080309;
   display: none;
   flex-direction: column;
-  z-index: 100000;
+  z-index: 100005;
   user-select: none;
   overflow: hidden;
-  font-family: inherit;
+  font-family: 'VT323', monospace, sans-serif;
+  letter-spacing: 0.5px;
 }
 
 .coffee-lounge-container {
@@ -25,20 +49,34 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #0d0611;
+  background: radial-gradient(circle at 50% 50%, #150818 0%, #0c040e 70%, #050106 100%);
+  overflow: hidden;
 }
 
-/* TOP HUD */
+/* Subtle antique vignette overlay */
+.coffee-lounge-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.85), inset 0 0 40px rgba(26, 10, 20, 0.6);
+  pointer-events: none;
+  z-index: 25;
+}
+
+/* --------------------------------------------------------------------------
+   1. TOP HUD (VINTAGE BRASS, GOLD LEAF & ORNATE BOSS HP BAR)
+   -------------------------------------------------------------------------- */
 .coffee-hud-top {
   position: absolute;
-  top: 8px;
-  left: 10px;
-  right: 10px;
-  z-index: 30;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   pointer-events: none;
+  gap: 12px;
 }
 
 .coffee-hud-top > * {
@@ -48,144 +86,387 @@
 .coffee-hud-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
+/* Vintage Brass Room Badge */
 .coffee-room-badge {
-  background: rgba(26, 12, 28, 0.88);
-  border: 1.5px solid #d97706;
+  background: linear-gradient(180deg, rgba(46, 20, 34, 0.94) 0%, rgba(22, 9, 17, 0.96) 100%);
+  border: 2px solid #d97706;
+  border-top-color: #fef08a;
+  border-left-color: #f59e0b;
+  border-bottom-color: #78350f;
+  border-right-color: #451a03;
   border-radius: 8px;
-  padding: 5px 10px;
+  padding: 6px 14px;
   color: #fef3c7;
   font-weight: 700;
-  font-size: 0.86rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  backdrop-filter: blur(4px);
+  font-size: 0.95rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7), 0 0 10px rgba(217, 119, 6, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.coffee-room-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8), 0 0 14px rgba(245, 158, 11, 0.45);
+}
+
+.coffee-badge-icon {
+  font-size: 1.15rem;
+  filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
+}
+
+.coffee-badge-title {
+  background: linear-gradient(180deg, #ffffff 0%, #fef08a 45%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+.coffee-badge-count {
+  font-size: 0.82rem;
+  color: #fcd34d;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(217, 119, 6, 0.4);
+}
+
+/* Vintage Boss Countdown & Astral Timer Badge */
 .coffee-boss-timer-badge {
-  background: rgba(88, 28, 135, 0.85);
-  border: 1.5px solid #a855f7;
+  background: linear-gradient(180deg, rgba(74, 20, 110, 0.92) 0%, rgba(30, 8, 48, 0.95) 100%);
+  border: 2px solid #a855f7;
+  border-top-color: #e9d5ff;
+  border-left-color: #c084fc;
+  border-bottom-color: #581c87;
+  border-right-color: #3b0764;
   border-radius: 8px;
-  padding: 5px 10px;
-  color: #f3e8ff;
+  padding: 6px 14px;
+  color: #f5f3ff;
   font-weight: 700;
-  font-size: 0.86rem;
-  backdrop-filter: blur(4px);
+  font-size: 0.92rem;
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
-  gap: 6px;
-  animation: pulse-border 2s infinite;
+  gap: 8px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7), 0 0 12px rgba(168, 85, 247, 0.35);
+  animation: pulse-boss-badge 2.4s infinite ease-in-out;
 }
 
-@keyframes pulse-border {
-  0%, 100% { border-color: #a855f7; }
-  50% { border-color: #f43f5e; box-shadow: 0 0 10px rgba(244, 63, 94, 0.5); }
+@keyframes pulse-boss-badge {
+  0%, 100% {
+    border-color: #a855f7;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7), 0 0 10px rgba(168, 85, 247, 0.3);
+  }
+  50% {
+    border-color: #f43f5e;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.8), 0 0 18px rgba(244, 63, 94, 0.6);
+  }
 }
 
+.boss-timer-gem {
+  font-size: 1.1rem;
+  filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.8));
+}
+
+.boss-timer-text {
+  font-weight: 800;
+  color: #fef08a;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* TOP HUD BUTTONS */
 .coffee-hud-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .btn-coffee-hud {
-  background: rgba(30, 15, 32, 0.88);
-  border: 1.5px solid #78350f;
+  background: linear-gradient(180deg, #38192d 0%, #200d1a 100%);
+  border: 2px solid #b45309;
+  border-top-color: #fef08a;
+  border-left-color: #f59e0b;
+  border-bottom-color: #451a03;
+  border-right-color: #260f03;
   color: #fde68a;
-  border-radius: 6px;
-  padding: 5px 10px;
-  font-size: 0.82rem;
-  font-weight: 700;
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 0.88rem;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.15s ease;
-  backdrop-filter: blur(4px);
+  transition: all 0.16s ease;
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  font-family: inherit;
 }
 
 .btn-coffee-hud:hover {
-  background: #78350f;
-  color: #fff;
-  border-color: #f59e0b;
+  background: linear-gradient(180deg, #572545 0%, #301326 100%);
+  color: #ffffff;
+  border-color: #fbbf24;
+  border-top-color: #fffbeb;
+  transform: translateY(-2px);
+  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.75), 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.btn-coffee-hud:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.btn-hud-icon {
+  font-size: 1rem;
 }
 
 .btn-coffee-hud.boss-btn {
-  border-color: #9333ea;
-  color: #e9d5ff;
+  border-color: #7e22ce;
+  border-top-color: #e9d5ff;
+  border-left-color: #a855f7;
+  color: #f3e8ff;
 }
 
 .btn-coffee-hud.boss-btn:hover {
-  background: #9333ea;
-  color: #fff;
+  background: linear-gradient(180deg, #6b21a8 0%, #3b0764 100%);
+  color: #ffffff;
+  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.75), 0 0 12px rgba(168, 85, 247, 0.5);
+}
+
+.btn-coffee-hud.btn-hud-summon {
+  border-color: #be123c;
+  border-top-color: #fecdd3;
+  border-left-color: #fb7185;
+  color: #ffe4e6;
+  background: linear-gradient(180deg, #4c1122 0%, #290812 100%);
+  animation: pulse-summon-btn 2s infinite ease-in-out;
+}
+
+@keyframes pulse-summon-btn {
+  0%, 100% {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), 0 0 6px rgba(244, 63, 94, 0.3);
+  }
+  50% {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8), 0 0 14px rgba(244, 63, 94, 0.65);
+    border-color: #f43f5e;
+  }
+}
+
+.btn-coffee-hud.btn-hud-summon:hover {
+  background: linear-gradient(180deg, #881337 0%, #4c1122 100%);
+  color: #ffffff;
 }
 
 .btn-coffee-hud.close-btn {
-  border-color: #ef4444;
-  color: #fca5a5;
+  border-color: #991b1b;
+  border-top-color: #fca5a5;
+  border-left-color: #ef4444;
+  color: #fee2e2;
+  background: linear-gradient(180deg, #451216 0%, #240a0c 100%);
 }
 
 .btn-coffee-hud.close-btn:hover {
-  background: #ef4444;
-  color: #fff;
+  background: linear-gradient(180deg, #7f1d1d 0%, #450a0a 100%);
+  color: #ffffff;
+  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.75), 0 0 12px rgba(239, 68, 68, 0.5);
 }
 
-/* BOSS HP BAR HUD (Center Top) */
+/* --------------------------------------------------------------------------
+   ORNATE BOSS HP BAR (CENTER TOP) - GOLDEN KRAKEN & DRAGON FRAME
+   -------------------------------------------------------------------------- */
 .coffee-boss-hp-wrapper {
   position: absolute;
-  top: 48px;
+  top: 54px;
   left: 50%;
   transform: translateX(-50%);
-  width: 90%;
-  max-width: 580px;
-  z-index: 30;
+  width: 92%;
+  max-width: 640px;
+  z-index: 40;
   pointer-events: auto;
   display: none;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.8));
+}
+
+.coffee-boss-ornament {
+  width: 28px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.boss-crest-fin {
+  width: 14px;
+  height: 38px;
+  background: linear-gradient(180deg, #fef08a 0%, #f59e0b 50%, #78350f 100%);
+  border: 1.5px solid #451a03;
+  clip-path: polygon(0% 0%, 100% 50%, 0% 100%, 30% 50%);
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
+}
+
+.ornament-right .boss-crest-fin {
+  transform: scaleX(-1);
+}
+
+.coffee-boss-hp-inner {
+  flex: 1;
+  background: linear-gradient(180deg, rgba(34, 12, 38, 0.96) 0%, rgba(16, 5, 20, 0.98) 100%);
+  border: 2px solid #d97706;
+  border-top-color: #fef08a;
+  border-left-color: #f59e0b;
+  border-bottom-color: #451a03;
+  border-right-color: #451a03;
+  border-radius: 10px;
+  padding: 8px 14px 10px 14px;
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
 }
 
 .coffee-boss-hp-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.82rem;
+}
+
+.coffee-boss-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.coffee-boss-emblem {
+  font-size: 1.25rem;
+  filter: drop-shadow(0 0 6px rgba(236, 72, 153, 0.8));
+  animation: float-emblem 2s infinite ease-in-out;
+}
+
+@keyframes float-emblem {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.coffee-boss-name {
+  font-size: 0.92rem;
   font-weight: 800;
-  color: #fef08a;
-  text-shadow: 0 1px 3px #000;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef08a 45%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.8px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
+}
+
+.coffee-boss-subtag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fee2e2;
+  background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
+  border: 1px solid #f87171;
+  border-radius: 4px;
+  padding: 1px 5px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 6px rgba(220, 38, 38, 0.5);
 }
 
 .coffee-boss-phase-pill {
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  background: #9333ea;
-  color: #fff;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: linear-gradient(180deg, #9333ea 0%, #581c87 100%);
+  color: #faf5ff;
   border: 1px solid #c084fc;
+  border-top-color: #f3e8ff;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+  letter-spacing: 0.5px;
+}
+
+/* Ornate Boss HP Bar & Crystal Segments Frame */
+.coffee-boss-hp-frame {
+  position: relative;
+  width: 100%;
+}
+
+.coffee-boss-crystal-grid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.crystal-tick {
+  width: 2px;
+  height: 18px;
+  background: rgba(254, 240, 138, 0.45);
+  box-shadow: 0 0 4px rgba(254, 240, 138, 0.6);
 }
 
 .coffee-boss-hp-bar {
   position: relative;
   width: 100%;
-  height: 18px;
-  background: rgba(15, 7, 20, 0.9);
-  border: 2px solid #a855f7;
-  border-radius: 9px;
+  height: 22px;
+  background: rgba(12, 4, 16, 0.95);
+  border: 2px solid #d97706;
+  border-top-color: #fef08a;
+  border-bottom-color: #451a03;
+  border-radius: 11px;
   overflow: hidden;
-  box-shadow: 0 0 12px rgba(147, 51, 234, 0.4);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 14px rgba(147, 51, 234, 0.5);
 }
 
 .coffee-boss-hp-fill {
+  position: relative;
   height: 100%;
   width: 100%;
-  background: linear-gradient(90deg, #ec4899, #9333ea, #f59e0b);
-  border-radius: 7px;
-  transition: width 0.25s ease-out;
+  background: linear-gradient(90deg, #ff1744 0%, #ec4899 30%, #a855f7 65%, #f59e0b 100%);
+  border-radius: 9px;
+  transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+}
+
+.coffee-boss-hp-sheen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+  animation: hp-sheen-sweep 2.5s infinite linear;
+}
+
+@keyframes hp-sheen-sweep {
+  0% { transform: translateX(-60px); }
+  100% { transform: translateX(650px); }
+}
+
+.coffee-boss-hp-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  background: #ffffff;
+  filter: blur(3px);
+  opacity: 0.7;
 }
 
 .coffee-boss-hp-text {
@@ -194,13 +475,130 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
+  font-size: 0.84rem;
   font-weight: 800;
   color: #ffffff;
-  text-shadow: 0 1px 2px #000;
+  text-shadow: 0 1px 3px #000, 0 0 6px #000;
+  letter-spacing: 0.8px;
+  z-index: 6;
 }
 
-/* CANVAS STAGE */
+/* --------------------------------------------------------------------------
+   LIVE DAMAGE LEADERBOARD COMPACT OVERLAY
+   -------------------------------------------------------------------------- */
+.coffee-leaderboard-box {
+  position: absolute;
+  top: 106px;
+  left: 14px;
+  background: linear-gradient(180deg, rgba(32, 13, 36, 0.94) 0%, rgba(18, 7, 21, 0.97) 100%);
+  border: 2px solid #b45309;
+  border-top-color: #fef08a;
+  border-left-color: #f59e0b;
+  border-bottom-color: #451a03;
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 220px;
+  max-width: 260px;
+  z-index: 35;
+  pointer-events: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 14px rgba(180, 83, 9, 0.35);
+  backdrop-filter: blur(8px);
+  display: none;
+}
+
+.coffee-leaderboard-title {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #fef08a;
+  border-bottom: 1.5px solid #78350f;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.lead-badge {
+  font-size: 0.68rem;
+  background: #78350f;
+  color: #fde68a;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid #d97706;
+}
+
+.coffee-rank-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  padding: 4px 0;
+  color: #e2e8f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.coffee-rank-item.top1 {
+  color: #facc15;
+  font-weight: 800;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
+}
+
+.coffee-rank-item.top2 {
+  color: #cbd5e1;
+  font-weight: 800;
+}
+
+.coffee-rank-item.top3 {
+  color: #fb923c;
+  font-weight: 800;
+}
+
+/* --------------------------------------------------------------------------
+   FLOATING ARCADE KEYBOARD & TOUCH PROMPTS
+   -------------------------------------------------------------------------- */
+.coffee-arcade-prompts {
+  position: absolute;
+  top: 72px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 35;
+  pointer-events: none;
+}
+
+.arcade-prompt-chip {
+  background: rgba(22, 10, 24, 0.86);
+  border: 1px solid #78350f;
+  border-left: 2.5px solid #f59e0b;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #fef3c7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.chip-key {
+  background: linear-gradient(180deg, #451a03 0%, #1f0c03 100%);
+  border: 1px solid #d97706;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #fde68a;
+  font-weight: 800;
+  font-size: 0.7rem;
+  box-shadow: 0 2px 0 #000;
+}
+
+/* --------------------------------------------------------------------------
+   CANVAS STAGE
+   -------------------------------------------------------------------------- */
 .coffee-stage-wrapper {
   position: relative;
   flex: 1;
@@ -221,16 +619,19 @@
   cursor: crosshair;
 }
 
-/* BOTTOM HUD CONTROLS */
+/* --------------------------------------------------------------------------
+   2. BOTTOM HUD CONTROLS, AMMO BANDOLIER & TACTILE ACTION BAR
+   -------------------------------------------------------------------------- */
 .coffee-hud-bottom {
   position: absolute;
-  bottom: 8px;
-  left: 10px;
-  right: 10px;
-  z-index: 35;
+  bottom: 10px;
+  left: 12px;
+  right: 12px;
+  z-index: 40;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  gap: 12px;
   pointer-events: none;
 }
 
@@ -238,306 +639,702 @@
   pointer-events: auto;
 }
 
-/* Ammo Bar */
+/* VINTAGE BRASS AMMO BANDOLIER */
 .coffee-ammo-bar {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: linear-gradient(180deg, rgba(35, 14, 30, 0.94) 0%, rgba(18, 7, 16, 0.97) 100%);
+  border: 2px solid #b45309;
+  border-top-color: #fef08a;
+  border-left-color: #f59e0b;
+  border-bottom-color: #451a03;
+  border-radius: 10px;
+  padding: 6px 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 14px rgba(180, 83, 9, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.coffee-ammo-bar-label {
+  display: flex;
   align-items: center;
-  gap: 5px;
-  background: rgba(18, 9, 22, 0.92);
-  border: 1.5px solid #d97706;
-  border-radius: 8px;
-  padding: 4px 8px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #fef08a;
+  letter-spacing: 0.6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(180, 83, 9, 0.5);
+}
+
+.coffee-ammo-slots-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .ammo-item-slot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(30, 15, 32, 0.7);
-  border: 1px solid #451a03;
-  border-radius: 6px;
-  padding: 3px 6px;
+  background: linear-gradient(180deg, rgba(46, 21, 38, 0.85) 0%, rgba(22, 9, 18, 0.9) 100%);
+  border: 1.5px solid #78350f;
+  border-top-color: #d97706;
+  border-radius: 8px;
+  padding: 5px 8px;
   cursor: pointer;
-  min-width: 48px;
-  transition: all 0.15s ease;
+  min-width: 54px;
+  transition: all 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 .ammo-item-slot:hover {
-  background: rgba(120, 53, 15, 0.4);
+  background: linear-gradient(180deg, rgba(78, 34, 62, 0.9) 0%, rgba(35, 14, 28, 0.95) 100%);
   border-color: #f59e0b;
+  border-top-color: #fef08a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.65), 0 0 8px rgba(245, 158, 11, 0.4);
 }
 
 .ammo-item-slot.active {
   border-color: #00cec9;
-  background: rgba(0, 206, 201, 0.2);
-  box-shadow: 0 0 8px rgba(0, 206, 201, 0.5);
-  transform: translateY(-2px);
+  border-top-color: #a5f3fc;
+  background: linear-gradient(180deg, rgba(14, 116, 144, 0.4) 0%, rgba(8, 47, 73, 0.6) 100%);
+  box-shadow: 0 0 14px rgba(0, 206, 201, 0.6), inset 0 0 8px rgba(0, 206, 201, 0.3);
+  transform: translateY(-4px);
+}
+
+.ammo-slot-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .ammo-slot-icon {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
 }
 
 .ammo-slot-name {
-  font-size: 0.64rem;
+  font-size: 0.68rem;
   color: #fde68a;
-  font-weight: 700;
+  font-weight: 800;
   white-space: nowrap;
 }
 
 .ammo-slot-qty {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  color: #fff;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
 }
 
-/* Chat & Emotes Bar */
+.ammo-item-slot.active .ammo-slot-qty {
+  color: #a5f3fc;
+  text-shadow: 0 0 6px rgba(0, 206, 201, 0.8);
+}
+
+/* --------------------------------------------------------------------------
+   TACTILE VINTAGE COFFEE ACTION BAR (.coffee-action-bar & .btn-coffee-action)
+   -------------------------------------------------------------------------- */
+.coffee-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(38, 16, 31, 0.94) 0%, rgba(20, 8, 17, 0.98) 100%);
+  border: 2px solid #b45309;
+  border-top-color: #fef08a;
+  border-left-color: #f59e0b;
+  border-bottom-color: #451a03;
+  border-radius: 12px;
+  padding: 6px 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 16px rgba(180, 83, 9, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.btn-coffee-action {
+  position: relative;
+  background: linear-gradient(180deg, #441e33 0%, #250f1d 100%);
+  border: 2px solid #b45309;
+  border-top-color: #fef08a;
+  border-left-color: #f59e0b;
+  border-bottom-color: #451a03;
+  border-right-color: #451a03;
+  border-radius: 8px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #fde68a;
+  box-shadow: 0 4px 0 #3d1b06, 0 6px 12px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.14s ease;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.btn-coffee-action:hover {
+  background: linear-gradient(180deg, #5c2846 0%, #35142a 100%);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #3d1b06, 0 8px 18px rgba(0, 0, 0, 0.75), 0 0 12px rgba(245, 158, 11, 0.45);
+}
+
+.btn-coffee-action:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #3d1b06, 0 2px 4px rgba(0, 0, 0, 0.8), inset 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.action-btn-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(254, 240, 138, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.action-btn-icon {
+  font-size: 1.25rem;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
+}
+
+.action-btn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+
+.action-btn-title {
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.action-btn-hotkey {
+  font-size: 0.66rem;
+  color: #fef08a;
+  opacity: 0.85;
+}
+
+/* Distinct Action Button Themes */
+.btn-action-shoot {
+  border-color: #be123c;
+  border-top-color: #fecdd3;
+  border-left-color: #fb7185;
+  background: linear-gradient(180deg, #5e1529 0%, #300814 100%);
+  color: #ffe4e6;
+  animation: pulse-shoot-action 2s infinite ease-in-out;
+}
+
+@keyframes pulse-shoot-action {
+  0%, 100% {
+    box-shadow: 0 4px 0 #3d1b06, 0 6px 12px rgba(0, 0, 0, 0.65), 0 0 8px rgba(244, 63, 94, 0.35);
+  }
+  50% {
+    box-shadow: 0 4px 0 #3d1b06, 0 6px 14px rgba(0, 0, 0, 0.75), 0 0 16px rgba(244, 63, 94, 0.7);
+  }
+}
+
+.btn-action-shoot:hover {
+  background: linear-gradient(180deg, #881337 0%, #4c1122 100%);
+  color: #ffffff;
+}
+
+.btn-action-interact {
+  border-color: #0d9488;
+  border-top-color: #99f6e4;
+  border-left-color: #2dd4bf;
+  background: linear-gradient(180deg, #134e4a 0%, #082f2c 100%);
+  color: #ccfbf1;
+}
+
+.btn-action-interact:hover {
+  background: linear-gradient(180deg, #0f766e 0%, #115e59 100%);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   CHAT & EMOTES BAR (RETRO MAHOGANY FINISH)
+   -------------------------------------------------------------------------- */
 .coffee-chat-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(18, 9, 22, 0.92);
-  border: 1.5px solid #581c87;
-  border-radius: 8px;
+  gap: 6px;
+  background: linear-gradient(180deg, rgba(35, 14, 30, 0.94) 0%, rgba(18, 7, 16, 0.97) 100%);
+  border: 2px solid #7e22ce;
+  border-top-color: #e9d5ff;
+  border-left-color: #a855f7;
+  border-bottom-color: #3b0764;
+  border-radius: 10px;
+  padding: 6px 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 14px rgba(126, 34, 206, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.coffee-chat-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(14, 5, 16, 0.88);
+  border: 1px solid #7e22ce;
+  border-radius: 6px;
   padding: 4px 8px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
+}
+
+.chat-input-icon {
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 .coffee-chat-input {
-  background: rgba(10, 5, 12, 0.8);
-  border: 1px solid #7e22ce;
-  border-radius: 5px;
-  padding: 4px 8px;
-  color: #fff;
-  font-size: 0.8rem;
+  background: transparent;
+  border: none;
+  color: #f5f3ff;
+  font-size: 0.84rem;
+  font-family: inherit;
   outline: none;
   width: 140px;
 }
 
-.coffee-chat-input:focus {
-  border-color: #a855f7;
+.coffee-chat-input::placeholder {
+  color: #a78bfa;
+  opacity: 0.7;
 }
 
 .btn-coffee-send {
-  background: #9333ea;
-  border: none;
-  color: #fff;
-  border-radius: 5px;
-  padding: 4px 8px;
-  font-size: 0.8rem;
-  font-weight: 700;
+  background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%);
+  border: 1.5px solid #c084fc;
+  border-top-color: #f3e8ff;
+  border-bottom-color: #4c1d95;
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.84rem;
+  font-weight: 800;
   cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  box-shadow: 0 2px 0 #3b0764;
+}
+
+.btn-coffee-send:hover {
+  background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 #3b0764, 0 0 8px rgba(168, 85, 247, 0.5);
+}
+
+.btn-coffee-send:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #3b0764;
+}
+
+.coffee-emotes-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .btn-coffee-emote {
-  background: rgba(30, 15, 32, 0.8);
-  border: 1px solid #7e22ce;
-  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(46, 21, 52, 0.85) 0%, rgba(24, 9, 28, 0.9) 100%);
+  border: 1.5px solid #7e22ce;
+  border-radius: 6px;
   padding: 4px 6px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: transform 0.1s;
+  transition: transform 0.12s ease, border-color 0.12s ease;
 }
 
 .btn-coffee-emote:hover {
-  transform: scale(1.15);
+  transform: scale(1.18);
   border-color: #c084fc;
+  box-shadow: 0 0 8px rgba(192, 132, 252, 0.5);
 }
 
-/* Action Quick Pills */
-.coffee-action-pills {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.btn-coffee-emote:active {
+  transform: scale(0.95);
 }
 
-.coffee-pill-btn {
-  background: rgba(30, 15, 32, 0.9);
-  border: 1.5px solid #d97706;
-  border-radius: 6px;
-  padding: 5px 8px;
-  color: #fef3c7;
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  transition: all 0.15s ease;
-}
-
-.coffee-pill-btn:hover {
-  background: #78350f;
-  color: #fff;
-}
-
-/* Live Damage Leaderboard Overlay */
-.coffee-leaderboard-box {
-  position: absolute;
-  top: 96px;
-  left: 12px;
-  background: rgba(18, 9, 22, 0.92);
-  border: 1.5px solid #9333ea;
-  border-radius: 8px;
-  padding: 8px 12px;
-  min-width: 200px;
-  z-index: 30;
-  pointer-events: auto;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
-  display: none;
-}
-
-.coffee-leaderboard-title {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #fef08a;
-  border-bottom: 1px solid #7e22ce;
-  padding-bottom: 4px;
-  margin-bottom: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.coffee-rank-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.74rem;
-  padding: 2px 0;
-  color: #e2e8f0;
-}
-
-.coffee-rank-item.top1 { color: #facc15; font-weight: 800; }
-.coffee-rank-item.top2 { color: #94a3b8; font-weight: 700; }
-.coffee-rank-item.top3 { color: #f97316; font-weight: 700; }
-
-/* SUB-MODALS (Drinks, Ammo, Food, Rewards) */
+/* --------------------------------------------------------------------------
+   3. DRAWERS & SUBMODALS (.coffee-menu-drawer, CARDS, FOOD & AMMO)
+   -------------------------------------------------------------------------- */
 .coffee-submodal {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(5, 1, 6, 0.82);
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 50;
-  backdrop-filter: blur(3px);
+  z-index: 60;
+  backdrop-filter: blur(8px);
+  animation: fadeInSubmodal 0.2s ease-out;
 }
 
-.coffee-submodal-content {
-  background: #190c16;
-  border: 2px solid #d97706;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 540px;
-  max-height: 85vh;
-  overflow-y: auto;
-  padding: 16px;
-  color: #fef3c7;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+@keyframes fadeInSubmodal {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
+
+/* Luxury Dark Mahogany & Walnut Menu Drawer */
+.coffee-menu-drawer,
+.coffee-submodal-content {
+  background: radial-gradient(circle at 50% 0%, #2f1722 0%, #1a0a14 60%, #10040c 100%);
+  border: 2px solid #d97706;
+  border-top-color: #fef08a;
+  border-left-color: #f59e0b;
+  border-bottom-color: #451a03;
+  border-right-color: #451a03;
+  border-radius: 14px;
+  width: 92%;
+  max-width: 580px;
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 18px 20px;
+  color: #fef3c7;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9), 0 0 24px rgba(217, 119, 6, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  position: relative;
+  animation: slideUpDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpDrawer {
+  from {
+    transform: translateY(24px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Brass Rivets on Drawer Corners */
+.coffee-menu-drawer::before,
+.coffee-menu-drawer::after {
+  content: '♦';
+  position: absolute;
+  top: 10px;
+  font-size: 0.8rem;
+  color: #fef08a;
+  text-shadow: 0 0 6px rgba(254, 240, 138, 0.8);
+  pointer-events: none;
+}
+.coffee-menu-drawer::before { left: 14px; }
+.coffee-menu-drawer::after { right: 14px; }
 
 .coffee-submodal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1.5px solid #78350f;
-  padding-bottom: 8px;
+  border-bottom: 2px solid #78350f;
+  padding-bottom: 10px;
   margin-bottom: 12px;
 }
 
 .coffee-submodal-title {
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.15rem;
   font-weight: 800;
-  color: #fbbf24;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef08a 40%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.8px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
+}
+
+.drawer-header-icon {
+  font-size: 1.35rem;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
 }
 
 .coffee-submodal-close {
-  background: transparent;
-  border: none;
-  color: #f87171;
+  background: linear-gradient(180deg, #451216 0%, #240a0c 100%);
+  border: 1.5px solid #ef4444;
+  border-top-color: #fca5a5;
+  color: #fecdd3;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
   font-size: 1.3rem;
   cursor: pointer;
   font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  box-shadow: 0 3px 0 #1b0709;
+  font-family: inherit;
 }
 
-.coffee-grid-items {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+.coffee-submodal-close:hover {
+  background: linear-gradient(180deg, #7f1d1d 0%, #450a0a 100%);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 #1b0709, 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.coffee-submodal-close:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #1b0709;
+}
+
+/* Drawer Flavor & Perk Banner */
+.coffee-drawer-banner {
+  background: linear-gradient(90deg, rgba(78, 34, 18, 0.5) 0%, rgba(42, 18, 30, 0.6) 100%);
+  border: 1px solid #78350f;
+  border-left: 3px solid #f59e0b;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
   gap: 10px;
 }
 
+.banner-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #451a03;
+  background: linear-gradient(180deg, #fef08a 0%, #f59e0b 100%);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.banner-desc {
+  font-size: 0.78rem;
+  color: #fde68a;
+  line-height: 1.3;
+}
+
+/* --------------------------------------------------------------------------
+   COFFEE, FOOD & AMMO CARDS (.coffee-card-item)
+   -------------------------------------------------------------------------- */
+.coffee-grid-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
 .coffee-card-item {
-  background: rgba(30, 15, 32, 0.85);
-  border: 1px solid #78350f;
-  border-radius: 8px;
-  padding: 10px;
+  background: linear-gradient(145deg, #2c1421 0%, #1a0b14 55%, #240e1b 100%);
+  border: 1.5px solid #946726;
+  border-top-color: #fde68a;
+  border-left-color: #d97706;
+  border-bottom-color: #451a03;
+  border-right-color: #3b1402;
+  border-radius: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 6px;
-  transition: all 0.15s ease;
+  gap: 8px;
+  transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.coffee-card-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(254, 240, 138, 0.4) 50%, transparent 100%);
 }
 
 .coffee-card-item:hover {
-  border-color: #f59e0b;
-  transform: translateY(-2px);
+  border-color: #fbbf24;
+  border-top-color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.75), 0 0 16px rgba(245, 158, 11, 0.4);
 }
 
 .coffee-card-title {
-  font-size: 0.88rem;
+  font-size: 0.96rem;
   font-weight: 800;
   color: #fef08a;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .coffee-card-desc {
-  font-size: 0.74rem;
-  color: #cbd5e1;
-  line-height: 1.3;
+  font-size: 0.78rem;
+  color: #e2d9cf;
+  line-height: 1.35;
+  margin-top: 2px;
 }
 
 .coffee-card-buff {
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   color: #38bdf8;
-  font-weight: 700;
-  background: rgba(56, 189, 248, 0.1);
-  padding: 3px 6px;
-  border-radius: 4px;
+  font-weight: 800;
+  background: rgba(14, 116, 144, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  padding: 3px 8px;
+  border-radius: 5px;
+  margin: 4px 0;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
 }
 
 .coffee-card-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .coffee-card-price {
-  font-size: 0.84rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: #34d399;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+  letter-spacing: 0.5px;
 }
 
 .btn-coffee-buy {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  border: none;
-  border-radius: 5px;
-  padding: 5px 10px;
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.76rem;
+  background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
+  border: 1.5px solid #fde68a;
+  border-top-color: #fffbeb;
+  border-bottom-color: #451a03;
+  border-radius: 6px;
+  padding: 6px 14px;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.82rem;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: all 0.15s ease;
+  box-shadow: 0 3px 0 #451a03, 0 4px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
+  font-family: inherit;
 }
 
 .btn-coffee-buy:hover {
-  opacity: 0.9;
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 #451a03, 0 6px 12px rgba(245, 158, 11, 0.4);
 }
 
+.btn-coffee-buy:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #451a03;
+}
+
+/* --------------------------------------------------------------------------
+   LEADERBOARD & REWARDS DRAWERS
+   -------------------------------------------------------------------------- */
+.coffee-leaderboard-full-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE DESIGN (MOBILE & TABLET ADAPTATION)
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .coffee-hud-top {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .coffee-boss-hp-wrapper {
+    top: 90px;
+    width: 95%;
+  }
+  .coffee-arcade-prompts {
+    display: none;
+  }
+  .coffee-action-bar {
+    gap: 6px;
+    padding: 4px 8px;
+  }
+  .btn-coffee-action {
+    padding: 5px 8px;
+  }
+  .action-btn-title {
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 680px) {
+  .coffee-hud-top {
+    top: 6px;
+    left: 6px;
+    right: 6px;
+  }
+  .coffee-room-badge,
+  .coffee-boss-timer-badge {
+    padding: 4px 8px;
+    font-size: 0.82rem;
+  }
+  .btn-coffee-hud {
+    padding: 4px 8px;
+    font-size: 0.78rem;
+  }
+  .btn-hud-label {
+    display: none;
+  }
+  .coffee-boss-hp-wrapper {
+    top: 50px;
+  }
+  .coffee-boss-name {
+    font-size: 0.78rem;
+  }
+  .coffee-hud-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    bottom: 6px;
+    left: 6px;
+    right: 6px;
+    gap: 6px;
+  }
+  .coffee-ammo-bar,
+  .coffee-action-bar,
+  .coffee-chat-bar {
+    width: 100%;
+    justify-content: space-around;
+  }
+  .coffee-action-bar {
+    order: 1;
+  }
+  .coffee-ammo-bar {
+    order: 2;
+  }
+  .coffee-chat-bar {
+    order: 3;
+  }
+  .ammo-item-slot {
+    min-width: 44px;
+    padding: 3px 4px;
+  }
+  .ammo-slot-name {
+    display: none;
+  }
+  .coffee-chat-input {
+    width: 100px;
+  }
+  .coffee-menu-drawer,
+  .coffee-submodal-content {
+    width: 96%;
+    padding: 14px 12px;
+    max-height: 90vh;
+  }
+  .coffee-grid-items {
+    grid-template-columns: 1fr;
+  }
+}
