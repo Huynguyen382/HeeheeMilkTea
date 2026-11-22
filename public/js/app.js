@@ -38,36 +38,55 @@ async function bootstrapApp() {
     window.state = state;
   }
 
+  // Safe runner to prevent an error in one module from bricking the entire boot sequence
+  const safeInit = (name, fn) => {
+    try {
+      fn();
+    } catch (err) {
+      console.error(`[Bootstrap] Error initializing ${name}:`, err);
+    }
+  };
+
   // 1. Initialize Game Canvas
-  const CanvasClass = GameCanvas || window.GameCanvas;
-  if (CanvasClass) {
-    state.canvas = new CanvasClass('scene');
-    state.canvas.onShipperArrived = handleShipperOrderArrival;
+  try {
+    const CanvasClass = GameCanvas || (typeof window !== 'undefined' ? window.GameCanvas : null);
+    if (CanvasClass) {
+      state.canvas = new CanvasClass('scene');
+      state.canvas.onShipperArrived = handleShipperOrderArrival;
+    }
+  } catch (err) {
+    console.error('[Bootstrap] Error initializing GameCanvas:', err);
   }
 
-  // 2. Initialize Core Systems & Listeners
-  initUIControls();
-  initDevMode();
-  initModalSync(scheduleNextOrder);
-  initWorkstation();
-  initWorkflow();
-  initMarket();
-  initStory();
-  initEvents();
-  initModals();
-  initShift();
-  initRoomModule();
-  initWeatherModule();
-  initFarmModule();
-  initFranchiseModule();
-  initStaffModule();
-  initPricing();
-  initSaveSync();
-  initLiveSync();
-  initCoffeeModule();
+  // 2. Initialize Core Systems & Listeners safely
+  safeInit('UIControls', initUIControls);
+  safeInit('DevMode', initDevMode);
+  safeInit('ModalSync', () => initModalSync(scheduleNextOrder));
+  safeInit('Workstation', initWorkstation);
+  safeInit('Workflow', initWorkflow);
+  safeInit('Market', initMarket);
+  safeInit('Story', initStory);
+  safeInit('Events', initEvents);
+  safeInit('Modals', initModals);
+  safeInit('Shift', initShift);
+  safeInit('RoomModule', initRoomModule);
+  safeInit('WeatherModule', initWeatherModule);
+  safeInit('FarmModule', initFarmModule);
+  safeInit('FranchiseModule', initFranchiseModule);
+  safeInit('StaffModule', initStaffModule);
+  safeInit('Pricing', initPricing);
+  safeInit('SaveSync', initSaveSync);
+  safeInit('LiveSync', initLiveSync);
+  safeInit('CoffeeModule', initCoffeeModule);
 
   // 3. Launch Store Authentication & Session Flow
-  await initStore();
+  try {
+    await initStore();
+  } catch (err) {
+    console.error('[Bootstrap] Critical error in initStore:', err);
+    const authModal = document.getElementById('modal-auth');
+    if (authModal) authModal.style.display = 'flex';
+  }
 }
 
 if (document.readyState === 'loading') {

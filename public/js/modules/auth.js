@@ -21,72 +21,109 @@ let elBtnLogout = null;
 export async function initStore() {
   setupAuthEvents();
 
+  // 1. Local-First Fast Boot: Restore cached local state if available
+  const cachedState = loadLocalGameState();
+  let hasActiveLocalSession = false;
+  if (cachedState && cachedState.save) {
+    state.storeState = cachedState;
+    hasActiveLocalSession = true;
+    if (modalAuth) modalAuth.style.display = 'none';
+    updateUI();
+    if (window.checkStaffOnLoad) window.checkStaffOnLoad();
+    scheduleNextOrder(1500);
+  }
+
+  // 2. Online Authentication & Sync
   if (window.API && window.API.token) {
-    const res = await window.API.getMe();
-    if (res && res.success && res.state) {
-      state.storeState = res.state;
-      saveLocalGameState();
-      if (modalAuth) modalAuth.style.display = 'none';
-      updateUI();
-      if (window.checkStaffOnLoad) window.checkStaffOnLoad();
-      connectSSE();
+    try {
+      const res = await Promise.race([
+        window.API.getMe(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 8000))
+      ]);
 
-      if (state.storeState.save && state.storeState.save.is_jailed === 1) {
-        showJailModal(state.storeState.save.jail_reason);
-        return;
-      }
+      if (res && res.success && res.state) {
+        state.storeState = res.state;
+        saveLocalGameState();
+        if (modalAuth) modalAuth.style.display = 'none';
+        updateUI();
+        if (window.checkStaffOnLoad) window.checkStaffOnLoad();
+        connectSSE();
 
-      if (checkRestStatus(state.storeState.save)) {
-        return;
-      }
-
-      // Auto-show story for new player
-      const storySeenKey = 'heehee_story_seen_' + (state.storeState.store_code || 'guest');
-      if (!localStorage.getItem(storySeenKey)) {
-        openStoryModal(0, state.storeState.save.chapter || 1);
-        localStorage.setItem(storySeenKey, 'true');
-      }
-
-      // On-demand Collab & Gifts Sync (Runs once on startup, and when opening modals - zero polling overhead)
-      const syncGiftsAndCollabs = async () => {
-        if (!state.isGamePaused && window.API && window.API.token) {
-          try {
-            const collabsRes = await window.API.getCollabs();
-            if (collabsRes && collabsRes.activeCollabs && state.canvas && state.canvas.setCollabs) {
-              state.canvas.setCollabs(collabsRes.activeCollabs);
-            }
-            const giftsRes = await window.API.getGifts();
-            if (giftsRes && giftsRes.success) {
-              const count = giftsRes.totalPending || (giftsRes.pendingGifts ? giftsRes.pendingGifts.length : 0);
-              const navBadge = document.getElementById('friend-gifts-badge');
-              const tabBadge = document.getElementById('gifts-pending-badge');
-              if (navBadge) {
-                if (count > 0) {
-                  navBadge.innerText = count > 99 ? '99+' : count;
-                  navBadge.style.display = 'inline-block';
-                } else {
-                  navBadge.style.display = 'none';
-                }
-              }
-              if (tabBadge) tabBadge.innerText = count;
-            }
-          } catch (e) {}
+        if (state.storeState.save && state.storeState.save.is_jailed === 1) {
+          showJailModal(state.storeState.save.jail_reason);
+          return;
         }
-      };
-      window.refreshCollabsAndGifts = syncGiftsAndCollabs;
-      syncGiftsAndCollabs();
 
-      scheduleNextOrder(1500);
-      return;
-    } else {
-      // Token invalid or session expired: clear stored token
-      window.API.token = null;
-      localStorage.removeItem('hyhy_session_token');
+        if (checkRestStatus(state.storeState.save)) {
+          return;
+        }
+
+        // Auto-show story for new player
+        const storySeenKey = 'heehee_story_seen_' + (state.storeState.store_code || 'guest');
+        if (!localStorage.getItem(storySeenKey)) {
+          openStoryModal(0, state.storeState.save.chapter || 1);
+          localStorage.setItem(storySeenKey, 'true');
+        }
+
+        // On-demand Collab & Gifts Sync (Runs once on startup, and when opening modals - zero polling overhead)
+        const syncGiftsAndCollabs = async () => {
+          if (!state.isGamePaused && window.API && window.API.token) {
+            try {
+              const collabsRes = await window.API.getCollabs();
+              if (collabsRes && collabsRes.activeCollabs && state.canvas && state.canvas.setCollabs) {
+                state.canvas.setCollabs(collabsRes.activeCollabs);
+              }
+              const giftsRes = await window.API.getGifts();
+              if (giftsRes && giftsRes.success) {
+                const count = giftsRes.totalPending || (giftsRes.pendingGifts ? giftsRes.pendingGifts.length : 0);
+                const navBadge = document.getElementById('friend-gifts-badge');
+                const tabBadge = document.getElementById('gifts-pending-badge');
+                if (navBadge) {
+                  if (count > 0) {
+                    navBadge.innerText = count > 99 ? '99+' : count;
+                    navBadge.style.display = 'inline-block';
+                  } else {
+                    navBadge.style.display = 'none';
+                  }
+                }
+                if (tabBadge) tabBadge.innerText = count;
+              }
+            } catch (e) {}
+          }
+        };
+        window.refreshCollabsAndGifts = syncGiftsAndCollabs;
+        syncGiftsAndCollabs();
+
+        return;
+      } else if (res && (res.status === 401 || res.session_expired || res.invalid_token)) {
+        // Token confirmed invalid by server: clear stored token
+        window.API.token = null;
+        localStorage.removeItem('hyhy_session_token');
+        if (!hasActiveLocalSession && modalAuth) {
+          modalAuth.style.display = 'flex';
+        }
+        return;
+      } else {
+        // Server error or Render cold start: preserve token & local state
+        console.warn('[Auth] Server returned non-success response on boot, keeping local session:', res);
+        if (hasActiveLocalSession) {
+          showToast('📡 Đang kết nối máy chủ Render... Chế độ Offline sẵn sàng!', 4000);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[Auth] Network timeout or unreachable on boot (Render waking up?):', err.message);
+      if (hasActiveLocalSession) {
+        showToast('📡 Đang đánh thức máy chủ Render... Tiếp tục chơi mượt mà!', 4000);
+        return;
+      }
     }
   }
 
-  // No valid token: open Auth modal
-  if (modalAuth) modalAuth.style.display = 'flex';
+  // No active session or cached state: open Auth modal
+  if (!hasActiveLocalSession && modalAuth) {
+    modalAuth.style.display = 'flex';
+  }
 }
 
 export function setupAuthEvents() {

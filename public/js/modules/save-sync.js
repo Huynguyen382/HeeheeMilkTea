@@ -40,6 +40,7 @@ export function saveLocalGameState() {
       savedAt: Date.now()
     });
     localStorage.setItem(key, serialized);
+    localStorage.setItem(`${CACHE_KEY_PREFIX}latest`, serialized);
   } catch (err) {
     console.warn('[SaveSync] LocalStorage write failed (quota exceeded?):', err);
   }
@@ -50,8 +51,29 @@ export function saveLocalGameState() {
  */
 export function loadLocalGameState() {
   try {
-    const key = getStorageKey();
-    const raw = localStorage.getItem(key);
+    // 1. Try active key
+    let raw = localStorage.getItem(getStorageKey());
+    // 2. Try latest key if not found
+    if (!raw) {
+      raw = localStorage.getItem(`${CACHE_KEY_PREFIX}latest`);
+    }
+    // 3. Fallback scan any hyhy_cached_state_*
+    if (!raw) {
+      let newestTime = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(CACHE_KEY_PREFIX)) {
+          try {
+            const item = JSON.parse(localStorage.getItem(k));
+            if (item && item.savedAt && item.savedAt > newestTime && item.storeState) {
+              newestTime = item.savedAt;
+              raw = localStorage.getItem(k);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed && parsed.storeState) {

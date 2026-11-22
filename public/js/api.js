@@ -2,26 +2,39 @@
 const API = {
   token: localStorage.getItem('hyhy_session_token') || null,
 
-  async request(endpoint, method = 'GET', body = null) {
+  async request(endpoint, method = 'GET', body = null, timeoutMs = 8000) {
     const headers = { 'Content-Type': 'application/json' };
     if (this.token) {
       headers['x-session-token'] = this.token;
     }
 
-    const config = { method, headers };
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+
+    const config = { method, headers, signal: controller ? controller.signal : undefined };
     if (body) config.body = JSON.stringify(body);
 
     try {
       const res = await fetch('/api' + endpoint, config);
-      const data = await res.json();
+      if (timeoutId) clearTimeout(timeoutId);
+
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        data = { error: 'Không thể phân tích dữ liệu từ máy chủ', status: res.status };
+      }
+
       if (res.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
         this.token = null;
         localStorage.removeItem('hyhy_session_token');
+        if (data && typeof data === 'object') data.status = 401;
       }
       return data;
     } catch (err) {
-      console.error('API Error:', err);
-      return { error: 'Không thể kết nối đến máy chủ Tiệm Trà Sữa HeeHee!' };
+      if (timeoutId) clearTimeout(timeoutId);
+      console.warn('API Request failed:', endpoint, err.name === 'AbortError' ? 'Request timed out' : err.message);
+      return { error: 'Không thể kết nối đến máy chủ Tiệm Trà Sữa HeeHee!', isNetworkError: true };
     }
   },
 
